@@ -1,0 +1,4 @@
+{
+  "web3HttpProvider": "https://mainnet.infura.io/v3/<project-id>",
+  "ensResolver": ""
+}
