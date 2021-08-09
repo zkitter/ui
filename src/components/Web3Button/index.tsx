@@ -5,7 +5,8 @@ import {setWeb3, connectWeb3, useAccount, useWeb3Loading} from "../../ducks/web3
 import {useDispatch} from "react-redux";
 
 type Props = {
-
+    onConnect?: () => Promise<void>;
+    onDisconnect?: () => Promise<void>|void;
 }
 
 export default function Web3Button(props: Props): ReactElement {
@@ -13,12 +14,14 @@ export default function Web3Button(props: Props): ReactElement {
     const web3Loading = useWeb3Loading();
     const dispatch = useDispatch();
 
-    const disconnect = useCallback(() => {
-        dispatch(setWeb3(null, ''));
+    const disconnect = useCallback(async () => {
+        await dispatch(setWeb3(null, ''));
+        return props.onDisconnect && props.onDisconnect();
     }, []);
 
     const connect = useCallback(async () => {
-        dispatch(connectWeb3());
+        await dispatch(connectWeb3());
+        return props.onConnect && props.onConnect();
     }, []);
 
     return (

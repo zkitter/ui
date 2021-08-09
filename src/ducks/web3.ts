@@ -4,7 +4,6 @@ import deepEqual from "fast-deep-equal";
 import {AppRootState} from "../store/configureAppStore";
 import {Subscription} from "web3-core-subscriptions";
 import {ThunkDispatch} from "redux-thunk";
-import EC from "elliptic";
 const {
     default: ENS,
     getEnsAddress,
@@ -13,6 +12,7 @@ import config from "../util/config";
 import {ensResolverABI} from "../util/abi";
 import {Dispatch} from "redux";
 import Web3Modal from "web3modal";
+import {generateGunKeyPairFromHex, validateGunPublicKey} from "../util/crypto";
 
 const web3Modal = new Web3Modal({
     network: "main", // optional
@@ -27,7 +27,7 @@ const resolver = new defaultWeb3.eth.Contract(
     ensResolverABI as any,
     config.ensResolver,
 );
-const ens = new ENS({
+const defaultENS = new ENS({
     provider: httpProvider,
     ensAddress: getEnsAddress('1'),
 });
@@ -53,8 +53,11 @@ type State = {
     account: string;
     networkType: string;
     ensName: string;
-    socialKey: string;
     loading: boolean;
+    publicKeys: {
+        gun: string;
+        semaphore: string;
+    };
 }
 
 const initialState: State = {
@@ -62,8 +65,11 @@ const initialState: State = {
     account: '',
     networkType: '',
     ensName: '',
-    socialKey: '',
     loading: false,
+    publicKeys: {
+        gun: '',
+        semaphore: '',
+    },
 };
 
 let event: Subscription<any> | null;
@@ -178,78 +184,52 @@ export const setWeb3 = (web3: Web3 | null, account: string) => async (
     });
 }
 
-export const generateSocialKey = () => async (dispatch: Dispatch, getState: () => AppRootState) => {
+export const addGunKeyToTextRecord = (pubkey: string) => async (dispatch: Dispatch, getState: () => AppRootState) => {
     const state = getState();
-    const {
-        web3,
-        account,
-    } = state.web3;
+    const { web3, account, ensName } = state.web3;
 
     if (!web3 || !account) {
         return Promise.reject(new Error('not connected to web3'));
     }
 
-    const signedMessage = await web3.eth.personal.sign('Sign this message to login to 0xSocial', account);
-    const data = new TextEncoder().encode(signedMessage);
-    const hashBuffer = await crypto.subtle.digest('SHA-256', data);
-    const hashArray = Array.from(new Uint8Array(hashBuffer));                     // convert buffer to byte array
-    const hashHex = hashArray.map(b => b.toString(16).padStart(2, '0')).join(''); // convert bytes to hex string
-
-    const ec = new EC.ec('p256');
-
-    const key = ec.keyFromPrivate(hashHex);
-
-    const pubPoint = key.getPublic();
-
-    const pubkey = pubPoint.encode('hex');
-
-    const hexToUintArray = hex => {
-        const a = [];
-        for (let i = 0, len = hex.length; i < len; i += 2) {
-            a.push(parseInt(hex.substr(i, 2), 16));
-        }
-        return new Uint8Array(a);
+    if (!ensName) {
+        return Promise.reject(new Error('no ens name'));
     }
 
-    const hexToArrayBuf = hex => {
-        return hexToUintArray(hex).buffer;
-    }
-
-    const arrayBufToBase64UrlEncode = buf => {
-        let binary = '';
-        const bytes = new Uint8Array(buf);
-        for (var i = 0; i < bytes.byteLength; i++) {
-            binary += String.fromCharCode(bytes[i]);
-        }
-        return window.btoa(binary)
-            .replace(/\//g, '_')
-            .replace(/=/g, '')
-            .replace(/\+/g, '-');
-    }
-
-    const jwkConv = (prvHex, pubHex) => ({
-        kty: "EC",
-        crv: "P-256",
-        ext: true,
-        x: arrayBufToBase64UrlEncode(hexToArrayBuf(pubHex).slice(1, 33)),
-        y: arrayBufToBase64UrlEncode(hexToArrayBuf(pubHex).slice(33, 66))
+    const ens = new ENS({
+        provider: web3.currentProvider,
+        ensAddress: getEnsAddress('1'),
     });
 
-    const publicKey = await crypto.subtle.importKey(
-        "jwk", //can be "jwk" (public or private), "spki" (public only), or "pkcs8" (private only)
-        jwkConv(hashHex, pubkey),
-        {   //these are the algorithm options
-            name: "ECDSA",
-            namedCurve: "P-256", //can be "P-256", "P-384", or "P-521"
-        },
-        true, //whether the key is extractable (i.e. can be used in exportKey)
-        ["verify"] //"verify" for public key import, "sign" for private key imports
+    return ens.name(ensName).setText('gun.social', pubkey);
+}
+
+export const generateGunKeyPair = (nonce = 0) =>
+    async (dispatch: Dispatch, getState: () => AppRootState): Promise<{pub: string; priv: string}> =>
+{
+    const state = getState();
+    const { web3, account } = state.web3;
+
+    if (!web3 || !account) {
+        return Promise.reject(new Error('not connected to web3'));
+    }
+
+    // @ts-ignore
+    const signedMessage = await web3.eth.personal.sign(
+        `Sign this message to generate a GUN key pair with key nonce: ${nonce}`,
+        account,
     );
 
-    console.log(publicKey)
-    const pub = await crypto.subtle.exportKey('jwk', publicKey);
-    console.log(Buffer.from(hashHex, 'hex').toString('base64'));
-    console.log(pub.x + '.' + pub.y)
+    return _generateGunKeyPair(signedMessage);
+}
+
+const _generateGunKeyPair = async (seed: string): Promise<{pub: string; priv: string}> => {
+    const data = new TextEncoder().encode(seed);
+    const hashBuffer = await crypto.subtle.digest('SHA-256', data);
+    const hashArray = Array.from(new Uint8Array(hashBuffer));
+    const hashHex = hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
+    const pair = await generateGunKeyPairFromHex(hashHex);
+    return pair;
 }
 
 export const lookupENS = () => async (dispatch: Dispatch, getState: () => AppRootState) => {
@@ -258,14 +238,18 @@ export const lookupENS = () => async (dispatch: Dispatch, getState: () => AppRoo
 
     if (!account) return;
 
-    const {name} = await ens.getName(account);
+    const {name} = await defaultENS.getName(account);
 
     if (name) {
-        const text = await ens.name(name).getText('gun.social');
-        dispatch({
-            type: ActionTypes.SET_SOCIAL_KEY,
-            payload: text,
-        });
+        const text = await defaultENS.name(name).getText('gun.social');
+
+        if (await validateGunPublicKey(text)) {
+            dispatch({
+                type: ActionTypes.SET_SOCIAL_KEY,
+                payload: text,
+            });
+        }
+
     }
 
     dispatch({
@@ -274,7 +258,7 @@ export const lookupENS = () => async (dispatch: Dispatch, getState: () => AppRoo
     });
 }
 
-export default function web3(state = initialState, action: Action) {
+export default function web3(state = initialState, action: Action): State {
     switch (action.type) {
         case ActionTypes.SET_WEB3:
             return {
@@ -299,7 +283,10 @@ export default function web3(state = initialState, action: Action) {
         case ActionTypes.SET_SOCIAL_KEY:
             return {
                 ...state,
-                socialKey: action.payload,
+                publicKeys: {
+                    ...state.publicKeys,
+                    gun: action.payload,
+                },
             };
         case ActionTypes.SET_LOADING:
             return {
@@ -332,6 +319,12 @@ export const useENSName = () => {
 export const useWeb3Loading = () => {
     return useSelector((state: AppRootState) => {
         return state.web3.loading;
+    }, deepEqual);
+}
+
+export const useGunKey = () => {
+    return useSelector((state: AppRootState) => {
+        return state.web3.publicKeys.gun;
     }, deepEqual);
 }
 
