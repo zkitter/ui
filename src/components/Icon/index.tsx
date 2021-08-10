@@ -1,6 +1,6 @@
 import React, {MouseEventHandler, ReactElement} from "react";
 import classNames from "classnames";
-import "./icon.scss";
+// import "./icon.scss";
 
 type Props = {
     url?: string;
@@ -21,8 +21,8 @@ export default function Icon(props: Props): ReactElement {
 
     return (
         <div
-            className={classNames('icon', className, {
-                'icon--clickable': onClick,
+            className={classNames('bg-contain bg-center bg-no-repeat icon', className, {
+                'cursor-pointer': onClick,
             })}
             style={{
                 backgroundImage: url ? `url(${url})` : undefined,

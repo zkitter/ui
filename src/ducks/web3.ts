@@ -16,7 +16,7 @@ import {generateGunKeyPairFromHex, validateGunPublicKey} from "../util/crypto";
 
 const web3Modal = new Web3Modal({
     network: "main", // optional
-    cacheProvider: false, // optional
+    cacheProvider: true, // optional
     providerOptions: {
     },
 });
@@ -304,9 +304,15 @@ export const useWeb3 = () => {
     }, deepEqual);
 }
 
-export const useAccount = () => {
+export const useAccount = (opt?: { uppercase?: boolean }) => {
     return useSelector((state: AppRootState) => {
-        return state.web3.account;
+        const account = state.web3.account;
+
+        if (!account) return '';
+
+        return opt?.uppercase
+            ? `0x${state.web3.account.slice(-40).toUpperCase()}`
+            : state.web3.account;
     }, deepEqual);
 }
 

@@ -22,15 +22,23 @@ export default function Button(props: Props): ReactElement {
     } = props;
     return (
         <button
-            className={classNames('button', className, {
-                'button--primary': btnType === 'primary',
-                'button--secondary': btnType === 'secondary',
-            })}
+            className={classNames(
+                'rounded-xl',
+                'flex flex-row flex-nowrap',
+                'button',
+                className,
+                {
+                    'py-2 px-4': !loading,
+                    'py-1 px-4': loading,
+                    'button--primary': btnType === 'primary',
+                    'button--secondary': btnType === 'secondary',
+                },
+            )}
             onClick={!disabled && !loading ? onClick : undefined}
             disabled={disabled}
             {...btnProps}
         >
-            {loading ? <Icon url={SpinnerGif} />: children}
+            {loading ? <Icon url={SpinnerGif} size={2} />: children}
         </button>
     )
 }

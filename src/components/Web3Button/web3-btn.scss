@@ -1,0 +1,11 @@
+@import "../../util/variable";
+
+.web3-button {
+  background-color: rgba($primary-color, .1);
+  color: $primary-color;
+  font-family: Inter, sans-serif;
+
+  &:hover {
+    box-shadow: 0 0 0 1px rgba($primary-color, .5);
+  }
+}

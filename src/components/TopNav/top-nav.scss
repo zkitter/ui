@@ -1,0 +1,20 @@
+@import "../../util/variable";
+
+.top-nav {
+  &__icon {
+    height: 3.5rem;
+    width: 3.5rem;
+    border-radius: 2rem;
+    transition: background-color 100ms ease-in-out,
+      color 100ms ease-in-out;
+
+    &:hover {
+      background: rgba($primary-color, .15);
+      color: $primary-color;
+    }
+
+    &--selected {
+      color: $primary-color;
+    }
+  }
+}
