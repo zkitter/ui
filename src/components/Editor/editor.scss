@@ -1,0 +1,39 @@
+@import "../../util/variable";
+
+.public-DraftEditorPlaceholder-root {
+  position: relative;
+  z-index: 100;
+  color: $gray-300;
+}
+
+.public-DraftEditorPlaceholder-inner {
+  position: absolute;
+  top: 0;
+  left: 0;
+  user-select: none;
+}
+
+div.DraftEditor-root {
+  flex: 1 1 auto;
+  overflow-y: auto;
+  padding: .75rem 0;
+}
+
+div.DraftEditor-editorContainer,
+div.public-DraftEditor-content {
+  position: relative;
+  height: 100%;
+  z-index: 200;
+}
+
+.public-DraftStyleDefault-block {
+  overflow: hidden;
+  padding-bottom: 2px;
+  padding-top: 2px;
+  position: relative;
+  white-space: pre-wrap;
+}
+
+.editor {
+
+}

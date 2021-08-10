@@ -1,11 +1,11 @@
-import {Post, PostJSON, PostMessageOption} from "../util/message";
+import {Post, PostMessageOption} from "../util/message";
 import {fetchMessage} from "../util/gun";
 import {getUser} from "./users";
 import {ThunkDispatch} from "redux-thunk";
-import {Dispatch} from "redux";
 import {AppRootState} from "../store/configureAppStore";
 import {useSelector} from "react-redux";
 import deepEqual from "fast-deep-equal";
+import config from "../util/config";
 
 enum ActionTypes {
     SET_POSTS = 'posts/setPosts',
@@ -20,16 +20,10 @@ type Action = {
 }
 
 type State = {
-    order: string[];
-    map: {
-        [messageId: string]: Post;
-    };
+    [messageId: string]: Post;
 }
 
-const initialState: State = {
-    order: [],
-    map: {},
-};
+const initialState: State = {};
 
 export const fetchPost = (messageId: string) =>
     async (dispatch: ThunkDispatch<any, any, any>): Promise<PostMessageOption> =>
@@ -44,8 +38,8 @@ export const fetchPost = (messageId: string) =>
     };
 }
 
-export const fetchPosts = () => async (dispatch: ThunkDispatch<any, any, any>) => {
-    const resp = await fetch('http://localhost:3000/v1/posts');
+export const fetchPosts = (limit = 10, offset = 0) => async (dispatch: ThunkDispatch<any, any, any>) => {
+    const resp = await fetch(`${config.indexerAPI}/v1/posts?limit=${limit}&offset=${offset}`);
     const json = await resp.json();
     const posts: Post[] = [];
 
@@ -62,23 +56,19 @@ export const fetchPosts = () => async (dispatch: ThunkDispatch<any, any, any>) =
         type: ActionTypes.SET_POSTS,
         payload: posts,
     });
+
+    return json.payload.map((post: any) => post.messageId);
 }
 
-export const usePostIds = (): string[] => {
+export const usePosts = (): State => {
     return useSelector((state: AppRootState) => {
-        return state.posts.order;
-    }, deepEqual);
-}
-
-export const usePostsMap = (): State["map"] => {
-    return useSelector((state: AppRootState) => {
-        return state.posts.map;
+        return state.posts;
     }, deepEqual);
 }
 
 export const usePost = (messageId: string): Post | null => {
     return useSelector((state: AppRootState) => {
-        return state.posts.map[messageId] || null;
+        return state.posts[messageId] || null;
     }, deepEqual);
 }
 
@@ -95,39 +85,27 @@ export default function posts(state = initialState, action: Action): State {
 
 function reduceSetPosts(state: State, action: Action): State {
     const payload = action.payload as Post[];
-    const order: string[] = [];
-    const map: { [h: string]: Post } = {};
+    const posts: { [h: string]: Post } = {};
 
     for (const post of payload) {
         const messageId = post.creator + '/' + post.hash();
-        order.push(messageId);
-        map[messageId] = post;
+        posts[messageId] = post;
     }
 
-    return {
-        ...state,
-        order,
-        map,
-    };
+    return posts;
 }
 
 function reduceAppendPosts(state: State, action: Action): State {
     const payload = action.payload as Post[];
-    const order: string[] = [];
-    const map: { [h: string]: Post } = {};
+    const posts: { [h: string]: Post } = {};
 
     for (const post of payload) {
         const messageId = post.creator + '/' + post.hash();
-        order.push(messageId);
-        map[messageId] = post;
+        posts[messageId] = post;
     }
 
     return {
         ...state,
-        order: state.order.concat(order),
-        map: {
-            ...state.map,
-            ...map,
-        },
+        ...posts,
     };
 }

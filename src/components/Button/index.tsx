@@ -26,13 +26,13 @@ export default function Button(props: Props): ReactElement {
                 'rounded-xl',
                 'flex flex-row flex-nowrap',
                 'button',
-                className,
                 {
                     'py-2 px-4': !loading,
                     'py-1 px-4': loading,
                     'button--primary': btnType === 'primary',
                     'button--secondary': btnType === 'secondary',
                 },
+                className,
             )}
             onClick={!disabled && !loading ? onClick : undefined}
             disabled={disabled}

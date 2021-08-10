@@ -3,6 +3,7 @@ import {applyMiddleware, combineReducers, createStore} from "redux";
 import web3 from "../ducks/web3";
 import posts from "../ducks/posts";
 import users from "../ducks/users";
+import drafts from "../ducks/drafts";
 import thunk from "redux-thunk";
 import {createLogger} from "redux-logger";
 
@@ -10,6 +11,7 @@ const rootReducer = combineReducers({
     web3,
     posts,
     users,
+    drafts,
 });
 
 export type AppRootState = ReturnType<typeof rootReducer>;

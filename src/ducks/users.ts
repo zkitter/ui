@@ -1,5 +1,9 @@
 import {Dispatch} from "redux";
 import {AppRootState} from "../store/configureAppStore";
+import {useSelector} from "react-redux";
+import deepEqual from "fast-deep-equal";
+import config from "../util/config";
+import {defaultENS} from "../util/web3";
 
 enum ActionTypes {
     SET_USER = 'users/setUser',
@@ -15,6 +19,7 @@ type Action = {
 export type User = {
     name: string;
     pubkey: string;
+    address: string;
 }
 
 type State = {
@@ -30,18 +35,31 @@ export const getUser = (name: string) => async (dispatch: Dispatch, getState: ()
 
     if (user) return user;
 
-    const resp = await fetch(`http://localhost:3000/v1/users/${name}`);
+    const address = await defaultENS.name(name).getAddress();
+
+    const resp = await fetch(`${config.indexerAPI}/v1/users/${name}`);
     const json = await resp.json();
 
     dispatch({
         type: ActionTypes.SET_USER,
-        payload: json.payload,
+        payload: {
+            name: json.payload.name,
+            pubkey: json.payload.pubkey,
+            address,
+        },
     });
 
     return {
         name: json.payload.name,
         pubkey: json.payload.pubkey,
+        address,
     };
+}
+
+export const useUser = (name: string): User | null => {
+    return useSelector((state: AppRootState) => {
+        return state.users[name] || null;
+    }, deepEqual);
 }
 
 export default function users(state = initialState, action: Action): State {
@@ -52,6 +70,7 @@ export default function users(state = initialState, action: Action): State {
                 [action.payload.name]: {
                     name: action.payload.name,
                     pubkey: action.payload.pubkey,
+                    address: action.payload.address,
                 },
             };
         default:

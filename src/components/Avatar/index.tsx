@@ -24,6 +24,7 @@ export default function Avatar(props: Props): ReactElement {
             className={classNames(
                 'inline-block',
                 'rounded-full',
+                'flex-shrink-0 flex-grow-0',
                 'w-6 h-6',
                 'bg-contain bg-center bg-no-repeat',
                 props.className,

@@ -1,0 +1,36 @@
+@import "../../util/variable";
+
+.post {
+  &__footer {
+    margin-left: -.3125rem;
+  }
+}
+
+.post-button {
+  color: rgba($black, .5);
+  height: 2rem;
+  cursor: pointer;
+
+  .icon {
+    @extend %row-nowrap;
+    align-content: center;
+    justify-content: center;
+    height: 2rem;
+    width: 2rem;
+    padding: .3125rem;
+    border-radius: 50%;
+
+    i {
+      align-self: center;
+    }
+
+    &:hover {
+      background-color: rgba($primary-color, .1);
+      color: $primary-color;
+    }
+  }
+}
+
+.post-button + .post-button {
+  margin-left: 1rem;
+}

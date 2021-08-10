@@ -8,28 +8,16 @@ const {
     default: ENS,
     getEnsAddress,
 } = require('@ensdomains/ensjs');
-import config from "../util/config";
-import {ensResolverABI} from "../util/abi";
 import {Dispatch} from "redux";
 import Web3Modal from "web3modal";
 import {generateGunKeyPairFromHex, validateGunPublicKey} from "../util/crypto";
+import {defaultENS, defaultWeb3} from "../util/web3";
 
 const web3Modal = new Web3Modal({
     network: "main", // optional
     cacheProvider: true, // optional
     providerOptions: {
     },
-});
-
-const httpProvider = new Web3.providers.HttpProvider(config.web3HttpProvider);
-const defaultWeb3 = new Web3(httpProvider);
-const resolver = new defaultWeb3.eth.Contract(
-    ensResolverABI as any,
-    config.ensResolver,
-);
-const defaultENS = new ENS({
-    provider: httpProvider,
-    ensAddress: getEnsAddress('1'),
 });
 
 enum ActionTypes {
@@ -301,6 +289,17 @@ export default function web3(state = initialState, action: Action): State {
 export const useWeb3 = () => {
     return useSelector((state: AppRootState) => {
         return state.web3.web3;
+    }, deepEqual);
+}
+
+export const useLoggedIn = () => {
+    return useSelector((state: AppRootState) => {
+        const {
+            web3,
+            account,
+            ensName,
+        } = state.web3;
+        return !!(web3 && account && ensName);
     }, deepEqual);
 }
 
