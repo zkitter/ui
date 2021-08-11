@@ -3,6 +3,7 @@ import {useSelector} from "react-redux";
 import deepEqual from "fast-deep-equal";
 import {AppRootState} from "../store/configureAppStore";
 import {Subscription} from "web3-core-subscriptions";
+import { genIdentityCommitment, Identity } from 'libsemaphore';
 import {ThunkDispatch} from "redux-thunk";
 const {
     default: ENS,
@@ -10,7 +11,7 @@ const {
 } = require('@ensdomains/ensjs');
 import {Dispatch} from "redux";
 import Web3Modal from "web3modal";
-import {generateGunKeyPairFromHex, validateGunPublicKey} from "../util/crypto";
+import {generateGunKeyPairFromHex, generateSemaphoreIDFromHex, validateGunPublicKey} from "../util/crypto";
 import {defaultENS, defaultWeb3} from "../util/web3";
 import {authenticateGun} from "../util/gun";
 
@@ -31,6 +32,7 @@ enum ActionTypes {
     SET_ENS_NAME = 'web3/setEnsName',
     SET_SOCIAL_KEY = 'web3/setSocialKey',
     SET_GUN_PRIVATE_KEY = 'web3/setGunPrivateKey',
+    SET_SEMAPHORE_ID = 'web3/setSemaphoreID',
 }
 
 type Action = {
@@ -48,13 +50,18 @@ type State = {
     loading: boolean;
     fetchingENS: boolean;
     unlocking: boolean;
-    publicKeys: {
-        gun: string;
-        semaphore: string;
-    };
-    privateKeys: {
-        gun: string;
-        semaphore: string;
+    gun: {
+        pub: string;
+        priv: string;
+    },
+    semaphore: {
+        keypair: {
+          pubKey: string,
+          privKey: Uint8Array|null,
+        },
+        commitment: string;
+        identityNullifier: string;
+        identityTrapdoor: string;
     };
 }
 
@@ -66,13 +73,18 @@ const initialState: State = {
     loading: false,
     fetchingENS: false,
     unlocking: false,
-    publicKeys: {
-        gun: '',
-        semaphore: '',
+    gun: {
+      pub: '',
+      priv: '',
     },
-    privateKeys: {
-        gun: '',
-        semaphore: '',
+    semaphore: {
+        keypair: {
+          pubKey: '',
+          privKey: null,
+        },
+        commitment: '',
+        identityNullifier: '',
+        identityTrapdoor: '',
     },
 };
 
@@ -143,6 +155,11 @@ export const setGunPrivateKey = (privateKey: string) => ({
     payload: privateKey,
 });
 
+export const setSemaphoreID = (identity: Identity) => ({
+    type: ActionTypes.SET_SEMAPHORE_ID,
+    payload: identity,
+})
+
 export const setWeb3 = (web3: Web3 | null, account: string) => async (
     dispatch: ThunkDispatch<any, any, any>,
 ) => {
@@ -200,13 +217,26 @@ export const setWeb3 = (web3: Web3 | null, account: string) => async (
     });
 }
 
-export const unlockENS = () => async (dispatch: ThunkDispatch<any, any, any>) => {
+export const genENS = () => async (dispatch: ThunkDispatch<any, any, any>) => {
     dispatch(setUnlocking(true));
 
     try {
         const result: any = await dispatch(generateGunKeyPair(0));
         authenticateGun(result as any);
         dispatch(setGunPrivateKey(result.priv));
+        dispatch(setUnlocking(false));
+    } catch (e) {
+        dispatch(setUnlocking(false));
+        throw e;
+    }
+}
+
+export const genSemaphore = () => async (dispatch: ThunkDispatch<any, any, any>) => {
+    dispatch(setUnlocking(true));
+
+    try {
+        const result: any = await dispatch(generateSemaphoreID(0));
+        dispatch(setSemaphoreID(result as Identity));
         dispatch(setUnlocking(false));
     } catch (e) {
         dispatch(setUnlocking(false));
@@ -260,6 +290,28 @@ const _generateGunKeyPair = async (seed: string): Promise<{pub: string; priv: st
     const hashHex = hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
     const pair = await generateGunKeyPairFromHex(hashHex);
     return pair;
+}
+
+const generateSemaphoreID = (nonce = 0) => async (
+    dispatch: Dispatch, getState: () => AppRootState,
+) => {
+    const state = getState();
+    const { web3, account } = state.web3;
+
+    if (!web3 || !account) {
+        return Promise.reject(new Error('not connected to web3'));
+    }
+
+    // @ts-ignore
+    const signedMessage = await web3.eth.personal.sign(
+        `Sign this message to generate a Semaphore identity with key nonce: ${nonce}`,
+        account,
+    );
+
+    const data = new TextEncoder().encode(signedMessage);
+    const hashBuffer = await crypto.subtle.digest('SHA-256', data);
+    const identity = await generateSemaphoreIDFromHex(Buffer.from(hashBuffer).toString('hex'));
+    return identity;
 }
 
 export const lookupENS = () => async (dispatch: Dispatch, getState: () => AppRootState) => {
@@ -318,11 +370,21 @@ export default function web3(state = initialState, action: Action): State {
         case ActionTypes.SET_SOCIAL_KEY:
             return {
                 ...state,
-                publicKeys: {
-                    ...state.publicKeys,
-                    gun: action.payload,
+                gun: {
+                    ...state.gun,
+                    pub: action.payload,
                 },
             };
+        case ActionTypes.SET_SEMAPHORE_ID:
+            return {
+                ...state,
+                semaphore: {
+                    keypair: action.payload.keypair,
+                    commitment: genIdentityCommitment(action.payload),
+                    identityNullifier: action.payload.identityNullifier,
+                    identityTrapdoor: action.payload.identityTrapdoor,
+                },
+            }
         case ActionTypes.SET_FETCHING_ENS:
             return {
                 ...state,
@@ -341,9 +403,9 @@ export default function web3(state = initialState, action: Action): State {
         case ActionTypes.SET_GUN_PRIVATE_KEY:
             return {
                 ...state,
-                privateKeys: {
-                    ...state.privateKeys,
-                    gun: action.payload,
+                gun: {
+                    ...state.gun,
+                    priv: action.payload,
                 },
             };
         default:
@@ -362,13 +424,11 @@ export const useLoggedIn = () => {
         const {
             web3,
             account,
-            privateKeys: {
-                gun,
-                semaphore,
-            }
+            gun,
+            semaphore,
         } = state.web3;
 
-        return !!(web3 && account && (gun || semaphore));
+        return !!(web3 && account && (gun.priv || semaphore.keypair.privKey));
     }, deepEqual);
 }
 
@@ -410,14 +470,11 @@ export const useENSFetching = () => {
 
 export const useGunKey = (): { pub: string; priv: string } => {
     return useSelector((state: AppRootState) => {
-        return {
-            pub: state.web3.publicKeys.gun,
-            priv: state.web3.privateKeys.gun,
-        };
+        return state.web3.gun;
     }, deepEqual);
 }
 
-export const useNetworktype = () => {
+export const useNetworkType = () => {
     return useSelector((state: AppRootState) => {
         return state.web3.networkType;
     }, deepEqual);

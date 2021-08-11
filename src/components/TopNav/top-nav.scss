@@ -2,9 +2,9 @@
 
 .top-nav {
   &__icon {
-    height: 3.5rem;
-    width: 3.5rem;
-    border-radius: 2rem;
+    height: 2.5rem;
+    width: 2.5rem;
+    border-radius: .5rem;
     transition: background-color 100ms ease-in-out,
       color 100ms ease-in-out;
 
@@ -14,7 +14,12 @@
     }
 
     &--selected {
+      background: rgba($primary-color, .15);
       color: $primary-color;
     }
+  }
+
+  &__icon + &__icon {
+    margin-left: .25rem;
   }
 }

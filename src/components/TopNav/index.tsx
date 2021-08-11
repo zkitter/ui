@@ -15,10 +15,23 @@ export default function TopNav(): ReactElement {
                 'top-nav'
             )}
         >
-            <div className="flex flex-row flex-nowrap items-center flex-grow flex-shrink-0">
-                <TopNavIcon fa="fas fa-home" pathname="/home" />
-                <TopNavIcon fa="fas fa-hashtag" pathname="/explore" />
-                <TopNavIcon fa="fas fa-bell" pathname="/notifications" />
+            <div
+                className={classNames(
+                    "flex flex-row flex-nowrap items-center flex-grow flex-shrink-0",
+                )}
+            >
+                <div
+                    className={classNames(
+                        "flex flex-row flex-nowrap items-center flex-shrink-0",
+                        "rounded-xl",
+                        "p-1",
+                        "bg-white",
+                    )}
+                >
+                    <TopNavIcon fa="fas fa-home" pathname="/home" />
+                    <TopNavIcon fa="fas fa-hashtag" pathname="/explore" />
+                    <TopNavIcon fa="fas fa-bell" pathname="/notifications" />
+                </div>
             </div>
             <div className="flex flex-row flex-nowrap items-center flex-grow-0 flex-shrink-0">
                 <Web3Button />
@@ -45,7 +58,7 @@ function TopNavIcon(props: TopNavIconProps): ReactElement {
             )}
             onClick={() => history.push(props.pathname)}
             fa={props.fa}
-            size={1.5}
+            size={1.125}
         />
     )
 }

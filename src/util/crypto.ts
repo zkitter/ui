@@ -1,4 +1,6 @@
 import EC from "elliptic";
+import { genPubKey } from 'libsemaphore';
+const snarkjs = require('snarkjs');
 
 export const hexToUintArray = (hex: string): Uint8Array => {
     const a = [];
@@ -73,3 +75,30 @@ export const generateGunKeyPairFromHex = async (hashHex: string): Promise<{pub: 
         pub: `${pubX}.${pubY}`,
     };
 }
+
+export const generateSemaphoreIDFromHex = async (hashHex: string) => {
+    const privKey = Buffer.from(hashHex, 'hex');
+    const pubKey = genPubKey(privKey);
+    const identityNullifierSeed = await crypto.subtle.digest(
+        'SHA-256',
+        new TextEncoder().encode(hashHex + 'identity_nullifier'),
+    );
+    const identityTrapdoorSeed = await crypto.subtle.digest(
+        'SHA-256',
+        new TextEncoder().encode(hashHex + 'identity_trapdoor'),
+    );
+
+    const identityNullifierSeedBuf = Buffer.from(identityNullifierSeed);
+    const identityTrapdoorSeedBuf = Buffer.from(identityTrapdoorSeed);
+
+    return {
+        keypair: {
+            pubKey,
+            privKey,
+        },
+        identityNullifier: snarkjs.bigInt.leBuff2int(identityNullifierSeedBuf.slice(0, 31)),
+        identityTrapdoor: snarkjs.bigInt.leBuff2int(identityTrapdoorSeedBuf.slice(0, 31)),
+    }
+}
+
+

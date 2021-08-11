@@ -1,4 +1,4 @@
-import React, {MouseEventHandler, ReactElement, ReactNode, ReactNodeArray, useState} from "react";
+import React, {MouseEventHandler, ReactElement, ReactNode, ReactNodeArray, useEffect, useState} from "react";
 import classNames from "classnames";
 import "./menuable.scss";
 import Icon from "../Icon";
@@ -7,6 +7,8 @@ type MenuableProps = {
     items: ItemProps[];
     children?: ReactNode;
     className?: string;
+    onOpen?: () => void;
+    onClose?: () => void;
 }
 
 type ItemProps = {
@@ -19,6 +21,14 @@ type ItemProps = {
 
 export default function Menuable(props: MenuableProps): ReactElement {
     const [isShowing, setShowing] = useState(false);
+
+    useEffect(() => {
+        if (isShowing) {
+            props.onOpen && props.onOpen();
+        } else {
+            props.onClose && props.onClose();
+        }
+    }, [isShowing]);
 
     return (
         <div

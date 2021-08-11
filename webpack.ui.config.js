@@ -19,12 +19,14 @@ const rules = [
     {
         test: /\.tsx?$/,
         exclude: /(node_modules|.webpack)/,
-        loaders: [{
-            loader: 'ts-loader',
-            options: {
-                transpileOnly: true,
+        use: [
+            {
+                loader: 'ts-loader',
+                options: {
+                    transpileOnly: true,
+                },
             },
-        }],
+        ],
     },
 ];
 

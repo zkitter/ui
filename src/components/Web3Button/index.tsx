@@ -9,7 +9,10 @@ import {
     useENSName,
     useGunKey,
     useLoggedIn,
-    unlockENS as _unlockENS, useWeb3Unlocking, useENSFetching, setGunPrivateKey,
+    useWeb3Unlocking,
+    useENSFetching,
+    setGunPrivateKey,
+    genENS, genSemaphore,
 } from "../../ducks/web3";
 import {useDispatch} from "react-redux";
 import classNames from "classnames";
@@ -95,20 +98,29 @@ function Web3ButtonAction(props: Props): ReactElement {
     const loggedIn = useLoggedIn();
     const dispatch = useDispatch();
 
+    const [opened, setOpened] = useState(false);
+
     const unlockENS = useCallback(async () => {
-        await dispatch(_unlockENS());
+        await dispatch(genENS());
+    }, []);
+
+    const unlockSemaphore = useCallback(async () => {
+        await dispatch(genSemaphore());
     }, []);
 
     const lock = useCallback(async () => {
+        setOpened(false);
         await dispatch(setGunPrivateKey(''));
     }, []);
 
     if (!loggedIn && !web3Loading) {
         if (!gunPair.priv) {
-            console.log(ensFetching);
+
             return (
                 <Menuable
                     className="web3-button__unlock-menu"
+                    onOpen={() => setOpened(true)}
+                    onClose={() => setOpened(false)}
                     items={[
                         {
                             label: 'ENS',
@@ -119,7 +131,7 @@ function Web3ButtonAction(props: Props): ReactElement {
                         {
                             label: 'Incognito',
                             iconFA: 'fas fa-user-secret',
-                            onClick: () => null,
+                            onClick: unlockSemaphore,
                         }
                     ]}
                 >
@@ -131,8 +143,26 @@ function Web3ButtonAction(props: Props): ReactElement {
                     >
                         {
                             web3Unlocking
-                                ? <Icon url={SpinnerGIF} size={2} />
-                                : <Icon fa="fas fa-lock" />
+                                ? (
+                                    <Icon
+                                        url={SpinnerGIF}
+                                        size={2}
+                                    />
+                                )
+                                : (
+                                    <Icon
+                                        className={classNames(
+                                            "hover:text-green-500",
+                                            {
+                                                "text-green-500": opened,
+                                            }
+                                        )}
+                                        fa={classNames({
+                                            "fas fa-unlock": opened,
+                                            "fas fa-lock": !opened,
+                                        })}
+                                    />
+                                )
                         }
                     </div>
                 </Menuable>
@@ -149,7 +179,12 @@ function Web3ButtonAction(props: Props): ReactElement {
                 )}
                 onClick={lock}
             >
-                <Icon fa="fas fa-unlock" />
+                <Icon
+                    className={classNames(
+                        "hover:text-red-500",
+                    )}
+                    fa="fas fa-unlock"
+                />
             </div>
         );
     }
