@@ -55,7 +55,7 @@ export default function Editor(props: Props): ReactElement {
                     'flex flex-col flex-nowrap items-center',
                     'p-4',
                     'border border-gray-300',
-                    'bg-gray-100',
+                    'bg-gray-50',
                     'rounded-xl',
                     props.className,
                 )}
@@ -75,7 +75,6 @@ export default function Editor(props: Props): ReactElement {
                 'pt-3 pb-2 px-4',
                 'bg-white',
                 'rounded-xl',
-                'cursor-text',
                 'text-lg',
                 'editor',
                 props.className,

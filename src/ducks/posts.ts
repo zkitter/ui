@@ -9,6 +9,8 @@ import config from "../util/config";
 
 enum ActionTypes {
     SET_POSTS = 'posts/setPosts',
+    SET_POST = 'posts/setPost',
+    SET_META = 'posts/setMeta',
     APPEND_POSTS = 'posts/appendPosts',
 }
 
@@ -32,6 +34,14 @@ export const fetchPost = (messageId: string) =>
     const user: any = await dispatch(getUser(username));
     const message = await fetchMessage(`~${user.pubkey}/message/${messageId}`);
 
+    dispatch({
+        type: ActionTypes.SET_POST,
+        payload: new Post({
+            ...message,
+            creator: username,
+        }),
+    });
+
     return {
         ...message,
         creator: username,
@@ -41,21 +51,10 @@ export const fetchPost = (messageId: string) =>
 export const fetchPosts = (limit = 10, offset = 0) => async (dispatch: ThunkDispatch<any, any, any>) => {
     const resp = await fetch(`${config.indexerAPI}/v1/posts?limit=${limit}&offset=${offset}`);
     const json = await resp.json();
-    const posts: Post[] = [];
 
     for (const post of json.payload) {
-        const messageId = post.messageId;
-        const message: any = await dispatch(fetchPost(messageId));
-        posts.push(new Post({
-            ...message,
-            meta: post.meta,
-        }));
+        dispatch(fetchPost(post.messageId));
     }
-
-    dispatch({
-        type: ActionTypes.SET_POSTS,
-        payload: posts,
-    });
 
     return json.payload.map((post: any) => post.messageId);
 }
@@ -76,11 +75,25 @@ export default function posts(state = initialState, action: Action): State {
     switch (action.type) {
         case ActionTypes.SET_POSTS:
             return reduceSetPosts(state, action);
+        case ActionTypes.SET_POST:
+            return reduceSetPost(state, action);
+        case ActionTypes.SET_META:
+            return reduceSetMeta(state, action);
         case ActionTypes.APPEND_POSTS:
             return reduceAppendPosts(state, action);
         default:
             return state;
     }
+}
+
+function reduceSetPost(state: State, action: Action): State {
+    const post = action.payload as Post;
+    const messageId = post.creator + '/' + post.hash();
+
+    return {
+        ...state,
+        [messageId]: post,
+    };
 }
 
 function reduceSetPosts(state: State, action: Action): State {
@@ -93,6 +106,22 @@ function reduceSetPosts(state: State, action: Action): State {
     }
 
     return posts;
+}
+
+function reduceSetMeta(state: State, action: Action): State {
+    const {messageId, meta} = action.payload;
+    const oldPost = state[messageId];
+    const post = new Post({
+        ...oldPost.toJSON(),
+        creator: oldPost.creator,
+        createdAt: oldPost.createdAt,
+        meta,
+    });
+
+    return {
+        ...state,
+        [messageId]: post,
+    };
 }
 
 function reduceAppendPosts(state: State, action: Action): State {

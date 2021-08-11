@@ -7,9 +7,11 @@ const { markdownToDraft, draftToMarkdown } = require('markdown-draft-js');
 import {markdownConvertOptions} from "../components/Editor";
 import {Dispatch} from "redux";
 import {MessageType, Post, PostMessageSubType} from "../util/message";
+import gun from "../util/gun";
 
 enum ActionTypes {
     SET_DRAFT = 'drafts/setDraft',
+    SET_SUBMITTING = 'drafts/setSubmitting',
 }
 
 type Action = {
@@ -20,6 +22,7 @@ type Action = {
 }
 
 type State = {
+    submitting: boolean;
     map: {
         [replyId: string]: Draft;
     }
@@ -31,6 +34,7 @@ type Draft = {
 }
 
 const initialState: State = {
+    submitting: false,
     map: {},
 };
 
@@ -45,6 +49,11 @@ export const setDraft = (editorState: EditorState, reference = '') => {
 }
 
 export const submitPost = (reference = '') => async (dispatch: Dispatch, getState: () => AppRootState) => {
+    dispatch({
+        type: ActionTypes.SET_SUBMITTING,
+        payload: true,
+    });
+
     const { drafts, web3 } = getState();
     const draft = drafts.map[reference];
     const {
@@ -71,7 +80,27 @@ export const submitPost = (reference = '') => async (dispatch: Dispatch, getStat
         ...json
     } = await post.toJSON();
 
-    console.log(json);
+    try {
+        // @ts-ignore
+        await gun.user()
+            .get('message')
+            .get(messageId)
+            // @ts-ignore
+            .put(json);
+
+        dispatch({
+            type: ActionTypes.SET_SUBMITTING,
+            payload: false,
+        });
+
+        dispatch(setDraft(EditorState.createEmpty(), reference));
+    } catch (e) {
+        dispatch({
+            type: ActionTypes.SET_SUBMITTING,
+            payload: false,
+        });
+        throw e;
+    }
 }
 
 export const useDraft = (reference = ''): Draft => {

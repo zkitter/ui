@@ -56,7 +56,7 @@ export const getUser = (name: string) => async (dispatch: Dispatch, getState: ()
     };
 }
 
-export const useUser = (name: string): User | null => {
+export const useUser = (name = ''): User | null => {
     return useSelector((state: AppRootState) => {
         return state.users[name] || null;
     }, deepEqual);

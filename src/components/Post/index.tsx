@@ -15,9 +15,9 @@ type Props = {
 
 export default function Post(props: Props): ReactElement {
     const post = usePost(props.messageId);
-    const user = post && useUser(post.creator);
+    const user = useUser(post?.creator);
 
-    if (!post || !user) return <></>;
+    if (!post || !user) return <LoadingPost {...props} />;
 
     return (
         <div
@@ -62,6 +62,48 @@ export default function Post(props: Props): ReactElement {
                     <PostButton
                         fa="far fa-heart"
                         count={post.meta.likeCount}
+                    />
+                </div>
+            </div>
+        </div>
+    );
+}
+
+export function LoadingPost(props: Props): ReactElement {
+    return (
+        <div
+            className={classNames(
+                'flex flex-row flex-nowrap',
+                'py-3 px-4',
+                'bg-white',
+                'rounded-xl',
+                'post',
+                props.className,
+            )}
+        >
+            <div className="mr-3 w-12 h-12 rounded-full bg-gray-50" />
+            <div className="flex flex-col flex-nowrap items-start flex-grow flex-shrink">
+                <div className="flex flex-row flex-nowrap items-center text-light w-full">
+                    <div className="font-bold text-base mr-1 w-24 h-6 bg-gray-50" />
+                    <div className="text-gray-400 mr-1 w-24 h-6 bg-gray-50" />
+                    <div className="text-gray-400 mr-1">•</div>
+                    <div className="text-gray-400 w-24 h-6 bg-gray-50" />
+                    <div className="flex flex-row flex-nowrap flex-grow flex-shrink justify-end">
+                    </div>
+                </div>
+                <div className="text-light mt-1 mb-2 w-80 h-6 bg-gray-50" />
+                <div className="flex flex-row flex-nowrap items-center post__footer">
+                    <PostButton
+                        fa="far fa-comments"
+                        count={0}
+                    />
+                    <PostButton
+                        fa="fas fa-retweet"
+                        count={0}
+                    />
+                    <PostButton
+                        fa="far fa-heart"
+                        count={0}
                     />
                 </div>
             </div>

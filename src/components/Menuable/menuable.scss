@@ -1,0 +1,21 @@
+@import "../../util/variable";
+
+.menuable {
+  position: relative;
+
+  &__menu {
+    position: absolute;
+    margin-top: .5rem;
+    top: 100%;
+    left: 0;
+    background-color: $white;
+    border-radius: .75rem;
+    padding: .5rem 0;
+
+    &__item {
+      @extend %row-nowrap;
+      align-content: center;
+      padding: .5rem 1rem;
+    }
+  }
+}

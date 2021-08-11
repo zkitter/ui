@@ -2,6 +2,7 @@ $primary-color: #1da1f2;
 $black: #000;
 $white: #fff;
 $gray-300: mix($black, $white, 30);
+$gray-100: mix($black, $white, 10);
 
 %row-nowrap {
   display: flex;

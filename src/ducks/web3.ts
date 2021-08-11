@@ -12,21 +12,25 @@ import {Dispatch} from "redux";
 import Web3Modal from "web3modal";
 import {generateGunKeyPairFromHex, validateGunPublicKey} from "../util/crypto";
 import {defaultENS, defaultWeb3} from "../util/web3";
+import {authenticateGun} from "../util/gun";
 
-const web3Modal = new Web3Modal({
+export const web3Modal = new Web3Modal({
     network: "main", // optional
     cacheProvider: true, // optional
-    providerOptions: {
-    },
+    // providerOptions: {
+    // },
 });
 
 enum ActionTypes {
     SET_LOADING = 'web3/setLoading',
+    SET_UNLOCKING = 'web3/setUnlocking',
+    SET_FETCHING_ENS = 'web3/setFetchingENS',
     SET_WEB3 = 'web3/setWeb3',
     SET_ACCOUNT = 'web3/setAccount',
     SET_NETWORK = 'web3/setNetwork',
     SET_ENS_NAME = 'web3/setEnsName',
     SET_SOCIAL_KEY = 'web3/setSocialKey',
+    SET_GUN_PRIVATE_KEY = 'web3/setGunPrivateKey',
 }
 
 type Action = {
@@ -42,7 +46,13 @@ type State = {
     networkType: string;
     ensName: string;
     loading: boolean;
+    fetchingENS: boolean;
+    unlocking: boolean;
     publicKeys: {
+        gun: string;
+        semaphore: string;
+    };
+    privateKeys: {
         gun: string;
         semaphore: string;
     };
@@ -54,7 +64,13 @@ const initialState: State = {
     networkType: '',
     ensName: '',
     loading: false,
+    fetchingENS: false,
+    unlocking: false,
     publicKeys: {
+        gun: '',
+        semaphore: '',
+    },
+    privateKeys: {
         gun: '',
         semaphore: '',
     },
@@ -92,6 +108,41 @@ export const connectWeb3 = () => async (dispatch: ThunkDispatch<any, any, any>) 
     }
 }
 
+export const setWeb3Loading = (status: boolean) => ({
+    type: ActionTypes.SET_LOADING,
+    payload: status,
+});
+
+export const setUnlocking = (status: boolean) => ({
+    type: ActionTypes.SET_UNLOCKING,
+    payload: status,
+});
+
+export const setFetchingENS = (status: boolean) => ({
+    type: ActionTypes.SET_FETCHING_ENS,
+    payload: status,
+});
+
+export const setENSName = (name: string) => ({
+    type: ActionTypes.SET_ENS_NAME,
+    payload: name,
+});
+
+export const setAccount = (account: string) => ({
+    type: ActionTypes.SET_ACCOUNT,
+    payload: account,
+});
+
+export const setNetwork = (network: string) => ({
+    type: ActionTypes.SET_NETWORK,
+    payload: network,
+});
+
+export const setGunPrivateKey = (privateKey: string) => ({
+    type: ActionTypes.SET_GUN_PRIVATE_KEY,
+    payload: privateKey,
+});
+
 export const setWeb3 = (web3: Web3 | null, account: string) => async (
     dispatch: ThunkDispatch<any, any, any>,
 ) => {
@@ -102,11 +153,7 @@ export const setWeb3 = (web3: Web3 | null, account: string) => async (
     //     event = null;
     // }
 
-
-    dispatch({
-        type: ActionTypes.SET_ACCOUNT,
-        payload: account,
-    });
+    dispatch(setAccount(account));
 
     dispatch({
         type: ActionTypes.SET_WEB3,
@@ -114,18 +161,9 @@ export const setWeb3 = (web3: Web3 | null, account: string) => async (
     });
 
     if (!web3) {
-        dispatch({
-            type: ActionTypes.SET_ACCOUNT,
-            payload: '',
-        });
-        dispatch({
-            type: ActionTypes.SET_NETWORK,
-            payload: '',
-        });
-        dispatch({
-            type: ActionTypes.SET_ENS_NAME,
-            payload: '',
-        });
+        dispatch(setAccount(''));
+        dispatch(setNetwork(''));
+        dispatch(setENSName(''));
         return;
     }
 
@@ -137,7 +175,7 @@ export const setWeb3 = (web3: Web3 | null, account: string) => async (
 
     const networkType = await web3.eth.net.getNetworkType();
 
-    await dispatch(lookupENS());
+    dispatch(lookupENS());
 
     dispatch({
         type: ActionTypes.SET_NETWORK,
@@ -146,20 +184,10 @@ export const setWeb3 = (web3: Web3 | null, account: string) => async (
 
     // @ts-ignore
     web3.currentProvider.on('accountsChanged', async ([account]) => {
-        dispatch({
-            type: ActionTypes.SET_LOADING,
-            payload: true,
-        });
-
-        dispatch({
-            type: ActionTypes.SET_ACCOUNT,
-            payload: account,
-        });
+        dispatch(setWeb3Loading(true));
+        dispatch(setAccount(account));
         await dispatch(lookupENS());
-        dispatch({
-            type: ActionTypes.SET_LOADING,
-            payload: false,
-        });
+        dispatch(setWeb3Loading(false));
     });
 
     // @ts-ignore
@@ -170,6 +198,20 @@ export const setWeb3 = (web3: Web3 | null, account: string) => async (
             payload: networkType,
         });
     });
+}
+
+export const unlockENS = () => async (dispatch: ThunkDispatch<any, any, any>) => {
+    dispatch(setUnlocking(true));
+
+    try {
+        const result: any = await dispatch(generateGunKeyPair(0));
+        authenticateGun(result as any);
+        dispatch(setGunPrivateKey(result.priv));
+        dispatch(setUnlocking(false));
+    } catch (e) {
+        dispatch(setUnlocking(false));
+        throw e;
+    }
 }
 
 export const addGunKeyToTextRecord = (pubkey: string) => async (dispatch: Dispatch, getState: () => AppRootState) => {
@@ -224,26 +266,31 @@ export const lookupENS = () => async (dispatch: Dispatch, getState: () => AppRoo
     const state = getState();
     const account = state.web3.account;
 
+    dispatch(setFetchingENS(true));
+
     if (!account) return;
 
-    const {name} = await defaultENS.getName(account);
+    try {
+        const {name} = await defaultENS.getName(account);
 
-    if (name) {
-        const text = await defaultENS.name(name).getText('gun.social');
+        if (name) {
+            const text = await defaultENS.name(name).getText('gun.social');
 
-        if (await validateGunPublicKey(text)) {
-            dispatch({
-                type: ActionTypes.SET_SOCIAL_KEY,
-                payload: text,
-            });
+            if (await validateGunPublicKey(text)) {
+                dispatch({
+                    type: ActionTypes.SET_SOCIAL_KEY,
+                    payload: text,
+                });
+            }
+
         }
 
+        dispatch(setENSName(name || ''));
+        dispatch(setFetchingENS(false));
+    } catch (e) {
+        dispatch(setFetchingENS(false));
+        throw e;
     }
-
-    dispatch({
-        type: ActionTypes.SET_ENS_NAME,
-        payload: name || '',
-    });
 }
 
 export default function web3(state = initialState, action: Action): State {
@@ -276,10 +323,28 @@ export default function web3(state = initialState, action: Action): State {
                     gun: action.payload,
                 },
             };
+        case ActionTypes.SET_FETCHING_ENS:
+            return {
+                ...state,
+                fetchingENS: action.payload,
+            };
+        case ActionTypes.SET_UNLOCKING:
+            return {
+                ...state,
+                unlocking: action.payload,
+            };
         case ActionTypes.SET_LOADING:
             return {
                 ...state,
                 loading: action.payload,
+            };
+        case ActionTypes.SET_GUN_PRIVATE_KEY:
+            return {
+                ...state,
+                privateKeys: {
+                    ...state.privateKeys,
+                    gun: action.payload,
+                },
             };
         default:
             return state;
@@ -297,9 +362,13 @@ export const useLoggedIn = () => {
         const {
             web3,
             account,
-            ensName,
+            privateKeys: {
+                gun,
+                semaphore,
+            }
         } = state.web3;
-        return !!(web3 && account && ensName);
+
+        return !!(web3 && account && (gun || semaphore));
     }, deepEqual);
 }
 
@@ -327,9 +396,24 @@ export const useWeb3Loading = () => {
     }, deepEqual);
 }
 
-export const useGunKey = () => {
+export const useWeb3Unlocking = () => {
     return useSelector((state: AppRootState) => {
-        return state.web3.publicKeys.gun;
+        return state.web3.unlocking;
+    }, deepEqual);
+}
+
+export const useENSFetching = () => {
+    return useSelector((state: AppRootState) => {
+        return state.web3.fetchingENS;
+    }, deepEqual);
+}
+
+export const useGunKey = (): { pub: string; priv: string } => {
+    return useSelector((state: AppRootState) => {
+        return {
+            pub: state.web3.publicKeys.gun,
+            priv: state.web3.privateKeys.gun,
+        };
     }, deepEqual);
 }
 
