@@ -1,11 +1,13 @@
 import React, {ReactElement} from "react";
 import makeBlockie from 'ethereum-blockies-base64';
 import classNames from "classnames";
+import Icon from "../Icon";
 
 type Props = {
-    address: string;
+    address?: string;
     name?: string;
     className?: string;
+    incognito?: boolean;
 }
 
 const CACHE: {
@@ -13,11 +15,33 @@ const CACHE: {
 } = {};
 
 export default function Avatar(props: Props): ReactElement {
-    let base64img = CACHE[props.address]
-        ? CACHE[props.address]
-        : makeBlockie(props.address);
+    const {
+        address = '',
+        incognito,
+        className,
+    } = props;
 
-    CACHE[props.address] = base64img;
+    if (incognito) {
+        return (
+            <Icon
+                className={classNames(
+                    'inline-flex flex-row flex-nowrap items-center justify-center',
+                    'rounded-full',
+                    'flex-shrink-0 flex-grow-0',
+                    'bg-gray-800 text-gray-100',
+                    'w-6 h-6',
+                    className,
+                )}
+                fa="fas fa-user-secret"
+            />
+        )
+    }
+
+    let base64img = CACHE[address]
+        ? CACHE[address]
+        : makeBlockie(address);
+
+    CACHE[address] = base64img;
 
     return (
         <div
@@ -27,7 +51,7 @@ export default function Avatar(props: Props): ReactElement {
                 'flex-shrink-0 flex-grow-0',
                 'w-6 h-6',
                 'bg-contain bg-center bg-no-repeat',
-                props.className,
+                className,
             )}
             style={{
                 backgroundImage: `url(${base64img})`

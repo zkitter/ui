@@ -25,10 +25,16 @@ export default function Menuable(props: MenuableProps): ReactElement {
     useEffect(() => {
         if (isShowing) {
             props.onOpen && props.onOpen();
+            const cb = () => {
+                setShowing(false);
+                window.removeEventListener('click', cb);
+            };
+            window.addEventListener('click', cb);
         } else {
             props.onClose && props.onClose();
         }
     }, [isShowing]);
+
 
     return (
         <div

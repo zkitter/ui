@@ -12,7 +12,7 @@ import {
     useWeb3Unlocking,
     useENSFetching,
     setGunPrivateKey,
-    genENS, genSemaphore,
+    genENS, genSemaphore, setSemaphoreID, useSemaphoreID,
 } from "../../ducks/web3";
 import {useDispatch} from "react-redux";
 import classNames from "classnames";
@@ -26,6 +26,7 @@ type Props = {
     onConnect?: () => Promise<void>;
     onDisconnect?: () => Promise<void>|void;
     onClick?: () => Promise<void>;
+    className?: string;
 }
 
 export default function Web3Button(props: Props): ReactElement {
@@ -36,6 +37,7 @@ export default function Web3Button(props: Props): ReactElement {
     const ensFetching = useENSFetching();
     const loggedIn = useLoggedIn();
     const gunKeyPair = useGunKey();
+    const semaphoreId = useSemaphoreID();
     const dispatch = useDispatch();
 
     const disconnect = useCallback(async () => {
@@ -54,6 +56,7 @@ export default function Web3Button(props: Props): ReactElement {
                 className={classNames(
                     'font-semibold',
                     'web3-button',
+                    props.className,
                 )}
                 onClick={connect}
                 disabled={web3Loading}
@@ -63,11 +66,37 @@ export default function Web3Button(props: Props): ReactElement {
         );
     }
 
+    let btnContent;
+
+    if (semaphoreId.keypair.privKey) {
+        btnContent = (
+            <>
+                <div>Incognito</div>
+                <Avatar className="ml-2" incognito />
+            </>
+        )
+    } else if (ensName) {
+        btnContent = (
+            <>
+                <div>{ensName}</div>
+                <Avatar className="ml-2" address={account} />
+            </>
+        )
+    } else {
+        btnContent = (
+            <>
+                <div>{`${account.slice(0, 6)}...${account.slice(-4)}`}</div>
+                <Avatar className="ml-2" address={account} />
+            </>
+        )
+    }
+
     return (
         <div
             className={classNames(
                 "flex flex-row flex-nowrap items-center",
                 "rounded-xl bg-gray-100",
+                props.className,
             )}
         >
             <Web3ButtonAction {...props} />
@@ -76,13 +105,15 @@ export default function Web3Button(props: Props): ReactElement {
                     'text-black',
                     'bg-white',
                     'font-inter',
+                    {
+                        'text-gray-100 bg-gray-800': semaphoreId.keypair.privKey,
+                    }
                 )}
                 onClick={props.onClick}
                 disabled={web3Loading}
                 loading={web3Loading}
             >
-                <div>{ensName ? ensName : `${account.slice(0, 6)}...${account.slice(-4)}`}</div>
-                <Avatar className="ml-2" address={account} />
+                {btnContent}
             </Button>
         </div>
     )
@@ -110,6 +141,14 @@ function Web3ButtonAction(props: Props): ReactElement {
 
     const lock = useCallback(async () => {
         setOpened(false);
+        await dispatch(setSemaphoreID({
+            keypair: {
+                pubKey: '',
+                privKey: null,
+            },
+            identityNullifier: '',
+            identityTrapdoor: '',
+        }))
         await dispatch(setGunPrivateKey(''));
     }, []);
 
@@ -181,7 +220,7 @@ function Web3ButtonAction(props: Props): ReactElement {
             >
                 <Icon
                     className={classNames(
-                        "hover:text-red-500",
+                        "text-green-500 hover:text-red-500",
                     )}
                     fa="fas fa-unlock"
                 />

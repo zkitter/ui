@@ -11,6 +11,7 @@
     background-color: $white;
     border-radius: .75rem;
     padding: .5rem 0;
+    z-index: 300;
 
     &__item {
       @extend %row-nowrap;

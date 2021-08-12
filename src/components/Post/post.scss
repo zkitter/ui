@@ -1,11 +1,21 @@
 @import "../../util/variable";
 
 .post {
+  position: relative;
   transition: box-shadow 150ms ease-in-out,
   background-color 150ms ease-in-out;
 
   &__footer {
     margin-left: -.3125rem;
+  }
+
+  &__parent-line {
+    position: absolute;
+    width: 2px;
+    background-color: #cccccc;
+    height: calc(100% - 2.25rem);
+    left: 2.375rem;
+    top: 4.25rem;
   }
 }
 
@@ -19,9 +29,6 @@
     @extend %row-nowrap;
     align-content: center;
     justify-content: center;
-    height: 2rem;
-    width: 2rem;
-    padding: .3125rem;
     border-radius: 50%;
 
     i {

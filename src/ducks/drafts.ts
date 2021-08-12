@@ -71,6 +71,7 @@ export const submitPost = (reference = '') => async (dispatch: Dispatch, getStat
         creator: ensName,
         payload: {
             content: markdown,
+            reference: reference,
         },
     });
 

@@ -11,14 +11,17 @@
 }
 
 .app {
-  background: radial-gradient(
-    141.86% 141.86% at 50% -28.96%,
-    rgba($primary-color, 0.125) 0%,
-    rgba($primary-color, 0) 100%
-  );
+  //background: radial-gradient(
+  //  141.86% 141.86% at 50% -28.96%,
+  //  rgba($primary-color, 0.25) 0%,
+  //  rgba($primary-color, 0) 100%
+  //);
+  background-color: #f9f9f9;
 
   &__content {
     width: 62.5rem;
     margin: 0 auto;
+    overflow-y: auto;
+    flex: 1 1 auto;
   }
 }

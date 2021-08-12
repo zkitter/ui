@@ -22,10 +22,20 @@ type Action = {
 }
 
 type State = {
-    [messageId: string]: Post;
+    map: { [messageId: string]: Post };
+    meta: {
+        [messageId: string]: {
+            replyCount: number;
+            likeCount: number;
+            repostCount: number;
+        };
+    };
 }
 
-const initialState: State = {};
+const initialState: State = {
+    map: {},
+    meta: {},
+};
 
 export const fetchPost = (messageId: string) =>
     async (dispatch: ThunkDispatch<any, any, any>): Promise<PostMessageOption> =>
@@ -53,7 +63,24 @@ export const fetchPosts = (limit = 10, offset = 0) => async (dispatch: ThunkDisp
     const json = await resp.json();
 
     for (const post of json.payload) {
-        dispatch(fetchPost(post.messageId));
+        dispatch({
+            type: ActionTypes.SET_META,
+            payload: post,
+        })
+    }
+
+    return json.payload.map((post: any) => post.messageId);
+}
+
+export const fetchReplies = (reference: string, limit = 10, offset = 0) => async (dispatch: ThunkDispatch<any, any, any>) => {
+    const resp = await fetch(`${config.indexerAPI}/v1/replies?limit=${limit}&offset=${offset}&parent=${encodeURIComponent(reference)}`);
+    const json = await resp.json();
+
+    for (const post of json.payload) {
+        dispatch({
+            type: ActionTypes.SET_META,
+            payload: post,
+        })
     }
 
     return json.payload.map((post: any) => post.messageId);
@@ -65,9 +92,19 @@ export const usePosts = (): State => {
     }, deepEqual);
 }
 
-export const usePost = (messageId: string): Post | null => {
+export const usePost = (messageId?: string): Post | null => {
     return useSelector((state: AppRootState) => {
-        return state.posts[messageId] || null;
+        return state.posts.map[messageId || ''] || null;
+    }, deepEqual);
+}
+
+export const useMeta = (messageId: string)  => {
+    return useSelector((state: AppRootState) => {
+        return state.posts.meta[messageId] || {
+            replyCount: 0,
+            repostCount: 0,
+            likeCount: 0,
+        };
     }, deepEqual);
 }
 
@@ -92,7 +129,10 @@ function reduceSetPost(state: State, action: Action): State {
 
     return {
         ...state,
-        [messageId]: post,
+        map: {
+            ...state.map,
+            [messageId]: post
+        },
     };
 }
 
@@ -105,22 +145,21 @@ function reduceSetPosts(state: State, action: Action): State {
         posts[messageId] = post;
     }
 
-    return posts;
+    return {
+        ...state,
+        map: posts,
+    };
 }
 
 function reduceSetMeta(state: State, action: Action): State {
     const {messageId, meta} = action.payload;
-    const oldPost = state[messageId];
-    const post = new Post({
-        ...oldPost.toJSON(),
-        creator: oldPost.creator,
-        createdAt: oldPost.createdAt,
-        meta,
-    });
 
     return {
         ...state,
-        [messageId]: post,
+        meta: {
+            ...state.meta,
+            [messageId]: meta
+        },
     };
 }
 

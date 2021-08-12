@@ -21,9 +21,13 @@ export default function Icon(props: Props): ReactElement {
 
     return (
         <div
-            className={classNames('bg-contain bg-center bg-no-repeat icon', className, {
-                'cursor-pointer': onClick,
-            })}
+            className={classNames(
+                'bg-contain bg-center bg-no-repeat icon',
+                {
+                    'cursor-pointer': onClick,
+                },
+                className,
+            )}
             style={{
                 backgroundImage: url ? `url(${url})` : undefined,
                 width: !fa ? `${size}rem` : undefined,

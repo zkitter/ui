@@ -8,6 +8,7 @@ import "./home-feed.scss";
 import Editor from "../Editor";
 import {useLoggedIn} from "../../ducks/web3";
 import {setDraft, submitPost, useDraft} from "../../ducks/drafts";
+import {useHistory} from "react-router";
 
 export default function HomeFeed(): ReactElement {
     const [limit, setLimit] = useState(20);
@@ -16,6 +17,7 @@ export default function HomeFeed(): ReactElement {
     const dispatch = useDispatch();
     const loggedIn = useLoggedIn();
     const draft = useDraft();
+    const history = useHistory();
 
     const onChange = useCallback((newEditorState: EditorState) => {
         dispatch(setDraft(newEditorState));
@@ -35,25 +37,33 @@ export default function HomeFeed(): ReactElement {
     return (
         <div
             className={classNames('flex-grow home-feed',
-                'm-4',
+                'px-4 py-2',
                 {},
             )}
         >
             <Editor
-                className={classNames("mb-2 transition-shadow", {
-                    'focus-within:shadow-lg': loggedIn,
+                className={classNames("mb-1 transition-shadow border border-gray-100", {
+                    'focus-within:border-gray-400': loggedIn,
                 })}
                 editorState={draft.editorState}
                 onChange={onChange}
                 onPost={onPost}
             />
-            { order.map(messageId => (
-                <Post
-                    key={messageId}
-                    className="transition-colors shadow-sm mb-2 hover:shadow-lg hover:bg-gray-50 cursor-pointer"
-                    messageId={messageId}
-                />
-            )) }
+            {
+                order.map(messageId => {
+                    const [creator, hash] = messageId.split('/');
+
+                    return (
+                        <Post
+                            key={messageId}
+                            className="rounded-xl transition-colors mb-1 hover:border-gray-400 cursor-pointer border border-gray-100"
+                            messageId={messageId}
+                            onClick={() => history.push(`/${creator}/status/${hash}`)}
+                        />
+                    );
+                })
+            }
+
         </div>
     );
 }

@@ -5,6 +5,7 @@ import HomeFeed from "../../components/HomeFeed";
 import "./app.scss";
 import {connectWeb3, web3Modal} from "../../ducks/web3";
 import {useDispatch} from "react-redux";
+import PostView from "../../components/PostView";
 
 export default function App(): ReactElement {
     const dispatch = useDispatch();
@@ -24,6 +25,9 @@ export default function App(): ReactElement {
                 <Switch>
                     <Route path="/explore">
                         <HomeFeed />
+                    </Route>
+                    <Route path="/:name/status/:hash">
+                        <PostView />
                     </Route>
                     <Route path="/">
                         <Redirect to="/explore" />

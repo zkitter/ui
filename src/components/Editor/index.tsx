@@ -11,10 +11,11 @@ import DraftEditor from "draft-js-plugins-editor";
 import classNames from "classnames";
 const TableUtils = require('draft-js-table');
 import "./editor.scss";
-import {useAccount, useENSName, useLoggedIn, useWeb3Loading} from "../../ducks/web3";
+import {useAccount, useENSName, useLoggedIn, useSemaphoreID, useWeb3Loading} from "../../ducks/web3";
 import Avatar from "../Avatar";
 import Web3Button from "../Web3Button";
 import Button from "../Button";
+import Icon from "../Icon";
 
 type Props = {
     editorState: EditorState;
@@ -36,6 +37,7 @@ export default function Editor(props: Props): ReactElement {
 
     const address = useAccount();
     const loggedIn = useLoggedIn();
+    const semaphoreId = useSemaphoreID();
 
     const [ref, setRef] = useState<DraftEditor|null>(null);
 
@@ -48,14 +50,14 @@ export default function Editor(props: Props): ReactElement {
         return 'not-handled';
     }, [editorState]);
 
-    if (!loggedIn) {
+    if (!disabled && !loggedIn) {
         return (
             <div
                 className={classNames(
                     'flex flex-col flex-nowrap items-center',
                     'p-4',
-                    'border border-gray-300',
-                    'bg-gray-50',
+                    'bg-white',
+                    'border border-gray-100',
                     'rounded-xl',
                     props.className,
                 )}
@@ -63,7 +65,11 @@ export default function Editor(props: Props): ReactElement {
                 <div className="mt-2 mb-4 text-gray-800">
                     Connect to a wallet to make a post
                 </div>
-                <Web3Button />
+                <Web3Button
+                    className={classNames("rounded-xl", {
+                        'border border-gray-100': address,
+                    })}
+                />
             </div>
         )
     }
@@ -83,6 +89,7 @@ export default function Editor(props: Props): ReactElement {
             <Avatar
                 className="w-12 h-12 mr-3"
                 address={address}
+                incognito={!!semaphoreId.keypair.privKey}
             />
             <div className="flex flex-col flex-nowrap w-full h-full">
                 <DraftEditor
@@ -119,7 +126,7 @@ export default function Editor(props: Props): ReactElement {
             </div>
         </div>
     );
-}
+};
 
 export const markdownConvertOptions = {
     preserveNewlines: true,

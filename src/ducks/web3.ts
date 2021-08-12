@@ -57,7 +57,7 @@ type State = {
     semaphore: {
         keypair: {
           pubKey: string,
-          privKey: Uint8Array|null,
+          privKey: Buffer|null,
         },
         commitment: string;
         identityNullifier: string;
@@ -155,7 +155,14 @@ export const setGunPrivateKey = (privateKey: string) => ({
     payload: privateKey,
 });
 
-export const setSemaphoreID = (identity: Identity) => ({
+export const setSemaphoreID = (identity: {
+    keypair: {
+        pubKey: string,
+        privKey: Buffer|null,
+    },
+    identityNullifier: string;
+    identityTrapdoor: string;
+}) => ({
     type: ActionTypes.SET_SEMAPHORE_ID,
     payload: identity,
 })
@@ -236,7 +243,7 @@ export const genSemaphore = () => async (dispatch: ThunkDispatch<any, any, any>)
 
     try {
         const result: any = await dispatch(generateSemaphoreID(0));
-        dispatch(setSemaphoreID(result as Identity));
+        dispatch(setSemaphoreID(result));
         dispatch(setUnlocking(false));
     } catch (e) {
         dispatch(setUnlocking(false));
@@ -380,7 +387,7 @@ export default function web3(state = initialState, action: Action): State {
                 ...state,
                 semaphore: {
                     keypair: action.payload.keypair,
-                    commitment: genIdentityCommitment(action.payload),
+                    commitment: action.payload.keypair.privKey && genIdentityCommitment(action.payload),
                     identityNullifier: action.payload.identityNullifier,
                     identityTrapdoor: action.payload.identityTrapdoor,
                 },
@@ -468,9 +475,15 @@ export const useENSFetching = () => {
     }, deepEqual);
 }
 
-export const useGunKey = (): { pub: string; priv: string } => {
+export const useGunKey = (): State['gun'] => {
     return useSelector((state: AppRootState) => {
         return state.web3.gun;
+    }, deepEqual);
+}
+
+export const useSemaphoreID = (): State['semaphore'] => {
+    return useSelector((state: AppRootState) => {
+        return state.web3.semaphore;
     }, deepEqual);
 }
 

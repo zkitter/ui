@@ -1,0 +1,57 @@
+@import "../../util/variable";
+
+.modal {
+  @extend %col-nowrap;
+  &__overlay {
+    position: fixed;
+    width: 100vw;
+    height: 100vh;
+    top: 0;
+    left: 0;
+    z-index: 9999;
+    overflow: auto;
+  }
+
+  &__wrapper {
+    margin: 3rem auto;
+    border-radius: .5rem;
+    z-index: 200;
+  }
+
+  &__header {
+    @extend %row-nowrap;
+    flex: 0 0 auto;
+    align-items: center;
+    padding: 1rem 1.25rem;
+
+    &__title {
+      font-weight: 500;
+    }
+
+    &__content {
+      @extend %row-nowrap;
+      flex: 1 1 auto;
+      justify-content: flex-end;
+    }
+  }
+
+  &__content {
+    flex: 1 1 auto;
+    max-height: 24rem;
+    overflow-y: auto;
+
+    p:nth-of-type(1) {
+      margin-top: 0;
+    }
+
+    .error-message {
+      text-align: center;
+      margin-top: 1rem;
+    }
+  }
+
+  &__footer {
+    @extend %col-nowrap;
+    flex: 0 0 auto;
+  }
+}

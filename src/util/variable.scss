@@ -2,11 +2,17 @@ $primary-color: #1da1f2;
 $black: #000;
 $white: #fff;
 $gray-300: mix($black, $white, 30);
+$gray-200: mix($black, $white, 20);
 $gray-100: mix($black, $white, 10);
 
 %row-nowrap {
   display: flex;
   flex-flow: row nowrap;
+}
+
+%col-nowrap {
+  display: flex;
+  flex-flow: column nowrap;
 }
 
 .font-roboto-mono {
@@ -20,4 +26,8 @@ $gray-100: mix($black, $white, 10);
 .text-light {
   font-size: .9375rem;
   line-height: 1.3125;
+}
+
+.w-144 {
+  width: 36rem;
 }
