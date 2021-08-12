@@ -56,7 +56,7 @@ export default function PostView(props: Props): ReactElement {
     useEffect(() => {
         if (!parentEl.current || !scrollEl.current) return;
         const rect = parentEl.current.getBoundingClientRect();
-        scrollEl.current.scrollTop = rect.height - 20;
+        scrollEl.current.scrollTop = rect.height;
     }, [height, parentEl, scrollEl]);
 
 
@@ -64,7 +64,7 @@ export default function PostView(props: Props): ReactElement {
         <div
             className={classNames(
                 'flex-grow post-view',
-                'mx-4 my-2',
+                'mx-4 py-2',
                 {},
             )}
             ref={scrollEl}

@@ -57,16 +57,18 @@ export default function Thread(props: Props): ReactElement {
                       const [creator, hash] = messageId.split('/');
 
                       return (
-                          <Thread
-                              key={messageId}
-                              level={level + 1}
-                              postClassName={classNames(
-                                  "transition-colors cursor-pointer",
-                                  "border-l-4 bg-gray-50 m-1 hover:border-gray-400",
-                              )}
-                              messageId={messageId}
-                              onClick={() => history.push(`/${creator}/status/${hash}`)}
-                          />
+                          <div className="py-1 bg-white">
+                              <Thread
+                                  key={messageId}
+                                  level={level + 1}
+                                  postClassName={classNames(
+                                      "transition-colors cursor-pointer",
+                                      "border-l-4 bg-gray-50 mr-1 hover:border-gray-400",
+                                  )}
+                                  messageId={messageId}
+                                  onClick={() => history.push(`/${creator}/status/${hash}`)}
+                              />
+                          </div>
                       );
                   })
               }

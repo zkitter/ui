@@ -2,6 +2,7 @@ import React, {MouseEventHandler, ReactElement} from "react";
 import {usePost} from "../../ducks/posts";
 import Post from "../Post";
 import {useHistory} from "react-router";
+import {PostMessageSubType} from "../../util/message";
 
 type Props = {
     level?: number;
@@ -15,7 +16,9 @@ type Props = {
 export default function ParentThread(props: Props): ReactElement {
     const post = usePost(props.messageId);
     const history = useHistory();
-    const parent = post?.payload.reference || '';
+    const parent = post?.subtype === PostMessageSubType.Reply
+        ? post?.payload.reference
+        : '';
     const [creator, hash] = parent.split('/');
 
     if (!parent) return <></>;

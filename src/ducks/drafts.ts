@@ -1,13 +1,13 @@
 import {useSelector} from "react-redux";
 import {AppRootState} from "../store/configureAppStore";
 import deepEqual from "fast-deep-equal";
-import {User} from "./users";
-import {convertFromRaw, convertToRaw, EditorState} from "draft-js";
-const { markdownToDraft, draftToMarkdown } = require('markdown-draft-js');
+import {convertToRaw, EditorState} from "draft-js";
 import {markdownConvertOptions} from "../components/Editor";
 import {Dispatch} from "redux";
-import {MessageType, Post, PostMessageSubType} from "../util/message";
+import {MessageType, Moderation, ModerationMessageSubType, Post, PostMessageSubType} from "../util/message";
 import gun from "../util/gun";
+
+const { markdownToDraft, draftToMarkdown } = require('markdown-draft-js');
 
 enum ActionTypes {
     SET_DRAFT = 'drafts/setDraft',
@@ -67,7 +67,7 @@ export const submitPost = (reference = '') => async (dispatch: Dispatch, getStat
 
     const post = new Post({
         type: MessageType.Post,
-        subtype: PostMessageSubType.Default,
+        subtype: reference ? PostMessageSubType.Reply : PostMessageSubType.Default,
         creator: ensName,
         payload: {
             content: markdown,
@@ -80,6 +80,104 @@ export const submitPost = (reference = '') => async (dispatch: Dispatch, getStat
         hash,
         ...json
     } = await post.toJSON();
+
+    try {
+        // @ts-ignore
+        await gun.user()
+            .get('message')
+            .get(messageId)
+            // @ts-ignore
+            .put(json);
+
+        dispatch({
+            type: ActionTypes.SET_SUBMITTING,
+            payload: false,
+        });
+
+        dispatch(setDraft(EditorState.createEmpty(), reference));
+    } catch (e) {
+        dispatch({
+            type: ActionTypes.SET_SUBMITTING,
+            payload: false,
+        });
+        throw e;
+    }
+}
+
+export const submitRepost = (reference = '') => async (dispatch: Dispatch, getState: () => AppRootState) => {
+    dispatch({
+        type: ActionTypes.SET_SUBMITTING,
+        payload: true,
+    });
+
+    const { web3 } = getState();
+    const {
+        ensName,
+    } = web3;
+
+    const post = new Post({
+        type: MessageType.Post,
+        subtype: PostMessageSubType.Repost,
+        creator: ensName,
+        payload: {
+            reference: reference,
+        },
+    });
+
+    const {
+        messageId,
+        hash,
+        ...json
+    } = await post.toJSON();
+
+    try {
+        // @ts-ignore
+        await gun.user()
+            .get('message')
+            .get(messageId)
+            // @ts-ignore
+            .put(json);
+
+        dispatch({
+            type: ActionTypes.SET_SUBMITTING,
+            payload: false,
+        });
+
+        dispatch(setDraft(EditorState.createEmpty(), reference));
+    } catch (e) {
+        dispatch({
+            type: ActionTypes.SET_SUBMITTING,
+            payload: false,
+        });
+        throw e;
+    }
+}
+
+export const submitModeration = (reference = '', subtype: ModerationMessageSubType) => async (dispatch: Dispatch, getState: () => AppRootState) => {
+    dispatch({
+        type: ActionTypes.SET_SUBMITTING,
+        payload: true,
+    });
+
+    const { web3 } = getState();
+    const {
+        ensName,
+    } = web3;
+
+    const moderation = new Moderation({
+        type: MessageType.Moderation,
+        subtype: subtype,
+        creator: ensName,
+        payload: {
+            reference: reference,
+        },
+    });
+
+    const {
+        messageId,
+        hash,
+        ...json
+    } = await moderation.toJSON();
 
     try {
         // @ts-ignore
