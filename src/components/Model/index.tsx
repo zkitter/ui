@@ -75,11 +75,12 @@ export function ModalHeader(props: HeaderProps): ReactElement {
 
 type ContentProps = {
     children: ReactNode | ReactNodeArray;
+    className?: string;
 }
 
 export function ModalContent(props: ContentProps): ReactElement {
     return (
-        <div className="modal__content">
+        <div className={classNames("modal__content", props.className)}>
             {props.children}
         </div>
     );

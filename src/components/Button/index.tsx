@@ -24,13 +24,12 @@ export default function Button(props: Props): ReactElement {
         <button
             className={classNames(
                 'rounded-xl',
-                'flex flex-row flex-nowrap',
-                'button',
+                'flex flex-row flex-nowrap items-center',
+                'h-10 px-4 button',
                 {
-                    'py-2 px-4': !loading,
-                    'py-1 px-4': loading,
                     'button--primary': btnType === 'primary',
                     'button--secondary': btnType === 'secondary',
+                    'cursor-default': disabled,
                 },
                 className,
             )}

@@ -15,6 +15,7 @@ import {setDraft, submitModeration, submitPost, submitRepost, useDraft} from "..
 import {useDispatch} from "react-redux";
 import {ModerationMessageSubType, PostMessageSubType} from "../../util/message";
 import {useLoggedIn} from "../../ducks/web3";
+import {useHistory} from "react-router";
 
 const { markdownToDraft } = require('markdown-draft-js');
 
@@ -39,19 +40,8 @@ export default function Post(props: Props): ReactElement {
         ? referencedPost
         : originalPost;
     const user = useUser(post?.creator);
-    const draft = useDraft(messageId);
     const dispatch = useDispatch();
     const [showReply, setShowReply] = useState(false);
-
-    const updateDraft = useCallback((newEditorState) => {
-        dispatch(setDraft(newEditorState, messageId));
-    }, [messageId]);
-
-    const submitReply = useCallback(async () => {
-        await dispatch(submitPost(messageId));
-        dispatch(setDraft(EditorState.createEmpty(), messageId));
-        setShowReply(false);
-    }, [messageId, draft.editorState]);
 
     useEffect(() => {
         if (!post) {
@@ -64,25 +54,55 @@ export default function Post(props: Props): ReactElement {
     return (
         <>
             { showReply && (
-                <Modal
-                    className="w-144"
+                <ReplyEditorModal
                     onClose={() => setShowReply(false)}
-                >
-                    <ModalHeader onClose={() => setShowReply(false)}>
-                        <b>{`Replying to ${post.creator}`}</b>
-                    </ModalHeader>
-                    <ModalContent>
-                        <Editor
-                            editorState={draft.editorState}
-                            onChange={updateDraft}
-                            onPost={submitReply}
-                        />
-                    </ModalContent>
-                </Modal>
+                    messageId={messageId}
+                />
             )}
             { !expand && <RegularPost setShowReply={setShowReply} {...props} /> }
             { !!expand && <ExpandedPost setShowReply={setShowReply} {...props} /> }
         </>
+    );
+}
+
+type ReplyEditorModalProps = {
+    onClose: () => void;
+    messageId: string;
+}
+
+function ReplyEditorModal(props: ReplyEditorModalProps): ReactElement {
+    const { messageId, onClose } = props;
+    const dispatch = useDispatch();
+    const post = usePost(props.messageId);
+    const draft = useDraft(props.messageId);
+
+    const updateDraft = useCallback((newEditorState) => {
+        dispatch(setDraft(newEditorState, messageId));
+    }, [messageId]);
+
+    const submitReply = useCallback(async () => {
+        await dispatch(submitPost(messageId));
+        dispatch(setDraft(EditorState.createEmpty(), messageId));
+        onClose();
+    }, [messageId, draft.editorState]);
+
+    return (
+        <Modal
+            className="w-144"
+            onClose={props.onClose}
+        >
+            <ModalHeader onClose={props.onClose}>
+                <b>{`Replying to ${post?.creator}`}</b>
+            </ModalHeader>
+            <ModalContent className="min-h-64">
+                <Editor
+                    className="reply-editor"
+                    editorState={draft.editorState}
+                    onChange={updateDraft}
+                    onPost={submitReply}
+                />
+            </ModalContent>
+        </Modal>
     );
 }
 
@@ -104,6 +124,7 @@ export function ExpandedPost(props: {
     const meta = useMeta(messageId);
     const dispatch = useDispatch();
     const loggedIn = useLoggedIn();
+    const history = useHistory();
 
     const onLike = useCallback(() => {
         dispatch(submitModeration(messageId, ModerationMessageSubType.Like));
@@ -112,6 +133,11 @@ export function ExpandedPost(props: {
     const onRepost = useCallback(() => {
         dispatch(submitRepost(messageId));
     }, [messageId]);
+
+    const gotoUserProfile = useCallback(e => {
+        e.stopPropagation();
+        history.push(`/${user?.name}/`);
+    }, [user?.name]);
 
     if (!post || !user) return <></>;
 
@@ -132,9 +158,14 @@ export function ExpandedPost(props: {
         >
             <div className="flex flex-row flex-nowrap flex-grow-0 flex-shrink-0">
                 <Avatar className="mr-3 w-12 h-12" address={user.address} />
-                <div className="flex flex-col flex-nowrap items-start text-light w-full">
-                    <div className="font-bold text-base mr-1">{user.name}</div>
-                    <div className="text-gray-400 mr-1">@{user.name}</div>
+                <div className="flex flex-col flex-nowrap items-start text-light w-full cursor-pointer">
+                    <div
+                        className="font-bold text-base mr-1 hover:underline"
+                        onClick={gotoUserProfile}
+                    >
+                        {user.name}
+                    </div>
+                    <div className="text-gray-400 mr-1" onClick={gotoUserProfile}>@{user.name}</div>
                 </div>
                 <div className="flex flex-row flex-nowrap flex-grow flex-shrink justify-end">
                     <Icon
@@ -224,6 +255,7 @@ export function RegularPost(props: {
     const meta = useMeta(messageId);
     const dispatch = useDispatch();
     const loggedIn = useLoggedIn();
+    const history = useHistory();
 
     const onLike = useCallback(() => {
         dispatch(submitModeration(messageId, ModerationMessageSubType.Like));
@@ -232,6 +264,11 @@ export function RegularPost(props: {
     const onRepost = useCallback(() => {
         dispatch(submitRepost(messageId));
     }, [messageId]);
+
+    const gotoUserProfile = useCallback(e => {
+        e.stopPropagation();
+        history.push(`/${user?.name}/`);
+    }, [user?.name]);
 
     if (!post || !user) return <></>;
 
@@ -262,7 +299,10 @@ export function RegularPost(props: {
             }
             <div className="flex flex-row flex-nowrap">
                 <div>
-                    <Avatar className="mr-3 w-12 h-12" address={user.address} />
+                    <Avatar
+                        className="mr-3 w-12 h-12"
+                        address={user.address}
+                    />
                     {
                         !!isParent && (
                             <div
@@ -272,18 +312,29 @@ export function RegularPost(props: {
                     }
                 </div>
                 <div className="flex flex-col flex-nowrap items-start flex-grow flex-shrink">
-                    <div className="flex flex-row flex-nowrap items-center text-light w-full">
-                        <div className="font-bold text-base mr-1">{user.name}</div>
-                        <div className="text-gray-400 mr-1">@{user.name}</div>
+                    <div
+                        className="flex flex-row flex-nowrap items-center text-light w-full"
+                    >
+                        <div
+                            className="font-bold text-base mr-1 hover:underline"
+                            onClick={gotoUserProfile}
+                        >
+                            {user.name}
+                        </div>
+                        <div className="text-gray-400 mr-1" onClick={gotoUserProfile}>
+                            @{user.name}
+                        </div>
                         <div className="text-gray-400 mr-1">•</div>
-                        <div className="text-gray-400">
+                        <div className="text-gray-400 hover:underline" onClick={gotoUserProfile}>
                             {moment(post.createdAt).fromNow(true)}
                         </div>
                         <div className="flex flex-row flex-nowrap flex-grow flex-shrink justify-end">
                             <Icon
                                 className="text-gray-400 hover:text-gray-800"
                                 fa="fas fa-ellipsis-h"
-                                onClick={() => null}
+                                onClick={e => {
+                                    e.stopPropagation();
+                                }}
                             />
                         </div>
                     </div>

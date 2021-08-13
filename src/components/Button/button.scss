@@ -11,4 +11,10 @@
     color: $white;
     font-weight: 600;
   }
+
+  &--secondary {
+    color: $primary-color;
+    font-weight: 600;
+    border: 1px solid $primary-color;
+  }
 }

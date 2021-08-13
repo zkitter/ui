@@ -15,21 +15,11 @@ export default function HomeFeed(): ReactElement {
     const [offset, setOffset] = useState(0);
     const [order, setOrder] = useState<string[]>([]);
     const dispatch = useDispatch();
-    const loggedIn = useLoggedIn();
-    const draft = useDraft();
     const history = useHistory();
-
-    const onChange = useCallback((newEditorState: EditorState) => {
-        dispatch(setDraft(newEditorState));
-    }, [draft]);
-
-    const onPost = useCallback(async () => {
-        dispatch(submitPost());
-    }, [draft]);
 
     useEffect(() => {
         (async function onHomeFeedMount() {
-            const messageIds: any = await dispatch(fetchPosts(limit, offset));
+            const messageIds: any = await dispatch(fetchPosts(undefined, limit, offset));
             setOrder(order.concat(messageIds));
         })();
     }, []);
@@ -41,14 +31,7 @@ export default function HomeFeed(): ReactElement {
                 {},
             )}
         >
-            <Editor
-                className={classNames("mb-1 transition-shadow border border-gray-100", {
-                    'focus-within:border-gray-400': loggedIn,
-                })}
-                editorState={draft.editorState}
-                onChange={onChange}
-                onPost={onPost}
-            />
+            <PostEditor />
             {
                 order.map(messageId => {
                     const [creator, hash] = messageId.split('/');
@@ -65,5 +48,30 @@ export default function HomeFeed(): ReactElement {
             }
 
         </div>
+    );
+}
+
+function PostEditor(): ReactElement {
+    const dispatch = useDispatch();
+    const loggedIn = useLoggedIn();
+    const draft = useDraft();
+
+    const onChange = useCallback((newEditorState: EditorState) => {
+        dispatch(setDraft(newEditorState));
+    }, [draft]);
+
+    const onPost = useCallback(async () => {
+        dispatch(submitPost());
+    }, [draft]);
+
+    return (
+        <Editor
+            className={classNames("mb-1 transition-shadow border border-gray-100", {
+                'focus-within:border-gray-400': loggedIn,
+            })}
+            editorState={draft.editorState}
+            onChange={onChange}
+            onPost={onPost}
+        />
     );
 }

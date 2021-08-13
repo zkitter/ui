@@ -45,3 +45,9 @@
 .post-button + .post-button {
   margin-left: 2rem;
 }
+
+.reply-editor {
+  .editor__wrapper {
+    min-height: 15rem;
+  }
+}

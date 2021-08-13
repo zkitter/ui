@@ -7,24 +7,30 @@ import "./post-view.scss";
 import {useDispatch} from "react-redux";
 import Thread from "../Thread";
 import ParentThread from "../ParentThread";
+import {PostMessageSubType} from "../../util/message";
 
 type Props = {
 
 }
 
 export default function PostView(props: Props): ReactElement {
+    const {name, hash} = useParams<{name: string; hash: string}>();
+    const reference = name + '/' + hash;
+
     const [limit, setLimit] = useState(20);
     const [offset, setOffset] = useState(0);
     const [order, setOrder] = useState<string[]>([]);
-    const [messageId, setMessageId] = useState('');
     const dispatch = useDispatch();
     const history = useHistory();
-    const {name, hash} = useParams<{name: string; hash: string}>();
-    const reference = name + '/' + hash;
     const parentEl = useRef<HTMLDivElement>(null);
     const containerEl = useRef<HTMLDivElement>(null);
     const scrollEl = useRef<HTMLDivElement>(null);
     const [height, setHeight] = useState(window.innerHeight);
+
+    const originalPost = usePost(reference);
+    const messageId = originalPost?.subtype === PostMessageSubType.Repost
+        ? originalPost.payload.reference
+        : reference;
 
     useEffect(() => {
         (async function onPostViewMount() {
@@ -40,7 +46,6 @@ export default function PostView(props: Props): ReactElement {
 
     useEffect(() => {
         setOrder([]);
-        setMessageId(reference);
     }, [reference]);
 
     useEffect(() => {
@@ -76,6 +81,7 @@ export default function PostView(props: Props): ReactElement {
             >
                 <div
                     ref={containerEl}
+                    className="rounded-xl overflow-hidden border border-gray-100"
                 >
                     <div ref={parentEl}>
                         <ParentThread messageId={messageId} />

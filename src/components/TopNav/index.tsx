@@ -4,10 +4,12 @@ import classNames from "classnames";
 import "./top-nav.scss"
 import {useHistory, useLocation} from "react-router";
 import Web3Button from "../Web3Button";
-import {useAccount} from "../../ducks/web3";
+import {useAccount, useENSName, useLoggedIn} from "../../ducks/web3";
 
 export default function TopNav(): ReactElement {
     const account = useAccount();
+    const loggedIn = useLoggedIn();
+    const ensName = useENSName();
 
     return (
         <div
@@ -31,8 +33,9 @@ export default function TopNav(): ReactElement {
                         "bg-white",
                     )}
                 >
-                    <TopNavIcon fa="fas fa-home" pathname="/home" />
-                    <TopNavIcon fa="fas fa-hashtag" pathname="/explore" />
+                    { loggedIn && <TopNavIcon fa="fas fa-home" pathname="/home" /> }
+                    { loggedIn && <TopNavIcon fa="fas fa-user" pathname={`/${ensName}/`} /> }
+                    <TopNavIcon fa="fas fa-globe-asia" pathname="/explore" />
                     <TopNavIcon fa="fas fa-bell" pathname="/notifications" />
                 </div>
             </div>

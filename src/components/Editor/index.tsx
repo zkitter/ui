@@ -1,11 +1,9 @@
 import React, {ReactElement, useCallback, useState} from "react";
 import {
-    convertToRaw,
     DraftHandleValue,
     EditorState,
     RichUtils,
     DefaultDraftBlockRenderMap,
-    ContentState, convertFromRaw,
 } from "draft-js";
 import DraftEditor from "draft-js-plugins-editor";
 import classNames from "classnames";
@@ -57,7 +55,6 @@ export default function Editor(props: Props): ReactElement {
                     'flex flex-col flex-nowrap items-center',
                     'p-4',
                     'bg-white',
-                    'border border-gray-100',
                     'rounded-xl',
                     props.className,
                 )}
@@ -73,6 +70,8 @@ export default function Editor(props: Props): ReactElement {
             </div>
         )
     }
+
+    const blockRenderMap = DefaultDraftBlockRenderMap.merge(TableUtils.DraftBlockRenderMap);
 
     return (
         <div
@@ -91,13 +90,13 @@ export default function Editor(props: Props): ReactElement {
                 address={address}
                 incognito={!!semaphoreId.keypair.privKey}
             />
-            <div className="flex flex-col flex-nowrap w-full h-full">
+            <div className="flex flex-col flex-nowrap w-full h-full editor__wrapper">
                 <DraftEditor
                     ref={setRef}
                     editorState={editorState}
                     onChange={onChange}
                     handleKeyCommand={handleKeyCommand}
-                    blockRenderMap={DefaultDraftBlockRenderMap.merge(TableUtils.DraftBlockRenderMap)}
+                    blockRenderMap={blockRenderMap}
                     placeholder={readOnly ? '' : "Write here..."}
                     readOnly={readOnly || disabled}
                     customStyleMap={{

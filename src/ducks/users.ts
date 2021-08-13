@@ -20,6 +20,15 @@ export type User = {
     name: string;
     pubkey: string;
     address: string;
+    coverImage: string;
+    profileImage: string;
+    bio: string;
+    joinedAt: number;
+    meta: {
+        followerCount: number;
+        followingCount: number;
+    };
+
 }
 
 type State = {
@@ -53,6 +62,14 @@ export const getUser = (name: string) => async (dispatch: Dispatch, getState: ()
         name: json.payload.name,
         pubkey: json.payload.pubkey,
         address,
+        profileImage: '',
+        coverImage: '',
+        bio: '',
+        meta: {
+            followerCount: 0,
+            followingCount: 0,
+        },
+        joinedAt: 0,
     };
 }
 
@@ -71,6 +88,14 @@ export default function users(state = initialState, action: Action): State {
                     name: action.payload.name,
                     pubkey: action.payload.pubkey,
                     address: action.payload.address,
+                    bio: action.payload.bio,
+                    profileImage: action.payload.profileImage,
+                    coverImage: action.payload.coverImage,
+                    joinedAt: action.payload.joinedAt,
+                    meta: {
+                        followerCount: action.payload.meta?.followerCount || 0,
+                        followingCount: action.payload.meta?.followingCount || 0,
+                    },
                 },
             };
         default:

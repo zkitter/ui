@@ -14,12 +14,15 @@
 }
 
 div.DraftEditor-root {
+  @extend %col-nowrap;
   flex: 1 1 auto;
   overflow-y: auto;
 }
 
 div.DraftEditor-editorContainer,
 div.public-DraftEditor-content {
+  @extend %col-nowrap;
+  flex: 1 1 auto;
   position: relative;
   height: 100%;
   z-index: 200;
@@ -37,5 +40,10 @@ div.public-DraftEditor-content {
   div.DraftEditor-root {
     padding: .75rem 0;
     cursor: text;
+  }
+
+  &__wrapper {
+    flex: 1 1 auto;
+    width: 0;
   }
 }

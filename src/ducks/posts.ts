@@ -58,8 +58,9 @@ export const fetchPost = (messageId: string) =>
     };
 }
 
-export const fetchPosts = (limit = 10, offset = 0) => async (dispatch: ThunkDispatch<any, any, any>) => {
-    const resp = await fetch(`${config.indexerAPI}/v1/posts?limit=${limit}&offset=${offset}`);
+export const fetchPosts = (creator?: string, limit = 10, offset = 0) => async (dispatch: ThunkDispatch<any, any, any>) => {
+    const creatorQuery = creator ? `&=${encodeURIComponent(creator)}` : '';
+    const resp = await fetch(`${config.indexerAPI}/v1/posts?limit=${limit}&offset=${offset}${creatorQuery}`);
     const json = await resp.json();
 
     for (const post of json.payload) {

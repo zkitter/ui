@@ -6,6 +6,7 @@ import "./app.scss";
 import {connectWeb3, web3Modal} from "../../ducks/web3";
 import {useDispatch} from "react-redux";
 import PostView from "../../components/PostView";
+import ProfileView from "../../components/ProfileView";
 
 export default function App(): ReactElement {
     const dispatch = useDispatch();
@@ -28,6 +29,12 @@ export default function App(): ReactElement {
                     </Route>
                     <Route path="/:name/status/:hash">
                         <PostView />
+                    </Route>
+
+                    <Route path="/home"></Route>
+                    <Route path="/notifications"></Route>
+                    <Route path="/:name">
+                        <ProfileView />
                     </Route>
                     <Route path="/">
                         <Redirect to="/explore" />
