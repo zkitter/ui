@@ -16,7 +16,13 @@ export default function Textarea(props: Props): ReactElement {
     } = props;
 
     return (
-        <div className={classNames("textarea-group", className)}>
+        <div
+            className={classNames(
+                'focus-within:border-gray-400 bg-white',
+                "rounded-lg textarea-group",
+                className,
+            )}
+        >
             { label && <div className="textarea-group__label">{label}</div> }
             <textarea
                 {...textareaProps}

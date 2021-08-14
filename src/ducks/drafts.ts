@@ -4,7 +4,14 @@ import deepEqual from "fast-deep-equal";
 import {convertToRaw, EditorState} from "draft-js";
 import {markdownConvertOptions} from "../components/Editor";
 import {Dispatch} from "redux";
-import {MessageType, Moderation, ModerationMessageSubType, Post, PostMessageSubType} from "../util/message";
+import {
+    MessageType,
+    Moderation,
+    ModerationMessageSubType,
+    Post,
+    PostMessageSubType, Profile,
+    ProfileMessageSubType
+} from "../util/message";
 import gun from "../util/gun";
 
 const { markdownToDraft, draftToMarkdown } = require('markdown-draft-js');
@@ -193,6 +200,58 @@ export const submitModeration = (reference = '', subtype: ModerationMessageSubTy
         });
 
         dispatch(setDraft(EditorState.createEmpty(), reference));
+    } catch (e) {
+        dispatch({
+            type: ActionTypes.SET_SUBMITTING,
+            payload: false,
+        });
+        throw e;
+    }
+}
+
+export const submitProfile = (
+    subtype: ProfileMessageSubType,
+    value: string,
+    key?: string,
+) => async (dispatch: Dispatch, getState: () => AppRootState) => {
+    dispatch({
+        type: ActionTypes.SET_SUBMITTING,
+        payload: true,
+    });
+
+    const { web3 } = getState();
+    const {
+        ensName,
+    } = web3;
+
+    const post = new Profile({
+        type: MessageType.Profile,
+        subtype: subtype,
+        creator: ensName,
+        payload: {
+            key: key || '',
+            value: value,
+        },
+    });
+
+    const {
+        messageId,
+        hash,
+        ...json
+    } = await post.toJSON();
+
+    try {
+        // @ts-ignore
+        await gun.user()
+            .get('message')
+            .get(messageId)
+            // @ts-ignore
+            .put(json);
+
+        dispatch({
+            type: ActionTypes.SET_SUBMITTING,
+            payload: false,
+        });
     } catch (e) {
         dispatch({
             type: ActionTypes.SET_SUBMITTING,

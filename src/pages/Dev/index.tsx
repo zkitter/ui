@@ -232,7 +232,7 @@ export default function Dev(): ReactElement {
             <div style={{ marginTop: '16px', width: '600px' }}>
                 <b style={{ marginRight: '8px'}}>Posts Feed:</b>
                 {
-                    postIds.map(messageId => {
+                    postIds.map((messageId: string) => {
                         const post = postsMap[messageId];
 
                         return post && (

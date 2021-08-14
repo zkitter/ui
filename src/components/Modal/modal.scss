@@ -2,6 +2,7 @@
 
 .modal {
   @extend %col-nowrap;
+
   &__overlay {
     position: fixed;
     width: 100vw;
@@ -16,6 +17,7 @@
     margin: 3rem auto;
     border-radius: .5rem;
     z-index: 200;
+    overflow: hidden;
   }
 
   &__header {
@@ -37,7 +39,7 @@
 
   &__content {
     flex: 1 1 auto;
-    max-height: 24rem;
+    max-height: calc(100vh - 20rem);
     overflow-y: auto;
 
     p:nth-of-type(1) {
@@ -51,7 +53,10 @@
   }
 
   &__footer {
-    @extend %col-nowrap;
+    @extend %row-nowrap;
+    align-content: center;
+    justify-content: flex-end;
     flex: 0 0 auto;
+    padding: 1rem 1.25rem;
   }
 }

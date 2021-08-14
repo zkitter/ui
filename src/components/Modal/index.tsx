@@ -88,11 +88,12 @@ export function ModalContent(props: ContentProps): ReactElement {
 
 type FooterProps = {
     children: ReactNode | ReactNodeArray;
+    className?: string;
 }
 
-export function ModalFooter(props: ContentProps): ReactElement {
+export function ModalFooter(props: FooterProps): ReactElement {
     return (
-        <div className="modal__footer">
+        <div className={classNames("border-t modal__footer", props.className)}>
             {props.children}
         </div>
     );

@@ -79,7 +79,7 @@ export default function Web3Button(props: Props): ReactElement {
         btnContent = (
             <>
                 <div>{ensName}</div>
-                <Avatar className="ml-2" address={account} />
+                <Avatar className="ml-2" name={ensName} />
             </>
         )
     } else {

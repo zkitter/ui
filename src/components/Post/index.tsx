@@ -10,7 +10,7 @@ import "./post.scss";
 import Editor, {markdownConvertOptions} from "../Editor";
 import {convertFromRaw, EditorState} from "draft-js";
 import DraftEditor from "draft-js-plugins-editor";
-import Modal, {ModalContent, ModalHeader} from "../Model";
+import Modal, {ModalContent, ModalHeader} from "../Modal";
 import {setDraft, submitModeration, submitPost, submitRepost, useDraft} from "../../ducks/drafts";
 import {useDispatch} from "react-redux";
 import {ModerationMessageSubType, PostMessageSubType} from "../../util/message";
@@ -136,8 +136,8 @@ export function ExpandedPost(props: {
 
     const gotoUserProfile = useCallback(e => {
         e.stopPropagation();
-        history.push(`/${user?.name}/`);
-    }, [user?.name]);
+        history.push(`/${user?.ens}/`);
+    }, [user?.ens]);
 
     if (!post || !user) return <></>;
 
@@ -157,7 +157,7 @@ export function ExpandedPost(props: {
             onClick={props.onClick}
         >
             <div className="flex flex-row flex-nowrap flex-grow-0 flex-shrink-0">
-                <Avatar className="mr-3 w-12 h-12" address={user.address} />
+                <Avatar className="mr-3 w-12 h-12" name={user.ens} />
                 <div className="flex flex-col flex-nowrap items-start text-light w-full cursor-pointer">
                     <div
                         className="font-bold text-base mr-1 hover:underline"
@@ -165,7 +165,7 @@ export function ExpandedPost(props: {
                     >
                         {user.name}
                     </div>
-                    <div className="text-gray-400 mr-1" onClick={gotoUserProfile}>@{user.name}</div>
+                    <div className="text-gray-400 mr-1" onClick={gotoUserProfile}>@{user.ens}</div>
                 </div>
                 <div className="flex flex-row flex-nowrap flex-grow flex-shrink justify-end">
                     <Icon
@@ -267,8 +267,8 @@ export function RegularPost(props: {
 
     const gotoUserProfile = useCallback(e => {
         e.stopPropagation();
-        history.push(`/${user?.name}/`);
-    }, [user?.name]);
+        history.push(`/${user?.ens}/`);
+    }, [user?.ens]);
 
     if (!post || !user) return <></>;
 
@@ -301,7 +301,7 @@ export function RegularPost(props: {
                 <div>
                     <Avatar
                         className="mr-3 w-12 h-12"
-                        address={user.address}
+                        name={user.ens}
                     />
                     {
                         !!isParent && (
@@ -322,7 +322,7 @@ export function RegularPost(props: {
                             {user.name}
                         </div>
                         <div className="text-gray-400 mr-1" onClick={gotoUserProfile}>
-                            @{user.name}
+                            @{user.ens}
                         </div>
                         <div className="text-gray-400 mr-1">•</div>
                         <div className="text-gray-400 hover:underline" onClick={gotoUserProfile}>

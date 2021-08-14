@@ -2,10 +2,11 @@ import React, {ReactElement} from "react";
 import makeBlockie from 'ethereum-blockies-base64';
 import classNames from "classnames";
 import Icon from "../Icon";
+import {useUser} from "../../ducks/users";
 
 type Props = {
-    address?: string;
     name?: string;
+    address?: string;
     className?: string;
     incognito?: boolean;
 }
@@ -16,10 +17,13 @@ const CACHE: {
 
 export default function Avatar(props: Props): ReactElement {
     const {
-        address = '',
+        address,
+        name,
         incognito,
         className,
     } = props;
+
+    const user = useUser(name);
 
     if (incognito) {
         return (
@@ -37,11 +41,30 @@ export default function Avatar(props: Props): ReactElement {
         )
     }
 
-    let base64img = CACHE[address]
-        ? CACHE[address]
-        : makeBlockie(address);
+    if (!user && !address) {
+        return (
+            <div
+                className={classNames(
+                    'inline-block',
+                    'rounded-full',
+                    'flex-shrink-0 flex-grow-0',
+                    'w-6 h-6 bg-gray-100',
+                    'bg-contain bg-center bg-no-repeat',
+                    className,
+                )}
+            />
+        );
+    }
 
-    CACHE[address] = base64img;
+    let imageUrl = user?.profileImage;
+
+    if (!user?.profileImage && user?.address) {
+        imageUrl = CACHE[user.address] ? CACHE[user.address] : makeBlockie(user.address);
+        CACHE[user?.address] = imageUrl;
+    } else if (address) {
+        imageUrl = CACHE[address] ? CACHE[address] : makeBlockie(address);
+        CACHE[address] = imageUrl;
+    }
 
     return (
         <div
@@ -54,7 +77,7 @@ export default function Avatar(props: Props): ReactElement {
                 className,
             )}
             style={{
-                backgroundImage: `url(${base64img})`
+                backgroundImage: `url(${imageUrl})`
             }}
         >
 

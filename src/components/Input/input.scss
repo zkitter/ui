@@ -1,0 +1,31 @@
+@import "../../util/variable";
+
+.input-group {
+  @extend %col-nowrap;
+  transition: border-color 150ms ease-in-out;
+
+  &__label {
+    background: white;
+    display: inline-block;
+    top: -.625rem;
+    width: fit-content;
+    font-size: 12px;
+    padding: 0 .25rem 0 .1875rem;
+    margin-left: .625rem;
+    position: absolute;
+  }
+
+  input {
+    padding: .5rem .75rem;
+    outline: none;
+
+    &::placeholder {
+      color: $gray-200;
+    }
+  }
+
+  .error-message {
+    text-align: center;
+    padding-top: .25rem;
+  }
+}

@@ -17,18 +17,19 @@ type Action = {
 }
 
 export type User = {
+    ens: string;
     name: string;
     pubkey: string;
     address: string;
     coverImage: string;
     profileImage: string;
     bio: string;
+    website: string;
     joinedAt: number;
     meta: {
         followerCount: number;
         followingCount: number;
     };
-
 }
 
 type State = {
@@ -37,34 +38,46 @@ type State = {
 
 const initialState: State = {};
 
-export const getUser = (name: string) => async (dispatch: Dispatch, getState: () => AppRootState): Promise<User> => {
+export const getUser = (ensName: string) => async (dispatch: Dispatch, getState: () => AppRootState): Promise<User> => {
     const state = getState();
     const users = state.users;
-    const user = users[name];
+    const user = users[ensName];
 
     if (user) return user;
 
-    const address = await defaultENS.name(name).getAddress();
+    const address = await defaultENS.name(ensName).getAddress();
 
-    const resp = await fetch(`${config.indexerAPI}/v1/users/${name}`);
+    const resp = await fetch(`${config.indexerAPI}/v1/users/${ensName}`);
     const json = await resp.json();
 
     dispatch({
         type: ActionTypes.SET_USER,
         payload: {
+            ens: ensName,
             name: json.payload.name,
             pubkey: json.payload.pubkey,
             address,
+            bio: json.payload.bio || '',
+            profileImage: json.payload.profileImage || '',
+            coverImage: json.payload.coverImage || '',
+            website: json.payload.website || '',
+            joinedAt: json.payload.joinedAt,
+            meta: {
+                followerCount: json.payload.meta?.followerCount || 0,
+                followingCount: json.payload.meta?.followingCount || 0,
+            },
         },
     });
 
     return {
+        ens: ensName,
         name: json.payload.name,
         pubkey: json.payload.pubkey,
         address,
         profileImage: '',
         coverImage: '',
         bio: '',
+        website: '',
         meta: {
             followerCount: 0,
             followingCount: 0,
@@ -72,6 +85,11 @@ export const getUser = (name: string) => async (dispatch: Dispatch, getState: ()
         joinedAt: 0,
     };
 }
+
+export const setUser = (user: User) => ({
+    type: ActionTypes.SET_USER,
+    payload: user,
+})
 
 export const useUser = (name = ''): User | null => {
     return useSelector((state: AppRootState) => {
@@ -84,13 +102,15 @@ export default function users(state = initialState, action: Action): State {
         case ActionTypes.SET_USER:
             return {
                 ...state,
-                [action.payload.name]: {
+                [action.payload.ens]: {
+                    ens: action.payload.ens,
                     name: action.payload.name,
                     pubkey: action.payload.pubkey,
                     address: action.payload.address,
                     bio: action.payload.bio,
                     profileImage: action.payload.profileImage,
                     coverImage: action.payload.coverImage,
+                    website: action.payload.website,
                     joinedAt: action.payload.joinedAt,
                     meta: {
                         followerCount: action.payload.meta?.followerCount || 0,

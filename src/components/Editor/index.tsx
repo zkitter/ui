@@ -9,7 +9,7 @@ import DraftEditor from "draft-js-plugins-editor";
 import classNames from "classnames";
 const TableUtils = require('draft-js-table');
 import "./editor.scss";
-import {useAccount, useENSName, useLoggedIn, useSemaphoreID, useWeb3Loading} from "../../ducks/web3";
+import {useAccount, useENSName, useGunKey, useLoggedIn, useSemaphoreID, useWeb3Loading} from "../../ducks/web3";
 import Avatar from "../Avatar";
 import Web3Button from "../Web3Button";
 import Button from "../Button";
@@ -35,6 +35,7 @@ export default function Editor(props: Props): ReactElement {
 
     const address = useAccount();
     const loggedIn = useLoggedIn();
+    const ensName = useENSName();
     const semaphoreId = useSemaphoreID();
 
     const [ref, setRef] = useState<DraftEditor|null>(null);
@@ -87,7 +88,7 @@ export default function Editor(props: Props): ReactElement {
         >
             <Avatar
                 className="w-12 h-12 mr-3"
-                address={address}
+                name={ensName}
                 incognito={!!semaphoreId.keypair.privKey}
             />
             <div className="flex flex-col flex-nowrap w-full h-full editor__wrapper">

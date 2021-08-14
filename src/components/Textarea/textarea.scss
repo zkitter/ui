@@ -1,0 +1,29 @@
+@import "../../util/variable";
+
+.textarea-group {
+  @extend %col-nowrap;
+
+  &__label {
+    background: white;
+    display: inline-block;
+    top: -.625rem;
+    width: fit-content;
+    font-size: 12px;
+    padding: 0 .25rem 0 .1875rem;
+    margin-left: .625rem;
+    position: absolute;
+  }
+
+  textarea {
+    width: 100%;
+    height: 100%;
+    resize: none;
+    padding: .5rem .75rem;
+    outline: none;
+    background-color: transparent;
+
+    &::placeholder {
+      color: $gray-200;
+    }
+  }
+}
