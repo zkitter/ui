@@ -14,6 +14,11 @@ import Web3Modal from "web3modal";
 import {generateGunKeyPairFromHex, generateSemaphoreIDFromHex, validateGunPublicKey} from "../util/crypto";
 import {defaultENS, defaultWeb3} from "../util/web3";
 import {authenticateGun} from "../util/gun";
+// @ts-ignore
+import * as snarkjs from 'snarkjs';
+import {getCircuit, getProvingKey} from "../util/fetch";
+
+type SnarkBigInt = snarkjs.bigInt
 
 export const web3Modal = new Web3Modal({
     network: "main", // optional
@@ -33,6 +38,7 @@ enum ActionTypes {
     SET_SOCIAL_KEY = 'web3/setSocialKey',
     SET_GUN_PRIVATE_KEY = 'web3/setGunPrivateKey',
     SET_SEMAPHORE_ID = 'web3/setSemaphoreID',
+    SET_SEMAPHORE_ID_PATH = 'web3/setSemaphoreIDPath',
 }
 
 type Action = {
@@ -56,12 +62,18 @@ type State = {
     },
     semaphore: {
         keypair: {
-          pubKey: string,
-          privKey: Buffer|null,
+          pubKey: string;
+          privKey: Buffer|null;
         },
-        commitment: string;
+        commitment: SnarkBigInt;
         identityNullifier: string;
         identityTrapdoor: string;
+        identityPath: {
+            element: string;
+            path_elements: string[];
+            path_index: number[];
+            root: string;
+        } | null;
     };
 }
 
@@ -85,6 +97,7 @@ const initialState: State = {
         commitment: '',
         identityNullifier: '',
         identityTrapdoor: '',
+        identityPath: null,
     },
 };
 
@@ -160,6 +173,7 @@ export const setSemaphoreID = (identity: {
         pubKey: string,
         privKey: Buffer|null,
     },
+    commitment: SnarkBigInt;
     identityNullifier: string;
     identityTrapdoor: string;
 }) => ({
@@ -243,7 +257,32 @@ export const genSemaphore = () => async (dispatch: ThunkDispatch<any, any, any>)
 
     try {
         const result: any = await dispatch(generateSemaphoreID(0));
-        dispatch(setSemaphoreID(result));
+        const commitment = await genIdentityCommitment(result);
+
+        await fetch(`http://localhost:3000/dev/semaphore`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+                identityCommitment: commitment.toString(),
+            }),
+        });
+
+        const resp = await fetch(`http://localhost:3000/dev/semaphore/${commitment.toString()}`);
+        const { payload: path } = await resp.json();
+
+        if (path) {
+            dispatch({
+                type: ActionTypes.SET_SEMAPHORE_ID_PATH,
+                payload: path,
+            })
+        }
+
+        dispatch(setSemaphoreID({
+            ...result,
+            commitment,
+        }));
         dispatch(setUnlocking(false));
     } catch (e) {
         dispatch(setUnlocking(false));
@@ -386,10 +425,19 @@ export default function web3(state = initialState, action: Action): State {
             return {
                 ...state,
                 semaphore: {
+                    ...state.semaphore,
                     keypair: action.payload.keypair,
-                    commitment: action.payload.keypair.privKey && genIdentityCommitment(action.payload),
+                    commitment: action.payload.commitment,
                     identityNullifier: action.payload.identityNullifier,
                     identityTrapdoor: action.payload.identityTrapdoor,
+                },
+            }
+        case ActionTypes.SET_SEMAPHORE_ID_PATH:
+            return {
+                ...state,
+                semaphore: {
+                    ...state.semaphore,
+                    identityPath: action.payload,
                 },
             }
         case ActionTypes.SET_FETCHING_ENS:

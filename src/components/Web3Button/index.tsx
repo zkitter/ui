@@ -146,6 +146,7 @@ function Web3ButtonAction(props: Props): ReactElement {
                 pubKey: '',
                 privKey: null,
             },
+            commitment: '',
             identityNullifier: '',
             identityTrapdoor: '',
         }))

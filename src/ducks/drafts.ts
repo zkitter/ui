@@ -13,7 +13,17 @@ import {
     ProfileMessageSubType
 } from "../util/message";
 import gun from "../util/gun";
-
+import {
+    genSignalHash,
+    genSignedMsg,
+    genExternalNullifier,
+    genProof,
+    genPublicSignals,
+} from "libsemaphore";
+import {getCircuit, getProvingKey} from "../util/fetch";
+// @ts-ignore
+import * as snarkjs from "snarkjs";
+import {ThunkDispatch} from "redux-thunk";
 const { markdownToDraft, draftToMarkdown } = require('markdown-draft-js');
 
 enum ActionTypes {
@@ -55,7 +65,88 @@ export const setDraft = (editorState: EditorState, reference = '') => {
     };
 }
 
-export const submitPost = (reference = '') => async (dispatch: Dispatch, getState: () => AppRootState) => {
+export const submitSemaphorePost = (post: Post) => async (dispatch: Dispatch, getState: () => AppRootState) => {
+    const state = getState();
+    const {
+        semaphore,
+    } = state.web3;
+    const identityCommitment = semaphore.commitment;
+    const identityNullifier = semaphore.identityNullifier;
+    const identityTrapdoor = semaphore.identityTrapdoor;
+    const identityPathElements = semaphore.identityPath?.path_elements;
+    const identityPathIndex = semaphore.identityPath?.path_index;
+    const privKey = semaphore.keypair?.privKey;
+    const pubKey = semaphore.keypair?.pubKey;
+
+    if (!identityCommitment || !identityPathElements || !identityPathIndex || !privKey || !pubKey || !identityTrapdoor || !identityNullifier) {
+        return null;
+    }
+
+    const hash = post.hash();
+    const signalStr = hash;
+    const externalNullifierStr = signalStr;
+    const externalNullifier = genExternalNullifier(externalNullifierStr);
+    const signalHash = await genSignalHash(Buffer.from(signalStr, 'hex'));
+
+    const { signature } = genSignedMsg(
+        privKey,
+        externalNullifier,
+        signalHash,
+    );
+
+    const circuit = await getCircuit();
+    const witness = circuit.calculateWitness({
+        'identity_pk[0]': pubKey[0],
+        'identity_pk[1]': pubKey[1],
+        'auth_sig_r[0]': signature.R8[0],
+        'auth_sig_r[1]': signature.R8[1],
+        auth_sig_s: signature.S,
+        signal_hash: signalHash,
+        external_nullifier: externalNullifier,
+        identity_nullifier: identityNullifier,
+        identity_trapdoor: identityTrapdoor,
+        identity_path_elements: identityPathElements,
+        identity_path_index: identityPathIndex,
+        fake_zero: snarkjs.bigInt(0),
+    });
+
+    const provingKey = await getProvingKey();
+    // @ts-ignore
+    const proof = await genProof(witness, provingKey);
+    const publicSignals = genPublicSignals(witness, circuit);
+
+    const json = post.toJSON();
+    try {
+        // @ts-ignore
+        await fetch('http://localhost:3000/dev/semaphore/post', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+                post: json,
+                proof: JSON.stringify(snarkjs.stringifyBigInts(proof)),
+                publicSignals: JSON.stringify(snarkjs.stringifyBigInts(publicSignals)),
+            }),
+        });
+
+        dispatch({
+            type: ActionTypes.SET_SUBMITTING,
+            payload: false,
+        });
+
+        dispatch(setDraft(EditorState.createEmpty(), `${post.creator}/${hash}`));
+    } catch (e) {
+        dispatch({
+            type: ActionTypes.SET_SUBMITTING,
+            payload: false,
+        });
+        throw e;
+    }
+
+}
+
+export const submitPost = (reference = '') => async (dispatch: ThunkDispatch<any, any, any>, getState: () => AppRootState) => {
     dispatch({
         type: ActionTypes.SET_SUBMITTING,
         payload: true,
@@ -65,6 +156,7 @@ export const submitPost = (reference = '') => async (dispatch: Dispatch, getStat
     const draft = drafts.map[reference];
     const {
         ensName,
+        semaphore,
     } = web3;
 
     if (!draft) return;
@@ -81,6 +173,10 @@ export const submitPost = (reference = '') => async (dispatch: Dispatch, getStat
             reference: reference,
         },
     });
+
+    if (semaphore.keypair.privKey) {
+        return dispatch(submitSemaphorePost(post));
+    }
 
     const {
         messageId,
