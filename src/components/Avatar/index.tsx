@@ -1,8 +1,9 @@
-import React, {ReactElement} from "react";
+import React, {ReactElement, useEffect} from "react";
 import makeBlockie from 'ethereum-blockies-base64';
 import classNames from "classnames";
 import Icon from "../Icon";
-import {useUser} from "../../ducks/users";
+import {getUser, useUser} from "../../ducks/users";
+import {useDispatch} from "react-redux";
 
 type Props = {
     name?: string;
@@ -24,6 +25,11 @@ export default function Avatar(props: Props): ReactElement {
     } = props;
 
     const user = useUser(name);
+    const dispatch = useDispatch();
+
+    useEffect(() => {
+        if (name) dispatch(getUser(name));
+    }, [name]);
 
     if (incognito) {
         return (
@@ -49,7 +55,7 @@ export default function Avatar(props: Props): ReactElement {
                     'rounded-full',
                     'flex-shrink-0 flex-grow-0',
                     'w-6 h-6 bg-gray-100',
-                    'bg-contain bg-center bg-no-repeat',
+                    'bg-cover bg-center bg-no-repeat',
                     className,
                 )}
             />
@@ -73,7 +79,7 @@ export default function Avatar(props: Props): ReactElement {
                 'rounded-full',
                 'flex-shrink-0 flex-grow-0',
                 'w-6 h-6',
-                'bg-contain bg-center bg-no-repeat',
+                'bg-cover bg-center bg-no-repeat',
                 className,
             )}
             style={{

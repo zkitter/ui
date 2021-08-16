@@ -14,8 +14,9 @@ import Modal, {ModalContent, ModalFooter, ModalHeader} from "../Modal";
 import Input from "../Input";
 import Textarea from "../Textarea";
 import deepEqual from "fast-deep-equal";
-import {submitProfile} from "../../ducks/drafts";
-import {ProfileMessageSubType} from "../../util/message";
+import {submitConnection, submitProfile} from "../../ducks/drafts";
+import {ConnectionMessageSubType, ProfileMessageSubType} from "../../util/message";
+import Avatar from "../Avatar";
 
 export default function ProfileView(): ReactElement {
     const {name} = useParams<{name: string}>();
@@ -55,7 +56,14 @@ export default function ProfileView(): ReactElement {
                             key={messageId}
                             className="rounded-xl transition-colors mb-1 hover:border-gray-400 cursor-pointer border border-gray-100"
                             messageId={messageId}
-                            onClick={() => history.push(`/${creator}/status/${hash}`)}
+                            onClick={() => {
+                                if (!hash) {
+                                    history.push(`/post/${creator}`)
+
+                                } else {
+                                    history.push(`/${creator}/status/${hash}`)
+                                }
+                            }}
                         />
                     );
                 })
@@ -72,6 +80,11 @@ function ProfileCard(): ReactElement {
     const ensName = useENSName();
     const isCurrentUser = name === ensName;
     const [showingEditor, showProfileEditor] = useState(false);
+    const dispatch = useDispatch();
+
+    const onFollow = useCallback(() => {
+        dispatch(submitConnection(name, ConnectionMessageSubType.Follow));
+    }, []);
 
     if (!user) {
         return (
@@ -127,16 +140,10 @@ function ProfileCard(): ReactElement {
                     )
             }
             <div className="flex flex-row flew-nowrap flex-shrink-0 items-end pl-4 relative -mt-15">
-                {
-                    !user.profileImage
-                        ? <div className="h-32 w-32 object-cover rounded-full border-4 border-white bg-gray-100" />
-                        : (
-                            <img
-                                className="h-32 w-32 object-cover rounded-full border-4 border-white"
-                                src={user.profileImage}
-                            />
-                        )
-                }
+                <Avatar
+                    className="h-32 w-32 rounded-full border-4 border-white bg-gray-100"
+                    name={user.ens}
+                />
                 <div className="flex flex-row flex-nowrap flex-grow justify-end mb-4 mx-4">
                     {
                         isCurrentUser && (
@@ -156,6 +163,7 @@ function ProfileCard(): ReactElement {
                                 btnType="primary"
                                 className="mr-2"
                                 disabled={!loggedIn || !gunKey.priv}
+                                onClick={onFollow}
                             >
                                 Follow
                             </Button>

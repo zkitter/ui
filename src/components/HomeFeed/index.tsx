@@ -7,7 +7,7 @@ import {fetchPosts} from "../../ducks/posts";
 import "./home-feed.scss";
 import Editor from "../Editor";
 import {useLoggedIn} from "../../ducks/web3";
-import {setDraft, submitPost, useDraft} from "../../ducks/drafts";
+import {setDraft, submitPost, useDraft, useSubmitting} from "../../ducks/drafts";
 import {useHistory} from "react-router";
 
 export default function HomeFeed(): ReactElement {
@@ -16,13 +16,14 @@ export default function HomeFeed(): ReactElement {
     const [order, setOrder] = useState<string[]>([]);
     const dispatch = useDispatch();
     const history = useHistory();
+    const loggedIn = useLoggedIn();
 
     useEffect(() => {
         (async function onHomeFeedMount() {
             const messageIds: any = await dispatch(fetchPosts(undefined, limit, offset));
             setOrder(order.concat(messageIds));
         })();
-    }, []);
+    }, [loggedIn]);
 
     return (
         <div
@@ -33,20 +34,27 @@ export default function HomeFeed(): ReactElement {
         >
             <PostEditor />
             {
-                order.map(messageId => {
+                order.map((messageId, i) => {
                     const [creator, hash] = messageId.split('/');
 
                     return (
                         <Post
-                            key={messageId}
+                            // key={messageId}
+                            key={i}
                             className="rounded-xl transition-colors mb-1 hover:border-gray-400 cursor-pointer border border-gray-100"
                             messageId={messageId}
-                            onClick={() => history.push(`/${creator}/status/${hash}`)}
+                            onClick={() => {
+                                if (!hash) {
+                                    history.push(`/post/${creator}`)
+
+                                } else {
+                                    history.push(`/${creator}/status/${hash}`)
+                                }
+                            }}
                         />
                     );
                 })
             }
-
         </div>
     );
 }
@@ -54,6 +62,7 @@ export default function HomeFeed(): ReactElement {
 function PostEditor(): ReactElement {
     const dispatch = useDispatch();
     const loggedIn = useLoggedIn();
+    const submitting = useSubmitting();
     const draft = useDraft();
 
     const onChange = useCallback((newEditorState: EditorState) => {
@@ -72,6 +81,7 @@ function PostEditor(): ReactElement {
             editorState={draft.editorState}
             onChange={onChange}
             onPost={onPost}
+            loading={submitting}
         />
     );
 }

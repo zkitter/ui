@@ -1,6 +1,6 @@
-import {Post, PostMessageOption} from "../util/message";
+import {Post, PostMessageOption, PostMessageSubType} from "../util/message";
 import {fetchMessage} from "../util/gun";
-import {getUser} from "./users";
+import {getUser, User} from "./users";
 import {ThunkDispatch} from "redux-thunk";
 import {AppRootState} from "../store/configureAppStore";
 import {useSelector} from "react-redux";
@@ -21,14 +21,18 @@ type Action = {
     error?: boolean;
 }
 
+type PostMeta = {
+    replyCount: number;
+    likeCount: number;
+    repostCount: number;
+    liked: boolean;
+    reposted: boolean;
+}
+
 type State = {
     map: { [messageId: string]: Post };
     meta: {
-        [messageId: string]: {
-            replyCount: number;
-            likeCount: number;
-            repostCount: number;
-        };
+        [messageId: string]: PostMeta;
     };
 }
 
@@ -38,9 +42,14 @@ const initialState: State = {
 };
 
 export const fetchPost = (messageId: string) =>
-    async (dispatch: ThunkDispatch<any, any, any>): Promise<PostMessageOption> =>
+    async (dispatch: ThunkDispatch<any, any, any>): Promise<PostMessageOption | null> =>
 {
-    const [username] = messageId.split('/');
+    const [username, hash] = messageId.split('/');
+
+    if (!hash) {
+        return null;
+    }
+
     const user: any = await dispatch(getUser(username));
     const message = await fetchMessage(`~${user.pubkey}/message/${messageId}`);
 
@@ -58,16 +67,51 @@ export const fetchPost = (messageId: string) =>
     };
 }
 
-export const fetchPosts = (creator?: string, limit = 10, offset = 0) => async (dispatch: ThunkDispatch<any, any, any>) => {
-    const creatorQuery = creator ? `&=${encodeURIComponent(creator)}` : '';
-    const resp = await fetch(`${config.indexerAPI}/v1/posts?limit=${limit}&offset=${offset}${creatorQuery}`);
+export const fetchPosts = (creator?: string, limit = 10, offset = 0) =>
+    async (
+        dispatch: ThunkDispatch<any, any, any>,
+        getState: () => AppRootState,
+    ) =>
+{
+    const {
+        web3: {
+            ensName,
+            gun: { pub, priv },
+        },
+    } = getState();
+    const creatorQuery = creator ? `&creator=${encodeURIComponent(creator)}` : '';
+    const contextualName = (ensName && pub && priv) ? ensName : undefined;
+    const resp = await fetch(`${config.indexerAPI}/v1/posts?limit=${limit}&offset=${offset}${creatorQuery}`, {
+        method: 'GET',
+        // @ts-ignore
+        headers: {
+            'x-contextual-name': contextualName,
+        },
+    });
     const json = await resp.json();
 
     for (const post of json.payload) {
+        const [creator, hash] = post.messageId.split('/');
+
         dispatch({
             type: ActionTypes.SET_META,
-            payload: post,
-        })
+            payload: {
+                messageId: post.subtype === PostMessageSubType.Repost
+                    ? post.payload.reference
+                    : post.messageId,
+                meta: post.meta,
+            },
+        });
+
+        if (!hash) {
+            dispatch({
+                type: ActionTypes.SET_POST,
+                payload: new Post({
+                    ...post,
+                    createdAt: new Date(post.createdAt),
+                }),
+            });
+        }
     }
 
     return json.payload.map((post: any) => post.messageId);
@@ -78,10 +122,27 @@ export const fetchReplies = (reference: string, limit = 10, offset = 0) => async
     const json = await resp.json();
 
     for (const post of json.payload) {
+        const [creator, hash] = post.messageId.split('/');
+
         dispatch({
             type: ActionTypes.SET_META,
-            payload: post,
-        })
+            payload: {
+                messageId: post.subtype === PostMessageSubType.Repost
+                    ? post.payload.reference
+                    : post.messageId,
+                meta: post.meta,
+            },
+        });
+
+        if (!hash) {
+            dispatch({
+                type: ActionTypes.SET_POST,
+                payload: new Post({
+                    ...post,
+                    createdAt: new Date(post.createdAt),
+                }),
+            });
+        }
     }
 
     return json.payload.map((post: any) => post.messageId);
@@ -100,11 +161,13 @@ export const usePost = (messageId?: string): Post | null => {
 }
 
 export const useMeta = (messageId: string)  => {
-    return useSelector((state: AppRootState) => {
+    return useSelector((state: AppRootState): PostMeta => {
         return state.posts.meta[messageId] || {
             replyCount: 0,
             repostCount: 0,
             likeCount: 0,
+            liked: 0,
+            reposted: 0,
         };
     }, deepEqual);
 }
@@ -126,7 +189,8 @@ export default function posts(state = initialState, action: Action): State {
 
 function reduceSetPost(state: State, action: Action): State {
     const post = action.payload as Post;
-    const messageId = post.creator + '/' + post.hash();
+    const hash = post.hash();
+    const messageId = post.creator ? post.creator + '/' + hash : hash;
 
     return {
         ...state,
@@ -142,7 +206,8 @@ function reduceSetPosts(state: State, action: Action): State {
     const posts: { [h: string]: Post } = {};
 
     for (const post of payload) {
-        const messageId = post.creator + '/' + post.hash();
+        const hash = post.hash();
+        const messageId = post.creator ? post.creator + '/' + hash : hash;
         posts[messageId] = post;
     }
 
@@ -153,7 +218,12 @@ function reduceSetPosts(state: State, action: Action): State {
 }
 
 function reduceSetMeta(state: State, action: Action): State {
-    const {messageId, meta} = action.payload;
+    const post = action.payload;
+    const {meta} = post;
+
+    const messageId = post.subtype === PostMessageSubType.Repost
+        ? post.payload.reference
+        : post.messageId;
 
     return {
         ...state,

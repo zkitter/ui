@@ -5,6 +5,8 @@ import {convertToRaw, EditorState} from "draft-js";
 import {markdownConvertOptions} from "../components/Editor";
 import {Dispatch} from "redux";
 import {
+    Connection,
+    ConnectionMessageSubType,
     MessageType,
     Moderation,
     ModerationMessageSubType,
@@ -167,7 +169,7 @@ export const submitPost = (reference = '') => async (dispatch: ThunkDispatch<any
     const post = new Post({
         type: MessageType.Post,
         subtype: reference ? PostMessageSubType.Reply : PostMessageSubType.Default,
-        creator: ensName,
+        creator: semaphore.keypair.privKey ? '' : ensName,
         payload: {
             content: markdown,
             reference: reference,
@@ -294,8 +296,59 @@ export const submitModeration = (reference = '', subtype: ModerationMessageSubTy
             type: ActionTypes.SET_SUBMITTING,
             payload: false,
         });
+    } catch (e) {
+        dispatch({
+            type: ActionTypes.SET_SUBMITTING,
+            payload: false,
+        });
+        throw e;
+    }
+}
 
-        dispatch(setDraft(EditorState.createEmpty(), reference));
+
+export const submitConnection = (name: string, subtype: ConnectionMessageSubType) => async (dispatch: Dispatch, getState: () => AppRootState) => {
+    const { web3 } = getState();
+    const {
+        ensName,
+    } = web3;
+    const gunUser = gun.user();
+
+    // @ts-ignore
+    if (!gunUser.is) return;
+
+    dispatch({
+        type: ActionTypes.SET_SUBMITTING,
+        payload: true,
+    });
+
+    const connection = new Connection({
+        type: MessageType.Connection,
+        subtype: subtype,
+        creator: ensName,
+        payload: {
+            name: name,
+        },
+    });
+
+    const {
+        messageId,
+        hash,
+        ...json
+    } = await connection.toJSON();
+
+    try {
+        // @ts-ignore
+        await gunUser
+            .get('message')
+            .get(messageId)
+            // @ts-ignore
+            .put(json);
+
+        dispatch({
+            type: ActionTypes.SET_SUBMITTING,
+            payload: false,
+        });
+
     } catch (e) {
         dispatch({
             type: ActionTypes.SET_SUBMITTING,
@@ -370,6 +423,12 @@ export const useDraft = (reference = ''): Draft => {
     }, deepEqual);
 }
 
+export const useSubmitting = (): boolean => {
+    return useSelector((state: AppRootState) => {
+        return state.drafts.submitting;
+    }, deepEqual);
+}
+
 export default function drafts(state = initialState, action: Action): State {
     switch (action.type) {
         case ActionTypes.SET_DRAFT:
@@ -379,6 +438,11 @@ export default function drafts(state = initialState, action: Action): State {
                     ...state.map,
                     [action.payload.reference || '']: action.payload,
                 },
+            };
+        case ActionTypes.SET_SUBMITTING:
+            return {
+                ...state,
+                submitting: action.payload,
             };
         default:
             return state;

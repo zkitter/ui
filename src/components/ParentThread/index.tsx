@@ -31,7 +31,14 @@ export default function ParentThread(props: Props): ReactElement {
             <Post
                 messageId={parent}
                 className="cursor-pointer hover:bg-gray-50"
-                onClick={() => history.push(`/${creator}/status/${hash}`)}
+                onClick={() => {
+                    if (!hash) {
+                        history.push(`/post/${creator}`)
+
+                    } else {
+                        history.push(`/${creator}/status/${hash}`)
+                    }
+                }}
                 isParent
             />
         </>

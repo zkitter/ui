@@ -21,6 +21,7 @@ import Icon from "../Icon";
 import Menuable from "../Menuable";
 import ENSLogoSVG from "../../../static/icons/ens-logo.svg";
 import SpinnerGIF from "../../../static/icons/spinner.gif";
+import gun from "../../util/gun";
 
 type Props = {
     onConnect?: () => Promise<void>;
@@ -140,7 +141,7 @@ function Web3ButtonAction(props: Props): ReactElement {
     }, []);
 
     const lock = useCallback(async () => {
-        setOpened(false);
+        gun.user().leave();
         await dispatch(setSemaphoreID({
             keypair: {
                 pubKey: '',
@@ -151,6 +152,7 @@ function Web3ButtonAction(props: Props): ReactElement {
             identityTrapdoor: '',
         }))
         await dispatch(setGunPrivateKey(''));
+        setOpened(false);
     }, []);
 
     if (!loggedIn && !web3Loading) {
@@ -166,7 +168,7 @@ function Web3ButtonAction(props: Props): ReactElement {
                             label: 'ENS',
                             iconUrl: ensFetching ? SpinnerGIF : ENSLogoSVG,
                             onClick: unlockENS,
-                            disabled: ensFetching,
+                            disabled: ensFetching || !ensName,
                         },
                         {
                             label: 'Incognito',
@@ -192,7 +194,7 @@ function Web3ButtonAction(props: Props): ReactElement {
                                 : (
                                     <Icon
                                         className={classNames(
-                                            "hover:text-green-500",
+                                            "hover:text-green-500 transition-colors",
                                             {
                                                 "text-green-500": opened,
                                             }
@@ -215,6 +217,7 @@ function Web3ButtonAction(props: Props): ReactElement {
             <div
                 className={classNames(
                     "flex flex-row flex-nowrap items-center",
+                    "transition-colors",
                     "web3-button__alt-action",
                 )}
                 onClick={lock}
@@ -222,6 +225,7 @@ function Web3ButtonAction(props: Props): ReactElement {
                 <Icon
                     className={classNames(
                         "text-green-500 hover:text-red-500",
+                        "transition-colors",
                     )}
                     fa="fas fa-unlock"
                 />

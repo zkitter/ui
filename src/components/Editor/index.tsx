@@ -21,6 +21,7 @@ type Props = {
     className?: string;
     disabled?: boolean;
     readOnly?: boolean;
+    loading?: boolean;
     onPost?: () => Promise<void>;
 }
 
@@ -30,6 +31,7 @@ export default function Editor(props: Props): ReactElement {
         disabled,
         readOnly,
         onPost,
+        loading,
         onChange = () => null,
     } = props;
 
@@ -119,6 +121,7 @@ export default function Editor(props: Props): ReactElement {
                         btnType="primary"
                         onClick={onPost}
                         disabled={!editorState.getCurrentContent().hasText()}
+                        loading={loading}
                     >
                         Post
                     </Button>

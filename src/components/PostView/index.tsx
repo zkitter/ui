@@ -14,8 +14,8 @@ type Props = {
 }
 
 export default function PostView(props: Props): ReactElement {
-    const {name, hash} = useParams<{name: string; hash: string}>();
-    const reference = name + '/' + hash;
+    const {name, hash} = useParams<{name?: string; hash: string}>();
+    const reference = name ? name + '/' + hash : hash;
 
     const [limit, setLimit] = useState(20);
     const [offset, setOffset] = useState(0);
@@ -37,7 +37,6 @@ export default function PostView(props: Props): ReactElement {
             if (!messageId) return;
 
             const messageIds: any = await dispatch(fetchReplies(messageId, limit, offset));
-
             if (messageIds.length) {
                 setOrder(messageIds);
             }
@@ -99,7 +98,14 @@ export default function PostView(props: Props): ReactElement {
                                     key={messageId}
                                     className="transition-colors cursor-pointer border-t border-gray-100 hover:bg-gray-50"
                                     messageId={messageId}
-                                    onClick={() => history.push(`/${creator}/status/${hash}`)}
+                                    onClick={() => {
+                                        if (!hash) {
+                                            history.push(`/post/${creator}`)
+
+                                        } else {
+                                            history.push(`/${creator}/status/${hash}`)
+                                        }
+                                    }}
                                 />
                             );
                         })

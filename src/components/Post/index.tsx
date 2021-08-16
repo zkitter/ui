@@ -11,7 +11,7 @@ import Editor, {markdownConvertOptions} from "../Editor";
 import {convertFromRaw, EditorState} from "draft-js";
 import DraftEditor from "draft-js-plugins-editor";
 import Modal, {ModalContent, ModalHeader} from "../Modal";
-import {setDraft, submitModeration, submitPost, submitRepost, useDraft} from "../../ducks/drafts";
+import {setDraft, submitModeration, submitPost, submitRepost, useDraft, useSubmitting} from "../../ducks/drafts";
 import {useDispatch} from "react-redux";
 import {ModerationMessageSubType, PostMessageSubType} from "../../util/message";
 import {useLoggedIn} from "../../ducks/web3";
@@ -75,6 +75,7 @@ function ReplyEditorModal(props: ReplyEditorModalProps): ReactElement {
     const dispatch = useDispatch();
     const post = usePost(props.messageId);
     const draft = useDraft(props.messageId);
+    const submitting = useSubmitting();
 
     const updateDraft = useCallback((newEditorState) => {
         dispatch(setDraft(newEditorState, messageId));
@@ -100,6 +101,7 @@ function ReplyEditorModal(props: ReplyEditorModalProps): ReactElement {
                     editorState={draft.editorState}
                     onChange={updateDraft}
                     onPost={submitReply}
+                    loading={submitting}
                 />
             </ModalContent>
         </Modal>
@@ -135,6 +137,7 @@ export function ExpandedPost(props: {
     }, [messageId]);
 
     const gotoUserProfile = useCallback(e => {
+        if (!user?.ens) return;
         e.stopPropagation();
         history.push(`/${user?.ens}/`);
     }, [user?.ens]);
@@ -157,7 +160,11 @@ export function ExpandedPost(props: {
             onClick={props.onClick}
         >
             <div className="flex flex-row flex-nowrap flex-grow-0 flex-shrink-0">
-                <Avatar className="mr-3 w-12 h-12" name={user.ens} />
+                <Avatar
+                    className="mr-3 w-12 h-12"
+                    name={user.ens}
+                    incognito={post.creator === ''}
+                />
                 <div className="flex flex-col flex-nowrap items-start text-light w-full cursor-pointer">
                     <div
                         className="font-bold text-base mr-1 hover:underline"
@@ -165,7 +172,9 @@ export function ExpandedPost(props: {
                     >
                         {user.name}
                     </div>
-                    <div className="text-gray-400 mr-1" onClick={gotoUserProfile}>@{user.ens}</div>
+                    <div className="text-gray-400 mr-1" onClick={gotoUserProfile}>
+                        {user.ens && `@${user.ens}`}
+                    </div>
                 </div>
                 <div className="flex flex-row flex-nowrap flex-grow flex-shrink justify-end">
                     <Icon
@@ -200,16 +209,20 @@ export function ExpandedPost(props: {
                 </div>
                 <div className="flex flex-row flex-nowrap items-center mt-2 pt-3 border-t border-gray-100 w-full post__footer">
                     <PostButton
-                        iconClassName="hover:bg-blue-100 hover:text-blue-500"
+                        iconClassName="hover:bg-blue-50 hover:text-blue-400"
                         fa="far fa-comments"
                         count={meta.replyCount}
                         onClick={() => setShowReply(true)}
                         large
                     />
                     <PostButton
+                        textClassName={classNames({
+                            "text-green-400": meta.reposted,
+                        })}
                         iconClassName={classNames(
                             {
-                                "hover:bg-green-100 hover:text-green-500": loggedIn,
+                                "hover:bg-green-50 hover:text-green-400": loggedIn,
+                                "text-green-400": meta.reposted,
                             },
                         )}
                         fa="fas fa-retweet"
@@ -219,12 +232,19 @@ export function ExpandedPost(props: {
                         large
                     />
                     <PostButton
+                        textClassName={classNames({
+                            "text-red-400": meta.liked,
+                        })}
                         iconClassName={classNames(
                             {
-                                "hover:bg-red-100 hover:text-red-500": loggedIn,
+                                "hover:bg-red-50 hover:text-red-400": loggedIn,
+                                "text-red-400": meta.liked,
                             },
                         )}
-                        fa="far fa-heart"
+                        fa={classNames({
+                            "far fa-heart": !meta.liked,
+                            "fas fa-heart": meta.liked,
+                        })}
                         count={meta.likeCount}
                         onClick={onLike}
                         disabled={!loggedIn}
@@ -251,7 +271,7 @@ export function RegularPost(props: {
     const post = originalPost?.subtype === PostMessageSubType.Repost
         ? referencedPost
         : originalPost;
-    const user = useUser(post?.creator);
+    let user = useUser(post?.creator);
     const meta = useMeta(messageId);
     const dispatch = useDispatch();
     const loggedIn = useLoggedIn();
@@ -266,6 +286,7 @@ export function RegularPost(props: {
     }, [messageId]);
 
     const gotoUserProfile = useCallback(e => {
+        if (!user?.ens) return;
         e.stopPropagation();
         history.push(`/${user?.ens}/`);
     }, [user?.ens]);
@@ -302,6 +323,7 @@ export function RegularPost(props: {
                     <Avatar
                         className="mr-3 w-12 h-12"
                         name={user.ens}
+                        incognito={post.creator === ''}
                     />
                     {
                         !!isParent && (
@@ -322,7 +344,7 @@ export function RegularPost(props: {
                             {user.name}
                         </div>
                         <div className="text-gray-400 mr-1" onClick={gotoUserProfile}>
-                            @{user.ens}
+                            {user.ens && `@${user.ens}`}
                         </div>
                         <div className="text-gray-400 mr-1">•</div>
                         <div className="text-gray-400 hover:underline" onClick={gotoUserProfile}>
@@ -357,15 +379,19 @@ export function RegularPost(props: {
                     </div>
                     <div className="flex flex-row flex-nowrap items-center post__footer">
                         <PostButton
-                            iconClassName="hover:bg-blue-100 hover:text-blue-500"
+                            iconClassName="hover:bg-blue-50 hover:text-blue-400"
                             fa="far fa-comments"
                             count={meta.replyCount}
                             onClick={() => setShowReply(true)}
                         />
                         <PostButton
+                            textClassName={classNames({
+                                "text-green-400": meta.reposted,
+                            })}
                             iconClassName={classNames(
                                 {
-                                    "hover:bg-green-100 hover:text-green-500": loggedIn,
+                                    "hover:bg-green-50 hover:text-green-400": loggedIn,
+                                    "text-green-400": meta.reposted,
                                 },
                             )}
                             fa="fas fa-retweet"
@@ -374,12 +400,19 @@ export function RegularPost(props: {
                             disabled={!loggedIn}
                         />
                         <PostButton
+                            textClassName={classNames({
+                                "text-red-400": meta.liked,
+                            })}
                             iconClassName={classNames(
                                 {
-                                    "hover:bg-red-100 hover:text-red-500": loggedIn,
+                                    "hover:bg-red-50 hover:text-red-400": loggedIn,
+                                    "text-red-400": meta.liked,
                                 },
                             )}
-                            fa="far fa-heart"
+                            fa={classNames({
+                                "far fa-heart": !meta.liked,
+                                "fas fa-heart": meta.liked,
+                            })}
                             count={meta.likeCount}
                             onClick={onLike}
                             disabled={!loggedIn}
@@ -464,6 +497,7 @@ type PostButtonProps = {
     large?: boolean;
     className?: string;
     iconClassName?: string;
+    textClassName?: string;
     disabled?: boolean;
 }
 
@@ -496,9 +530,9 @@ function PostButton(props: PostButtonProps): ReactElement {
                 size={props.large ? 1.25 : 1}
             />
             <span
-                className={classNames("ml-2", {
+                className={classNames("ml-1", {
                     'text-lg': props.large,
-                })}
+                }, props.textClassName)}
             >
                 {props.count}
             </span>

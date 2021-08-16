@@ -25,7 +25,7 @@ export default function Button(props: Props): ReactElement {
             className={classNames(
                 'rounded-xl',
                 'flex flex-row flex-nowrap items-center',
-                'h-10 px-4 button',
+                'h-10 px-4 button transition-colors',
                 {
                     'button--primary': btnType === 'primary',
                     'button--secondary': btnType === 'secondary',

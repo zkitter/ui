@@ -38,52 +38,67 @@ type State = {
 
 const initialState: State = {};
 
+const fetchPromises: {
+    [name: string]: Promise<any>;
+} = {};
+
 export const getUser = (ensName: string) => async (dispatch: Dispatch, getState: () => AppRootState): Promise<User> => {
-    const state = getState();
-    const users = state.users;
-    const user = users[ensName];
+    if (fetchPromises[ensName]) return fetchPromises[ensName];
 
-    if (user) return user;
+    const fetchPromise = new Promise<User>(async (resolve, reject) => {
+        const state = getState();
+        const users = state.users;
+        const user = users[ensName];
 
-    const address = await defaultENS.name(ensName).getAddress();
+        if (user) return user;
 
-    const resp = await fetch(`${config.indexerAPI}/v1/users/${ensName}`);
-    const json = await resp.json();
+        const address = await defaultENS.name(ensName).getAddress();
 
-    dispatch({
-        type: ActionTypes.SET_USER,
-        payload: {
+        const resp = await fetch(`${config.indexerAPI}/v1/users/${ensName}`);
+        const json = await resp.json();
+
+        dispatch({
+            type: ActionTypes.SET_USER,
+            payload: {
+                ens: ensName,
+                name: json.payload.name,
+                pubkey: json.payload.pubkey,
+                address,
+                bio: json.payload.bio || '',
+                profileImage: json.payload.profileImage || '',
+                coverImage: json.payload.coverImage || '',
+                website: json.payload.website || '',
+                joinedAt: json.payload.joinedAt,
+                meta: {
+                    followerCount: json.payload.meta?.followerCount || 0,
+                    followingCount: json.payload.meta?.followingCount || 0,
+                },
+            },
+        });
+
+
+        const value = {
             ens: ensName,
             name: json.payload.name,
             pubkey: json.payload.pubkey,
             address,
-            bio: json.payload.bio || '',
-            profileImage: json.payload.profileImage || '',
-            coverImage: json.payload.coverImage || '',
-            website: json.payload.website || '',
-            joinedAt: json.payload.joinedAt,
+            profileImage: '',
+            coverImage: '',
+            bio: '',
+            website: '',
             meta: {
-                followerCount: json.payload.meta?.followerCount || 0,
-                followingCount: json.payload.meta?.followingCount || 0,
+                followerCount: 0,
+                followingCount: 0,
             },
-        },
+            joinedAt: 0,
+        };
+
+        resolve(value);
     });
 
-    return {
-        ens: ensName,
-        name: json.payload.name,
-        pubkey: json.payload.pubkey,
-        address,
-        profileImage: '',
-        coverImage: '',
-        bio: '',
-        website: '',
-        meta: {
-            followerCount: 0,
-            followingCount: 0,
-        },
-        joinedAt: 0,
-    };
+    fetchPromises[ensName] = fetchPromise;
+
+    return fetchPromise;
 }
 
 export const setUser = (user: User) => ({
@@ -93,6 +108,24 @@ export const setUser = (user: User) => ({
 
 export const useUser = (name = ''): User | null => {
     return useSelector((state: AppRootState) => {
+        if (name === '') {
+            return {
+                ens: '',
+                name: "Anonymous",
+                pubkey: '',
+                address: '',
+                coverImage: '',
+                profileImage: '',
+                bio: '',
+                website: '',
+                joinedAt: 0,
+                meta: {
+                    followerCount: 0,
+                    followingCount: 0,
+                },
+            }
+        }
+
         return state.users[name] || null;
     }, deepEqual);
 }

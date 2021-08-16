@@ -60,6 +60,7 @@ export default function Menuable(props: MenuableProps): ReactElement {
                                 )}
                                 onClick={e => {
                                     e.stopPropagation();
+                                    if (item.disabled) return;
                                     item.onClick && item.onClick(e);
                                 }}
                             >
@@ -79,6 +80,7 @@ export default function Menuable(props: MenuableProps): ReactElement {
                                         <Icon
                                             fa={item.iconFA}
                                             url={item.iconUrl}
+                                            className={classNames({ 'opacity-50': item.disabled })}
                                         />
                                     )
                                 }

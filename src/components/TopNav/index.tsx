@@ -1,15 +1,43 @@
-import React, {ReactElement} from "react";
+import React, {ReactElement, useCallback} from "react";
 import Icon from "../Icon";
 import classNames from "classnames";
 import "./top-nav.scss"
 import {useHistory, useLocation} from "react-router";
 import Web3Button from "../Web3Button";
-import {useAccount, useENSName, useLoggedIn} from "../../ducks/web3";
+import {
+    addGunKeyToTextRecord,
+    generateGunKeyPair,
+    useAccount,
+    useENSFetching,
+    useENSName,
+    useGunKey,
+    useLoggedIn,
+    useSemaphoreID,
+    useWeb3Loading
+} from "../../ducks/web3";
+import Button from "../Button";
+import {useDispatch} from "react-redux";
 
 export default function TopNav(): ReactElement {
     const account = useAccount();
     const loggedIn = useLoggedIn();
     const ensName = useENSName();
+    const semaphore = useSemaphoreID();
+    const gunKey = useGunKey();
+    const web3Loading = useWeb3Loading();
+    const ensFetching = useENSFetching();
+    const dispatch = useDispatch();
+
+    const showRegisterENSButton = !loggedIn && account && !web3Loading && !ensFetching && !ensName;
+    const showAddTextRecordButton = !loggedIn && account && !web3Loading && !ensFetching && ensName && !gunKey.pub;
+
+    const updateTextRecord = useCallback(async () => {
+        const gunPair: any = await dispatch(generateGunKeyPair(0));
+
+        if (gunPair.pub) {
+            await dispatch(addGunKeyToTextRecord(gunPair.pub));
+        }
+    }, [])
 
     return (
         <div
@@ -40,6 +68,26 @@ export default function TopNav(): ReactElement {
                 </div>
             </div>
             <div className="flex flex-row flex-nowrap items-center flex-grow-0 flex-shrink-0">
+                {
+                    showRegisterENSButton && (
+                        <Button
+                            className="mr-2 border border-yellow-300 bg-yellow-50 text-yellow-500"
+                            onClick={() => window.open(`https://app.ens.domains/address/${account}`)}
+                        >
+                            Register ENS
+                        </Button>
+                    )
+                }
+                {
+                    showAddTextRecordButton && (
+                        <Button
+                            className="mr-2 border border-yellow-300 bg-yellow-50 text-yellow-500"
+                            onClick={updateTextRecord}
+                        >
+                            Create Record
+                        </Button>
+                    )
+                }
                 <Web3Button
                     className={classNames("rounded-xl", {
                         'border border-gray-100': account,

@@ -30,6 +30,9 @@ export default function App(): ReactElement {
                     <Route path="/:name/status/:hash">
                         <PostView />
                     </Route>
+                    <Route path="/post/:hash">
+                        <PostView />
+                    </Route>
 
                     <Route path="/home"></Route>
                     <Route path="/notifications"></Route>

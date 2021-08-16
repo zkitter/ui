@@ -11,12 +11,15 @@ const {
 } = require('@ensdomains/ensjs');
 import {Dispatch} from "redux";
 import Web3Modal from "web3modal";
-import {generateGunKeyPairFromHex, generateSemaphoreIDFromHex, validateGunPublicKey} from "../util/crypto";
+import {
+    generateGunKeyPairFromHex,
+    generateSemaphoreIDFromHex,
+    validateGunPublicKey,
+} from "../util/crypto";
 import {defaultENS, defaultWeb3} from "../util/web3";
 import {authenticateGun} from "../util/gun";
 // @ts-ignore
 import * as snarkjs from 'snarkjs';
-import {getCircuit, getProvingKey} from "../util/fetch";
 
 type SnarkBigInt = snarkjs.bigInt
 
@@ -39,6 +42,7 @@ enum ActionTypes {
     SET_GUN_PRIVATE_KEY = 'web3/setGunPrivateKey',
     SET_SEMAPHORE_ID = 'web3/setSemaphoreID',
     SET_SEMAPHORE_ID_PATH = 'web3/setSemaphoreIDPath',
+    ADD_PENDING = 'web3/addPending',
 }
 
 type Action = {
@@ -75,6 +79,9 @@ type State = {
             root: string;
         } | null;
     };
+    pending: {
+        createRecordTx: string;
+    }
 }
 
 const initialState: State = {
@@ -98,6 +105,9 @@ const initialState: State = {
         identityNullifier: '',
         identityTrapdoor: '',
         identityPath: null,
+    },
+    pending: {
+        createRecordTx: '',
     },
 };
 
@@ -146,6 +156,14 @@ export const setUnlocking = (status: boolean) => ({
 export const setFetchingENS = (status: boolean) => ({
     type: ActionTypes.SET_FETCHING_ENS,
     payload: status,
+});
+
+export const setPendingTx = (txHash: string, key = '') => ({
+    type: ActionTypes.ADD_PENDING,
+    payload: {
+        key: key || txHash,
+        txHash,
+    },
 });
 
 export const setENSName = (name: string) => ({
@@ -307,7 +325,11 @@ export const addGunKeyToTextRecord = (pubkey: string) => async (dispatch: Dispat
         ensAddress: getEnsAddress('1'),
     });
 
-    return ens.name(ensName).setText('gun.social', pubkey);
+    const tx = await ens.name(ensName).setText('gun.social', pubkey);
+
+    dispatch(setPendingTx(tx.hash));
+
+    return tx;
 }
 
 export const generateGunKeyPair = (nonce = 0) =>
@@ -383,7 +405,10 @@ export const lookupENS = () => async (dispatch: Dispatch, getState: () => AppRoo
 
         }
 
-        dispatch(setENSName(name || ''));
+        if (name !== '0x0000000000000000000000000000000000000000') {
+            dispatch(setENSName(name || ''));
+        }
+
         dispatch(setFetchingENS(false));
     } catch (e) {
         dispatch(setFetchingENS(false));
@@ -463,6 +488,14 @@ export default function web3(state = initialState, action: Action): State {
                     priv: action.payload,
                 },
             };
+        case ActionTypes.ADD_PENDING:
+            return {
+                ...state,
+                pending: {
+                    ...state.pending,
+                    [action.payload.key]: action.payload.txHash,
+                },
+            };
         default:
             return state;
     }
@@ -483,7 +516,15 @@ export const useLoggedIn = () => {
             semaphore,
         } = state.web3;
 
-        return !!(web3 && account && (gun.priv || semaphore.keypair.privKey));
+        const hasGun = !!gun.priv && !!gun.pub;
+        const hasSemaphore = !!semaphore.keypair.privKey
+            && !!semaphore.keypair.pubKey
+            && !!semaphore.identityNullifier
+            && !!semaphore.identityTrapdoor
+            && !!semaphore.identityPath
+            && !!semaphore.commitment;
+
+        return !!(web3 && account && (hasGun || hasSemaphore));
     }, deepEqual);
 }
 
