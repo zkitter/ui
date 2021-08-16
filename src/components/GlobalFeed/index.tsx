@@ -3,15 +3,15 @@ import classNames from "classnames";
 import {EditorState} from 'draft-js';
 import Post from "../Post";
 import {useDispatch} from "react-redux";
-import {fetchHomeFeed} from "../../ducks/posts";
-import "./home-feed.scss";
+import {fetchPosts} from "../../ducks/posts";
+import "./global-feed.scss";
 import Editor from "../Editor";
 import {useLoggedIn} from "../../ducks/web3";
 import {setDraft, submitPost, useDraft, useSubmitting} from "../../ducks/drafts";
 import {useHistory} from "react-router";
 import InfiniteScrollable from "../InfiniteScrollable";
 
-export default function HomeFeed(): ReactElement {
+export default function GlobalFeed(): ReactElement {
     const [limit, setLimit] = useState(20);
     const [offset, setOffset] = useState(0);
     const [order, setOrder] = useState<string[]>([]);
@@ -27,12 +27,12 @@ export default function HomeFeed(): ReactElement {
 
     const fetchMore = useCallback(async (reset = false) => {
         if (reset) {
-            const messageIds: any = await dispatch(fetchHomeFeed(20, 0));
+            const messageIds: any = await dispatch(fetchPosts(undefined, 20, 0));
             setOffset(20);
             setOrder(messageIds);
         } else {
             if (order.length % limit) return;
-            const messageIds: any = await dispatch(fetchHomeFeed(limit, offset));
+            const messageIds: any = await dispatch(fetchPosts(undefined, limit, offset));
             setOffset(offset + limit);
             setOrder(order.concat(messageIds));
         }
@@ -40,7 +40,7 @@ export default function HomeFeed(): ReactElement {
 
     return (
         <InfiniteScrollable
-            className={classNames('flex-grow home-feed',
+            className={classNames('flex-grow global-feed',
                 'px-4 py-2',
                 {},
             )}

@@ -41,16 +41,57 @@ const initialState: State = {
     meta: {},
 };
 
-export const fetchPost = (messageId: string) =>
-    async (dispatch: ThunkDispatch<any, any, any>): Promise<PostMessageOption | null> =>
-{
+
+export const fetchMeta = (messageId: string) => async (
+    dispatch: ThunkDispatch<any, any, any>, getState: () => AppRootState
+) => {
+    const {
+        web3: {
+            ensName,
+            gun: { pub, priv },
+        },
+    } = getState();
     const [username, hash] = messageId.split('/');
 
     if (!hash) {
         return null;
     }
 
+    const contextualName = (ensName && pub && priv) ? ensName : undefined;
+    const resp = await fetch(`${config.indexerAPI}/v1/post/${hash || username}`, {
+        method: 'GET',
+        // @ts-ignore
+        headers: {
+            'x-contextual-name': contextualName,
+        },
+    });
+    const json = await resp.json();
+    const post = json.payload;
+
+    dispatch({
+        type: ActionTypes.SET_META,
+        payload: {
+            messageId: post.subtype === PostMessageSubType.Repost
+                ? post.payload.reference
+                : post.messageId,
+            meta: post.meta,
+        },
+    });
+}
+
+export const fetchPost = (messageId: string) =>
+    async (
+        dispatch: ThunkDispatch<any, any, any>,
+        getState: () => AppRootState,
+    ): Promise<PostMessageOption | null> =>
+{
+    const [username, hash] = messageId.split('/');
     const user: any = await dispatch(getUser(username));
+
+    if (!hash) {
+        return null;
+    }
+
     const message = await fetchMessage(`~${user.pubkey}/message/${messageId}`);
 
     dispatch({
@@ -82,6 +123,55 @@ export const fetchPosts = (creator?: string, limit = 10, offset = 0) =>
     const creatorQuery = creator ? `&creator=${encodeURIComponent(creator)}` : '';
     const contextualName = (ensName && pub && priv) ? ensName : undefined;
     const resp = await fetch(`${config.indexerAPI}/v1/posts?limit=${limit}&offset=${offset}${creatorQuery}`, {
+        method: 'GET',
+        // @ts-ignore
+        headers: {
+            'x-contextual-name': contextualName,
+        },
+    });
+    const json = await resp.json();
+
+    for (const post of json.payload) {
+        const [creator, hash] = post.messageId.split('/');
+
+        dispatch({
+            type: ActionTypes.SET_META,
+            payload: {
+                messageId: post.subtype === PostMessageSubType.Repost
+                    ? post.payload.reference
+                    : post.messageId,
+                meta: post.meta,
+            },
+        });
+
+        if (!hash) {
+            dispatch({
+                type: ActionTypes.SET_POST,
+                payload: new Post({
+                    ...post,
+                    createdAt: new Date(post.createdAt),
+                }),
+            });
+        }
+    }
+
+    return json.payload.map((post: any) => post.messageId);
+}
+
+export const fetchHomeFeed = (limit = 10, offset = 0) =>
+    async (
+        dispatch: ThunkDispatch<any, any, any>,
+        getState: () => AppRootState,
+    ) =>
+{
+    const {
+        web3: {
+            ensName,
+            gun: { pub, priv },
+        },
+    } = getState();
+    const contextualName = (ensName && pub && priv) ? ensName : undefined;
+    const resp = await fetch(`${config.indexerAPI}/v1/homefeed?limit=${limit}&offset=${offset}`, {
         method: 'GET',
         // @ts-ignore
         headers: {

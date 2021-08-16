@@ -1,15 +1,9 @@
-@import "../../util/variable";
-
-.profile-view {
+.global-feed {
   max-width: 37.25rem;
   overflow-y: auto;
 
   &::-webkit-scrollbar {
     width: 0;  /* Remove scrollbar space */
     background: transparent;  /* Optional: just make scrollbar invisible */
-  }
-
-  &__data-group + &__data-group {
-    margin-left: 1rem;
   }
 }

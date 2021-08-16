@@ -1,7 +1,7 @@
-import React, {MouseEventHandler, ReactElement, useEffect, useState} from "react";
+import React, {MouseEventHandler, ReactElement, useCallback, useEffect, useState} from "react";
 import {useDispatch} from "react-redux";
 import {useHistory, useParams} from "react-router";
-import {fetchPost, fetchReplies} from "../../ducks/posts";
+import {fetchPost, fetchReplies, useMeta} from "../../ducks/posts";
 import classNames from "classnames";
 import Post from "../Post";
 
@@ -11,9 +11,9 @@ type Props = {
     className?: string;
     postClassName?: string;
     onClick?: MouseEventHandler;
+    clearObserver?: () => void;
     expand?: boolean;
 };
-
 
 export default function Thread(props: Props): ReactElement {
     const { messageId, level = 0 } = props;
@@ -22,17 +22,29 @@ export default function Thread(props: Props): ReactElement {
     const [order, setOrder] = useState<string[]>([]);
     const history = useHistory();
     const dispatch = useDispatch();
+    const meta = useMeta(messageId);
+
+    const fetchMore = useCallback(async (reset = false) => {
+        if (reset) {
+            const messageIds: any = await dispatch(fetchReplies(messageId, 20, 0));
+            setOffset(messageIds.length);
+            setOrder(messageIds);
+        } else {
+            const messageIds: any = await dispatch(fetchReplies(messageId, limit, offset));
+            setOffset(offset + messageIds.length);
+            setOrder(order.concat(messageIds));
+        }
+    }, [limit, offset, order, messageId]);
+
+    const showMore = useCallback(async () => {
+        props.clearObserver && props.clearObserver();
+        await fetchMore();
+    }, [fetchMore, messageId]);
 
     useEffect(() => {
         (async function onThreadMount() {
             if (!messageId || level >= 3) return;
-
-            const messageIds: any = await dispatch(fetchReplies(messageId, limit, offset));
-
-            if (messageIds.length) {
-                setOrder(messageIds);
-            }
-
+            await fetchMore(true);
         })();
     }, [messageId, level]);
 
@@ -57,7 +69,7 @@ export default function Thread(props: Props): ReactElement {
                       const [creator, hash] = messageId.split('/');
 
                       return (
-                          <div className="py-1 bg-white">
+                          <div className="pt-1 bg-white">
                               <Thread
                                   key={messageId}
                                   level={level + 1}
@@ -67,10 +79,25 @@ export default function Thread(props: Props): ReactElement {
                                   )}
                                   messageId={messageId}
                                   onClick={() => history.push(`/${creator}/status/${hash}`)}
+                                  clearObserver={props.clearObserver}
                               />
                           </div>
                       );
                   })
+              }
+              {
+                  order.length < meta.replyCount && (
+                      <div
+                          className={classNames(
+                              "flex flex-row flex-nowrap items-center justify-center",
+                              "p-4 bg-white text-blue-400 hover:text-blue-300 cursor-pointer hover:underline",
+                              "border-t border-gray-100"
+                          )}
+                          onClick={showMore}
+                      >
+                          Show More
+                      </div>
+                  )
               }
           </div>
       </div>

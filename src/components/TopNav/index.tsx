@@ -64,7 +64,7 @@ export default function TopNav(): ReactElement {
                     { loggedIn && <TopNavIcon fa="fas fa-home" pathname="/home" /> }
                     { loggedIn && <TopNavIcon fa="fas fa-user" pathname={`/${ensName}/`} /> }
                     <TopNavIcon fa="fas fa-globe-asia" pathname="/explore" />
-                    <TopNavIcon fa="fas fa-bell" pathname="/notifications" />
+                    {/*<TopNavIcon fa="fas fa-bell" pathname="/notifications" />*/}
                 </div>
             </div>
             <div className="flex flex-row flex-nowrap items-center flex-grow-0 flex-shrink-0">

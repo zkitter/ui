@@ -17,6 +17,8 @@ import deepEqual from "fast-deep-equal";
 import {submitConnection, submitProfile} from "../../ducks/drafts";
 import {ConnectionMessageSubType, ProfileMessageSubType} from "../../util/message";
 import Avatar from "../Avatar";
+import EtherScanSVG from "../../../static/icons/etherscan-logo-gray-500.svg";
+import InfiniteScrollable from "../InfiniteScrollable";
 
 export default function ProfileView(): ReactElement {
     const {name} = useParams<{name: string}>();
@@ -25,26 +27,35 @@ export default function ProfileView(): ReactElement {
     const [order, setOrder] = useState<string[]>([]);
     const dispatch = useDispatch();
     const history = useHistory();
+    const loggedIn = useLoggedIn();
 
     useEffect(() => {
         dispatch(getUser(name));
         (async function onProfileViewViewMount() {
-            if (!name) return;
-
-            const messageIds: any = await dispatch(fetchPosts(name, limit, offset));
-
-            if (messageIds.length) {
-                setOrder(messageIds);
-            }
+            await fetchMore(true);
         })();
-    }, [name]);
+    }, [name, loggedIn]);
+
+    const fetchMore = useCallback(async (reset = false) => {
+        if (reset) {
+            const messageIds: any = await dispatch(fetchPosts(name, 20, 0));
+            setOffset(20);
+            setOrder(messageIds);
+        } else {
+            if (order.length % limit) return;
+            const messageIds: any = await dispatch(fetchPosts(name, limit, offset));
+            setOffset(offset + limit);
+            setOrder(order.concat(messageIds));
+        }
+    }, [limit, offset, order, name]);
 
     return (
-        <div
+        <InfiniteScrollable
             className={classNames(
                 'flex-grow profile-view',
                 'mx-4 py-2',
             )}
+            onScrolledToBottom={fetchMore}
         >
             <ProfileCard />
             {
@@ -68,7 +79,7 @@ export default function ProfileView(): ReactElement {
                     );
                 })
             }
-        </div>
+        </InfiniteScrollable>
     )
 }
 
@@ -188,10 +199,10 @@ function ProfileCard(): ReactElement {
             <div className="px-4 py-3 text-light">
                 { user.bio }
             </div>
-            <div className="px-4">
+            <div className="px-4 flex flex-row flex-nowrap">
                 {
-                    !!user.joinedAt &&  (
-                        <div className="flex flex-row flex-nowrap item-center text-light text-gray-500">
+                    !!user.joinedAt && (
+                        <div className="profile-view__data-group flex flex-row flex-nowrap items-center text-light text-gray-500">
                             <Icon fa="far fa-calendar-alt"/>
                             <div className="ml-2">
                                 {`Joined ${moment(user.joinedAt).format('MMMM YYYY')}`}
@@ -199,7 +210,19 @@ function ProfileCard(): ReactElement {
                         </div>
                     )
                 }
-
+                {
+                    !!user.address && (
+                        <div
+                            className="profile-view__data-group flex flex-row flex-nowrap items-center text-light text-gray-500 cursor-pointer hover:underline"
+                            onClick={() => window.open(`https://etherscan.io/address/${user.address}`, '_blank')}
+                        >
+                            <Icon url={EtherScanSVG} />
+                            <div className="ml-2">
+                                {`Etherscan ${user.address.slice(0, 6)}...${user.address.slice(-4)}`}
+                            </div>
+                        </div>
+                    )
+                }
             </div>
             <div className="p-4 flex flex-row flex-nowrap item-center text-light">
                 <div className="flex flex-row flex-nowrap item-center">

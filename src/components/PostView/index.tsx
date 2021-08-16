@@ -1,6 +1,6 @@
-import React, {ReactElement, useEffect, useRef, useState} from "react";
+import React, {ReactElement, useCallback, useEffect, useRef, useState} from "react";
 import {useHistory, useLocation, useParams} from "react-router";
-import {fetchPost, fetchPosts, fetchReplies, usePost} from "../../ducks/posts";
+import {fetchHomeFeed, fetchMeta, fetchPost, fetchPosts, fetchReplies, useMeta, usePost} from "../../ducks/posts";
 import Post from "../Post";
 import classNames from "classnames";
 import "./post-view.scss";
@@ -8,10 +8,14 @@ import {useDispatch} from "react-redux";
 import Thread from "../Thread";
 import ParentThread from "../ParentThread";
 import {PostMessageSubType} from "../../util/message";
+import {useENSName, useLoggedIn} from "../../ducks/web3";
+import Button from "../Button";
 
 type Props = {
 
 }
+
+let cachedObserver: any = null;
 
 export default function PostView(props: Props): ReactElement {
     const {name, hash} = useParams<{name?: string; hash: string}>();
@@ -22,6 +26,8 @@ export default function PostView(props: Props): ReactElement {
     const [order, setOrder] = useState<string[]>([]);
     const dispatch = useDispatch();
     const history = useHistory();
+    const loggedIn = useLoggedIn();
+    const ensName = useENSName();
     const parentEl = useRef<HTMLDivElement>(null);
     const containerEl = useRef<HTMLDivElement>(null);
     const scrollEl = useRef<HTMLDivElement>(null);
@@ -31,23 +37,50 @@ export default function PostView(props: Props): ReactElement {
     const messageId = originalPost?.subtype === PostMessageSubType.Repost
         ? originalPost.payload.reference
         : reference;
+    const meta = useMeta(messageId);
 
     useEffect(() => {
         (async function onPostViewMount() {
-            if (!messageId) return;
-
-            const messageIds: any = await dispatch(fetchReplies(messageId, limit, offset));
-            if (messageIds.length) {
-                setOrder(messageIds);
-            }
+            await dispatch(fetchMeta(messageId));
+            await fetchMore(true);
         })();
-    }, [messageId]);
+
+    }, [loggedIn, ensName, messageId]);
+
+    const fetchMore = useCallback(async (reset = false) => {
+        if (reset) {
+            const messageIds: any = await dispatch(fetchReplies(messageId, 20, 0));
+            setOffset(messageIds.length);
+            setOrder(messageIds);
+        } else {
+            const messageIds: any = await dispatch(fetchReplies(messageId, limit, offset));
+            setOffset(offset + messageIds.length);
+            setOrder(order.concat(messageIds));
+        }
+    }, [limit, offset, order, messageId]);
+
+    const showMore = useCallback(async () => {
+        if (cachedObserver) {
+            cachedObserver.unobserve(containerEl.current);
+            cachedObserver.disconnect();
+            cachedObserver = null;
+        }
+        await fetchMore();
+    }, [containerEl, fetchMore, messageId]);
+
+    const clearObserver = useCallback(async () => {
+        if (cachedObserver) {
+            cachedObserver.unobserve(containerEl.current);
+            cachedObserver.disconnect();
+            cachedObserver = null;
+        }
+    }, [containerEl, fetchMore, messageId]);
 
     useEffect(() => {
-        setOrder([]);
-    }, [reference]);
-
-    useEffect(() => {
+        if (cachedObserver) {
+            cachedObserver.unobserve(containerEl.current);
+            cachedObserver.disconnect();
+        }
         // @ts-ignore
         const observer = new window.ResizeObserver(() => {
             const rect = containerEl.current?.getBoundingClientRect();
@@ -55,7 +88,8 @@ export default function PostView(props: Props): ReactElement {
             setHeight(window.innerHeight + rect.height - 80);
         })
         observer.observe(containerEl.current);
-    }, [containerEl]);
+        cachedObserver = observer;
+    }, [containerEl, messageId]);
 
     useEffect(() => {
         if (!parentEl.current || !scrollEl.current) return;
@@ -90,14 +124,15 @@ export default function PostView(props: Props): ReactElement {
                         expand
                     />
                     {
-                        order.map(messageId => {
+                        order.map((messageId, index) => {
                             const [creator, hash] = messageId.split('/');
 
                             return (
                                 <Thread
-                                    key={messageId}
+                                    key={index}
                                     className="transition-colors cursor-pointer border-t border-gray-100 hover:bg-gray-50"
                                     messageId={messageId}
+                                    clearObserver={clearObserver}
                                     onClick={() => {
                                         if (!hash) {
                                             history.push(`/post/${creator}`)
@@ -109,6 +144,20 @@ export default function PostView(props: Props): ReactElement {
                                 />
                             );
                         })
+                    }
+                    {
+                        order.length < meta.replyCount && (
+                            <div
+                                className={classNames(
+                                    "flex flex-row flex-nowrap items-center justify-center",
+                                    "p-4 bg-white text-blue-400 hover:text-blue-300 cursor-pointer hover:underline",
+                                    "border-t border-gray-100"
+                                )}
+                                onClick={showMore}
+                            >
+                                Show More
+                            </div>
+                        )
                     }
                 </div>
             </div>
