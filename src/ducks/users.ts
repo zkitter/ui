@@ -27,8 +27,12 @@ export type User = {
     website: string;
     joinedAt: number;
     meta: {
+        blockedCount: number;
+        blockingCount: number;
         followerCount: number;
         followingCount: number;
+        followed: string | null;
+        blocked: string | null;
     };
 }
 
@@ -38,67 +42,132 @@ type State = {
 
 const initialState: State = {};
 
-const fetchPromises: {
-    [name: string]: Promise<any>;
-} = {};
+const fetchPromises: any = {};
 
-export const getUser = (ensName: string) => async (dispatch: Dispatch, getState: () => AppRootState): Promise<User> => {
-    if (fetchPromises[ensName]) return fetchPromises[ensName];
+const cachedUser: any = {};
+
+export const getUser = (ens: string) => async (dispatch: Dispatch, getState: () => AppRootState): Promise<User> => {
+    const {
+        web3: {
+            ensName,
+            gun: { pub, priv },
+        },
+    } = getState();
+    const contextualName = (ensName && pub && priv) ? ensName : undefined;
+    const key = contextualName + ens;
+
+    if (fetchPromises[key]) {
+        if (cachedUser[key]) {
+            dispatch({
+                type: ActionTypes.SET_USER,
+                payload: cachedUser[key],
+            });
+        }
+        return fetchPromises[key];
+    }
 
     const fetchPromise = new Promise<User>(async (resolve, reject) => {
-        const state = getState();
-        const users = state.users;
-        const user = users[ensName];
+        let payload;
 
-        if (user) return user;
+        if (cachedUser[key]) {
+            payload = cachedUser[key];
+        } else {
+            const address = await defaultENS.name(ens).getAddress();
+            const resp = await fetch(`${config.indexerAPI}/v1/users/${ens}`, {
+                method: 'GET',
+                // @ts-ignore
+                headers: {
+                    'x-contextual-name': contextualName,
+                },
+            });
+            const json = await resp.json();
 
-        const address = await defaultENS.name(ensName).getAddress();
+            payload = {
+                ens: ens,
+                name: json.payload?.name || ens,
+                pubkey: json.payload?.pubkey || '',
+                address: address === '0x0000000000000000000000000000000000000000' ? '' : address,
+                bio: json.payload?.bio || '',
+                profileImage: json.payload?.profileImage || '',
+                coverImage: json.payload?.coverImage || '',
+                website: json.payload?.website || '',
+                joinedAt: json.payload?.joinedAt,
+                meta: {
+                    followerCount: json.payload?.meta?.followerCount || 0,
+                    followingCount: json.payload?.meta?.followingCount || 0,
+                    blockedCount: json.payload?.meta?.blockedCount || 0,
+                    blockingCount: json.payload?.meta?.blockingCount || 0,
+                    followed: json.payload?.meta?.followed || null,
+                    blocked: json.payload?.meta?.blocked || null,
+                },
+            };
 
-        const resp = await fetch(`${config.indexerAPI}/v1/users/${ensName}`);
-        const json = await resp.json();
+            cachedUser[key] = payload;
+        }
 
         dispatch({
             type: ActionTypes.SET_USER,
-            payload: {
-                ens: ensName,
-                name: json.payload.name,
-                pubkey: json.payload.pubkey,
-                address,
-                bio: json.payload.bio || '',
-                profileImage: json.payload.profileImage || '',
-                coverImage: json.payload.coverImage || '',
-                website: json.payload.website || '',
-                joinedAt: json.payload.joinedAt,
-                meta: {
-                    followerCount: json.payload.meta?.followerCount || 0,
-                    followingCount: json.payload.meta?.followingCount || 0,
-                },
-            },
+            payload: payload,
         });
 
-
-        const value = {
-            ens: ensName,
-            name: json.payload.name,
-            pubkey: json.payload.pubkey,
-            address,
-            profileImage: '',
-            coverImage: '',
-            bio: '',
-            website: '',
-            meta: {
-                followerCount: 0,
-                followingCount: 0,
-            },
-            joinedAt: 0,
-        };
-
-        resolve(value);
+        resolve(payload);
     });
 
-    fetchPromises[ensName] = fetchPromise;
+    fetchPromises[key] = fetchPromise;
 
     return fetchPromise;
+}
+
+export const fetchUsers = () => async (dispatch: Dispatch, getState: () => AppRootState): Promise<string[]> => {
+    const {
+        web3: {
+            ensName,
+            gun: { pub, priv },
+        },
+    } = getState();
+    const contextualName = (ensName && pub && priv) ? ensName : undefined;
+    const resp = await fetch(`${config.indexerAPI}/v1/users?limit=10`, {
+        method: 'GET',
+        // @ts-ignore
+        headers: {
+            'x-contextual-name': contextualName,
+        },
+    });
+
+    const json = await resp.json();
+    const list: string[] = [];
+
+    for (const user of json.payload) {
+        const address = await defaultENS.name(user.ens).getAddress();
+        const payload = {
+            ens: user.ens,
+            name: user.name || user.ens,
+            pubkey: user.pubkey || '',
+            address: address === '0x0000000000000000000000000000000000000000' ? '' : address,
+            bio: user.bio || '',
+            profileImage: user.profileImage || '',
+            coverImage: user.coverImage || '',
+            website: user.website || '',
+            joinedAt: user.joinedAt,
+            meta: {
+                followerCount: user.meta?.followerCount || 0,
+                followingCount: user.meta?.followingCount || 0,
+                blockedCount: user.meta?.blockedCount || 0,
+                blockingCount: user.meta?.blockingCount || 0,
+                followed: user.meta?.followed || null,
+                blocked: user.meta?.blocked || null,
+            },
+        };
+
+        dispatch({
+            type: ActionTypes.SET_USER,
+            payload: payload,
+        });
+
+        list.push(user.ens);
+    }
+
+    return list;
 }
 
 export const setUser = (user: User) => ({
@@ -122,6 +191,10 @@ export const useUser = (name = ''): User | null => {
                 meta: {
                     followerCount: 0,
                     followingCount: 0,
+                    blockedCount: 0,
+                    blockingCount: 0,
+                    followed: null,
+                    blocked: null,
                 },
             }
         }
@@ -148,6 +221,10 @@ export default function users(state = initialState, action: Action): State {
                     meta: {
                         followerCount: action.payload.meta?.followerCount || 0,
                         followingCount: action.payload.meta?.followingCount || 0,
+                        blockedCount: action.payload.meta?.blockedCount || 0,
+                        blockingCount: action.payload.meta?.blockingCount || 0,
+                        followed: action.payload.meta?.followed || null,
+                        blocked: action.payload.meta?.blocked || null,
                     },
                 },
             };

@@ -8,7 +8,7 @@ import {
     addGunKeyToTextRecord,
     generateGunKeyPair,
     useAccount,
-    useENSFetching,
+    useENSFetching, useENSLoggedIn,
     useENSName,
     useGunKey,
     useLoggedIn,
@@ -20,7 +20,7 @@ import {useDispatch} from "react-redux";
 
 export default function TopNav(): ReactElement {
     const account = useAccount();
-    const loggedIn = useLoggedIn();
+    const loggedIn = useENSLoggedIn();
     const ensName = useENSName();
     const semaphore = useSemaphoreID();
     const gunKey = useGunKey();

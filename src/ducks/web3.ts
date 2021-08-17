@@ -17,7 +17,7 @@ import {
     validateGunPublicKey,
 } from "../util/crypto";
 import {defaultENS, defaultWeb3} from "../util/web3";
-import {authenticateGun} from "../util/gun";
+import gun, {authenticateGun} from "../util/gun";
 // @ts-ignore
 import * as snarkjs from 'snarkjs';
 
@@ -241,6 +241,11 @@ export const setWeb3 = (web3: Web3 | null, account: string) => async (
     // @ts-ignore
     web3.currentProvider.on('accountsChanged', async ([account]) => {
         dispatch(setWeb3Loading(true));
+        const gunUser = gun.user();
+        // @ts-ignore
+        if (gunUser.is) {
+            gunUser.leave();
+        }
         dispatch(setAccount(account));
         await dispatch(lookupENS());
         dispatch(setWeb3Loading(false));
@@ -525,6 +530,19 @@ export const useLoggedIn = () => {
             && !!semaphore.commitment;
 
         return !!(web3 && account && (hasGun || hasSemaphore));
+    }, deepEqual);
+}
+
+export const useENSLoggedIn = () => {
+    return useSelector((state: AppRootState) => {
+        const {
+            web3,
+            account,
+            gun,
+        } = state.web3;
+
+        const hasGun = !!gun.priv && !!gun.pub;
+        return !!(web3 && account && (hasGun));
     }, deepEqual);
 }
 

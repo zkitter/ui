@@ -160,7 +160,7 @@ function Web3ButtonAction(props: Props): ReactElement {
 
             return (
                 <Menuable
-                    className="web3-button__unlock-menu"
+                    menuClassName="web3-button__unlock-menu"
                     onOpen={() => setOpened(true)}
                     onClose={() => setOpened(false)}
                     items={[

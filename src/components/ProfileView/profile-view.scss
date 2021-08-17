@@ -1,7 +1,7 @@
 @import "../../util/variable";
 
 .profile-view {
-  max-width: 37.25rem;
+  width: 36.25rem;
   overflow-y: auto;
 
   &::-webkit-scrollbar {
@@ -11,5 +11,10 @@
 
   &__data-group + &__data-group {
     margin-left: 1rem;
+  }
+
+  &__menu {
+    left: auto;
+    right: 0;
   }
 }

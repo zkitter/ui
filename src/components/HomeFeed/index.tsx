@@ -41,7 +41,7 @@ export default function HomeFeed(): ReactElement {
     return (
         <InfiniteScrollable
             className={classNames('flex-grow home-feed',
-                'px-4 py-2',
+                'mx-4 py-2',
                 {},
             )}
             bottomOffset={128}

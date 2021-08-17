@@ -207,8 +207,23 @@ export const fetchHomeFeed = (limit = 10, offset = 0) =>
     return json.payload.map((post: any) => post.messageId);
 }
 
-export const fetchReplies = (reference: string, limit = 10, offset = 0) => async (dispatch: ThunkDispatch<any, any, any>) => {
-    const resp = await fetch(`${config.indexerAPI}/v1/replies?limit=${limit}&offset=${offset}&parent=${encodeURIComponent(reference)}`);
+export const fetchReplies = (reference: string, limit = 10, offset = 0) =>
+    async (dispatch: ThunkDispatch<any, any, any>, getState: () => AppRootState) =>
+{
+    const {
+        web3: {
+            ensName,
+            gun: { pub, priv },
+        },
+    } = getState();
+    const contextualName = (ensName && pub && priv) ? ensName : undefined;
+    const resp = await fetch(`${config.indexerAPI}/v1/replies?limit=${limit}&offset=${offset}&parent=${encodeURIComponent(reference)}`, {
+        method: 'GET',
+        // @ts-ignore
+        headers: {
+            'x-contextual-name': contextualName,
+        },
+    });
     const json = await resp.json();
 
     for (const post of json.payload) {

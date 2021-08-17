@@ -1,4 +1,4 @@
-import React, {MouseEventHandler, ReactElement, useCallback, useEffect, useState} from "react";
+import React, {MouseEventHandler, ReactElement, ReactNode, useCallback, useEffect, useState} from "react";
 import classNames from "classnames";
 import moment from "moment";
 import {fetchPost, useMeta, usePost} from "../../ducks/posts";
@@ -14,8 +14,9 @@ import Modal, {ModalContent, ModalHeader} from "../Modal";
 import {setDraft, submitModeration, submitPost, submitRepost, useDraft, useSubmitting} from "../../ducks/drafts";
 import {useDispatch} from "react-redux";
 import {ModerationMessageSubType, PostMessageSubType} from "../../util/message";
-import {useLoggedIn} from "../../ducks/web3";
+import {useGunKey, useLoggedIn} from "../../ducks/web3";
 import {useHistory} from "react-router";
+import Menuable from "../Menuable";
 
 const { markdownToDraft } = require('markdown-draft-js');
 
@@ -41,7 +42,6 @@ export default function Post(props: Props): ReactElement {
         : originalPost;
     const user = useUser(post?.creator);
     const dispatch = useDispatch();
-    const [showReply, setShowReply] = useState(false);
 
     useEffect(() => {
         if (!post) {
@@ -53,14 +53,8 @@ export default function Post(props: Props): ReactElement {
 
     return (
         <>
-            { showReply && (
-                <ReplyEditorModal
-                    onClose={() => setShowReply(false)}
-                    messageId={messageId}
-                />
-            )}
-            { !expand && <RegularPost setShowReply={setShowReply} {...props} /> }
-            { !!expand && <ExpandedPost setShowReply={setShowReply} {...props} /> }
+            { !expand && <RegularPost {...props} /> }
+            { !!expand && <ExpandedPost {...props} /> }
         </>
     );
 }
@@ -108,12 +102,7 @@ function ReplyEditorModal(props: ReplyEditorModalProps): ReactElement {
     );
 }
 
-export function ExpandedPost(props: {
-    setShowReply: (showReply: boolean) => void;
-} & Props): ReactElement {
-    const {
-        setShowReply,
-    } = props;
+export function ExpandedPost(props: Props): ReactElement {
     const originalPost = usePost(props.messageId);
     const referencedPost = usePost(originalPost?.payload.reference);
     const messageId = originalPost?.subtype === PostMessageSubType.Repost
@@ -123,18 +112,7 @@ export function ExpandedPost(props: {
         ? referencedPost
         : originalPost;
     const user = useUser(post?.creator);
-    const meta = useMeta(messageId);
-    const dispatch = useDispatch();
-    const loggedIn = useLoggedIn();
     const history = useHistory();
-
-    const onLike = useCallback(() => {
-        dispatch(submitModeration(messageId, ModerationMessageSubType.Like));
-    }, [messageId]);
-
-    const onRepost = useCallback(() => {
-        dispatch(submitRepost(messageId));
-    }, [messageId]);
 
     const gotoUserProfile = useCallback(e => {
         if (!user?.ens) return;
@@ -177,11 +155,7 @@ export function ExpandedPost(props: {
                     </div>
                 </div>
                 <div className="flex flex-row flex-nowrap flex-grow flex-shrink justify-end">
-                    <Icon
-                        className="text-gray-400 hover:text-gray-800"
-                        fa="fas fa-ellipsis-h"
-                        onClick={() => null}
-                    />
+                    <PostMenu messageId={messageId} />
                 </div>
             </div>
             <div className="flex flex-col flex-nowrap items-start flex-grow flex-shrink">
@@ -207,60 +181,18 @@ export function ExpandedPost(props: {
                         {moment(post.createdAt).format('lll')}
                     </div>
                 </div>
-                <div className="flex flex-row flex-nowrap items-center mt-2 pt-3 border-t border-gray-100 w-full post__footer">
-                    <PostButton
-                        iconClassName="hover:bg-blue-50 hover:text-blue-400"
-                        fa="far fa-comments"
-                        count={meta.replyCount}
-                        onClick={() => setShowReply(true)}
-                        large
-                    />
-                    <PostButton
-                        textClassName={classNames({
-                            "text-green-400": meta.reposted,
-                        })}
-                        iconClassName={classNames(
-                            {
-                                "hover:bg-green-50 hover:text-green-400": loggedIn,
-                                "text-green-400": meta.reposted,
-                            },
-                        )}
-                        fa="fas fa-retweet"
-                        count={meta.repostCount}
-                        onClick={onRepost}
-                        disabled={!loggedIn}
-                        large
-                    />
-                    <PostButton
-                        textClassName={classNames({
-                            "text-red-400": meta.liked,
-                        })}
-                        iconClassName={classNames(
-                            {
-                                "hover:bg-red-50 hover:text-red-400": loggedIn,
-                                "text-red-400": meta.liked,
-                            },
-                        )}
-                        fa={classNames({
-                            "far fa-heart": !meta.liked,
-                            "fas fa-heart": meta.liked,
-                        })}
-                        count={meta.likeCount}
-                        onClick={onLike}
-                        disabled={!loggedIn}
-                        large
-                    />
-                </div>
+                <PostFooter
+                    messageId={messageId}
+                    className="mt-2 pt-3 border-t border-gray-100 w-full"
+                    large
+                />
             </div>
         </div>
     );
 }
 
-export function RegularPost(props: {
-    setShowReply: (showReply: boolean) => void;
-} & Props): ReactElement {
+export function RegularPost(props: Props): ReactElement {
     const {
-        setShowReply,
         isParent,
     } = props;
     const originalPost = usePost(props.messageId);
@@ -272,18 +204,7 @@ export function RegularPost(props: {
         ? referencedPost
         : originalPost;
     let user = useUser(post?.creator);
-    const meta = useMeta(messageId);
-    const dispatch = useDispatch();
-    const loggedIn = useLoggedIn();
     const history = useHistory();
-
-    const onLike = useCallback(() => {
-        dispatch(submitModeration(messageId, ModerationMessageSubType.Like));
-    }, [messageId]);
-
-    const onRepost = useCallback(() => {
-        dispatch(submitRepost(messageId));
-    }, [messageId]);
 
     const gotoUserProfile = useCallback(e => {
         if (!user?.ens) return;
@@ -351,13 +272,7 @@ export function RegularPost(props: {
                             {moment(post.createdAt).fromNow(true)}
                         </div>
                         <div className="flex flex-row flex-nowrap flex-grow flex-shrink justify-end">
-                            <Icon
-                                className="text-gray-400 hover:text-gray-800"
-                                fa="fas fa-ellipsis-h"
-                                onClick={e => {
-                                    e.stopPropagation();
-                                }}
-                            />
+                            <PostMenu messageId={messageId} />
                         </div>
                     </div>
                     <div className="text-light mt-1 mb-2">
@@ -377,51 +292,124 @@ export function RegularPost(props: {
                             readOnly
                         />
                     </div>
-                    <div className="flex flex-row flex-nowrap items-center post__footer">
-                        <PostButton
-                            iconClassName="hover:bg-blue-50 hover:text-blue-400"
-                            fa="far fa-comments"
-                            count={meta.replyCount}
-                            onClick={() => setShowReply(true)}
-                        />
-                        <PostButton
-                            textClassName={classNames({
-                                "text-green-400": meta.reposted,
-                            })}
-                            iconClassName={classNames(
-                                {
-                                    "hover:bg-green-50 hover:text-green-400": loggedIn,
-                                    "text-green-400": meta.reposted,
-                                },
-                            )}
-                            fa="fas fa-retweet"
-                            count={meta.repostCount}
-                            onClick={onRepost}
-                            disabled={!loggedIn}
-                        />
-                        <PostButton
-                            textClassName={classNames({
-                                "text-red-400": meta.liked,
-                            })}
-                            iconClassName={classNames(
-                                {
-                                    "hover:bg-red-50 hover:text-red-400": loggedIn,
-                                    "text-red-400": meta.liked,
-                                },
-                            )}
-                            fa={classNames({
-                                "far fa-heart": !meta.liked,
-                                "fas fa-heart": meta.liked,
-                            })}
-                            count={meta.likeCount}
-                            onClick={onLike}
-                            disabled={!loggedIn}
-                        />
-                    </div>
+                    <PostFooter
+                        messageId={messageId}
+                    />
                 </div>
             </div>
         </div>
     );
+}
+
+function PostFooter(props: {
+    className?: string;
+    messageId: string;
+    large?: boolean;
+}): ReactElement {
+    const {large, className, messageId} = props;
+    const meta = useMeta(messageId);
+    const loggedIn = useLoggedIn();
+    const gunKey = useGunKey();
+    const dispatch = useDispatch();
+    const [showReply, setShowReply] = useState(false);
+
+    const onLike = useCallback(() => {
+        dispatch(submitModeration(messageId, ModerationMessageSubType.Like));
+    }, [messageId]);
+
+    const onRepost = useCallback(() => {
+        dispatch(submitRepost(messageId));
+    }, [messageId]);
+
+    return (
+        <div
+            className={classNames(
+                "flex flex-row flex-nowrap items-center",
+                "post__footer",
+                className,
+            )}
+        >
+            { showReply && (
+                <ReplyEditorModal
+                    onClose={() => setShowReply(false)}
+                    messageId={messageId}
+                />
+            )}
+            <PostButton
+                iconClassName="hover:bg-blue-50 hover:text-blue-400"
+                fa="far fa-comments"
+                count={meta.replyCount}
+                onClick={() => setShowReply(true)}
+                large={large}
+            />
+            <PostButton
+                textClassName={classNames({
+                    "text-green-400": meta.reposted,
+                })}
+                iconClassName={classNames(
+                    {
+                        "hover:bg-green-50 hover:text-green-400": loggedIn,
+                        "text-green-400": meta.reposted,
+                    },
+                )}
+                fa="fas fa-retweet"
+                count={meta.repostCount}
+                onClick={meta.reposted ? undefined : onRepost}
+                disabled={!loggedIn || !gunKey.priv}
+                large={large}
+            />
+            <PostButton
+                textClassName={classNames({
+                    "text-red-400": meta.liked,
+                })}
+                iconClassName={classNames(
+                    {
+                        "hover:bg-red-50 hover:text-red-400": loggedIn,
+                        "text-red-400": meta.liked,
+                    },
+                )}
+                fa={classNames({
+                    "far fa-heart": !meta.liked,
+                    "fas fa-heart": meta.liked,
+                })}
+                count={meta.likeCount}
+                onClick={meta.liked ? undefined : onLike}
+                disabled={!loggedIn || !gunKey.priv}
+                large={large}
+            />
+        </div>
+    );
+}
+
+function PostMenu(props: Props): ReactElement {
+    const post = usePost(props.messageId);
+
+    return (
+        <Menuable
+            className="post__menu"
+            items={[
+                {
+                    label: `Block @${post?.creator}`,
+                    iconFA: 'fas fa-user-slash',
+                    disabled: true,
+                    iconClassName: 'text-gray-400',
+                },
+                {
+                    label: `Block Post`,
+                    iconFA: 'fas fa-ban',
+                    disabled: true,
+                    iconClassName: 'text-gray-400',
+                },
+            ]}
+        >
+            <Icon
+                className="text-gray-400 hover:text-gray-800"
+                fa="fas fa-ellipsis-h"
+                onClick={() => null}
+            />
+        </Menuable>
+
+    )
 }
 
 export function LoadingPost(props: Props): ReactElement {

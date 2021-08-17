@@ -3,14 +3,16 @@ import {Redirect, Route, Switch} from "react-router";
 import TopNav from "../../components/TopNav";
 import GlobalFeed from "../../components/GlobalFeed";
 import "./app.scss";
-import {connectWeb3, web3Modal} from "../../ducks/web3";
+import {connectWeb3, useENSLoggedIn, web3Modal} from "../../ducks/web3";
 import {useDispatch} from "react-redux";
 import PostView from "../../components/PostView";
 import ProfileView from "../../components/ProfileView";
 import HomeFeed from "../../components/HomeFeed";
+import DiscoverUserPanel from "../../components/DiscoverUserPanel";
 
 export default function App(): ReactElement {
     const dispatch = useDispatch();
+    const loggedIn = useENSLoggedIn();
 
     useEffect(() => {
         (async function onAppMount() {
@@ -27,19 +29,35 @@ export default function App(): ReactElement {
                 <Switch>
                     <Route path="/explore">
                         <GlobalFeed />
+                        <DiscoverUserPanel />
                     </Route>
                     <Route path="/:name/status/:hash">
                         <PostView />
+                        <DiscoverUserPanel />
                     </Route>
                     <Route path="/post/:hash">
                         <PostView />
+                        <DiscoverUserPanel />
                     </Route>
-                    <Route path="/home">
-                        <HomeFeed />
-                    </Route>
+                    {
+                        !loggedIn
+                            ? (
+                                <Route path="/home">
+                                    <Redirect to="/" />
+                                </Route>
+                            )
+                            : (
+                                <Route path="/home">
+                                    <HomeFeed />
+                                    <DiscoverUserPanel />
+                                </Route>
+                            )
+                    }
+
                     <Route path="/notifications"></Route>
                     <Route path="/:name">
                         <ProfileView />
+                        <DiscoverUserPanel />
                     </Route>
                     <Route path="/">
                         <Redirect to="/explore" />

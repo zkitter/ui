@@ -7,6 +7,7 @@ type MenuableProps = {
     items: ItemProps[];
     children?: ReactNode;
     className?: string;
+    menuClassName?: string;
     onOpen?: () => void;
     onClose?: () => void;
 }
@@ -15,6 +16,7 @@ type ItemProps = {
     label: string;
     iconUrl?: string;
     iconFA?: string;
+    iconClassName?: string;
     onClick?: MouseEventHandler;
     disabled?: boolean;
 }
@@ -40,18 +42,21 @@ export default function Menuable(props: MenuableProps): ReactElement {
         <div
             className={classNames('menuable', {
                 'menuable--active': isShowing,
-            })}
-            onClick={() => setShowing(!isShowing)}
+            }, props.className)}
+            onClick={e => {
+                e.stopPropagation();
+                setShowing(!isShowing);
+            }}
         >
             {props.children}
             {
                 isShowing && (
-                    <div className={classNames("rounded-xl border menuable__menu", props.className)}>
+                    <div className={classNames("rounded-xl border menuable__menu", props.menuClassName)}>
                         {props.items.map((item, i) => (
                             <div
                                 key={i}
                                 className={classNames(
-                                    "text-sm",
+                                    "text-sm whitespace-nowrap",
                                     'flex flex-row flex-nowrap items-center',
                                     "menuable__menu__item",
                                     {
@@ -80,7 +85,13 @@ export default function Menuable(props: MenuableProps): ReactElement {
                                         <Icon
                                             fa={item.iconFA}
                                             url={item.iconUrl}
-                                            className={classNames({ 'opacity-50': item.disabled })}
+                                            className={classNames(
+                                                'ml-4',
+                                                {
+                                                    'opacity-50': item.disabled,
+                                                },
+                                                item.iconClassName,
+                                            )}
                                         />
                                     )
                                 }

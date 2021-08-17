@@ -8,7 +8,7 @@ import Post from "../Post";
 import Button from "../Button";
 import Icon from "../Icon";
 import {getUser, setUser, useUser} from "../../ducks/users";
-import {useENSName, useGunKey, useLoggedIn} from "../../ducks/web3";
+import {useENSFetching, useENSName, useGunKey, useLoggedIn, useWeb3Loading} from "../../ducks/web3";
 import moment from "moment";
 import Modal, {ModalContent, ModalFooter, ModalHeader} from "../Modal";
 import Input from "../Input";
@@ -19,9 +19,11 @@ import {ConnectionMessageSubType, ProfileMessageSubType} from "../../util/messag
 import Avatar from "../Avatar";
 import EtherScanSVG from "../../../static/icons/etherscan-logo-gray-500.svg";
 import InfiniteScrollable from "../InfiniteScrollable";
+import Menuable from "../Menuable";
 
 export default function ProfileView(): ReactElement {
     const {name} = useParams<{name: string}>();
+    const ensName = useENSName();
     const [limit, setLimit] = useState(20);
     const [offset, setOffset] = useState(0);
     const [order, setOrder] = useState<string[]>([]);
@@ -30,11 +32,11 @@ export default function ProfileView(): ReactElement {
     const loggedIn = useLoggedIn();
 
     useEffect(() => {
-        dispatch(getUser(name));
         (async function onProfileViewViewMount() {
+            await dispatch(getUser(name));
             await fetchMore(true);
         })();
-    }, [name, loggedIn]);
+    }, [name, loggedIn, ensName]);
 
     const fetchMore = useCallback(async (reset = false) => {
         if (reset) {
@@ -171,22 +173,34 @@ function ProfileCard(): ReactElement {
                     {
                         !isCurrentUser && (
                             <Button
-                                btnType="primary"
+                                btnType={user.meta.followed ? "secondary" : "primary"}
                                 className="mr-2"
                                 disabled={!loggedIn || !gunKey.priv}
-                                onClick={onFollow}
+                                onClick={user.meta.followed ? undefined : onFollow}
                             >
-                                Follow
+                                {user.meta.followed ? 'Followed' : 'Follow'}
                             </Button>
                         )
                     }
                     {
                         !isCurrentUser && (
-                            <Button
-                                btnType="secondary"
+                            <Menuable
+                                menuClassName="profile-view__menu"
+                                items={[
+                                    {
+                                        label: `Block @${user?.ens}`,
+                                        iconFA: 'fas fa-user-slash',
+                                        disabled: true,
+                                        iconClassName: 'text-gray-400',
+                                    },
+                                ]}
                             >
-                                <Icon fa="fas fa-ellipsis-h" />
-                            </Button>
+                                <Button
+                                    btnType="secondary"
+                                >
+                                    <Icon fa="fas fa-ellipsis-h" />
+                                </Button>
+                            </Menuable>
                         )
                     }
                 </div>

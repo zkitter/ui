@@ -114,7 +114,7 @@ export default function PostView(props: Props): ReactElement {
             >
                 <div
                     ref={containerEl}
-                    className="rounded-xl overflow-hidden border border-gray-100"
+                    className="rounded-xl overflow-visible border border-gray-100"
                 >
                     <div ref={parentEl}>
                         <ParentThread messageId={messageId} />

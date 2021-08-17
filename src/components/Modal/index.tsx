@@ -25,7 +25,10 @@ export default function Modal(props: Props): ReactElement {
                 'bg-black bg-opacity-80',
                 "modal__overlay",
             )}
-            onClick={onClose}
+            onClick={e => {
+                e.stopPropagation();
+                onClose && onClose(e);
+            }}
         >
             <div
                 className={classNames(

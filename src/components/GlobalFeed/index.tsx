@@ -41,7 +41,7 @@ export default function GlobalFeed(): ReactElement {
     return (
         <InfiniteScrollable
             className={classNames('flex-grow global-feed',
-                'px-4 py-2',
+                'mx-4 py-2',
                 {},
             )}
             bottomOffset={128}

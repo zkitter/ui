@@ -180,6 +180,9 @@ export const submitPost = (reference = '') => async (dispatch: ThunkDispatch<any
         return dispatch(submitSemaphorePost(post));
     }
 
+    // @ts-ignore
+    if (!gun.user().is) return;
+
     const {
         messageId,
         hash,
@@ -219,6 +222,9 @@ export const submitRepost = (reference = '') => async (dispatch: Dispatch, getSt
     const {
         ensName,
     } = web3;
+
+    // @ts-ignore
+    if (!gun.user().is) return;
 
     const post = new Post({
         type: MessageType.Post,
@@ -268,6 +274,9 @@ export const submitModeration = (reference = '', subtype: ModerationMessageSubTy
     const {
         ensName,
     } = web3;
+
+    // @ts-ignore
+    if (!gun.user().is) return;
 
     const moderation = new Moderation({
         type: MessageType.Moderation,

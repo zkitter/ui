@@ -17,6 +17,15 @@
     left: 2.375rem;
     top: 4.25rem;
   }
+
+  &__menu {
+    height: fit-content;
+
+    .menuable__menu {
+      left: auto;
+      right: 0;
+    }
+  }
 }
 
 .post-button {
