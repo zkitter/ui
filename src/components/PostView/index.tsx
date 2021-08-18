@@ -41,6 +41,7 @@ export default function PostView(props: Props): ReactElement {
 
     useEffect(() => {
         (async function onPostViewMount() {
+            setOrder([]);
             await dispatch(fetchMeta(messageId));
             await fetchMore(true);
         })();

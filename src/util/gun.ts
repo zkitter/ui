@@ -1,8 +1,9 @@
 import Gun from "gun";
 import "gun/sea";
 import {Message, MessageType, Post, PostJSON, PostMessageOption, PostMessageSubType} from "./message";
+import config from "./config";
 
-const gun = Gun('http://localhost:8765/gun');
+const gun = Gun(config.gunPeers);
 
 export const authenticateGun = (keyPair: { pub: string; priv: string }) => {
     // @ts-ignore

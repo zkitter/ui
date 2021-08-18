@@ -38,6 +38,7 @@ export default function Thread(props: Props): ReactElement {
 
     const showMore = useCallback(async () => {
         props.clearObserver && props.clearObserver();
+        setOrder([]);
         await fetchMore();
     }, [fetchMore, messageId]);
 

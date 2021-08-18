@@ -7,7 +7,7 @@
     "dev-ui": "webpack-dev-server --config webpack.ui.config.js --hot --inline",
     "build-ui": " webpack --config webpack.ui.config.js",
     "dev": "NODE_ENV=development concurrently --kill-others-on-fail npm:dev-ui",
-    "build": "npm run build-ui"
+    "build": "NODE_ENV=production npm run build-ui"
   },
   "dependencies": {
     "@ensdomains/ensjs": "^2.0.1",
