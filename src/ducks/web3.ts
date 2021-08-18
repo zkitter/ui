@@ -20,6 +20,7 @@ import {defaultENS, defaultWeb3} from "../util/web3";
 import gun, {authenticateGun} from "../util/gun";
 // @ts-ignore
 import * as snarkjs from 'snarkjs';
+import config from "../util/config";
 
 type SnarkBigInt = snarkjs.bigInt
 
@@ -282,7 +283,7 @@ export const genSemaphore = () => async (dispatch: ThunkDispatch<any, any, any>)
         const result: any = await dispatch(generateSemaphoreID(0));
         const commitment = await genIdentityCommitment(result);
 
-        await fetch(`http://localhost:3000/dev/semaphore`, {
+        await fetch(`${config.indexerAPI}/dev/semaphore`, {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
@@ -292,7 +293,7 @@ export const genSemaphore = () => async (dispatch: ThunkDispatch<any, any, any>)
             }),
         });
 
-        const resp = await fetch(`http://localhost:3000/dev/semaphore/${commitment.toString()}`);
+        const resp = await fetch(`${config.indexerAPI}/dev/semaphore/${commitment.toString()}`);
         const { payload: path } = await resp.json();
 
         if (path) {

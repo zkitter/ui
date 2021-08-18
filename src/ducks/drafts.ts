@@ -26,6 +26,7 @@ import {getCircuit, getProvingKey} from "../util/fetch";
 // @ts-ignore
 import * as snarkjs from "snarkjs";
 import {ThunkDispatch} from "redux-thunk";
+import config from "../util/config";
 const { markdownToDraft, draftToMarkdown } = require('markdown-draft-js');
 
 enum ActionTypes {
@@ -120,7 +121,7 @@ export const submitSemaphorePost = (post: Post) => async (dispatch: Dispatch, ge
     const json = post.toJSON();
     try {
         // @ts-ignore
-        await fetch('http://localhost:3000/dev/semaphore/post', {
+        await fetch(`${config.indexerAPI}/dev/semaphore/post`, {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
