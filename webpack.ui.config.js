@@ -9,7 +9,13 @@ const devServerEntries = [
     'webpack/hot/only-dev-server',
 ];
 
-const envPlugin = new webpack.EnvironmentPlugin(['NODE_ENV']);
+const envPlugin = new webpack.EnvironmentPlugin([
+    'NODE_ENV',
+    'WEB3_HTTP_PROVIDER',
+    'ENS_RESOLVER',
+    'INDEXER_API',
+    'GUN_PEERS',
+]);
 
 const rules = [
     {
