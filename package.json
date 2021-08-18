@@ -9,7 +9,8 @@
     "predev": "cp ./static/bn128.js ./node_modules/websnark/src/bn128.js",
     "prebuild": "cp ./static/bn128.js ./node_modules/websnark/src/bn128.js",
     "dev": "NODE_ENV=development concurrently --kill-others-on-fail npm:dev-ui",
-    "build": "NODE_ENV=production npm run build-ui"
+    "build": "NODE_ENV=production npm run build-ui",
+    "serve": "serve ./build -l 80 & serve ./build -l 443"
   },
   "dependencies": {
     "@ensdomains/ensjs": "^2.0.1",
