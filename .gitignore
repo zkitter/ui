@@ -4,3 +4,4 @@ build*
 config.dev.json
 config.json
 .DS_Store
+.env
