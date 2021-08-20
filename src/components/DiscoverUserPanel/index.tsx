@@ -32,7 +32,7 @@ export default function DiscoverUserPanel(): ReactElement {
             <div className="px-4 py-2 font-bold text-lg border-b border-gray-100">Discover Users</div>
             <div className="flex flex-col flex-nowrap py-1">
                 { loading && <Icon className="self-center my-4" url={SpinnerGIF} size={3} /> }
-                {users.map(ens => <UserRow name={ens} />)}
+                {users.map(ens => <UserRow key={ens} name={ens} />)}
             </div>
         </div>
     )

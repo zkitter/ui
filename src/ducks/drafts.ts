@@ -85,7 +85,11 @@ export const submitSemaphorePost = (post: Post) => async (dispatch: Dispatch, ge
         return null;
     }
 
-    const hash = post.hash();
+    const {
+        messageId,
+        hash,
+        ...json
+    } = post.toJSON();
     const signalStr = hash;
     const externalNullifierStr = signalStr;
     const externalNullifier = genExternalNullifier(externalNullifierStr);
@@ -118,27 +122,27 @@ export const submitSemaphorePost = (post: Post) => async (dispatch: Dispatch, ge
     const proof = await genProof(witness, provingKey);
     const publicSignals = genPublicSignals(witness, circuit);
 
-    const json = post.toJSON();
+
     try {
         // @ts-ignore
-        await fetch(`${config.indexerAPI}/dev/semaphore/post`, {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-            },
-            body: JSON.stringify({
-                post: json,
-                proof: JSON.stringify(snarkjs.stringifyBigInts(proof)),
-                publicSignals: JSON.stringify(snarkjs.stringifyBigInts(publicSignals)),
-            }),
-        });
+        const semaphorePost: any = {
+            ...json,
+            proof: JSON.stringify(snarkjs.stringifyBigInts(proof)),
+            publicSignals: JSON.stringify(snarkjs.stringifyBigInts(publicSignals)),
+        };
+
+        // @ts-ignore
+        await gun.get('message')
+            .get(messageId)
+            // @ts-ignore
+            .put(semaphorePost);
 
         dispatch({
             type: ActionTypes.SET_SUBMITTING,
             payload: false,
         });
 
-        dispatch(setDraft(EditorState.createEmpty(), `${post.creator}/${hash}`));
+        dispatch(setDraft(EditorState.createEmpty(), post.payload.reference || ''));
     } catch (e) {
         dispatch({
             type: ActionTypes.SET_SUBMITTING,

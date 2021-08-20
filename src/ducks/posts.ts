@@ -88,23 +88,27 @@ export const fetchPost = (messageId: string) =>
     const [username, hash] = messageId.split('/');
     const user: any = await dispatch(getUser(username));
 
-    if (!hash) {
-        return null;
+    let message;
+
+    if (username && !hash) {
+        message = await fetchMessage(`message/${messageId}`);
+    } else if (username && hash) {
+        message = await fetchMessage(`~${user.pubkey}/message/${messageId}`);
     }
 
-    const message = await fetchMessage(`~${user.pubkey}/message/${messageId}`);
+    if (!message) return null;
 
     dispatch({
         type: ActionTypes.SET_POST,
         payload: new Post({
             ...message,
-            creator: username,
+            creator: hash ? username : '',
         }),
     });
 
     return {
         ...message,
-        creator: username,
+        creator: hash ? username : '',
     };
 }
 
@@ -144,15 +148,15 @@ export const fetchPosts = (creator?: string, limit = 10, offset = 0) =>
             },
         });
 
-        if (!hash) {
-            dispatch({
-                type: ActionTypes.SET_POST,
-                payload: new Post({
-                    ...post,
-                    createdAt: new Date(post.createdAt),
-                }),
-            });
-        }
+        // if (!hash) {
+        //     dispatch({
+        //         type: ActionTypes.SET_POST,
+        //         payload: new Post({
+        //             ...post,
+        //             createdAt: new Date(post.createdAt),
+        //         }),
+        //     });
+        // }
     }
 
     return json.payload.map((post: any) => post.messageId);
@@ -239,15 +243,15 @@ export const fetchReplies = (reference: string, limit = 10, offset = 0) =>
             },
         });
 
-        if (!hash) {
-            dispatch({
-                type: ActionTypes.SET_POST,
-                payload: new Post({
-                    ...post,
-                    createdAt: new Date(post.createdAt),
-                }),
-            });
-        }
+        // if (!hash) {
+        //     dispatch({
+        //         type: ActionTypes.SET_POST,
+        //         payload: new Post({
+        //             ...post,
+        //             createdAt: new Date(post.createdAt),
+        //         }),
+        //     });
+        // }
     }
 
     return json.payload.map((post: any) => post.messageId);

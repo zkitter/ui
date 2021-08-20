@@ -1,5 +1,6 @@
 const webpack = require('webpack');
 const HtmlWebpackPlugin = require('html-webpack-plugin');
+const CopyPlugin = require("copy-webpack-plugin");
 const path = require('path');
 
 const isProd = process.env.NODE_ENV === 'production';
@@ -91,6 +92,12 @@ module.exports = [
         },
         plugins: [
             envPlugin,
+            new CopyPlugin([
+                {
+                    from: "./static/icons/favicon.png",
+                    to: __dirname + '/build/favicon.png',
+                },
+            ]),
             new HtmlWebpackPlugin({
                 template: `./static/index.html`,
                 filename: `index.html`,

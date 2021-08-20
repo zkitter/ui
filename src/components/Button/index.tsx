@@ -29,7 +29,7 @@ export default function Button(props: Props): ReactElement {
                 {
                     'button--primary': btnType === 'primary',
                     'button--secondary': btnType === 'secondary',
-                    'cursor-default': disabled,
+                    'cursor-default': disabled || loading,
                 },
                 className,
             )}

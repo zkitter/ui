@@ -182,6 +182,11 @@ export const setNetwork = (network: string) => ({
     payload: network,
 });
 
+export const setGunPublicKey = (publicKey: string) => ({
+    type: ActionTypes.SET_SOCIAL_KEY,
+    payload: publicKey,
+});
+
 export const setGunPrivateKey = (privateKey: string) => ({
     type: ActionTypes.SET_GUN_PRIVATE_KEY,
     payload: privateKey,
@@ -241,6 +246,17 @@ export const setWeb3 = (web3: Web3 | null, account: string) => async (
 
     // @ts-ignore
     web3.currentProvider.on('accountsChanged', async ([account]) => {
+        dispatch(setGunPublicKey(''));
+        dispatch(setGunPrivateKey(''));
+        dispatch(setSemaphoreID({
+            keypair: {
+                pubKey: '',
+                privKey: null,
+            },
+            identityNullifier: '',
+            identityTrapdoor: '',
+            commitment: '',
+        }));
         dispatch(setWeb3Loading(true));
         const gunUser = gun.user();
         // @ts-ignore
@@ -249,6 +265,7 @@ export const setWeb3 = (web3: Web3 | null, account: string) => async (
         }
         dispatch(setAccount(account));
         await dispatch(lookupENS());
+
         dispatch(setWeb3Loading(false));
     });
 

@@ -2,6 +2,7 @@
 node_modules
 build*
 config.dev.json
+config.prod.json
 config.json
 .DS_Store
 .env

@@ -42,6 +42,16 @@ export default function Thread(props: Props): ReactElement {
         await fetchMore();
     }, [fetchMore, messageId]);
 
+    const gotoPost = useCallback(() => {
+        const [creator, hash] = messageId.split('/')
+        if (!hash) {
+            history.push(`/post/${creator}`)
+
+        } else {
+            history.push(`/${creator}/status/${hash}`)
+        }
+    }, [messageId]);
+
     useEffect(() => {
         (async function onThreadMount() {
             if (!messageId || level >= 3) return;
@@ -79,7 +89,7 @@ export default function Thread(props: Props): ReactElement {
                                       "border-l-4 bg-gray-50 mr-1 hover:border-gray-400",
                                   )}
                                   messageId={messageId}
-                                  onClick={() => history.push(`/${creator}/status/${hash}`)}
+                                  onClick={gotoPost}
                                   clearObserver={props.clearObserver}
                               />
                           </div>
