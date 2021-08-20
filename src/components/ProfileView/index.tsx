@@ -18,6 +18,7 @@ import {submitConnection, submitProfile} from "../../ducks/drafts";
 import {ConnectionMessageSubType, ProfileMessageSubType} from "../../util/message";
 import Avatar from "../Avatar";
 import EtherScanSVG from "../../../static/icons/etherscan-logo-gray-500.svg";
+import SnapshotLogoSVG from "../../../static/icons/snapshot-logo-bw.svg";
 import InfiniteScrollable from "../InfiniteScrollable";
 import Menuable from "../Menuable";
 
@@ -233,6 +234,19 @@ function ProfileCard(): ReactElement {
                             <Icon url={EtherScanSVG} />
                             <div className="ml-2">
                                 {`Etherscan ${user.address.slice(0, 6)}...${user.address.slice(-4)}`}
+                            </div>
+                        </div>
+                    )
+                }
+                {
+                    !!user.snapshotSpace && (
+                        <div
+                            className="profile-view__data-group flex flex-row flex-nowrap items-center text-light text-gray-500 cursor-pointer hover:underline"
+                            onClick={() => window.open(`https://snapshot.org/#/${user.ens}`, '_blank')}
+                        >
+                            <Icon url={SnapshotLogoSVG} />
+                            <div className="ml-2">
+                                {`Snapshot Space`}
                             </div>
                         </div>
                     )

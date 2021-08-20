@@ -34,6 +34,16 @@ export type User = {
         followed: string | null;
         blocked: string | null;
     };
+    snapshotSpace?: {
+        id: string;
+        name: string;
+        about: string;
+        network: string;
+        symbol: string;
+        avatar: string;
+        members: string[];
+        admins: string[];
+    }
 }
 
 type State = {
@@ -84,10 +94,10 @@ export const getUser = (ens: string) => async (dispatch: Dispatch, getState: () 
 
             payload = {
                 ens: ens,
-                name: json.payload?.name || ens,
+                name: json.payload?.name || json.payload?.snapshotSpace?.name || ens,
                 pubkey: json.payload?.pubkey || '',
                 address: address === '0x0000000000000000000000000000000000000000' ? '' : address,
-                bio: json.payload?.bio || '',
+                bio: json.payload?.bio || json.payload?.snapshotSpace?.about || '',
                 profileImage: json.payload?.profileImage || '',
                 coverImage: json.payload?.coverImage || '',
                 website: json.payload?.website || '',
@@ -100,6 +110,7 @@ export const getUser = (ens: string) => async (dispatch: Dispatch, getState: () 
                     followed: json.payload?.meta?.followed || null,
                     blocked: json.payload?.meta?.blocked || null,
                 },
+                snapshotSpace: json.payload?.snapshotSpace,
             };
 
             cachedUser[key] = payload;
@@ -141,10 +152,10 @@ export const fetchUsers = () => async (dispatch: Dispatch, getState: () => AppRo
         const address = await defaultENS.name(user.ens).getAddress();
         const payload = {
             ens: user.ens,
-            name: user.name || user.ens,
+            name: user.name || json.payload?.snapshotSpace?.name || user.ens,
             pubkey: user.pubkey || '',
             address: address === '0x0000000000000000000000000000000000000000' ? '' : address,
-            bio: user.bio || '',
+            bio: user.bio || json.payload?.snapshotSpace?.about || '',
             profileImage: user.profileImage || '',
             coverImage: user.coverImage || '',
             website: user.website || '',
@@ -157,6 +168,7 @@ export const fetchUsers = () => async (dispatch: Dispatch, getState: () => AppRo
                 followed: user.meta?.followed || null,
                 blocked: user.meta?.blocked || null,
             },
+            snapshotSpace: user.snapshotSpace,
         };
 
         dispatch({
@@ -226,6 +238,7 @@ export default function users(state = initialState, action: Action): State {
                         followed: action.payload.meta?.followed || null,
                         blocked: action.payload.meta?.blocked || null,
                     },
+                    snapshotSpace: action.payload.snapshotSpace,
                 },
             };
         default:

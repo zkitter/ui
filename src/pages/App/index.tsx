@@ -9,6 +9,7 @@ import PostView from "../../components/PostView";
 import ProfileView from "../../components/ProfileView";
 import HomeFeed from "../../components/HomeFeed";
 import DiscoverUserPanel from "../../components/DiscoverUserPanel";
+import {SnapshotAdminPanel, SnapshotMemberPanel} from "../../components/SnapshotPanels";
 
 export default function App(): ReactElement {
     const dispatch = useDispatch();
@@ -57,7 +58,11 @@ export default function App(): ReactElement {
                     <Route path="/notifications"></Route>
                     <Route path="/:name">
                         <ProfileView />
-                        <DiscoverUserPanel />
+                        <div className="app__meta-content">
+                            <SnapshotAdminPanel />
+                            <SnapshotMemberPanel />
+                            <DiscoverUserPanel />
+                        </div>
                     </Route>
                     <Route path="/">
                         <Redirect to="/explore" />

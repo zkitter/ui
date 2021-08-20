@@ -28,4 +28,13 @@ html {
     overflow-y: auto;
     flex: 1 1 auto;
   }
+
+  &__meta-content {
+    overflow-y: auto;
+    padding-bottom: 4rem;
+
+    &::-webkit-scrollbar {
+      display: none;
+    }
+  }
 }

@@ -64,7 +64,14 @@ export default function Avatar(props: Props): ReactElement {
 
     let imageUrl = user?.profileImage;
 
-    if (!user?.profileImage && user?.address) {
+    if (!user?.profileImage && user?.snapshotSpace?.avatar) {
+        const avatar = new URL(user?.snapshotSpace?.avatar);
+        if (avatar.protocol === 'ipfs:') {
+            imageUrl = `https://ipfs.io/ipfs/${avatar.pathname.slice(2)}`;
+        } else {
+            imageUrl = avatar.href;
+        }
+    } else if (!user?.profileImage && user?.address) {
         imageUrl = CACHE[user.address] ? CACHE[user.address] : makeBlockie(user.address);
         CACHE[user?.address] = imageUrl;
     } else if (address) {
