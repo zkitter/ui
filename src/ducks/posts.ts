@@ -148,16 +148,19 @@ export const fetchPosts = (creator?: string, limit = 10, offset = 0) =>
             },
         });
 
-        // if (!hash) {
-        //     dispatch({
-        //         type: ActionTypes.SET_POST,
-        //         payload: new Post({
-        //             ...post,
-        //             createdAt: new Date(post.createdAt),
-        //         }),
-        //     });
-        // }
+        dispatch({
+            type: ActionTypes.SET_POST,
+            payload: new Post({
+                ...post,
+                createdAt: new Date(post.createdAt),
+            }),
+        });
+
     }
+
+    setTimeout(() => {
+        json.payload.forEach((post: any) => dispatch(fetchPost(post.messageId)));
+    }, 0);
 
     return json.payload.map((post: any) => post.messageId);
 }
@@ -197,16 +200,18 @@ export const fetchHomeFeed = (limit = 10, offset = 0) =>
             },
         });
 
-        if (!hash) {
-            dispatch({
-                type: ActionTypes.SET_POST,
-                payload: new Post({
-                    ...post,
-                    createdAt: new Date(post.createdAt),
-                }),
-            });
-        }
+        dispatch({
+            type: ActionTypes.SET_POST,
+            payload: new Post({
+                ...post,
+                createdAt: new Date(post.createdAt),
+            }),
+        });
     }
+
+    setTimeout(() => {
+        json.payload.forEach((post: any) => dispatch(fetchPost(post.messageId)));
+    }, 0);
 
     return json.payload.map((post: any) => post.messageId);
 }
@@ -243,16 +248,18 @@ export const fetchReplies = (reference: string, limit = 10, offset = 0) =>
             },
         });
 
-        // if (!hash) {
-        //     dispatch({
-        //         type: ActionTypes.SET_POST,
-        //         payload: new Post({
-        //             ...post,
-        //             createdAt: new Date(post.createdAt),
-        //         }),
-        //     });
-        // }
+        dispatch({
+            type: ActionTypes.SET_POST,
+            payload: new Post({
+                ...post,
+                createdAt: new Date(post.createdAt),
+            }),
+        });
     }
+
+    setTimeout(() => {
+        json.payload.forEach((post: any) => dispatch(fetchPost(post.messageId)));
+    }, 0);
 
     return json.payload.map((post: any) => post.messageId);
 }

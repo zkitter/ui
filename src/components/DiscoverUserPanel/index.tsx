@@ -25,7 +25,7 @@ export default function DiscoverUserPanel(): ReactElement {
     return (
         <div
             className={classNames(
-                'flex flex-col flex-nowrap flex-grow bg-gray-100 border border-gray-200 rounded-xl mt-2',
+                'flex flex-col flex-nowrap flex-grow bg-gray-100 border border-transparent rounded-xl mt-2',
                 'discover-user',
             )}
         >
@@ -46,12 +46,12 @@ function UserRow(props: {name: string}): ReactElement {
 
     return (
         <div
-            className="flex flex-row flex-nowrap px-4 py-3 cursor-pointer hover:bg-black hover:bg-opacity-5"
+            className="flex flex-row flex-nowrap px-4 py-2 cursor-pointer hover:bg-black hover:bg-opacity-5 items-center"
             onClick={() => history.push(`/${user.ens}/`)}
         >
-            <Avatar name={user.ens} className="w-12 h-12 mr-3" />
+            <Avatar name={user.ens} className="w-10 h-10 mr-3" />
             <div className="flex flex-col flex-nowrap justify-center">
-                <div className="font-bold text-lg hover:underline">{user.name}</div>
+                <div className="font-bold text-md hover:underline">{user.name}</div>
                 <div className="text-sm text-gray-500">@{user.ens}</div>
             </div>
         </div>

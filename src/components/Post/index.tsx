@@ -49,7 +49,7 @@ export default function Post(props: Props): ReactElement {
         }
     }, [messageId, post]);
 
-    if (!post || !user) return <LoadingPost {...props} />;
+    if (!post) return <LoadingPost {...props} />;
 
     return (
         <>

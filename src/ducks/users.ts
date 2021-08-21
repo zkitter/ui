@@ -7,6 +7,7 @@ import {defaultENS} from "../util/web3";
 
 enum ActionTypes {
     SET_USER = 'users/setUser',
+    SET_USER_ADDRESS = 'users/setUserAddress',
 }
 
 type Action = {
@@ -56,6 +57,17 @@ const fetchPromises: any = {};
 
 const cachedUser: any = {};
 
+export const fetchAddressByName = (ens: string) => async (dispatch: Dispatch, getState: () => AppRootState) => {
+    const address = await defaultENS.name(ens).getAddress();
+    dispatch({
+        type: ActionTypes.SET_USER_ADDRESS,
+        payload: {
+            name: ens,
+            address: address === '0x0000000000000000000000000000000000000000' ? '' : address,
+        },
+    });
+}
+
 export const getUser = (ens: string) => async (dispatch: Dispatch, getState: () => AppRootState): Promise<User> => {
     const {
         web3: {
@@ -82,7 +94,9 @@ export const getUser = (ens: string) => async (dispatch: Dispatch, getState: () 
         if (cachedUser[key]) {
             payload = cachedUser[key];
         } else {
-            const address = await defaultENS.name(ens).getAddress();
+            // @ts-ignore
+            dispatch(fetchAddressByName(ens));
+
             const resp = await fetch(`${config.indexerAPI}/v1/users/${ens}`, {
                 method: 'GET',
                 // @ts-ignore
@@ -96,7 +110,6 @@ export const getUser = (ens: string) => async (dispatch: Dispatch, getState: () 
                 ens: ens,
                 name: json.payload?.name || json.payload?.snapshotSpace?.name || ens,
                 pubkey: json.payload?.pubkey || '',
-                address: address === '0x0000000000000000000000000000000000000000' ? '' : address,
                 bio: json.payload?.bio || json.payload?.snapshotSpace?.about || '',
                 profileImage: json.payload?.profileImage || '',
                 coverImage: json.payload?.coverImage || '',
@@ -146,15 +159,19 @@ export const fetchUsers = () => async (dispatch: Dispatch, getState: () => AppRo
     });
 
     const json = await resp.json();
+
+    setTimeout(() => {
+
+    }, 0)
     const list: string[] = [];
 
     for (const user of json.payload) {
-        const address = await defaultENS.name(user.ens).getAddress();
+        // @ts-ignore
+        dispatch(fetchAddressByName(user.ens));
         const payload = {
             ens: user.ens,
             name: user.name || json.payload?.snapshotSpace?.name || user.ens,
             pubkey: user.pubkey || '',
-            address: address === '0x0000000000000000000000000000000000000000' ? '' : address,
             bio: user.bio || json.payload?.snapshotSpace?.about || '',
             profileImage: user.profileImage || '',
             coverImage: user.coverImage || '',
@@ -218,30 +235,51 @@ export const useUser = (name = ''): User | null => {
 export default function users(state = initialState, action: Action): State {
     switch (action.type) {
         case ActionTypes.SET_USER:
-            return {
-                ...state,
-                [action.payload.ens]: {
-                    ens: action.payload.ens,
-                    name: action.payload.name,
-                    pubkey: action.payload.pubkey,
-                    address: action.payload.address,
-                    bio: action.payload.bio,
-                    profileImage: action.payload.profileImage,
-                    coverImage: action.payload.coverImage,
-                    website: action.payload.website,
-                    joinedAt: action.payload.joinedAt,
-                    meta: {
-                        followerCount: action.payload.meta?.followerCount || 0,
-                        followingCount: action.payload.meta?.followingCount || 0,
-                        blockedCount: action.payload.meta?.blockedCount || 0,
-                        blockingCount: action.payload.meta?.blockingCount || 0,
-                        followed: action.payload.meta?.followed || null,
-                        blocked: action.payload.meta?.blocked || null,
-                    },
-                    snapshotSpace: action.payload.snapshotSpace,
-                },
-            };
+            return reduceSetUser(state, action);
+        case ActionTypes.SET_USER_ADDRESS:
+            return reduceSetUserAddress(state, action);
         default:
             return state;
     }
+}
+
+function reduceSetUserAddress(state: State, action: Action): State {
+    const user = state[action.payload.name];
+
+    return {
+        ...state,
+        [action.payload.name]: {
+            ...user,
+            ens: action.payload.name,
+            address: action.payload.address,
+        },
+    };
+}
+
+function reduceSetUser(state: State, action: Action): State {
+    const user = state[action.payload.ens];
+
+    return {
+        ...state,
+        [action.payload.ens]: {
+            ...user,
+            ens: action.payload.ens,
+            name: action.payload.name,
+            pubkey: action.payload.pubkey,
+            bio: action.payload.bio,
+            profileImage: action.payload.profileImage,
+            coverImage: action.payload.coverImage,
+            website: action.payload.website,
+            joinedAt: action.payload.joinedAt,
+            meta: {
+                followerCount: action.payload.meta?.followerCount || 0,
+                followingCount: action.payload.meta?.followingCount || 0,
+                blockedCount: action.payload.meta?.blockedCount || 0,
+                blockingCount: action.payload.meta?.blockingCount || 0,
+                followed: action.payload.meta?.followed || null,
+                blocked: action.payload.meta?.blocked || null,
+            },
+            snapshotSpace: action.payload.snapshotSpace,
+        },
+    };
 }
