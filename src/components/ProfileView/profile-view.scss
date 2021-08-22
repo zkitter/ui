@@ -17,4 +17,15 @@
     left: auto;
     right: 0;
   }
+
+  &__menu-btn {
+    &:hover {
+      color: $primary-color;
+    }
+
+    &--active {
+      color: $primary-color;
+      box-shadow: inset 0px -0.125rem 0px 0px  $primary-color;
+    }
+  }
 }

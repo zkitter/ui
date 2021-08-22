@@ -23,6 +23,10 @@ $gray-100: mix($black, $white, 10);
   font-family: 'Roboto Mono', monospace;
 }
 
+.text-primary-color {
+  color: $primary-color;
+}
+
 .text-light {
   font-size: .9375rem;
   line-height: 1.3125;

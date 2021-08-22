@@ -6,6 +6,7 @@ import {AppRootState} from "../store/configureAppStore";
 import {useSelector} from "react-redux";
 import deepEqual from "fast-deep-equal";
 import config from "../util/config";
+import {Dispatch} from "redux";
 
 enum ActionTypes {
     SET_POSTS = 'posts/setPosts',
@@ -134,10 +135,66 @@ export const fetchPosts = (creator?: string, limit = 10, offset = 0) =>
         },
     });
     const json = await resp.json();
+    dispatch(processPosts(json.payload));
 
-    for (const post of json.payload) {
-        const [creator, hash] = post.messageId.split('/');
+    return json.payload.map((post: any) => post.messageId);
+}
 
+export const fetchLikedBy = (creator?: string, limit = 10, offset = 0) =>
+    async (
+        dispatch: ThunkDispatch<any, any, any>,
+        getState: () => AppRootState,
+    ) =>
+{
+    const {
+        web3: {
+            ensName,
+            gun: { pub, priv },
+        },
+    } = getState();
+    const contextualName = (ensName && pub && priv) ? ensName : undefined;
+    const resp = await fetch(`${config.indexerAPI}/v1/${creator}/likes?limit=${limit}&offset=${offset}`, {
+        method: 'GET',
+        // @ts-ignore
+        headers: {
+            'x-contextual-name': contextualName,
+        },
+    });
+    const json = await resp.json();
+    dispatch(processPosts(json.payload));
+
+    return json.payload.map((post: any) => post.messageId);
+}
+
+
+export const fetchRepliedBy = (creator: string, limit = 10, offset = 0) =>
+    async (
+        dispatch: ThunkDispatch<any, any, any>,
+        getState: () => AppRootState,
+    ) =>
+{
+    const {
+        web3: {
+            ensName,
+            gun: { pub, priv },
+        },
+    } = getState();
+    const contextualName = (ensName && pub && priv) ? ensName : undefined;
+    const resp = await fetch(`${config.indexerAPI}/v1/${creator}/replies?limit=${limit}&offset=${offset}`, {
+        method: 'GET',
+        // @ts-ignore
+        headers: {
+            'x-contextual-name': contextualName,
+        },
+    });
+    const json = await resp.json();
+    dispatch(processPosts(json.payload));
+
+    return json.payload.map((post: any) => post.messageId);
+}
+
+const processPosts = (posts: any[]) => async (dispatch: Dispatch) => {
+    for (const post of posts) {
         dispatch({
             type: ActionTypes.SET_META,
             payload: {
@@ -159,10 +216,9 @@ export const fetchPosts = (creator?: string, limit = 10, offset = 0) =>
     }
 
     setTimeout(() => {
-        json.payload.forEach((post: any) => dispatch(fetchPost(post.messageId)));
+        // @ts-ignore
+        posts.forEach((post: any) => dispatch(fetchPost(post.messageId)));
     }, 0);
-
-    return json.payload.map((post: any) => post.messageId);
 }
 
 export const fetchHomeFeed = (limit = 10, offset = 0) =>

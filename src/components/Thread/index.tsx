@@ -87,7 +87,6 @@ export default function Thread(props: Props): ReactElement {
                                   postClassName={classNames(
                                       "transition-colors cursor-pointer",
                                       "border-l-4 bg-gray-50 mr-1 hover:border-gray-400",
-                                      props.postClassName,
                                   )}
                                   messageId={messageId}
                                   onClick={gotoPost}

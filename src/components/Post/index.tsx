@@ -1,4 +1,4 @@
-import React, {MouseEventHandler, ReactElement, ReactNode, useCallback, useEffect, useState} from "react";
+import React, {MouseEventHandler, ReactElement, useCallback, useEffect, useState} from "react";
 import classNames from "classnames";
 import moment from "moment";
 import {fetchPost, useMeta, usePost} from "../../ducks/posts";
@@ -40,7 +40,6 @@ export default function Post(props: Props): ReactElement {
     const post = originalPost?.subtype === PostMessageSubType.Repost
         ? referencedPost
         : originalPost;
-    const user = useUser(post?.creator);
     const dispatch = useDispatch();
 
     useEffect(() => {
@@ -113,6 +112,7 @@ export function ExpandedPost(props: Props): ReactElement {
         : originalPost;
     const user = useUser(post?.creator);
     const history = useHistory();
+    const [parentCreator, parentHash] = post?.payload.reference.split('/') || [];
 
     const gotoUserProfile = useCallback(e => {
         if (!user?.ens) return;
@@ -159,6 +159,30 @@ export function ExpandedPost(props: Props): ReactElement {
                 </div>
             </div>
             <div className="flex flex-col flex-nowrap items-start flex-grow flex-shrink">
+                {
+                    !!parentCreator && (
+                        <div className="flex flex-row flex-nowrap mt-2 items-center text-gray-500">
+                            {
+                                parentHash
+                                    ? (
+                                        <span>
+                                            Replying to
+                                            <span
+                                                className="cursor-pointer hover:underline text-primary-color ml-1"
+                                                onClick={e => {
+                                                    e.stopPropagation();
+                                                    history.push(`/${parentCreator}/`);
+                                                }}
+                                            >
+                                                {`@${parentCreator}`}
+                                            </span>
+                                        </span>
+                                    )
+                                    : 'Replying to an anonymous user'
+                            }
+                        </div>
+                    )
+                }
                 <div className="mt-4 mb-2 text-xl">
                     <DraftEditor
                         editorState={editorState}
@@ -206,6 +230,8 @@ export function RegularPost(props: Props): ReactElement {
     let user = useUser(post?.creator);
     const history = useHistory();
 
+    const [parentCreator, parentHash] = post?.payload.reference.split('/') || [];
+
     const gotoUserProfile = useCallback(e => {
         if (!user?.ens) return;
         e.stopPropagation();
@@ -227,7 +253,10 @@ export function RegularPost(props: Props): ReactElement {
                 'post',
                 props.className,
             )}
-            onClick={props.onClick}
+            onClick={e => {
+                e.stopPropagation();
+                props.onClick && props.onClick(e);
+            }}
         >
             {
                 originalPost?.subtype === PostMessageSubType.Repost
@@ -239,6 +268,7 @@ export function RegularPost(props: Props): ReactElement {
                     )
                     : null
             }
+
             <div className="flex flex-row flex-nowrap">
                 <div>
                     <Avatar
@@ -276,6 +306,30 @@ export function RegularPost(props: Props): ReactElement {
                         </div>
                     </div>
                     <div className="text-light mt-1 mb-2">
+                        {
+                            !!parentCreator && (
+                                <div className="flex flex-row flex-nowrap mb-2 items-center text-gray-500">
+                                    {
+                                        parentHash
+                                            ? (
+                                                <span>
+                                                    Replying to
+                                                    <span
+                                                        className="cursor-pointer hover:underline text-primary-color ml-1"
+                                                        onClick={e => {
+                                                            e.stopPropagation();
+                                                            history.push(`/${parentCreator}/`);
+                                                        }}
+                                                    >
+                                                        {`@${parentCreator}`}
+                                                    </span>
+                                                </span>
+                                            )
+                                            : 'Replying to an anonymous user'
+                                    }
+                                </div>
+                            )
+                        }
                         <DraftEditor
                             editorState={editorState}
                             onChange={() => null}

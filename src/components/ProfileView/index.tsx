@@ -1,8 +1,8 @@
-import React, {ReactElement, useCallback, useEffect, useState} from "react";
+import React, {ReactElement, useCallback, useEffect, useState, MouseEvent, MouseEventHandler} from "react";
 import classNames from "classnames";
-import {fetchPosts} from "../../ducks/posts";
+import {fetchLikedBy, fetchPost, fetchPosts, fetchRepliedBy} from "../../ducks/posts";
 import {useDispatch} from "react-redux";
-import {useHistory, useParams} from "react-router";
+import {Route, Switch, useHistory, useLocation, useParams} from "react-router";
 import "./profile-view.scss";
 import Post from "../Post";
 import Button from "../Button";
@@ -19,38 +19,56 @@ import {ConnectionMessageSubType, ProfileMessageSubType} from "../../util/messag
 import Avatar from "../Avatar";
 import EtherScanSVG from "../../../static/icons/etherscan-logo-gray-500.svg";
 import SnapshotLogoSVG from "../../../static/icons/snapshot-logo-bw.svg";
+import SnapshotLogoPNG from "../../../static/icons/snapshot-logo.png";
 import InfiniteScrollable from "../InfiniteScrollable";
 import Menuable from "../Menuable";
 
 export default function ProfileView(): ReactElement {
     const {name} = useParams<{name: string}>();
     const ensName = useENSName();
+    const [fetching, setFetching] = useState(false);
     const [limit, setLimit] = useState(20);
     const [offset, setOffset] = useState(0);
     const [order, setOrder] = useState<string[]>([]);
     const dispatch = useDispatch();
     const history = useHistory();
+    const loc = useLocation();
     const loggedIn = useLoggedIn();
+    const subpath = loc.pathname.split('/')[2];
+    const user = useUser(name);
 
     useEffect(() => {
         (async function onProfileViewViewMount() {
+            setOrder([]);
+            setOffset(0);
             await dispatch(getUser(name));
             await fetchMore(true);
         })();
-    }, [name, loggedIn, ensName]);
+    }, [name, loggedIn, ensName, subpath]);
 
     const fetchMore = useCallback(async (reset = false) => {
+        setFetching(true);
+        let fetchFn: any = fetchPosts;
+
+        if (subpath === 'likes') {
+            fetchFn = fetchLikedBy;
+        } else if (subpath === 'replies') {
+            fetchFn = fetchRepliedBy;
+        }
+
         if (reset) {
-            const messageIds: any = await dispatch(fetchPosts(name, 20, 0));
+            const messageIds: any = await dispatch(fetchFn(name, 20, 0));
             setOffset(20);
             setOrder(messageIds);
         } else {
             if (order.length % limit) return;
-            const messageIds: any = await dispatch(fetchPosts(name, limit, offset));
+            const messageIds: any = await dispatch(fetchFn(name, limit, offset));
             setOffset(offset + limit);
             setOrder(order.concat(messageIds));
         }
-    }, [limit, offset, order, name]);
+
+        setFetching(false);
+    }, [limit, offset, order, name, subpath]);
 
     return (
         <InfiniteScrollable
@@ -61,28 +79,116 @@ export default function ProfileView(): ReactElement {
             onScrolledToBottom={fetchMore}
         >
             <ProfileCard />
-            {
-                order.map(messageId => {
-                    const [creator, hash] = messageId.split('/');
+            <div
+                className={classNames(
+                    'flex flex-row flex-nowrap items-center justify-center',
+                    'border border-gray-200 rounded-xl mb-1',
+                )}
+            >
+                {user?.snapshotSpace && (
+                    <ProfileMenuButton
+                        iconUrl={SnapshotLogoPNG}
+                        label="Proposals"
+                        onClick={() => history.push(`/${name}/proposals`)}
+                        active={subpath === 'proposals'}
+                    />
+                )}
+                <ProfileMenuButton
+                    iconFa="fas fa-comment-alt"
+                    label="Posts"
+                    onClick={() => history.push(`/${name}/`)}
+                    active={!subpath}
+                />
+                <ProfileMenuButton
+                    iconFa="fas fa-reply"
+                    label="Replies"
+                    onClick={() => history.push(`/${name}/replies`)}
+                    active={subpath === 'replies'}
+                />
+                <ProfileMenuButton
+                    iconFa="fas fa-heart"
+                    label="Likes"
+                    onClick={() => history.push(`/${name}/likes`)}
+                    active={subpath === 'likes'}
+                />
+            </div>
+            <PostList list={order} fetching={fetching} />
+            <Switch>
+                <Route path="/:name/likes">
+                </Route>
+                <Route path="/:name/replies">
+                </Route>
+                <Route path="/:name">
+                </Route>
+            </Switch>
+        </InfiniteScrollable>
+    )
+}
 
+function ProfileMenuButton(props: {
+    iconFa?: string;
+    iconUrl?: string;
+    label: string;
+    active?: boolean;
+    onClick: MouseEventHandler;
+}): ReactElement {
+    return (
+        <div
+            className={classNames(
+                'flex flex-row flex-nowrap items-center cursor-pointer',
+                "text-gray-300 profile-view__menu-btn p-3 mx-1",
+                {
+                    'profile-view__menu-btn--active': props.active,
+                },
+            )}
+            onClick={props.onClick}
+        >
+            <Icon fa={props.iconFa} url={props.iconUrl} />
+            <span className="ml-2 font-semibold">{props.label}</span>
+        </div>
+    );
+}
+
+function PostList(props: { list: string[]; fetching: boolean }): ReactElement {
+    const history = useHistory();
+    const gotoPost = useCallback((e: MouseEvent, messageId: string) => {
+        const [creator, hash] = messageId.split('/');
+        if (!hash) {
+            history.push(`/post/${creator}`)
+
+        } else {
+            history.push(`/${creator}/status/${hash}`)
+        }
+    }, []);
+
+    if (!props.list.length && !props.fetching) {
+        return (
+            <div
+                className={classNames(
+                    'flex flex-row flex-nowrap items-center justify-center',
+                    'py-6 px-4 border border-gray-200 rounded-xl text-sm text-gray-300',
+                )}
+            >
+                Nothing to see here yet
+            </div>
+        )
+    }
+
+    return (
+        <>
+            {
+                props.list.map(messageId => {
                     return (
                         <Post
                             key={messageId}
                             className="rounded-xl transition-colors mb-1 hover:border-gray-400 cursor-pointer border border-gray-200"
                             messageId={messageId}
-                            onClick={() => {
-                                if (!hash) {
-                                    history.push(`/post/${creator}`)
-
-                                } else {
-                                    history.push(`/${creator}/status/${hash}`)
-                                }
-                            }}
+                            onClick={e => gotoPost(e, messageId)}
                         />
                     );
                 })
             }
-        </InfiniteScrollable>
+        </>
     )
 }
 

@@ -9,7 +9,6 @@ import Thread from "../Thread";
 import ParentThread from "../ParentThread";
 import {PostMessageSubType} from "../../util/message";
 import {useENSName, useLoggedIn} from "../../ducks/web3";
-import Button from "../Button";
 
 type Props = {
 
