@@ -115,12 +115,16 @@ export default function PostView(props: Props): ReactElement {
             >
                 <div
                     ref={containerEl}
-                    className="rounded-xl overflow-visible border border-gray-100"
+                    className="rounded-xl overflow-visible border border-gray-200"
                 >
                     <div ref={parentEl}>
-                        <ParentThread messageId={messageId} />
+                        <ParentThread
+                            className="rounded-xl"
+                            messageId={messageId}
+                        />
                     </div>
                     <Post
+                        className="rounded-xl"
                         messageId={messageId}
                         expand
                     />
@@ -131,7 +135,8 @@ export default function PostView(props: Props): ReactElement {
                             return (
                                 <Thread
                                     key={index}
-                                    className="transition-colors cursor-pointer border-t border-gray-100 hover:bg-gray-50"
+                                    className="transition-colors cursor-pointer border-t border-gray-200 hover:bg-gray-50"
+                                    postClassName="rounded-xl"
                                     messageId={messageId}
                                     clearObserver={clearObserver}
                                     onClick={() => {
@@ -152,7 +157,7 @@ export default function PostView(props: Props): ReactElement {
                                 className={classNames(
                                     "flex flex-row flex-nowrap items-center justify-center",
                                     "p-4 bg-white text-blue-400 hover:text-blue-300 cursor-pointer hover:underline",
-                                    "border-t border-gray-100"
+                                    "border-t border-gray-200"
                                 )}
                                 onClick={showMore}
                             >

@@ -44,7 +44,7 @@ export default function TopNav(): ReactElement {
             className={classNames(
                 'h-20 bg-white',
                 'flex', 'flex-row', 'flex-nowrap', 'items-center',
-                'p-4 border-b border-gray-100',
+                'p-4 border-b border-gray-200',
                 'top-nav'
             )}
         >
@@ -56,7 +56,7 @@ export default function TopNav(): ReactElement {
                 <div
                     className={classNames(
                         "flex flex-row flex-nowrap items-center flex-shrink-0",
-                        "rounded-xl border border-gray-100",
+                        "rounded-xl border border-gray-200",
                         "p-1 overflow-hidden",
                         "bg-white",
                     )}
@@ -90,7 +90,7 @@ export default function TopNav(): ReactElement {
                 }
                 <Web3Button
                     className={classNames("rounded-xl", {
-                        'border border-gray-100': account,
+                        'border border-gray-200': account,
                     })}
                 />
             </div>

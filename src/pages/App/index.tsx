@@ -30,15 +30,12 @@ export default function App(): ReactElement {
                 <Switch>
                     <Route path="/explore">
                         <GlobalFeed />
-                        <DiscoverUserPanel />
                     </Route>
                     <Route path="/:name/status/:hash">
                         <PostView />
-                        <DiscoverUserPanel />
                     </Route>
                     <Route path="/post/:hash">
                         <PostView />
-                        <DiscoverUserPanel />
                     </Route>
                     {
                         !loggedIn
@@ -50,7 +47,6 @@ export default function App(): ReactElement {
                             : (
                                 <Route path="/home">
                                     <HomeFeed />
-                                    <DiscoverUserPanel />
                                 </Route>
                             )
                     }
@@ -58,16 +54,36 @@ export default function App(): ReactElement {
                     <Route path="/notifications"></Route>
                     <Route path="/:name">
                         <ProfileView />
-                        <div className="app__meta-content">
-                            <SnapshotAdminPanel />
-                            <SnapshotMemberPanel />
-                            <DiscoverUserPanel />
-                        </div>
                     </Route>
                     <Route path="/">
                         <Redirect to="/explore" />
                     </Route>
                 </Switch>
+                <div className="app__meta-content">
+                    <Switch>
+                        <Route path="/explore">
+                            <DiscoverUserPanel key="discover-user" />
+                        </Route>
+                        <Route path="/:name/status/:hash">
+                            <DiscoverUserPanel key="discover-user" />
+                        </Route>
+                        <Route path="/post/:hash">
+                            <DiscoverUserPanel key="discover-user" />
+                        </Route>
+                        <Route path="/home">
+                            <DiscoverUserPanel key="discover-user" />
+                        </Route>
+                        <Route path="/notifications"></Route>
+                        <Route path="/:name">
+                            <SnapshotAdminPanel />
+                            <SnapshotMemberPanel />
+                            <DiscoverUserPanel key="discover-user" />
+                        </Route>
+                        <Route path="/">
+                            <Redirect to="/explore" />
+                        </Route>
+                    </Switch>
+                </div>
             </div>
         </div>
     )

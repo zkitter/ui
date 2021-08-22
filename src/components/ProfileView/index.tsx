@@ -68,7 +68,7 @@ export default function ProfileView(): ReactElement {
                     return (
                         <Post
                             key={messageId}
-                            className="rounded-xl transition-colors mb-1 hover:border-gray-400 cursor-pointer border border-gray-100"
+                            className="rounded-xl transition-colors mb-1 hover:border-gray-400 cursor-pointer border border-gray-200"
                             messageId={messageId}
                             onClick={() => {
                                 if (!hash) {
@@ -105,7 +105,7 @@ function ProfileCard(): ReactElement {
             <div
                 className={classNames(
                     "flex flex-col flex-nowrap",
-                    "rounded-xl border border-gray-100",
+                    "rounded-xl border border-gray-200",
                     "overflow-hidden bg-white mb-1",
                 )}
             >
@@ -138,7 +138,7 @@ function ProfileCard(): ReactElement {
         <div
             className={classNames(
                 "flex flex-col flex-nowrap",
-                "rounded-xl border border-gray-100",
+                "rounded-xl border border-gray-200",
                 "overflow-hidden bg-white mb-1",
             )}
         >
@@ -174,12 +174,12 @@ function ProfileCard(): ReactElement {
                     {
                         !isCurrentUser && (
                             <Button
-                                btnType={user.meta.followed ? "secondary" : "primary"}
+                                btnType={user.meta?.followed ? "secondary" : "primary"}
                                 className="mr-2"
                                 disabled={!loggedIn || !gunKey.priv}
-                                onClick={user.meta.followed ? undefined : onFollow}
+                                onClick={user.meta?.followed ? undefined : onFollow}
                             >
-                                {user.meta.followed ? 'Followed' : 'Follow'}
+                                {user.meta?.followed ? 'Followed' : 'Follow'}
                             </Button>
                         )
                     }
@@ -220,7 +220,7 @@ function ProfileCard(): ReactElement {
                         <div className="profile-view__data-group flex flex-row flex-nowrap items-center text-light text-gray-500">
                             <Icon fa="far fa-calendar-alt"/>
                             <div className="ml-2">
-                                {`Joined ${moment(user.joinedAt).format('MMMM YYYY')}`}
+                                {`Joined ${moment(Number(user.joinedAt)).format('MMMM YYYY')}`}
                             </div>
                         </div>
                     )

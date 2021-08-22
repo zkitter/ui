@@ -183,7 +183,7 @@ export function ExpandedPost(props: Props): ReactElement {
                 </div>
                 <PostFooter
                     messageId={messageId}
-                    className="mt-2 pt-3 border-t border-gray-100 w-full"
+                    className="mt-2 pt-3 border-t border-gray-200 w-full"
                     large
                 />
             </div>

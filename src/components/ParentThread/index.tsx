@@ -3,6 +3,7 @@ import {usePost} from "../../ducks/posts";
 import Post from "../Post";
 import {useHistory} from "react-router";
 import {PostMessageSubType} from "../../util/message";
+import classNames from "classnames";
 
 type Props = {
     level?: number;
@@ -26,11 +27,12 @@ export default function ParentThread(props: Props): ReactElement {
     return (
         <>
             <ParentThread
+                className={props.className}
                 messageId={parent}
             />
             <Post
                 messageId={parent}
-                className="cursor-pointer hover:bg-gray-50"
+                className={classNames("cursor-pointer hover:bg-gray-50", props.className)}
                 onClick={() => {
                     if (!hash) {
                         history.push(`/post/${creator}`)

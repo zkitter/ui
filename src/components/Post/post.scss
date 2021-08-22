@@ -2,7 +2,7 @@
 
 .post {
   position: relative;
-  transition: box-shadow 150ms ease-in-out,
+  transition: border-color 150ms ease-in,
   background-color 150ms ease-in-out;
 
   &__footer {
