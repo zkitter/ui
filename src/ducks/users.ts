@@ -4,6 +4,7 @@ import {useSelector} from "react-redux";
 import deepEqual from "fast-deep-equal";
 import config from "../util/config";
 import {defaultENS} from "../util/web3";
+import {setAdmins, setMembers, setSpace} from "./snapshot";
 
 enum ActionTypes {
     SET_USER = 'users/setUser',
@@ -35,26 +36,20 @@ export type User = {
         followed: string | null;
         blocked: string | null;
     };
-    snapshotSpace?: {
-        id: string;
-        name: string;
-        about: string;
-        network: string;
-        symbol: string;
-        avatar: string;
-        members: string[];
-        admins: string[];
-    }
+    snapshot?: boolean;
 }
 
 type State = {
-    [name: string]: User;
+    map: {
+        [name: string]: User;
+    };
 }
 
-const initialState: State = {};
+const initialState: State = {
+    map: {},
+};
 
 const fetchPromises: any = {};
-
 const cachedUser: any = {};
 
 export const fetchAddressByName = (ens: string) => async (dispatch: Dispatch, getState: () => AppRootState) => {
@@ -79,12 +74,6 @@ export const getUser = (ens: string) => async (dispatch: Dispatch, getState: () 
     const key = contextualName + ens;
 
     if (fetchPromises[key]) {
-        if (cachedUser[key]) {
-            dispatch({
-                type: ActionTypes.SET_USER,
-                payload: cachedUser[key],
-            });
-        }
         return fetchPromises[key];
     }
 
@@ -94,9 +83,6 @@ export const getUser = (ens: string) => async (dispatch: Dispatch, getState: () 
         if (cachedUser[key]) {
             payload = cachedUser[key];
         } else {
-            // @ts-ignore
-            dispatch(fetchAddressByName(ens));
-
             const resp = await fetch(`${config.indexerAPI}/v1/users/${ens}`, {
                 method: 'GET',
                 // @ts-ignore
@@ -106,26 +92,8 @@ export const getUser = (ens: string) => async (dispatch: Dispatch, getState: () 
             });
             const json = await resp.json();
 
-            payload = {
-                ens: ens,
-                name: json.payload?.name || json.payload?.snapshotSpace?.name || ens,
-                pubkey: json.payload?.pubkey || '',
-                bio: json.payload?.bio || json.payload?.snapshotSpace?.about || '',
-                profileImage: json.payload?.profileImage || '',
-                coverImage: json.payload?.coverImage || '',
-                website: json.payload?.website || '',
-                joinedAt: json.payload?.joinedAt,
-                meta: {
-                    followerCount: json.payload?.meta?.followerCount || 0,
-                    followingCount: json.payload?.meta?.followingCount || 0,
-                    blockedCount: json.payload?.meta?.blockedCount || 0,
-                    blockingCount: json.payload?.meta?.blockingCount || 0,
-                    followed: json.payload?.meta?.followed || null,
-                    blocked: json.payload?.meta?.blocked || null,
-                },
-                snapshotSpace: json.payload?.snapshotSpace,
-            };
-
+            // @ts-ignore
+            payload = dispatch(processUserPayload(json.payload));
             cachedUser[key] = payload;
         }
 
@@ -159,44 +127,65 @@ export const fetchUsers = () => async (dispatch: Dispatch, getState: () => AppRo
     });
 
     const json = await resp.json();
-
-    setTimeout(() => {
-
-    }, 0)
     const list: string[] = [];
 
     for (const user of json.payload) {
         // @ts-ignore
-        dispatch(fetchAddressByName(user.ens));
-        const payload = {
-            ens: user.ens,
-            name: user.name || json.payload?.snapshotSpace?.name || user.ens,
-            pubkey: user.pubkey || '',
-            bio: user.bio || json.payload?.snapshotSpace?.about || '',
-            profileImage: user.profileImage || '',
-            coverImage: user.coverImage || '',
-            website: user.website || '',
-            joinedAt: user.joinedAt,
-            meta: {
-                followerCount: user.meta?.followerCount || 0,
-                followingCount: user.meta?.followingCount || 0,
-                blockedCount: user.meta?.blockedCount || 0,
-                blockingCount: user.meta?.blockingCount || 0,
-                followed: user.meta?.followed || null,
-                blocked: user.meta?.blocked || null,
-            },
-            snapshotSpace: user.snapshotSpace,
-        };
-
-        dispatch({
-            type: ActionTypes.SET_USER,
-            payload: payload,
-        });
-
+        const payload = dispatch(processUserPayload(user));
+        const key = contextualName + user.ens;
+        cachedUser[key] = payload;
         list.push(user.ens);
     }
 
     return list;
+}
+
+const processUserPayload = (user: any) => (dispatch: Dispatch) => {
+    // @ts-ignore
+    dispatch(fetchAddressByName(user.ens));
+
+    const space = user.snapshotSpace;
+
+    const payload: User = {
+        address: '',
+        ens: user.ens,
+        name: user.name || '',
+        pubkey: user.pubkey || '',
+        bio: user.bio || '',
+        profileImage: user.profileImage || '',
+        coverImage: user.coverImage || '',
+        website: user.website || '',
+        joinedAt: user.joinedAt,
+        meta: {
+            followerCount: user.meta?.followerCount || 0,
+            followingCount: user.meta?.followingCount || 0,
+            blockedCount: user.meta?.blockedCount || 0,
+            blockingCount: user.meta?.blockingCount || 0,
+            followed: user.meta?.followed || null,
+            blocked: user.meta?.blocked || null,
+        },
+        snapshot: !!space,
+    };
+
+    dispatch({
+        type: ActionTypes.SET_USER,
+        payload: payload,
+    });
+
+    if (space) {
+        dispatch(setSpace({
+            ens: user.ens,
+            about: space.about,
+            avatar: space.avatar,
+            name: space.name,
+            network: space.network,
+            strategies: space.strategies,
+        }));
+        dispatch(setAdmins(user.ens, space.admins));
+        dispatch(setMembers(user.ens, space.members));
+    }
+
+    return payload;
 }
 
 export const setUser = (user: User) => ({
@@ -204,9 +193,9 @@ export const setUser = (user: User) => ({
     payload: user,
 })
 
-export const useUser = (name = ''): User | null => {
+export const useUser = (ens = ''): User | null => {
     return useSelector((state: AppRootState) => {
-        if (name === '') {
+        if (ens === '') {
             return {
                 ens: '',
                 name: "Anonymous",
@@ -228,7 +217,17 @@ export const useUser = (name = ''): User | null => {
             }
         }
 
-        return state.users[name] || null;
+        const user = state.users.map[ens];
+        const space = state.snapshot.spaces[ens];
+
+        const val: User = {
+            ...user,
+            name: user?.name || space?.name || ens,
+            bio: user?.bio || space?.about || '',
+            profileImage: user?.profileImage || space?.avatar || '',
+        };
+
+        return user ? val : null;
     }, deepEqual);
 }
 
@@ -244,42 +243,48 @@ export default function users(state = initialState, action: Action): State {
 }
 
 function reduceSetUserAddress(state: State, action: Action): State {
-    const user = state[action.payload.name];
+    const user = state.map[action.payload.name];
 
     return {
         ...state,
-        [action.payload.name]: {
-            ...user,
-            ens: action.payload.name,
-            address: action.payload.address,
+        map: {
+            ...state.map,
+            [action.payload.name]: {
+                ...user,
+                ens: action.payload.name,
+                address: action.payload.address,
+            },
         },
     };
 }
 
 function reduceSetUser(state: State, action: Action): State {
-    const user = state[action.payload.ens];
+    const user = state.map[action.payload.ens];
 
     return {
         ...state,
-        [action.payload.ens]: {
-            ...user,
-            ens: action.payload.ens,
-            name: action.payload.name,
-            pubkey: action.payload.pubkey,
-            bio: action.payload.bio,
-            profileImage: action.payload.profileImage,
-            coverImage: action.payload.coverImage,
-            website: action.payload.website,
-            joinedAt: action.payload.joinedAt,
-            meta: {
-                followerCount: action.payload.meta?.followerCount || 0,
-                followingCount: action.payload.meta?.followingCount || 0,
-                blockedCount: action.payload.meta?.blockedCount || 0,
-                blockingCount: action.payload.meta?.blockingCount || 0,
-                followed: action.payload.meta?.followed || null,
-                blocked: action.payload.meta?.blocked || null,
+        map: {
+            ...state.map,
+            [action.payload.ens]: {
+                ...user,
+                ens: action.payload.ens,
+                name: action.payload.name,
+                pubkey: action.payload.pubkey,
+                bio: action.payload.bio,
+                profileImage: action.payload.profileImage,
+                coverImage: action.payload.coverImage,
+                website: action.payload.website,
+                joinedAt: action.payload.joinedAt,
+                meta: {
+                    followerCount: action.payload.meta?.followerCount || 0,
+                    followingCount: action.payload.meta?.followingCount || 0,
+                    blockedCount: action.payload.meta?.blockedCount || 0,
+                    blockingCount: action.payload.meta?.blockingCount || 0,
+                    followed: action.payload.meta?.followed || null,
+                    blocked: action.payload.meta?.blocked || null,
+                },
+                snapshot: action.payload.snapshot,
             },
-            snapshotSpace: action.payload.snapshotSpace,
         },
     };
 }

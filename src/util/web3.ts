@@ -16,3 +16,14 @@ export const defaultENS = new ENS({
     provider: httpProvider,
     ensAddress: getEnsAddress('1'),
 });
+
+const cachedName: any = {};
+export const fetchNameByAddress = async (address: string) => {
+    if (typeof cachedName[address] !== 'undefined') {
+        return cachedName[address];
+    }
+
+    const {name} = await defaultENS.getName(address);
+    cachedName[address] = name || null;
+    return name;
+}

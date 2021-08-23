@@ -8,12 +8,13 @@ import Icon from "../Icon";
 import SnapshotLogoPNG from "../../../static/icons/snapshot-logo.png";
 import {useHistory, useParams} from "react-router";
 import SpinnerGIF from "../../../static/icons/spinner.gif";
-import {defaultENS} from "../../util/web3";
+import {fetchNameByAddress} from "../../util/web3";
+import {useSpace} from "../../ducks/snapshot";
 
 export function SnapshotAdminPanel(): ReactElement {
     const {name} = useParams<{name: string}>();
     const user = useUser(name);
-    const space = user?.snapshotSpace;
+    const space = useSpace(name);
 
     if (!space) return <></>;
 
@@ -38,7 +39,7 @@ export function SnapshotAdminPanel(): ReactElement {
                 <span>Snapshot Admins</span>
             </div>
             <div className="flex flex-col flex-nowrap py-1">
-                {space.admins.map(address => <UserRow key={address} address={address} />)}
+                {Object.keys(space.admins).map(address => <UserRow key={address} address={address} />)}
             </div>
         </div>
     )
@@ -47,7 +48,7 @@ export function SnapshotAdminPanel(): ReactElement {
 export function SnapshotMemberPanel(): ReactElement {
     const {name} = useParams<{name: string}>();
     const user = useUser(name);
-    const space = user?.snapshotSpace;
+    const space = useSpace(name);
 
     if (!space) return <></>;
 
@@ -72,7 +73,7 @@ export function SnapshotMemberPanel(): ReactElement {
                 <span>Snapshot Members</span>
             </div>
             <div className="flex flex-col flex-nowrap py-1">
-                {space.members.map(address => <UserRow key={address} address={address} />)}
+                {Object.keys(space.members).map(address => <UserRow key={address} address={address} />)}
             </div>
         </div>
     )
@@ -95,9 +96,9 @@ function UserRow(props: {address: string}): ReactElement {
 
     useEffect(() => {
         (async function onAdminRowMount() {
-            const {name} = await defaultENS.getName(props.address);
-            dispatch(getUser(name));
+            const name = await fetchNameByAddress(props.address);
             if (name) {
+                dispatch(getUser(name));
                 setName(name);
             }
         })()

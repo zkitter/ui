@@ -1,5 +1,4 @@
 import { genCircuit } from "libsemaphore";
-import {local} from "web3modal";
 
 let circuit: any, provingKey: Uint8Array;
 

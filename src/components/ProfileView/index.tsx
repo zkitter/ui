@@ -85,7 +85,7 @@ export default function ProfileView(): ReactElement {
                     'border border-gray-200 rounded-xl mb-1',
                 )}
             >
-                {user?.snapshotSpace && (
+                {user?.snapshot && (
                     <ProfileMenuButton
                         iconUrl={SnapshotLogoPNG}
                         label="Proposals"
@@ -112,13 +112,9 @@ export default function ProfileView(): ReactElement {
                     active={subpath === 'likes'}
                 />
             </div>
-            <PostList list={order} fetching={fetching} />
             <Switch>
-                <Route path="/:name/likes">
-                </Route>
-                <Route path="/:name/replies">
-                </Route>
                 <Route path="/:name">
+                    <PostList list={order} fetching={fetching} />
                 </Route>
             </Switch>
         </InfiniteScrollable>
@@ -345,7 +341,7 @@ function ProfileCard(): ReactElement {
                     )
                 }
                 {
-                    !!user.snapshotSpace && (
+                    !!user.snapshot && (
                         <div
                             className="profile-view__data-group flex flex-row flex-nowrap items-center text-light text-gray-500 cursor-pointer hover:underline"
                             onClick={() => window.open(`https://snapshot.org/#/${user.ens}`, '_blank')}
