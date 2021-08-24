@@ -10,6 +10,7 @@ import ProfileView from "../../components/ProfileView";
 import HomeFeed from "../../components/HomeFeed";
 import DiscoverUserPanel from "../../components/DiscoverUserPanel";
 import {SnapshotAdminPanel, SnapshotMemberPanel} from "../../components/SnapshotPanels";
+import ProposalView from "../../components/ProposalView";
 
 export default function App(): ReactElement {
     const dispatch = useDispatch();
@@ -36,6 +37,9 @@ export default function App(): ReactElement {
                     </Route>
                     <Route path="/post/:hash">
                         <PostView />
+                    </Route>
+                    <Route path="/proposal/:proposalId">
+                        <ProposalView />
                     </Route>
                     {
                         !loggedIn

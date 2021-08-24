@@ -155,12 +155,8 @@ function ProfileMenuButton(props: {
 function ProposalList(props: { list: string[]; fetching: boolean }): ReactElement {
     const history = useHistory();
     const gotoPost = useCallback((e: MouseEvent, messageId: string) => {
-        const [creator, hash] = messageId.split('/');
-        if (!hash) {
-            history.push(`/post/${creator}`)
-
-        } else {
-            history.push(`/${creator}/status/${hash}`)
+        if (messageId) {
+            history.push(`/proposal/${messageId}`)
         }
     }, []);
 
