@@ -91,7 +91,7 @@ export const fetchPost = (messageId: string) =>
 
     let message;
 
-    if (creator && !hash) {
+    if (!creator) {
         message = await fetchMessage(`message/${messageId}`);
     } else if (creator && hash) {
         message = await fetchMessage(`~${user.pubkey}/message/${messageId}`);

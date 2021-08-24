@@ -49,7 +49,6 @@ export default function Post(props: Props): ReactElement {
         }
     }, [messageId, post]);
 
-
     if (originalPost?.subtype === PostMessageSubType.Repost) {
         try {
             const url = new URL(originalPost.payload.reference);
