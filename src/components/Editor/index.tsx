@@ -163,7 +163,8 @@ export const markdownConvertOptions = {
         breaks: true,
         enable: {
             inline: ["ins", 'del'],
-            core: ['abbr']
+            core: ['abbr'],
+            block: ['list', 'table']
         },
 
         // highlight: function (str: string, lang: string) {

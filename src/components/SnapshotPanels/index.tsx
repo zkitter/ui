@@ -1,7 +1,7 @@
 import React, {ReactElement, useCallback, useEffect, useState} from "react";
 import classNames from "classnames";
 import {useDispatch} from "react-redux";
-import {fetchUsers, getUser, useUser} from "../../ducks/users";
+import {getUser, useUser} from "../../ducks/users";
 import Avatar from "../Avatar";
 import "./snapshot-panel.scss";
 import Icon from "../Icon";
@@ -13,7 +13,6 @@ import {useSpace} from "../../ducks/snapshot";
 
 export function SnapshotAdminPanel(): ReactElement {
     const {name} = useParams<{name: string}>();
-    const user = useUser(name);
     const space = useSpace(name);
 
     if (!space) return <></>;
@@ -47,7 +46,6 @@ export function SnapshotAdminPanel(): ReactElement {
 
 export function SnapshotMemberPanel(): ReactElement {
     const {name} = useParams<{name: string}>();
-    const user = useUser(name);
     const space = useSpace(name);
 
     if (!space) return <></>;

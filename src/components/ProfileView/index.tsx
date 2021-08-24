@@ -22,10 +22,12 @@ import SnapshotLogoSVG from "../../../static/icons/snapshot-logo-bw.svg";
 import SnapshotLogoPNG from "../../../static/icons/snapshot-logo.png";
 import InfiniteScrollable from "../InfiniteScrollable";
 import Menuable from "../Menuable";
+import {fetchProposals} from "../../ducks/snapshot";
+import Proposal from "../Proposal";
+import SpinnerGif from "../../../static/icons/spinner.gif";
 
 export default function ProfileView(): ReactElement {
     const {name} = useParams<{name: string}>();
-    const ensName = useENSName();
     const [fetching, setFetching] = useState(false);
     const [limit, setLimit] = useState(20);
     const [offset, setOffset] = useState(0);
@@ -44,7 +46,7 @@ export default function ProfileView(): ReactElement {
             await dispatch(getUser(name));
             await fetchMore(true);
         })();
-    }, [name, loggedIn, ensName, subpath]);
+    }, [name, loggedIn, subpath]);
 
     const fetchMore = useCallback(async (reset = false) => {
         setFetching(true);
@@ -54,6 +56,8 @@ export default function ProfileView(): ReactElement {
             fetchFn = fetchLikedBy;
         } else if (subpath === 'replies') {
             fetchFn = fetchRepliedBy;
+        } else if (subpath === 'proposals') {
+            fetchFn = fetchProposals;
         }
 
         if (reset) {
@@ -113,6 +117,9 @@ export default function ProfileView(): ReactElement {
                 />
             </div>
             <Switch>
+                <Route path="/:name/proposals">
+                    <ProposalList list={order} fetching={fetching} />
+                </Route>
                 <Route path="/:name">
                     <PostList list={order} fetching={fetching} />
                 </Route>
@@ -143,6 +150,62 @@ function ProfileMenuButton(props: {
             <span className="ml-2 font-semibold">{props.label}</span>
         </div>
     );
+}
+
+function ProposalList(props: { list: string[]; fetching: boolean }): ReactElement {
+    const history = useHistory();
+    const gotoPost = useCallback((e: MouseEvent, messageId: string) => {
+        const [creator, hash] = messageId.split('/');
+        if (!hash) {
+            history.push(`/post/${creator}`)
+
+        } else {
+            history.push(`/${creator}/status/${hash}`)
+        }
+    }, []);
+
+    if (!props.list.length ) {
+        return props.fetching
+            ? (
+                <div
+                    className={classNames(
+                        'flex flex-row flex-nowrap items-center justify-center',
+                        'py-6 px-4 border border-gray-200 rounded-xl text-sm text-gray-300',
+                    )}
+                >
+                    <Icon url={SpinnerGif} size={3} />
+                </div>
+            )
+            : (
+                <div
+                    className={classNames(
+                        'flex flex-row flex-nowrap items-center justify-center',
+                        'py-6 px-4 border border-gray-200 rounded-xl text-sm text-gray-300',
+                    )}
+                >
+                    Nothing to see here yet
+                </div>
+            )
+    }
+
+
+
+    return (
+        <>
+            {
+                props.list.map(id => {
+                    return (
+                        <Proposal
+                            key={id}
+                            className="rounded-xl transition-colors mb-1 hover:border-gray-400 cursor-pointer border border-gray-200"
+                            id={id}
+                            onClick={e => gotoPost(e, id)}
+                        />
+                    );
+                })
+            }
+        </>
+    )
 }
 
 function PostList(props: { list: string[]; fetching: boolean }): ReactElement {

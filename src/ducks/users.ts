@@ -198,7 +198,7 @@ export const useUser = (ens = ''): User | null => {
         if (ens === '') {
             return {
                 ens: '',
-                name: "Anonymous",
+                name: '',
                 pubkey: '',
                 address: '',
                 coverImage: '',

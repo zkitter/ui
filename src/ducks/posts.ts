@@ -1,4 +1,4 @@
-import {Post, PostMessageOption, PostMessageSubType} from "../util/message";
+import {parseMessageId, Post, PostMessageOption, PostMessageSubType} from "../util/message";
 import {fetchMessage} from "../util/gun";
 import {getUser, User} from "./users";
 import {ThunkDispatch} from "redux-thunk";
@@ -86,14 +86,14 @@ export const fetchPost = (messageId: string) =>
         getState: () => AppRootState,
     ): Promise<PostMessageOption | null> =>
 {
-    const [username, hash] = messageId.split('/');
-    const user: any = await dispatch(getUser(username));
+    const {creator, hash} = parseMessageId(messageId);
+    const user: any = await dispatch(getUser(creator));
 
     let message;
 
-    if (username && !hash) {
+    if (creator && !hash) {
         message = await fetchMessage(`message/${messageId}`);
-    } else if (username && hash) {
+    } else if (creator && hash) {
         message = await fetchMessage(`~${user.pubkey}/message/${messageId}`);
     }
 
@@ -103,13 +103,13 @@ export const fetchPost = (messageId: string) =>
         type: ActionTypes.SET_POST,
         payload: new Post({
             ...message,
-            creator: hash ? username : '',
+            creator: creator,
         }),
     });
 
     return {
         ...message,
-        creator: hash ? username : '',
+        creator: creator,
     };
 }
 

@@ -1,11 +1,18 @@
 import {useSelector} from "react-redux";
 import {AppRootState} from "../store/configureAppStore";
 import deepEqual from "fast-deep-equal";
+import {ThunkDispatch} from "redux-thunk";
+import config from "../util/config";
+import snapshotjs from '@snapshot-labs/snapshot.js';
+import {Dispatch} from "redux";
+import {parseMessageId} from "../util/message";
 
 export enum ActionType {
     SET_SPACE = 'SET_SPACE',
     SET_ADMINS = 'SET_ADMINS',
     SET_MEMBERS = 'SET_MEMBERS',
+    SET_PROPOSAL = 'SET_PROPOSAL',
+    SET_SCORES = 'SET_SCORES',
 }
 
 export type Action<payload> = {
@@ -19,7 +26,25 @@ export type State = {
     spaces: {
         [ens: string]: Space;
     };
+    proposals: {
+        [proposalId: string]: Proposal;
+    };
 }
+
+export type Proposal = {
+    id: string;
+    author: string;
+    title: string;
+    body: string;
+    choices: string[];
+    end: Date;
+    snapshot: string;
+    spaceId: string;
+    start: Date;
+    created: Date;
+    state: string;
+    scores: number[];
+};
 
 export type Space = {
     ens: string;
@@ -47,6 +72,7 @@ export type Strategy = {
 
 const initialState: State = {
     spaces: {},
+    proposals: {},
 };
 
 export const setSpace = (space: {
@@ -84,10 +110,131 @@ export const setMembers = (ens: string, members: string[]): Action<{ ens: string
     },
 });
 
-export const useSpace = (ens: string): Space|null => {
+export const setScores = (proposalId: string, scores: number[]): Action<{ proposalId: string; scores: number[] }> => ({
+    type: ActionType.SET_SCORES,
+    payload: {
+        proposalId,
+        scores,
+    },
+});
+
+export const setProposal = (proposal: Proposal) => ({
+    type: ActionType.SET_PROPOSAL,
+    payload: proposal,
+});
+
+export const fetchScores = (proposalId: string, limit = 10, offset = 0) =>
+    async (
+        dispatch: ThunkDispatch<any, any, any>,
+        getState: () => AppRootState,
+    ) =>
+{
+    const resp = await fetch(`${config.indexerAPI}/v1/snapshot-votes/${proposalId}`, {
+        method: 'GET',
+    });
+    const json = await resp.json();
+
+    if (json.error) {
+        throw new Error(json.payload);
+    }
+
+    dispatch(setScores(proposalId, json.payload));
+
+    return json.payload;
+}
+
+export const fetchProposal = (proposalId: string) =>
+    async (
+        dispatch: ThunkDispatch<any, any, any>,
+        getState: () => AppRootState,
+    ) =>
+{
+    const {hash} = parseMessageId(proposalId);
+
+    if (hash) return;
+
+    const {
+        web3: {
+            ensName,
+            gun: { pub, priv },
+        },
+    } = getState();
+    const contextualName = (ensName && pub && priv) ? ensName : undefined;
+    const resp = await fetch(`${config.indexerAPI}/v1/snapshot-proposal/${proposalId}`, {
+        method: 'GET',
+        // @ts-ignore
+        headers: {
+            'x-contextual-name': contextualName,
+        },
+    });
+    const json = await resp.json();
+    return dispatch(processProposal(json.payload));
+}
+
+export const fetchProposals = (creator?: string, limit = 10, offset = 0) =>
+    async (
+        dispatch: ThunkDispatch<any, any, any>,
+        getState: () => AppRootState,
+    ) =>
+{
+    const {
+        web3: {
+            ensName,
+            gun: { pub, priv },
+        },
+    } = getState();
+    const creatorQuery = creator ? `&creator=${encodeURIComponent(creator)}` : '';
+    const contextualName = (ensName && pub && priv) ? ensName : undefined;
+    const resp = await fetch(`${config.indexerAPI}/v1/snapshot-proposals?limit=${limit}&offset=${offset}${creatorQuery}`, {
+        method: 'GET',
+        // @ts-ignore
+        headers: {
+            'x-contextual-name': contextualName,
+        },
+    });
+    const json = await resp.json();
+
+    for (let proposal of json.payload) {
+        dispatch(processProposal(proposal));
+    }
+
+    return json.payload.map((p: any) => p.id);
+}
+
+const processProposal = (payload: any) => (dispatch: Dispatch): Proposal => {
+    const proposal: Proposal = {
+        id: payload.id,
+        author: payload.author,
+        body: payload.body,
+        choices: payload.choices,
+        end: new Date(payload.end * 1000),
+        snapshot: payload.snapshot,
+        spaceId: payload.space?.id,
+        start: new Date(payload.start * 1000),
+        created: new Date(payload.created * 1000),
+        state: payload.state,
+        title: payload.title,
+        scores: payload.meta?.scores || [],
+    };
+
+    dispatch(setProposal(proposal));
+
+    return proposal;
+}
+
+export const useSpace = (ens?: string): Space|null => {
     return useSelector((state: AppRootState) => {
+        if (!ens) return null;
+
         const space = state.snapshot.spaces[ens];
         return space || null;
+    }, deepEqual);
+};
+
+export const useProposal = (id: string): Proposal|null => {
+    return useSelector((state: AppRootState) => {
+        const proposal = state.snapshot.proposals[id];
+        return proposal || null;
     }, deepEqual);
 };
 
@@ -99,6 +246,19 @@ export default function snapshot(state = initialState, action: Action<any>): Sta
             return reduceSetAdmins(state, action);
         case ActionType.SET_MEMBERS:
             return reduceSetMembers(state, action);
+        case ActionType.SET_PROPOSAL:
+            return reduceSetProposal(state, action);
+        case ActionType.SET_SCORES:
+            return {
+                ...state,
+                proposals: {
+                    ...state.proposals,
+                    [action.payload.proposalId]: {
+                        ...state.proposals[action.payload.proposalId],
+                        scores: action.payload.scores,
+                    },
+                },
+            };
         default:
             return state;
     }
@@ -152,6 +312,16 @@ function reduceSetMembers(state: State, action: Action<{ ens: string; members: s
                     return map;
                 }, {}),
             },
+        },
+    };
+}
+
+function reduceSetProposal(state: State, action: Action<Proposal>): State {
+    return {
+        ...state,
+        proposals: {
+            ...state.proposals,
+            [action.payload.id]: action.payload,
         },
     };
 }

@@ -17,6 +17,7 @@ import {ModerationMessageSubType, PostMessageSubType} from "../../util/message";
 import {useGunKey, useLoggedIn} from "../../ducks/web3";
 import {useHistory} from "react-router";
 import Menuable from "../Menuable";
+import Proposal from "../Proposal";
 
 const { markdownToDraft } = require('markdown-draft-js');
 
@@ -47,6 +48,36 @@ export default function Post(props: Props): ReactElement {
             dispatch(fetchPost(messageId));
         }
     }, [messageId, post]);
+
+
+    if (originalPost?.subtype === PostMessageSubType.Repost) {
+        try {
+            const url = new URL(originalPost.payload.reference);
+            if (url?.hostname === 'snapshot.org') {
+                const [_, spaceId, __, proposalId] = url?.hash.split('/');
+                return (
+                    <Proposal
+                        {...props}
+                        id={proposalId}
+                        repostBy={originalPost.creator}
+                    />
+                );
+            }
+        } catch (e) {}
+    }
+
+    try {
+        const url = new URL(props.messageId);
+        if (url?.hostname === 'snapshot.org') {
+            const [_, spaceId, __, proposalId] = url?.hash.split('/');
+            return (
+                <Proposal
+                    {...props}
+                    id={proposalId}
+                />
+            );
+        }
+    } catch (e) {}
 
     if (!post) return <LoadingPost {...props} />;
 
@@ -148,7 +179,7 @@ export function ExpandedPost(props: Props): ReactElement {
                         className="font-bold text-base mr-1 hover:underline"
                         onClick={gotoUserProfile}
                     >
-                        {user.name}
+                        {user.name || 'Anonymous'}
                     </div>
                     <div className="text-gray-400 mr-1" onClick={gotoUserProfile}>
                         {user.ens && `@${user.ens}`}
@@ -183,7 +214,7 @@ export function ExpandedPost(props: Props): ReactElement {
                         </div>
                     )
                 }
-                <div className="mt-4 mb-2 text-xl">
+                <div className="mt-4 mb-2 text-xl w-full">
                     <DraftEditor
                         editorState={editorState}
                         onChange={() => null}
@@ -268,7 +299,6 @@ export function RegularPost(props: Props): ReactElement {
                     )
                     : null
             }
-
             <div className="flex flex-row flex-nowrap">
                 <div>
                     <Avatar
@@ -292,7 +322,7 @@ export function RegularPost(props: Props): ReactElement {
                             className="font-bold text-base mr-1 hover:underline"
                             onClick={gotoUserProfile}
                         >
-                            {user.name}
+                            {post.creator === '' ? 'Anonymous' : user.name}
                         </div>
                         <div className="text-gray-400 mr-1" onClick={gotoUserProfile}>
                             {user.ens && `@${user.ens}`}
@@ -305,7 +335,7 @@ export function RegularPost(props: Props): ReactElement {
                             <PostMenu messageId={messageId} />
                         </div>
                     </div>
-                    <div className="text-light mt-1 mb-2">
+                    <div className="text-light mt-1 mb-2 w-full">
                         {
                             !!parentCreator && (
                                 <div className="flex flex-row flex-nowrap mb-2 items-center text-gray-500">
@@ -543,7 +573,7 @@ type PostButtonProps = {
     disabled?: boolean;
 }
 
-function PostButton(props: PostButtonProps): ReactElement {
+export function PostButton(props: PostButtonProps): ReactElement {
     return (
         <button
             className={classNames(
