@@ -38,7 +38,7 @@ export default function ProposalView(props: Props): ReactElement {
     useEffect(() => {
         (async function onPostViewMount() {
             setOrder([]);
-            // await dispatch(fetchMeta(messageId));
+            dispatch(fetchProposal(proposalId));
             await fetchMore(true);
         })();
 
@@ -51,16 +51,20 @@ export default function ProposalView(props: Props): ReactElement {
     }, [proposal])
 
     const fetchMore = useCallback(async (reset = false) => {
+        if (!proposal?.spaceId) return;
+
+        const reference = `https://snapshot.org/#/${proposal.spaceId}/proposal/${proposalId}`
+
         if (reset) {
-            const messageIds: any = await dispatch(fetchReplies(proposalId, 20, 0));
+            const messageIds: any = await dispatch(fetchReplies(reference, 20, 0));
             setOffset(messageIds.length);
             setOrder(messageIds);
         } else {
-            const messageIds: any = await dispatch(fetchReplies(proposalId, limit, offset));
+            const messageIds: any = await dispatch(fetchReplies(reference, limit, offset));
             setOffset(offset + messageIds.length);
             setOrder(order.concat(messageIds));
         }
-    }, [limit, offset, order, proposalId]);
+    }, [limit, offset, order, proposalId, proposal?.spaceId]);
 
     const showMore = useCallback(async () => {
         if (cachedObserver) {

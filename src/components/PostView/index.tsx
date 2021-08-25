@@ -16,8 +16,9 @@ import "./post-view.scss";
 import {useDispatch} from "react-redux";
 import Thread from "../Thread";
 import ParentThread from "../ParentThread";
-import {PostMessageSubType} from "../../util/message";
+import {parseMessageId, PostMessageSubType} from "../../util/message";
 import {useENSName, useLoggedIn} from "../../ducks/web3";
+import {fetchProposal} from "../../ducks/snapshot";
 
 type Props = {
 
@@ -142,7 +143,7 @@ export default function PostView(props: Props): ReactElement {
                         order.map((messageId, index) => {
                             return (
                                 <Thread
-                                    key={index}
+                                    key={messageId}
                                     className="transition-colors cursor-pointer border-t border-gray-200 hover:bg-gray-50"
                                     postClassName="rounded-xl"
                                     messageId={messageId}

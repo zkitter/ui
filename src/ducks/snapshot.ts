@@ -44,6 +44,13 @@ export type Proposal = {
     created: Date;
     state: string;
     scores: number[];
+    meta: {
+        replyCount: number;
+        likeCount: number;
+        repostCount: number;
+        liked: boolean;
+        reposted: boolean;
+    };
 };
 
 export type Space = {
@@ -215,6 +222,13 @@ const processProposal = (payload: any) => (dispatch: Dispatch): Proposal => {
         state: payload.state,
         title: payload.title,
         scores: payload.meta?.scores || [],
+        meta: {
+            replyCount: payload.meta?.replyCount || 0,
+            repostCount: payload.meta?.repostCount || 0,
+            likeCount: payload.meta?.likeCount || 0,
+            liked: payload.meta?.liked || 0,
+            reposted: payload.meta?.reposted || 0,
+        },
     };
 
     dispatch(setProposal(proposal));

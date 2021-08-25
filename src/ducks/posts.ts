@@ -9,6 +9,7 @@ import config from "../util/config";
 import {Dispatch} from "redux";
 import {useHistory} from "react-router";
 import {useCallback} from "react";
+import {fetchProposal} from "./snapshot";
 
 enum ActionTypes {
     SET_POSTS = 'posts/setPosts',
@@ -48,6 +49,13 @@ const initialState: State = {
 export const fetchMeta = (messageId: string) => async (
     dispatch: ThunkDispatch<any, any, any>, getState: () => AppRootState
 ) => {
+    const {url} = parseMessageId(messageId);
+    if (url?.hostname === 'snapshot.org') {
+        const [_, spaceId, __, proposalId] = url?.hash.split('/');
+        await dispatch(fetchProposal(proposalId));
+        return;
+    }
+
     const {
         web3: {
             ensName,
@@ -197,15 +205,31 @@ export const fetchRepliedBy = (creator: string, limit = 10, offset = 0) =>
 
 const processPosts = (posts: any[]) => async (dispatch: Dispatch) => {
     for (const post of posts) {
-        dispatch({
-            type: ActionTypes.SET_META,
-            payload: {
-                messageId: post.subtype === PostMessageSubType.Repost
-                    ? post.payload.reference
-                    : post.messageId,
-                meta: post.meta,
-            },
-        });
+        if (post.subtype === PostMessageSubType.Repost) {
+            const {url} = parseMessageId(post.payload.reference);
+
+            if (url?.hostname === 'snapshot.org') {
+                const [_, spaceId, __, proposalId] = url?.hash.split('/');
+                // @ts-ignore
+                dispatch(fetchProposal(proposalId));
+            } else {
+                dispatch({
+                    type: ActionTypes.SET_META,
+                    payload: {
+                        messageId: post.payload.reference,
+                        meta: post.meta,
+                    },
+                });
+            }
+        } else {
+            dispatch({
+                type: ActionTypes.SET_META,
+                payload: {
+                    messageId: post.messageId,
+                    meta: post.meta,
+                },
+            });
+        }
 
         dispatch({
             type: ActionTypes.SET_POST,

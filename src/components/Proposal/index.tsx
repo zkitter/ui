@@ -481,7 +481,6 @@ function ProposalFooter(props: {
     large?: boolean;
 }): ReactElement {
     const {large, className, proposalId} = props;
-    const meta = useMeta(proposalId);
     const proposal = useProposal(proposalId)
     const loggedIn = useLoggedIn();
     const gunKey = useGunKey();
@@ -498,6 +497,10 @@ function ProposalFooter(props: {
         if (!linkReference) return;
         dispatch(submitRepost(linkReference));
     }, [linkReference]);
+
+    if (!proposal) return <></>;
+
+    const meta = proposal.meta;
 
     return (
         <div

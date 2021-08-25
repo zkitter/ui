@@ -1,9 +1,11 @@
-import React, {MouseEventHandler, ReactElement} from "react";
-import {useGoToPost, usePost} from "../../ducks/posts";
+import React, {MouseEventHandler, ReactElement, useEffect} from "react";
+import {fetchMeta, useGoToPost, usePost} from "../../ducks/posts";
 import Post from "../Post";
 import {useHistory} from "react-router";
 import {PostMessageSubType} from "../../util/message";
 import classNames from "classnames";
+import {useDispatch} from "react-redux";
+import {useLoggedIn} from "../../ducks/web3";
 
 type Props = {
     level?: number;
@@ -16,11 +18,19 @@ type Props = {
 
 export default function ParentThread(props: Props): ReactElement {
     const post = usePost(props.messageId);
-    const history = useHistory();
     const parent = post?.subtype === PostMessageSubType.Reply
         ? post?.payload.reference
         : '';
     const gotoPost = useGoToPost();
+    const dispatch = useDispatch();
+    const loggedIn = useLoggedIn();
+
+    useEffect(() => {
+        (async function onPostViewMount() {
+            await dispatch(fetchMeta(parent));
+        })();
+
+    }, [loggedIn, parent]);
 
     if (!parent) return <></>;
 
