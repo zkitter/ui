@@ -91,7 +91,6 @@ export const getUser = (ens: string) => async (dispatch: Dispatch, getState: () 
                 },
             });
             const json = await resp.json();
-
             // @ts-ignore
             payload = dispatch(processUserPayload(json.payload));
             cachedUser[key] = payload;

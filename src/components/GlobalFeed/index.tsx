@@ -3,7 +3,7 @@ import classNames from "classnames";
 import {EditorState} from 'draft-js';
 import Post from "../Post";
 import {useDispatch} from "react-redux";
-import {fetchPosts} from "../../ducks/posts";
+import {fetchPosts, useGoToPost} from "../../ducks/posts";
 import "./global-feed.scss";
 import Editor from "../Editor";
 import {useLoggedIn} from "../../ducks/web3";
@@ -24,6 +24,8 @@ export default function GlobalFeed(): ReactElement {
             await fetchMore(true);
         })();
     }, [loggedIn]);
+
+    const gotoPost = useGoToPost();
 
     const fetchMore = useCallback(async (reset = false) => {
         if (reset) {
@@ -50,22 +52,13 @@ export default function GlobalFeed(): ReactElement {
             <PostEditor />
             {
                 order.map((messageId, i) => {
-                    const [creator, hash] = messageId.split('/');
-
                     return (
                         <Post
                             key={messageId}
                             // key={i}
                             className="rounded-xl transition-colors mb-1 hover:border-gray-400 cursor-pointer border border-gray-200"
                             messageId={messageId}
-                            onClick={() => {
-                                if (!hash) {
-                                    history.push(`/post/${creator}`)
-
-                                } else {
-                                    history.push(`/${creator}/status/${hash}`)
-                                }
-                            }}
+                            onClick={() => gotoPost(messageId)}
                         />
                     );
                 })

@@ -1,7 +1,7 @@
 import React, {MouseEventHandler, ReactElement, useCallback, useEffect, useState} from "react";
 import classNames from "classnames";
 import moment from "moment";
-import {fetchPost, useMeta, usePost} from "../../ducks/posts";
+import {fetchMeta, fetchPost, useMeta, usePost} from "../../ducks/posts";
 import {useUser} from "../../ducks/users";
 import Avatar from "../Avatar";
 import "../../util/variable.scss";
@@ -46,6 +46,7 @@ export default function Post(props: Props): ReactElement {
     useEffect(() => {
         if (!post) {
             dispatch(fetchPost(messageId));
+            dispatch(fetchMeta(messageId));
         }
     }, [messageId, post]);
 

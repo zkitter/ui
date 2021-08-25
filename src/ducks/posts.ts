@@ -7,6 +7,8 @@ import {useSelector} from "react-redux";
 import deepEqual from "fast-deep-equal";
 import config from "../util/config";
 import {Dispatch} from "redux";
+import {useHistory} from "react-router";
+import {useCallback} from "react";
 
 enum ActionTypes {
     SET_POSTS = 'posts/setPosts',
@@ -342,6 +344,29 @@ export const useMeta = (messageId: string)  => {
             reposted: 0,
         };
     }, deepEqual);
+}
+
+export const useGoToPost = () => {
+    const history = useHistory();
+    return useCallback((messageId: string) => {
+        const { creator, hash, url } = parseMessageId(messageId);
+
+        if (url) {
+            if (url.hostname === 'snapshot.org') {
+                const [_, spaceId, __, proposalId] = url?.hash.split('/');
+                history.push(`/proposal/${proposalId}`);
+                return;
+            }
+        }
+
+        if (!creator) {
+            history.push(`/post/${hash}`);
+        }
+
+        if (creator && hash) {
+            history.push(`/${creator}/status/${hash}`);
+        }
+    }, []);
 }
 
 export default function posts(state = initialState, action: Action): State {

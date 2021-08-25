@@ -1,6 +1,6 @@
 import React, {ReactElement, useCallback, useEffect, useState, MouseEvent, MouseEventHandler} from "react";
 import classNames from "classnames";
-import {fetchLikedBy, fetchPost, fetchPosts, fetchRepliedBy} from "../../ducks/posts";
+import {fetchLikedBy, fetchPost, fetchPosts, fetchRepliedBy, useGoToPost} from "../../ducks/posts";
 import {useDispatch} from "react-redux";
 import {Route, Switch, useHistory, useLocation, useParams} from "react-router";
 import "./profile-view.scss";
@@ -154,7 +154,7 @@ function ProfileMenuButton(props: {
 
 function ProposalList(props: { list: string[]; fetching: boolean }): ReactElement {
     const history = useHistory();
-    const gotoPost = useCallback((e: MouseEvent, messageId: string) => {
+    const gotoProposal = useCallback((messageId: string) => {
         if (messageId) {
             history.push(`/proposal/${messageId}`)
         }
@@ -195,7 +195,7 @@ function ProposalList(props: { list: string[]; fetching: boolean }): ReactElemen
                             key={id}
                             className="rounded-xl transition-colors mb-1 hover:border-gray-400 cursor-pointer border border-gray-200"
                             id={id}
-                            onClick={e => gotoPost(e, id)}
+                            onClick={() => gotoProposal(id)}
                         />
                     );
                 })
@@ -205,16 +205,7 @@ function ProposalList(props: { list: string[]; fetching: boolean }): ReactElemen
 }
 
 function PostList(props: { list: string[]; fetching: boolean }): ReactElement {
-    const history = useHistory();
-    const gotoPost = useCallback((e: MouseEvent, messageId: string) => {
-        const [creator, hash] = messageId.split('/');
-        if (!hash) {
-            history.push(`/post/${creator}`)
-
-        } else {
-            history.push(`/${creator}/status/${hash}`)
-        }
-    }, []);
+    const gotoPost = useGoToPost();
 
     if (!props.list.length && !props.fetching) {
         return (
@@ -238,7 +229,7 @@ function PostList(props: { list: string[]; fetching: boolean }): ReactElement {
                             key={messageId}
                             className="rounded-xl transition-colors mb-1 hover:border-gray-400 cursor-pointer border border-gray-200"
                             messageId={messageId}
-                            onClick={e => gotoPost(e, messageId)}
+                            onClick={() => gotoPost(messageId)}
                         />
                     );
                 })

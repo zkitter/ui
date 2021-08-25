@@ -1,5 +1,5 @@
 import React, {MouseEventHandler, ReactElement} from "react";
-import {usePost} from "../../ducks/posts";
+import {useGoToPost, usePost} from "../../ducks/posts";
 import Post from "../Post";
 import {useHistory} from "react-router";
 import {PostMessageSubType} from "../../util/message";
@@ -20,7 +20,7 @@ export default function ParentThread(props: Props): ReactElement {
     const parent = post?.subtype === PostMessageSubType.Reply
         ? post?.payload.reference
         : '';
-    const [creator, hash] = parent.split('/');
+    const gotoPost = useGoToPost();
 
     if (!parent) return <></>;
 
@@ -33,14 +33,7 @@ export default function ParentThread(props: Props): ReactElement {
             <Post
                 messageId={parent}
                 className={classNames("cursor-pointer hover:bg-gray-50", props.className)}
-                onClick={() => {
-                    if (!hash) {
-                        history.push(`/post/${creator}`)
-
-                    } else {
-                        history.push(`/${creator}/status/${hash}`)
-                    }
-                }}
+                onClick={() => gotoPost(parent)}
                 isParent
             />
         </>

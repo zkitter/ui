@@ -135,7 +135,8 @@ export default function ProposalView(props: Props): ReactElement {
                                     postClassName="rounded-xl"
                                     messageId={messageId}
                                     clearObserver={clearObserver}
-                                    onClick={() => {
+                                    onClick={(e) => {
+                                        e.stopPropagation();
                                         if (!hash) {
                                             history.push(`/post/${creator}`)
 

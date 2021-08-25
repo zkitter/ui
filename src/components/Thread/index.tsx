@@ -1,9 +1,10 @@
 import React, {MouseEventHandler, ReactElement, useCallback, useEffect, useState} from "react";
 import {useDispatch} from "react-redux";
 import {useHistory, useParams} from "react-router";
-import {fetchPost, fetchReplies, useMeta} from "../../ducks/posts";
+import {fetchPost, fetchReplies, useGoToPost, useMeta} from "../../ducks/posts";
 import classNames from "classnames";
 import Post from "../Post";
+import {parseMessageId} from "../../util/message";
 
 type Props = {
     level?: number;
@@ -42,15 +43,7 @@ export default function Thread(props: Props): ReactElement {
         await fetchMore();
     }, [fetchMore, messageId]);
 
-    const gotoPost = useCallback(() => {
-        const [creator, hash] = messageId.split('/')
-        if (!hash) {
-            history.push(`/post/${creator}`)
-
-        } else {
-            history.push(`/${creator}/status/${hash}`)
-        }
-    }, [messageId]);
+    const gotoPost = useGoToPost();
 
     useEffect(() => {
         (async function onThreadMount() {
@@ -77,8 +70,6 @@ export default function Thread(props: Props): ReactElement {
           >
               {
                   order.map(messageId => {
-                      const [creator, hash] = messageId.split('/');
-
                       return (
                           <div className="pt-1 bg-white">
                               <Thread
@@ -89,7 +80,10 @@ export default function Thread(props: Props): ReactElement {
                                       "border-l-4 bg-gray-50 mr-1 hover:border-gray-400",
                                   )}
                                   messageId={messageId}
-                                  onClick={gotoPost}
+                                  onClick={e => {
+                                      e.stopPropagation();
+                                      gotoPost(messageId);
+                                  }}
                                   clearObserver={props.clearObserver}
                               />
                           </div>

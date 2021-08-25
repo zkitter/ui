@@ -1,6 +1,15 @@
 import React, {ReactElement, useCallback, useEffect, useRef, useState} from "react";
 import {useHistory, useLocation, useParams} from "react-router";
-import {fetchHomeFeed, fetchMeta, fetchPost, fetchPosts, fetchReplies, useMeta, usePost} from "../../ducks/posts";
+import {
+    fetchHomeFeed,
+    fetchMeta,
+    fetchPost,
+    fetchPosts,
+    fetchReplies,
+    useGoToPost,
+    useMeta,
+    usePost
+} from "../../ducks/posts";
 import Post from "../Post";
 import classNames from "classnames";
 import "./post-view.scss";
@@ -46,6 +55,8 @@ export default function PostView(props: Props): ReactElement {
         })();
 
     }, [loggedIn, ensName, messageId]);
+
+    const gotoPost = useGoToPost();
 
     const fetchMore = useCallback(async (reset = false) => {
         if (reset) {
@@ -129,8 +140,6 @@ export default function PostView(props: Props): ReactElement {
                     />
                     {
                         order.map((messageId, index) => {
-                            const [creator, hash] = messageId.split('/');
-
                             return (
                                 <Thread
                                     key={index}
@@ -138,13 +147,9 @@ export default function PostView(props: Props): ReactElement {
                                     postClassName="rounded-xl"
                                     messageId={messageId}
                                     clearObserver={clearObserver}
-                                    onClick={() => {
-                                        if (!hash) {
-                                            history.push(`/post/${creator}`)
-
-                                        } else {
-                                            history.push(`/${creator}/status/${hash}`)
-                                        }
+                                    onClick={(e) => {
+                                        e.stopPropagation();
+                                        gotoPost(messageId);
                                     }}
                                 />
                             );

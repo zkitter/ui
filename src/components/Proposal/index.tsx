@@ -32,6 +32,7 @@ type Props = {
 export default function Proposal(props: Props): ReactElement {
     const {
         expand,
+        isParent,
     } = props;
 
     const proposal = useProposal(props.id);
@@ -127,6 +128,9 @@ function RegularProposal(props: Props): ReactElement {
                 'py-3 px-4',
                 'bg-white',
                 'post',
+                {
+                    'border-b rounded-bl-none rounded-br-none': props.isParent,
+                },
                 props.className,
             )}
             onClick={e => {
