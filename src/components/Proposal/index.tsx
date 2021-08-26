@@ -6,19 +6,17 @@ import moment from "moment";
 import {getUser, useUser} from "../../ducks/users";
 import {useDispatch} from "react-redux";
 import {fetchNameByAddress} from "../../util/web3";
-import DraftEditor from "draft-js-plugins-editor";
-import Draft, {CompositeDecorator, convertFromRaw, EditorState} from "draft-js";
-import Editor, {markdownConvertOptions} from "../Editor";
+import {EditorState} from "draft-js";
+import Editor from "../Editor";
 import {useHistory} from "react-router";
 import Button from "../Button";
-import {fetchPost, useMeta, usePost} from "../../ducks/posts";
 import {useGunKey, useLoggedIn} from "../../ducks/web3";
 import {setDraft, submitModeration, submitPost, submitRepost, useDraft, useSubmitting} from "../../ducks/drafts";
-import {ModerationMessageSubType, PostMessageSubType} from "../../util/message";
+import {ModerationMessageSubType} from "../../util/message";
 import {PostButton} from "../Post";
 import Modal, {ModalContent, ModalHeader} from "../Modal";
 import Icon from "../Icon";
-const { markdownToDraft } = require('markdown-draft-js');
+import {convertMarkdownToDraft, DraftEditor} from "../DraftEditor";
 
 type Props = {
     id: string;
@@ -112,12 +110,10 @@ function RegularProposal(props: Props): ReactElement {
 
     if (!proposal) return <></>;
 
-    let body = proposal.body.split('\n').join(' ').slice(0, 250);
-    body = body.length === 250 ? body + '...' : body;
+    let body = proposal.body.slice(0, 280);
+    body = proposal.body.length > 280 ? body + '...' : body;
 
-    const editorState = EditorState.createWithContent(
-        convertFromRaw(markdownToDraft(body, markdownConvertOptions)),
-    );
+    const editorState = convertMarkdownToDraft(body);
 
     const total = proposal.scores.reduce((sum, s) => sum + s, 0);
 
@@ -197,20 +193,15 @@ function RegularProposal(props: Props): ReactElement {
                                 : `Ending ${moment(proposal.end).toNow()}`
                         }
                     </div>
-                    <div className="mt-2 mb-2 text-light w-full text-gray-900">
+                    <div
+                        className={classNames(
+                            "mt-2 mb-2 text-light w-full text-gray-900 overflow-hidden relative",
+                            {"post__fade-out": proposal.body.length > 280 }
+                        )}
+                    >
                         <DraftEditor
                             editorState={editorState}
                             onChange={() => null}
-                            customStyleMap={{
-                                CODE: {
-                                    backgroundColor: '#f6f6f6',
-                                    color: '#1c1e21',
-                                    padding: '2px 4px',
-                                    margin: '0 2px',
-                                    borderRadius: '2px',
-                                    fontFamily: 'Roboto Mono, monospace',
-                                },
-                            }}
                             readOnly
                         />
                     </div>
@@ -330,9 +321,7 @@ function ExpandedProposal(props: Props): ReactElement {
 
     if (!proposal) return <></>;
 
-    const editorState = EditorState.createWithContent(
-        convertFromRaw(markdownToDraft(proposal.body, markdownConvertOptions)),
-    );
+    const editorState = convertMarkdownToDraft(proposal.body);
 
     return (
         <div

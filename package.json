@@ -12,12 +12,14 @@
     "build": "NODE_ENV=production npm run build-ui"
   },
   "dependencies": {
+    "@draft-js-plugins/editor": "^4.1.0",
+    "@draft-js-plugins/hashtag": "^4.2.1",
+    "@draft-js-plugins/linkify": "^4.1.1",
     "@ensdomains/ensjs": "^2.0.1",
     "@snapshot-labs/snapshot.js": "^0.2.0",
     "bn.js": "^5.2.0",
     "classnames": "^2.3.1",
     "draft-js": "^0.11.7",
-    "draft-js-plugins-editor": "^3.0.0",
     "draft-js-table": "^0.3.0",
     "elliptic": "^6.5.4",
     "ethereum-blockies-base64": "^1.0.2",
@@ -36,6 +38,7 @@
     "redux": "^4.0.5",
     "redux-logger": "^3.0.6",
     "redux-thunk": "^2.3.0",
+    "remarkable": "^2.0.1",
     "snarkjs": "0.1.20",
     "web3": "^1.5.1",
     "web3modal": "^1.9.4",

@@ -51,3 +51,11 @@ li {
   margin-left: 2rem;
   padding-left: .5rem;
 }
+
+a {
+  color: $primary-color;
+
+  &:hover {
+    text-decoration: underline;
+  }
+}

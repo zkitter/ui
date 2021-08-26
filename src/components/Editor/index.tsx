@@ -1,19 +1,17 @@
 import React, {ReactElement, useCallback, useState} from "react";
 import {
+    convertFromRaw,
     DraftHandleValue,
     EditorState,
     RichUtils,
-    DefaultDraftBlockRenderMap,
 } from "draft-js";
-import DraftEditor from "draft-js-plugins-editor";
 import classNames from "classnames";
-const TableUtils = require('draft-js-table');
 import "./editor.scss";
-import {useAccount, useENSName, useGunKey, useLoggedIn, useSemaphoreID, useWeb3Loading} from "../../ducks/web3";
+import {useAccount, useENSName, useLoggedIn, useSemaphoreID} from "../../ducks/web3";
 import Avatar from "../Avatar";
 import Web3Button from "../Web3Button";
 import Button from "../Button";
-import Icon from "../Icon";
+import {DraftEditor} from "../DraftEditor";
 
 type Props = {
     editorState: EditorState;
@@ -39,8 +37,6 @@ export default function Editor(props: Props): ReactElement {
     const loggedIn = useLoggedIn();
     const ensName = useENSName();
     const semaphoreId = useSemaphoreID();
-
-    const [ref, setRef] = useState<DraftEditor|null>(null);
 
     const handleKeyCommand: (command: string) => DraftHandleValue = useCallback((command: string): DraftHandleValue => {
         const newState = RichUtils.handleKeyCommand(editorState, command);
@@ -74,8 +70,6 @@ export default function Editor(props: Props): ReactElement {
         )
     }
 
-    const blockRenderMap = DefaultDraftBlockRenderMap.merge(TableUtils.DraftBlockRenderMap);
-
     return (
         <div
             className={classNames(
@@ -95,23 +89,12 @@ export default function Editor(props: Props): ReactElement {
             />
             <div className="flex flex-col flex-nowrap w-full h-full editor__wrapper">
                 <DraftEditor
-                    ref={setRef}
                     editorState={editorState}
                     onChange={onChange}
                     handleKeyCommand={handleKeyCommand}
-                    blockRenderMap={blockRenderMap}
                     placeholder={readOnly ? '' : "Write here..."}
                     readOnly={readOnly || disabled}
-                    customStyleMap={{
-                        CODE: {
-                            backgroundColor: '#f6f6f6',
-                            color: '#1c1e21',
-                            padding: '2px 4px',
-                            margin: '0 2px',
-                            borderRadius: '2px',
-                            fontFamily: 'Roboto Mono, monospace',
-                        },
-                    }}
+
                 />
                 <div className="flex flex-row flex-nowrap border-t pt-2">
                     <div className="flex-grow pr-4 mr-4">
@@ -129,60 +112,4 @@ export default function Editor(props: Props): ReactElement {
             </div>
         </div>
     );
-};
-
-export const markdownConvertOptions = {
-    preserveNewlines: true,
-    blockStyles: {
-        'ins_open': 'UNDERLINE',
-        'del_open': 'STRIKETHROUGH',
-    },
-    styleItems: {
-        'UNDERLINE': {
-            open: function () {
-                return '++';
-            },
-
-            close: function () {
-                return '++';
-            }
-        },
-        'STRIKETHROUGH': {
-            open: function () {
-                return '~~';
-            },
-
-            close: function () {
-                return '~~';
-            }
-        },
-    },
-    remarkableOptions: {
-        html: false,
-        xhtmlOut: false,
-        breaks: true,
-        enable: {
-            inline: ["ins", 'del'],
-            core: ['abbr'],
-            block: ['list', 'table']
-        },
-
-        // highlight: function (str: string, lang: string) {
-        //     if (lang && hljs.getLanguage(lang)) {
-        //         try {
-        //             return hljs.highlight(lang, str).value;
-        //         } catch (err) {
-        //             //
-        //         }
-        //     }
-        //
-        //     try {
-        //         return hljs.highlightAuto(str).value;
-        //     } catch (err) {
-        //         //
-        //     }
-        //
-        //     return ''; // use external default escaping
-        // }
-    }
 };

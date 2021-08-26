@@ -298,6 +298,57 @@ export const fetchHomeFeed = (limit = 10, offset = 0) =>
     return json.payload.map((post: any) => post.messageId);
 }
 
+export const fetchTagFeed = (tagName: string, limit = 10, offset = 0) =>
+    async (
+        dispatch: ThunkDispatch<any, any, any>,
+        getState: () => AppRootState,
+    ) =>
+    {
+        const {
+            web3: {
+                ensName,
+                gun: { pub, priv },
+            },
+        } = getState();
+        const contextualName = (ensName && pub && priv) ? ensName : undefined;
+        const resp = await fetch(`${config.indexerAPI}/v1/tags/${encodeURIComponent(tagName)}?limit=${limit}&offset=${offset}`, {
+            method: 'GET',
+            // @ts-ignore
+            headers: {
+                'x-contextual-name': contextualName,
+            },
+        });
+        const json = await resp.json();
+
+        for (const post of json.payload) {
+            const [creator, hash] = post.messageId.split('/');
+
+            dispatch({
+                type: ActionTypes.SET_META,
+                payload: {
+                    messageId: post.subtype === PostMessageSubType.Repost
+                        ? post.payload.reference
+                        : post.messageId,
+                    meta: post.meta,
+                },
+            });
+
+            dispatch({
+                type: ActionTypes.SET_POST,
+                payload: new Post({
+                    ...post,
+                    createdAt: new Date(post.createdAt),
+                }),
+            });
+        }
+
+        setTimeout(() => {
+            json.payload.forEach((post: any) => dispatch(fetchPost(post.messageId)));
+        }, 0);
+
+        return json.payload.map((post: any) => post.messageId);
+    }
+
 export const fetchReplies = (reference: string, limit = 10, offset = 0) =>
     async (dispatch: ThunkDispatch<any, any, any>, getState: () => AppRootState) =>
 {

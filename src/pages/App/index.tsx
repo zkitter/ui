@@ -11,6 +11,7 @@ import HomeFeed from "../../components/HomeFeed";
 import DiscoverUserPanel from "../../components/DiscoverUserPanel";
 import {SnapshotAdminPanel, SnapshotMemberPanel} from "../../components/SnapshotPanels";
 import ProposalView from "../../components/ProposalView";
+import TagFeed from "../../components/TagFeed";
 
 export default function App(): ReactElement {
     const dispatch = useDispatch();
@@ -31,6 +32,9 @@ export default function App(): ReactElement {
                 <Switch>
                     <Route path="/explore">
                         <GlobalFeed />
+                    </Route>
+                    <Route path="/tag/:tagName">
+                        <TagFeed />
                     </Route>
                     <Route path="/:name/status/:hash">
                         <PostView />

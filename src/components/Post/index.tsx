@@ -7,9 +7,8 @@ import Avatar from "../Avatar";
 import "../../util/variable.scss";
 import Icon from "../Icon";
 import "./post.scss";
-import Editor, {markdownConvertOptions} from "../Editor";
-import {convertFromRaw, EditorState} from "draft-js";
-import DraftEditor from "draft-js-plugins-editor";
+import Editor from "../Editor";
+import {EditorState} from "draft-js";
 import Modal, {ModalContent, ModalHeader} from "../Modal";
 import {setDraft, submitModeration, submitPost, submitRepost, useDraft, useSubmitting} from "../../ducks/drafts";
 import {useDispatch} from "react-redux";
@@ -18,8 +17,8 @@ import {useGunKey, useLoggedIn} from "../../ducks/web3";
 import {useHistory} from "react-router";
 import Menuable from "../Menuable";
 import Proposal from "../Proposal";
+import {convertMarkdownToDraft, DraftEditor} from "../DraftEditor";
 
-const { markdownToDraft } = require('markdown-draft-js');
 
 type Props = {
     messageId: string;
@@ -153,9 +152,7 @@ export function ExpandedPost(props: Props): ReactElement {
 
     if (!post || !user) return <></>;
 
-    const editorState = EditorState.createWithContent(
-        convertFromRaw(markdownToDraft(post.payload.content, markdownConvertOptions)),
-    );
+    const editorState = convertMarkdownToDraft(post.payload.content);
 
     return (
         <div
@@ -218,16 +215,6 @@ export function ExpandedPost(props: Props): ReactElement {
                     <DraftEditor
                         editorState={editorState}
                         onChange={() => null}
-                        customStyleMap={{
-                            CODE: {
-                                backgroundColor: '#f6f6f6',
-                                color: '#1c1e21',
-                                padding: '2px 4px',
-                                margin: '0 2px',
-                                borderRadius: '2px',
-                                fontFamily: 'Roboto Mono, monospace',
-                            },
-                        }}
                         readOnly
                     />
                 </div>
@@ -271,9 +258,10 @@ export function RegularPost(props: Props): ReactElement {
 
     if (!post || !user) return <></>;
 
-    const editorState = EditorState.createWithContent(
-        convertFromRaw(markdownToDraft(post.payload.content, markdownConvertOptions)),
-    );
+    let body = post.payload.content.slice(0, 512);
+    body = post.payload.content.length > 512 ? body + '...' : body;
+
+    const editorState = convertMarkdownToDraft(body);
 
     return (
         <div
@@ -335,7 +323,14 @@ export function RegularPost(props: Props): ReactElement {
                             <PostMenu messageId={messageId} />
                         </div>
                     </div>
-                    <div className="text-light mt-1 mb-2 w-full">
+                    <div
+                        className={classNames(
+                            "text-light mt-1 mb-2 w-full relative",
+                            {
+                                "post__fade-out": post.payload.content.length > 512,
+                            }
+                        )}
+                    >
                         {
                             !!parentCreator && (
                                 <div className="flex flex-row flex-nowrap mb-2 items-center text-gray-500">

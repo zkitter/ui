@@ -2,7 +2,6 @@ import {useSelector} from "react-redux";
 import {AppRootState} from "../store/configureAppStore";
 import deepEqual from "fast-deep-equal";
 import {convertToRaw, EditorState} from "draft-js";
-import {markdownConvertOptions} from "../components/Editor";
 import {Dispatch} from "redux";
 import {
     Connection,
@@ -26,8 +25,8 @@ import {getCircuit, getProvingKey} from "../util/fetch";
 // @ts-ignore
 import * as snarkjs from "snarkjs";
 import {ThunkDispatch} from "redux-thunk";
-import config from "../util/config";
-const { markdownToDraft, draftToMarkdown } = require('markdown-draft-js');
+import {markdownConvertOptions} from "../components/DraftEditor";
+const { draftToMarkdown } = require('markdown-draft-js');
 
 enum ActionTypes {
     SET_DRAFT = 'drafts/setDraft',
