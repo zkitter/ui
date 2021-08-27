@@ -33,6 +33,7 @@ export type User = {
         blockingCount: number;
         followerCount: number;
         followingCount: number;
+        postingCount: number;
         followed: string | null;
         blocked: string | null;
     };
@@ -117,7 +118,7 @@ export const fetchUsers = () => async (dispatch: Dispatch, getState: () => AppRo
         },
     } = getState();
     const contextualName = (ensName && pub && priv) ? ensName : undefined;
-    const resp = await fetch(`${config.indexerAPI}/v1/users?limit=10`, {
+    const resp = await fetch(`${config.indexerAPI}/v1/users?limit=5`, {
         method: 'GET',
         // @ts-ignore
         headers: {
@@ -137,6 +138,36 @@ export const fetchUsers = () => async (dispatch: Dispatch, getState: () => AppRo
     }
 
     return list;
+}
+
+export const searchUsers = (query: string) => async (dispatch: Dispatch, getState: () => AppRootState): Promise<string[]> => {
+    const {
+        web3: {
+            ensName,
+            gun: { pub, priv },
+        },
+    } = getState();
+    const contextualName = (ensName && pub && priv) ? ensName : undefined;
+    const resp = await fetch(`${config.indexerAPI}/v1/users/search/${encodeURIComponent(query)}`, {
+        method: 'GET',
+        // @ts-ignore
+        headers: {
+            'x-contextual-name': contextualName,
+        },
+    });
+
+    const json = await resp.json();
+    const list: string[] = [];
+
+    for (const user of json.payload) {
+        // @ts-ignore
+        const payload = dispatch(processUserPayload(user));
+        const key = contextualName + user.ens;
+        cachedUser[key] = payload;
+        list.push(user.ens);
+    }
+
+    return json.payload;
 }
 
 const processUserPayload = (user: any) => (dispatch: Dispatch) => {
@@ -160,6 +191,7 @@ const processUserPayload = (user: any) => (dispatch: Dispatch) => {
             followingCount: user.meta?.followingCount || 0,
             blockedCount: user.meta?.blockedCount || 0,
             blockingCount: user.meta?.blockingCount || 0,
+            postingCount: user.meta?.postingCount || 0,
             followed: user.meta?.followed || null,
             blocked: user.meta?.blocked || null,
         },
@@ -210,6 +242,7 @@ export const useUser = (ens = ''): User | null => {
                     followingCount: 0,
                     blockedCount: 0,
                     blockingCount: 0,
+                    postingCount: 0,
                     followed: null,
                     blocked: null,
                 },
@@ -279,6 +312,7 @@ function reduceSetUser(state: State, action: Action): State {
                     followingCount: action.payload.meta?.followingCount || 0,
                     blockedCount: action.payload.meta?.blockedCount || 0,
                     blockingCount: action.payload.meta?.blockingCount || 0,
+                    postingCount: action.payload.meta?.postingCount || 0,
                     followed: action.payload.meta?.followed || null,
                     blocked: action.payload.meta?.blocked || null,
                 },

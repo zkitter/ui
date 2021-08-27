@@ -2,7 +2,7 @@ import React, {ReactElement, useEffect} from "react";
 import makeBlockie from 'ethereum-blockies-base64';
 import classNames from "classnames";
 import Icon from "../Icon";
-import {getUser, useUser} from "../../ducks/users";
+import {fetchAddressByName, getUser, useUser} from "../../ducks/users";
 import {useDispatch} from "react-redux";
 import {useSpace} from "../../ducks/snapshot";
 
@@ -26,11 +26,13 @@ export default function Avatar(props: Props): ReactElement {
     } = props;
 
     const user = useUser(name);
-    const space = useSpace(name);
     const dispatch = useDispatch();
 
     useEffect(() => {
-        if (name) dispatch(getUser(name));
+        if (name) {
+            dispatch(getUser(name));
+            dispatch(fetchAddressByName(name));
+        }
     }, [name]);
 
     if (incognito) {

@@ -22,4 +22,17 @@
   &__icon + &__icon {
     margin-left: .25rem;
   }
+
+  &__back-icon {
+    height: 2.5rem;
+    width: 2.5rem;
+    border-radius: 50%;
+    transition: background-color 100ms ease-in-out,
+    color 100ms ease-in-out;
+
+    &:hover {
+      background: rgba($primary-color, .15);
+      color: $primary-color;
+    }
+  }
 }

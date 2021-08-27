@@ -2,7 +2,7 @@ import React, {ReactElement, useCallback} from "react";
 import Icon from "../Icon";
 import classNames from "classnames";
 import "./top-nav.scss"
-import {useHistory, useLocation} from "react-router";
+import {Route, Switch, useHistory, useLocation, useParams} from "react-router";
 import Web3Button from "../Web3Button";
 import {
     addGunKeyToTextRecord,
@@ -17,16 +17,19 @@ import {
 } from "../../ducks/web3";
 import Button from "../Button";
 import {useDispatch} from "react-redux";
+import Avatar from "../Avatar";
+import {useUser} from "../../ducks/users";
+import SnapshotPNG from "../../../static/icons/snapshot-logo.png";
 
 export default function TopNav(): ReactElement {
     const account = useAccount();
     const loggedIn = useENSLoggedIn();
     const ensName = useENSName();
-    const semaphore = useSemaphoreID();
     const gunKey = useGunKey();
     const web3Loading = useWeb3Loading();
     const ensFetching = useENSFetching();
     const dispatch = useDispatch();
+    const history = useHistory();
 
     const showRegisterENSButton = !loggedIn && account && !web3Loading && !ensFetching && !ensName;
     const showAddTextRecordButton = !loggedIn && account && !web3Loading && !ensFetching && ensName && !gunKey.pub;
@@ -42,7 +45,7 @@ export default function TopNav(): ReactElement {
     return (
         <div
             className={classNames(
-                'h-20 bg-white',
+                'h-20 bg-white flex-shrink-0',
                 'flex', 'flex-row', 'flex-nowrap', 'items-center',
                 'p-4 border-b border-gray-200',
                 'top-nav'
@@ -53,19 +56,18 @@ export default function TopNav(): ReactElement {
                     "flex flex-row flex-nowrap items-center flex-grow flex-shrink-0",
                 )}
             >
-                <div
-                    className={classNames(
-                        "flex flex-row flex-nowrap items-center flex-shrink-0",
-                        "rounded-xl border border-gray-200",
-                        "p-1 overflow-hidden",
-                        "bg-white",
-                    )}
-                >
-                    { loggedIn && <TopNavIcon fa="fas fa-home" pathname="/home" /> }
-                    { loggedIn && <TopNavIcon fa="fas fa-user" pathname={`/${ensName}/`} /> }
-                    <TopNavIcon fa="fas fa-globe-asia" pathname="/explore" />
-                    {/*<TopNavIcon fa="fas fa-bell" pathname="/notifications" />*/}
-                </div>
+                <Switch>
+                    <Route path="/explore" component={DefaultHeaderGroup} />
+                    <Route path="/home" component={DefaultHeaderGroup} />
+                    <Route path="/tag/:tagName" component={TagHeaderGroup} />
+                    <Route path="/:name/status/:hash" component={PostHeaderGroup} />
+                    <Route path="/post/:hash" component={PostHeaderGroup} />
+                    <Route path="/Proposal/:hash" component={ProposalHeaderGroup} />
+                    <Route path="/:name" component={UserProfileHeaderGroup} />
+                    <Route>
+                        <DefaultHeaderGroup />
+                    </Route>
+                </Switch>
             </div>
             <div className="flex flex-row flex-nowrap items-center flex-grow-0 flex-shrink-0">
                 {
@@ -96,6 +98,152 @@ export default function TopNav(): ReactElement {
             </div>
         </div>
     );
+}
+
+function DefaultHeaderGroup() {
+    const loggedIn = useENSLoggedIn();
+    const ensName = useENSName();
+
+    return (
+        <div
+            className={classNames(
+                "flex flex-row flex-nowrap items-center flex-shrink-0",
+                "rounded-xl border border-gray-200",
+                "p-1 overflow-hidden",
+                "bg-white",
+            )}
+        >
+            { loggedIn && <TopNavIcon fa="fas fa-home" pathname="/home" /> }
+            { loggedIn && <TopNavIcon fa="fas fa-user" pathname={`/${ensName}/`} /> }
+            <TopNavIcon fa="fas fa-globe-asia" pathname="/explore" />
+            {/*<TopNavIcon fa="fas fa-bell" pathname="/notifications" />*/}
+        </div>
+    )
+}
+
+function UserProfileHeaderGroup() {
+    const {name} = useParams<{ name: string }>();
+    const history = useHistory();
+    const user = useUser(name);
+
+    return (
+        <div
+            className={classNames(
+                "flex flex-row flex-nowrap items-center flex-shrink-0",
+                "rounded-xl p-1 overflow-hidden",
+                "bg-white",
+            )}
+        >
+            <Icon
+                className="w-8 h-8 flex flex-row items-center justify-center top-nav__back-icon"
+                fa="fas fa-chevron-left"
+                onClick={() => history.push(`/`)}
+            />
+            <div
+                className="flex flex-row flex-nowrap items-center px-2 py-2"
+            >
+                <div className="flex flex-col flex-nowrap justify-center ml-2">
+                    <div className="font-bold text-lg">
+                        {user?.name || name}
+                    </div>
+                    <div className="text-xs text-gray-500">{user?.meta.postingCount || 0} Posts</div>
+                </div>
+            </div>
+        </div>
+    )
+}
+
+function TagHeaderGroup() {
+    const history = useHistory();
+    const {tagName} = useParams<{ tagName: string }>();
+    const tag = decodeURIComponent(tagName);
+
+    return (
+        <div
+            className={classNames(
+                "flex flex-row flex-nowrap items-center flex-shrink-0",
+                "rounded-xl p-1 overflow-hidden",
+                "bg-white",
+            )}
+        >
+            <Icon
+                className="w-8 h-8 flex flex-row items-center justify-center top-nav__back-icon"
+                fa="fas fa-chevron-left"
+                onClick={() => history.push(`/`)}
+            />
+            <div
+                className="flex flex-row flex-nowrap items-center px-2 py-2"
+            >
+                <div className="flex flex-col flex-nowrap justify-center ml-2">
+                    <div className="font-bold text-xl">
+                        {tag}
+                    </div>
+                </div>
+            </div>
+        </div>
+    )
+}
+
+function PostHeaderGroup() {
+    const history = useHistory();
+
+    return (
+        <div
+            className={classNames(
+                "flex flex-row flex-nowrap items-center flex-shrink-0",
+                "rounded-xl p-1 overflow-hidden",
+                "bg-white",
+            )}
+        >
+            <Icon
+                className="w-8 h-8 flex flex-row items-center justify-center top-nav__back-icon"
+                fa="fas fa-chevron-left"
+                onClick={() => history.push(`/`)}
+            />
+            <div
+                className="flex flex-row flex-nowrap items-center px-2 py-2"
+            >
+                <div className="flex flex-col flex-nowrap justify-center ml-2">
+                    <div className="font-bold text-xl">
+                        Post
+                    </div>
+                </div>
+            </div>
+        </div>
+    )
+}
+
+function ProposalHeaderGroup() {
+    const history = useHistory();
+
+    return (
+        <div
+            className={classNames(
+                "flex flex-row flex-nowrap items-center flex-shrink-0",
+                "rounded-xl p-1 overflow-hidden",
+                "bg-white",
+            )}
+        >
+            <Icon
+                className="w-8 h-8 flex flex-row items-center justify-center top-nav__back-icon"
+                fa="fas fa-chevron-left"
+                onClick={() => history.push(`/`)}
+            />
+            <div
+                className="flex flex-row flex-nowrap items-center px-2 py-2"
+            >
+                <Icon
+                    url={SnapshotPNG}
+                    size={1.5}
+                />
+                <div className="flex flex-col flex-nowrap justify-center ml-2">
+                    <div className="font-bold text-xl">
+                        Proposal
+                    </div>
+                </div>
+            </div>
+        </div>
+    )
 }
 
 type TopNavIconProps = {

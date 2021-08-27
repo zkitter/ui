@@ -12,6 +12,7 @@ import DiscoverUserPanel from "../../components/DiscoverUserPanel";
 import {SnapshotAdminPanel, SnapshotMemberPanel} from "../../components/SnapshotPanels";
 import ProposalView from "../../components/ProposalView";
 import TagFeed from "../../components/TagFeed";
+import DiscoverTagPanel from "../../components/DiscoverTagPanel";
 
 export default function App(): ReactElement {
     const dispatch = useDispatch();
@@ -71,21 +72,34 @@ export default function App(): ReactElement {
                     <Switch>
                         <Route path="/explore">
                             <DiscoverUserPanel key="discover-user" />
+                            <DiscoverTagPanel key="discover-tag" />
                         </Route>
                         <Route path="/:name/status/:hash">
                             <DiscoverUserPanel key="discover-user" />
+                            <DiscoverTagPanel key="discover-tag" />
                         </Route>
                         <Route path="/post/:hash">
                             <DiscoverUserPanel key="discover-user" />
+                            <DiscoverTagPanel key="discover-tag" />
+                        </Route>
+                        <Route path="/proposal/:proposalId">
+                            <DiscoverUserPanel key="discover-user" />
+                            <DiscoverTagPanel key="discover-tag" />
+                        </Route>
+                        <Route path="/tag/:tagName">
+                            <DiscoverUserPanel key="discover-user" />
+                            <DiscoverTagPanel key="discover-tag" />
                         </Route>
                         <Route path="/home">
                             <DiscoverUserPanel key="discover-user" />
+                            <DiscoverTagPanel key="discover-tag" />
                         </Route>
                         <Route path="/notifications"></Route>
                         <Route path="/:name">
                             <SnapshotAdminPanel />
                             <SnapshotMemberPanel />
                             <DiscoverUserPanel key="discover-user" />
+                            <DiscoverTagPanel key="discover-tag" />
                         </Route>
                         <Route path="/">
                             <Redirect to="/explore" />

@@ -1,5 +1,19 @@
 @import "../../util/variable";
+//@import '/node_modules/@draft-js-plugins/mention/lib/plugin.css';
 
-.hngfxw3{
+.m6zwb4v, .m6zwb4v:visited {
   color: $primary-color;
+  background: transparent;
+}
+
+.mnw6qvm{border:1px solid #eee;position:absolute;min-width:220px;max-width:440px;background:#fff;border-radius:2px;box-shadow:0px 4px 30px 0px rgba(220,220,220,1);cursor:pointer;padding-top:8px;padding-bottom:8px;z-index:2;display:-webkit-box;display:-webkit-flex;display:-ms-flexbox;display:flex;-webkit-flex-direction:column;-ms-flex-direction:column;flex-direction:column;box-sizing:border-box;-webkit-transform:scale(0);-ms-transform:scale(0);transform:scale(0);}
+.m1ymsnxd{opacity:0;-webkit-transition:opacity 0.25s cubic-bezier(0.3,1.2,0.2,1);transition:opacity 0.25s cubic-bezier(0.3,1.2,0.2,1);}
+.m126ak5t{opacity:1;}
+.mtiwdxc{padding:7px 10px 3px 10px;-webkit-transition:background-color 0.4s cubic-bezier(.27,1.27,.48,.56);transition:background-color 0.4s cubic-bezier(.27,1.27,.48,.56);}.mtiwdxc:active{background-color:#cce7ff;}
+.myz2dw1{padding:7px 10px 3px 10px;-webkit-transition:background-color 0.4s cubic-bezier(.27,1.27,.48,.56);transition:background-color 0.4s cubic-bezier(.27,1.27,.48,.56);background-color:#e6f3ff;}.myz2dw1:active{background-color:#cce7ff;}
+.mpqdcgq{display:inline-block;margin-left:8px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:368px;font-size:0.9em;margin-bottom:0.2em;}
+.m1mfvffo{display:inline-block;width:24px;height:24px;border-radius:12px;}
+
+.mnw6qvm {
+  z-index: 300;
 }

@@ -1,54 +1,93 @@
-import React, {ReactElement} from "react";
+import React, {ReactElement, useCallback, useMemo, useState} from "react";
 import {
     CompositeDecorator, ContentBlock, ContentState, convertFromRaw, convertToRaw,
     DefaultDraftBlockRenderMap, EditorState,
 } from "draft-js";
 import DraftJSPluginEditor, {PluginEditorProps} from "@draft-js-plugins/editor";
 import createLinkifyPlugin from '@draft-js-plugins/linkify';
-import createHashtagPlugin, {extractHashtagsWithIndices} from '@draft-js-plugins/hashtag';
+import createHashtagPlugin from '@draft-js-plugins/hashtag';
+import createMentionPlugin, {
+    defaultSuggestionsFilter, MentionData,
+} from '@draft-js-plugins/mention';
 const TableUtils = require('draft-js-table');
 const { linkify } = require("remarkable/linkify");
 const { markdownToDraft } = require('markdown-draft-js');
 import "./draft-js-editor.scss";
-import {hashtagify} from "../../util/hashtag";
 import {useHistory} from "react-router";
-const { draftToMarkdown } = require('markdown-draft-js');
+import {useDispatch} from "react-redux";
+import {searchUsers} from "../../ducks/users";
+import Avatar from "../Avatar";
+import classNames from "classnames";
+import debounce from "lodash.debounce";
 
 const blockRenderMap = DefaultDraftBlockRenderMap.merge(TableUtils.DraftBlockRenderMap);
 const linkifyPlugin = createLinkifyPlugin();
 const hashtagPlugin = createHashtagPlugin();
 
 export function DraftEditor(props: PluginEditorProps): ReactElement {
+    const dispatch = useDispatch();
+    const { MentionSuggestions, mentionPlugin } = useMemo(() => {
+        const mentionPlugin = createMentionPlugin({
+            mentionRegExp,
+        });
+        const { MentionSuggestions } = mentionPlugin;
+        return { mentionPlugin, MentionSuggestions };
+    }, []);
+
+    const [open, setOpen] = useState(false);
+    const [suggestions, setSuggestions] = useState<MentionData[]>([]);
+
+    const onOpenChange = useCallback((_open: boolean) => {
+        setOpen(_open);
+    }, []);
+
+    const onSearchChange = useCallback(async ({ value }: { value: string }) => {
+        let result: any = await dispatch(searchUsers(value));
+        result = result.map((r: any) => ({
+            name: '@' + r.ens,
+            profileImage: r.profileImage,
+            nickname: r.name,
+        }))
+        setSuggestions(defaultSuggestionsFilter(value, result));
+    }, []);
+
+    const debouncedOnSearchChange = debounce(onSearchChange, 500);
+
     return (
-        <DraftJSPluginEditor
-            blockRenderMap={blockRenderMap}
-            customStyleMap={{
-                CODE: {
-                    backgroundColor: '#f6f6f6',
-                    color: '#1c1e21',
-                    padding: '2px 4px',
-                    margin: '0 2px',
-                    borderRadius: '2px',
-                    fontFamily: 'Roboto Mono, monospace',
-                },
-            }}
-            {...props}
-            plugins={[linkifyPlugin, hashtagPlugin]}
-            onChange={editorState => {
-                // const currentContent = editorState.getCurrentContent();
-                // const markdown = draftToMarkdown(convertToRaw(currentContent), markdownConvertOptions);
-                // const selection = editorState.getSelection();
-                // const anchorOffset = selection.getAnchorOffset();
-                // const blockKey = selection.getAnchorKey();
-                // const block = editorState.getCurrentContent().getBlockForKey(blockKey);
-                // const blockText = block.getText();
-                // // console.log(extractHashtagsWithIndices(markdown), markdown, blockText);
-                props.onChange && props.onChange(editorState);
-                return editorState;
-            }}
-        />
+        <>
+            <DraftJSPluginEditor
+                blockRenderMap={blockRenderMap}
+                customStyleMap={{
+                    CODE: {
+                        backgroundColor: '#f6f6f6',
+                        color: '#1c1e21',
+                        padding: '2px 4px',
+                        margin: '0 2px',
+                        borderRadius: '2px',
+                        fontFamily: 'Roboto Mono, monospace',
+                    },
+                }}
+                {...props}
+                plugins={[linkifyPlugin, hashtagPlugin, mentionPlugin]}
+                onChange={editorState => {
+                    props.onChange && props.onChange(editorState);
+                    return editorState;
+                }}
+            />
+            <MentionSuggestions
+                open={open}
+                onOpenChange={onOpenChange}
+                suggestions={suggestions}
+                onSearchChange={debouncedOnSearchChange}
+                // @ts-ignore
+                entryComponent={Entry}
+                onAddMention={() => {
+                    // get the mention object selected
+                }}
+            />
+        </>
     )
-}
+};
 
 export const decorator = new CompositeDecorator([
     {
@@ -83,6 +122,23 @@ export const decorator = new CompositeDecorator([
             );
         },
     },
+    {
+        strategy: findMentionEntities,
+        component: (props: any) => {
+            const history = useHistory();
+            return (
+                <a
+                    className="hashtag"
+                    onClick={e => {
+                        e.stopPropagation();
+                        history.push(`/${encodeURIComponent(props.decoratedText.slice(1))}/`)
+                    }}
+                >
+                    {props.children}
+                </a>
+            );
+        },
+    },
 ]);
 
 function findLinkEntities(contentBlock: any, callback: any, contentState: any) {
@@ -98,10 +154,43 @@ function findLinkEntities(contentBlock: any, callback: any, contentState: any) {
     );
 }
 
+const mentionRegExp = '[' +
+    '\\w-' +
+    // Latin-1 Supplement (letters only) - https://en.wikipedia.org/wiki/List_of_Unicode_characters#Latin-1_Supplement
+    '\u00C0-\u00D6' +
+    '\u00D8-\u00F6' +
+    '\u00F8-\u00FF' +
+    // Latin Extended-A (without deprecated character) - https://en.wikipedia.org/wiki/List_of_Unicode_characters#Latin_Extended-A
+    '\u0100-\u0148' +
+    '\u014A-\u017F' +
+    // Cyrillic symbols: \u0410-\u044F - https://en.wikipedia.org/wiki/Cyrillic_script_in_Unicode
+    '\u0410-\u044F' +
+    // hiragana (japanese): \u3040-\u309F - https://gist.github.com/ryanmcgrath/982242#file-japaneseregex-js
+    '\u3040-\u309F' +
+    // katakana (japanese): \u30A0-\u30FF - https://gist.github.com/ryanmcgrath/982242#file-japaneseregex-js
+    '\u30A0-\u30FF' +
+    // For an advanced explaination about Hangul see https://github.com/draft-js-plugins/draft-js-plugins/pull/480#issuecomment-254055437
+    // Hangul Jamo (korean): \u3130-\u318F - https://en.wikipedia.org/wiki/Korean_language_and_computers#Hangul_in_Unicode
+    // Hangul Syllables (korean): \uAC00-\uD7A3 - https://en.wikipedia.org/wiki/Korean_language_and_computers#Hangul_in_Unicode
+    '\u3130-\u318F' +
+    '\uAC00-\uD7A3' +
+    // common chinese symbols: \u4e00-\u9eff - http://stackoverflow.com/a/1366113/837709
+    // extended to \u9fa5 https://github.com/draft-js-plugins/draft-js-plugins/issues/1888
+    '\u4e00-\u9fa5' +
+    // Arabic https://en.wikipedia.org/wiki/Arabic_(Unicode_block)
+    '\u0600-\u06ff' +
+    // Vietnamese http://vietunicode.sourceforge.net/charset/
+    '\u00C0-\u1EF9' +
+    '\u002E'+
+    ']';
 const HASHTAG_REGEX = /\#[\w\u0590-\u05ff]+/g;
-
+const MENTION_REGEX = new RegExp(`\@${mentionRegExp}+`, 'g');
 function findHashtagEntities(contentBlock: ContentBlock, callback: any, contentState: ContentState) {
     findWithRegex(HASHTAG_REGEX, contentBlock, callback);
+}
+
+function findMentionEntities(contentBlock: ContentBlock, callback: any, contentState: ContentState) {
+    findWithRegex(MENTION_REGEX, contentBlock, callback);
 }
 
 function findWithRegex(regex: any, contentBlock: ContentBlock, callback: any) {
@@ -175,5 +264,48 @@ export const convertMarkdownToDraft = (md: string) => {
     return EditorState.createWithContent(
         convertFromRaw(markdownToDraft(md, markdownConvertOptions)),
         decorator,
+    );
+}
+
+interface EntryComponentProps {
+    className?: string;
+    onMouseDown(event: MouseEvent): void;
+    onMouseUp(event: MouseEvent): void;
+    onMouseEnter(event: MouseEvent): void;
+    role: string;
+    id: string;
+    'aria-selected'?: boolean | 'false' | 'true';
+    mention: MentionData;
+    isFocused: boolean;
+    searchValue?: string;
+}
+
+function Entry(props: EntryComponentProps): ReactElement {
+    const {
+        mention,
+        searchValue, // eslint-disable-line @typescript-eslint/no-unused-vars
+        isFocused, // eslint-disable-line @typescript-eslint/no-unused-vars
+        className,
+        ...parentProps
+    } = props;
+
+    const name = mention.name.slice(1);
+
+    return (
+        // @ts-ignore
+        <div
+            className={classNames('mention-entry', className)}
+            {...parentProps}
+        >
+            <div
+                className="flex flex-row flex-nowrap p-1 cursor-pointer items-center"
+            >
+                <Avatar name={name} className="w-8 h-8 mr-2" />
+                <div className="flex flex-col flex-nowrap justify-center">
+                    <div className="font-bold text-sm hover:underline">{mention.nickname || name}</div>
+                    <div className="text-xs text-gray-500">{mention.name}</div>
+                </div>
+            </div>
+        </div>
     );
 }
