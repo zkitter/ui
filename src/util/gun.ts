@@ -1,4 +1,5 @@
-import Gun from "gun";
+import Gun from "gun/gun";
+// const Gun = require('gun');
 import "gun/sea";
 import {Message, MessageType, Post, PostJSON, PostMessageOption, PostMessageSubType} from "./message";
 import config from "./config";
@@ -13,9 +14,9 @@ export const authenticateGun = (keyPair: { pub: string; priv: string }) => {
 export const fetchMessage = async (soul: string): Promise<PostMessageOption> => {
     return new Promise(async (resolve, reject) => {
         // @ts-ignore
-        const data = await gun.get(soul);
+        const data: any = await gun.get(soul);
 
-        let payload;
+        let payload: any | undefined;
 
         const type = Message.getType(data.type);
 
@@ -31,12 +32,12 @@ export const fetchMessage = async (soul: string): Promise<PostMessageOption> => 
                 resolve({
                     type: type as MessageType,
                     subtype: subtype as PostMessageSubType,
-                    createdAt: new Date(data.createdAt),
+                    createdAt: new Date(Number(data.createdAt)),
                     payload: {
-                        topic: payload.topic,
-                        title: payload.title,
-                        content: payload.content,
-                        reference: payload.reference,
+                        topic: payload?.topic,
+                        title: payload?.title,
+                        content: payload?.content,
+                        reference: payload?.reference,
                     },
                 });
             }

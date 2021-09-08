@@ -3,7 +3,10 @@ import {useSelector} from "react-redux";
 import deepEqual from "fast-deep-equal";
 import {AppRootState} from "../store/configureAppStore";
 import {Subscription} from "web3-core-subscriptions";
-import { genIdentityCommitment, Identity } from 'libsemaphore';
+import {Identity } from 'libsemaphore';
+import {
+    genIdentityCommitment_poseidon as genIdentityCommitment,
+} from "semaphore-lib";
 import {ThunkDispatch} from "redux-thunk";
 const {
     default: ENS,
@@ -20,6 +23,7 @@ import {defaultENS, defaultWeb3} from "../util/web3";
 import gun, {authenticateGun} from "../util/gun";
 // @ts-ignore
 import * as snarkjs from 'snarkjs';
+import semethid from "semethid";
 import config from "../util/config";
 
 type SnarkBigInt = snarkjs.bigInt
@@ -393,15 +397,12 @@ const generateSemaphoreID = (nonce = 0) => async (
         return Promise.reject(new Error('not connected to web3'));
     }
 
-    // @ts-ignore
-    const signedMessage = await web3.eth.personal.sign(
-        `Sign this message to generate a Semaphore identity with key nonce: ${nonce}`,
-        account,
+    const identity: Identity = await semethid(
+        // @ts-ignore
+        (message: string) => web3.eth.personal.sign(message, account),
+        'TWITTER_UNCLEAR',
+        0,
     );
-
-    const data = new TextEncoder().encode(signedMessage);
-    const hashBuffer = await crypto.subtle.digest('SHA-256', data);
-    const identity = await generateSemaphoreIDFromHex(Buffer.from(hashBuffer).toString('hex'));
     return identity;
 }
 

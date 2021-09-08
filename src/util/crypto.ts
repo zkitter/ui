@@ -100,5 +100,3 @@ export const generateSemaphoreIDFromHex = async (hashHex: string) => {
         identityTrapdoor: snarkjs.bigInt.leBuff2int(identityTrapdoorSeedBuf.slice(0, 31)),
     }
 }
-
-

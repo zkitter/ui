@@ -10,13 +10,13 @@ const devServerEntries = [
     'webpack/hot/only-dev-server',
 ];
 
-const envPlugin = new webpack.EnvironmentPlugin([
-    'NODE_ENV',
-    'WEB3_HTTP_PROVIDER',
-    'ENS_RESOLVER',
-    'INDEXER_API',
-    'GUN_PEERS',
-]);
+const envPlugin = new webpack.EnvironmentPlugin({
+    'NODE_ENV': '',
+    'WEB3_HTTP_PROVIDER': '',
+    'ENS_RESOLVER': '',
+    'INDEXER_API': '',
+    'GUN_PEERS': [],
+});
 
 const rules = [
     {
@@ -67,6 +67,7 @@ const rendererRules = [
 
 module.exports = [
     {
+        target: 'web',
         mode: isProd ? 'production' : 'development',
         entry: [
             ...(isProd ? [] : devServerEntries),
@@ -77,7 +78,17 @@ module.exports = [
             extensions: ['.ts', '.tsx', '.js', '.jsx', '.png', '.svg'],
             modules: [
                 path.resolve('./node_modules')
-            ]
+            ],
+            fallback: {
+                browserify: require.resolve("browserify"),
+                stream: require.resolve("stream-browserify"),
+                path: require.resolve("path-browserify"),
+                crypto: require.resolve("crypto-browserify"),
+                os: require.resolve("os-browserify/browser"),
+                http: require.resolve("stream-http"),
+                https: require.resolve("https-browserify"),
+                fs: false,
+            },
         },
         module: {
             rules: [
@@ -92,6 +103,12 @@ module.exports = [
         },
         plugins: [
             envPlugin,
+            new webpack.ProvidePlugin({
+                Buffer: ["buffer", "Buffer"],
+            }),
+            new webpack.ProvidePlugin({
+                process: "process",
+            }),
             new CopyPlugin([
                 {
                     from: "./static/icons/favicon.png",

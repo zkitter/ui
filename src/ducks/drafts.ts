@@ -22,8 +22,6 @@ import {
     genPublicSignals,
 } from "libsemaphore";
 import {getCircuit, getProvingKey} from "../util/fetch";
-// @ts-ignore
-import * as snarkjs from "snarkjs";
 import {ThunkDispatch} from "redux-thunk";
 import {markdownConvertOptions} from "../components/DraftEditor";
 const { draftToMarkdown } = require('markdown-draft-js');
@@ -113,7 +111,7 @@ export const submitSemaphorePost = (post: Post) => async (dispatch: Dispatch, ge
         identity_trapdoor: identityTrapdoor,
         identity_path_elements: identityPathElements,
         identity_path_index: identityPathIndex,
-        fake_zero: snarkjs.bigInt(0),
+        fake_zero: BigInt(0),
     });
 
     const provingKey = await getProvingKey();
@@ -124,11 +122,11 @@ export const submitSemaphorePost = (post: Post) => async (dispatch: Dispatch, ge
 
     try {
         // @ts-ignore
-        const semaphorePost: any = {
-            ...json,
-            proof: JSON.stringify(snarkjs.stringifyBigInts(proof)),
-            publicSignals: JSON.stringify(snarkjs.stringifyBigInts(publicSignals)),
-        };
+        // const semaphorePost: any = {
+        //     ...json,
+        //     proof: JSON.stringify(stringifyBigInts(proof)),
+        //     publicSignals: JSON.stringify(stringifyBigInts(publicSignals)),
+        // };
 
         // @ts-ignore
         await gun.get('message')
