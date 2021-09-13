@@ -70,6 +70,30 @@ export default function Editor(props: Props): ReactElement {
         )
     }
 
+    if (semaphoreId.commitment && !semaphoreId.identityPath) {
+        return (
+            <div
+                className={classNames(
+                    'flex flex-col flex-nowrap items-center',
+                    'p-4',
+                    'bg-white',
+                    'rounded-xl',
+                    props.className,
+                )}
+            >
+                <div className="mt-2 mb-4 text-gray-800">
+                    Register with InterRep
+                </div>
+                <Button
+                    className="mr-2 border border-yellow-300 bg-yellow-50 text-yellow-500"
+                    onClick={() => window.open(`https://kovan.interrep.link`)}
+                >
+                    Register with InterRep
+                </Button>
+            </div>
+        )
+    }
+
     return (
         <div
             className={classNames(

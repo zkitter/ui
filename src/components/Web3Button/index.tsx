@@ -20,6 +20,7 @@ import Avatar from "../Avatar";
 import Icon from "../Icon";
 import Menuable from "../Menuable";
 import ENSLogoSVG from "../../../static/icons/ens-logo.svg";
+import TwitterLogoSVG from "../../../static/icons/twitter.svg";
 import SpinnerGIF from "../../../static/icons/spinner.gif";
 import gun from "../../util/gun";
 
@@ -34,10 +35,6 @@ export default function Web3Button(props: Props): ReactElement {
     const account = useAccount({ uppercase: true });
     const ensName = useENSName();
     const web3Loading = useWeb3Loading();
-    const web3Unlocking = useWeb3Unlocking();
-    const ensFetching = useENSFetching();
-    const loggedIn = useLoggedIn();
-    const gunKeyPair = useGunKey();
     const semaphoreId = useSemaphoreID();
     const dispatch = useDispatch();
 
@@ -136,8 +133,10 @@ function Web3ButtonAction(props: Props): ReactElement {
         await dispatch(genENS());
     }, []);
 
-    const unlockSemaphore = useCallback(async () => {
-        await dispatch(genSemaphore());
+    const unlockSemaphore = useCallback(async (
+        groupId: 'TWITTER_UNCLEAR' | 'TWITTER_CONFIRMED' | 'TWITTER_NOT_SUFFICIENT',
+    ) => {
+        await dispatch(genSemaphore(groupId));
     }, []);
 
     const lock = useCallback(async () => {
@@ -147,9 +146,9 @@ function Web3ButtonAction(props: Props): ReactElement {
                 pubKey: '',
                 privKey: null,
             },
-            commitment: '',
-            identityNullifier: '',
-            identityTrapdoor: '',
+            commitment: null,
+            identityNullifier: null,
+            identityTrapdoor: null,
         }))
         await dispatch(setGunPrivateKey(''));
         setOpened(false);
@@ -157,7 +156,6 @@ function Web3ButtonAction(props: Props): ReactElement {
 
     if (!loggedIn && !web3Loading) {
         if (!gunPair.priv) {
-
             return (
                 <Menuable
                     menuClassName="web3-button__unlock-menu"
@@ -171,9 +169,25 @@ function Web3ButtonAction(props: Props): ReactElement {
                             disabled: ensFetching || !ensName,
                         },
                         {
-                            label: 'Incognito',
+                            label: 'Incognito (Beta)',
                             iconFA: 'fas fa-user-secret',
-                            onClick: unlockSemaphore,
+                            children: [
+                                {
+                                    label: 'Over 7000 followers',
+                                    iconUrl: TwitterLogoSVG,
+                                    onClick: () => unlockSemaphore('TWITTER_CONFIRMED'),
+                                },
+                                {
+                                    label: '2 to 6999 followers',
+                                    iconUrl: TwitterLogoSVG,
+                                    onClick: () => unlockSemaphore('TWITTER_UNCLEAR'),
+                                },
+                                {
+                                    label: 'Under 2 followers',
+                                    iconUrl: TwitterLogoSVG,
+                                    onClick: () => unlockSemaphore('TWITTER_NOT_SUFFICIENT'),
+                                },
+                            ],
                         }
                     ]}
                 >
@@ -185,12 +199,7 @@ function Web3ButtonAction(props: Props): ReactElement {
                     >
                         {
                             web3Unlocking
-                                ? (
-                                    <Icon
-                                        url={SpinnerGIF}
-                                        size={2}
-                                    />
-                                )
+                                ? <Icon url={SpinnerGIF} size={2} />
                                 : (
                                     <Icon
                                         className={classNames(

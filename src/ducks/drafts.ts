@@ -16,15 +16,17 @@ import {
 import gun from "../util/gun";
 import {
     genSignalHash,
-    genSignedMsg,
     genExternalNullifier,
-    genProof,
-    genPublicSignals,
-} from "libsemaphore";
-import {getCircuit, getProvingKey} from "../util/fetch";
+    genNullifierHash_poseidon,
+} from "semaphore-lib";
+
 import {ThunkDispatch} from "redux-thunk";
 import {markdownConvertOptions} from "../components/DraftEditor";
+import {genProof_fastSemaphore} from "../util/crypto";
+import config from "../util/config";
+import {Identity} from "libsemaphore";
 const { draftToMarkdown } = require('markdown-draft-js');
+const snarkjs = require('snarkjs');
 
 enum ActionTypes {
     SET_DRAFT = 'drafts/setDraft',
@@ -87,46 +89,59 @@ export const submitSemaphorePost = (post: Post) => async (dispatch: Dispatch, ge
         hash,
         ...json
     } = post.toJSON();
-    const signalStr = hash;
-    const externalNullifierStr = signalStr;
-    const externalNullifier = genExternalNullifier(externalNullifierStr);
-    const signalHash = await genSignalHash(Buffer.from(signalStr, 'hex'));
+    const externalNullifier = genExternalNullifier('POST');
+    const signalHash = await genSignalHash(hash);
+    const nullifiersHash = genNullifierHash_poseidon(externalNullifier, identityNullifier as any, 20);
 
-    const { signature } = genSignedMsg(
-        privKey,
-        externalNullifier,
+    const wasmFilePath = `${config.indexerAPI}/dev/semaphore_wasm`;
+    const finalZkeyPath = `${config.indexerAPI}/dev/semaphore_final_zkey`;
+
+    const identity: Identity = {
+        keypair: semaphore.keypair as any,
+        identityTrapdoor: semaphore.identityTrapdoor,
+        identityNullifier: semaphore.identityNullifier,
+    };
+
+    const ZERO_VALUE = BigInt(0);
+
+    const {
+        fullProof: {
+            proof,
+            publicSignals,
+        },
+        root,
+    } = await genProof_fastSemaphore(
+        identity,
         signalHash,
+        identityPathIndex,
+        identityPathElements,
+        externalNullifier,
+        20,
+        ZERO_VALUE,
+        5,
+        wasmFilePath,
+        finalZkeyPath,
     );
-
-    const circuit = await getCircuit();
-    const witness = circuit.calculateWitness({
-        'identity_pk[0]': pubKey[0],
-        'identity_pk[1]': pubKey[1],
-        'auth_sig_r[0]': signature.R8[0],
-        'auth_sig_r[1]': signature.R8[1],
-        auth_sig_s: signature.S,
-        signal_hash: signalHash,
-        external_nullifier: externalNullifier,
-        identity_nullifier: identityNullifier,
-        identity_trapdoor: identityTrapdoor,
-        identity_path_elements: identityPathElements,
-        identity_path_index: identityPathIndex,
-        fake_zero: BigInt(0),
-    });
-
-    const provingKey = await getProvingKey();
-    // @ts-ignore
-    const proof = await genProof(witness, provingKey);
-    const publicSignals = genPublicSignals(witness, circuit);
-
 
     try {
         // @ts-ignore
-        // const semaphorePost: any = {
-        //     ...json,
-        //     proof: JSON.stringify(stringifyBigInts(proof)),
-        //     publicSignals: JSON.stringify(stringifyBigInts(publicSignals)),
-        // };
+        console.log(proof);
+        console.log([
+            root,
+            nullifiersHash,
+            signalHash,
+            externalNullifier,
+        ])
+        const semaphorePost: any = {
+            ...json,
+            proof: JSON.stringify(proof),
+            publicSignals: JSON.stringify([
+                root.toString(),
+                nullifiersHash.toString(),
+                signalHash.toString(),
+                externalNullifier,
+            ]),
+        };
 
         // @ts-ignore
         await gun.get('message')

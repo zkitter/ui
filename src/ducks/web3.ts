@@ -16,17 +16,12 @@ import {Dispatch} from "redux";
 import Web3Modal from "web3modal";
 import {
     generateGunKeyPairFromHex,
-    generateSemaphoreIDFromHex,
     validateGunPublicKey,
 } from "../util/crypto";
 import {defaultENS, defaultWeb3} from "../util/web3";
 import gun, {authenticateGun} from "../util/gun";
-// @ts-ignore
-import * as snarkjs from 'snarkjs';
 import semethid from "semethid";
 import config from "../util/config";
-
-type SnarkBigInt = snarkjs.bigInt
 
 export const web3Modal = new Web3Modal({
     network: "main", // optional
@@ -74,9 +69,9 @@ type State = {
           pubKey: string;
           privKey: Buffer|null;
         },
-        commitment: SnarkBigInt;
-        identityNullifier: string;
-        identityTrapdoor: string;
+        commitment: BigInt|null;
+        identityNullifier: BigInt|null;
+        identityTrapdoor: BigInt|null;
         identityPath: {
             element: string;
             path_elements: string[];
@@ -106,9 +101,9 @@ const initialState: State = {
           pubKey: '',
           privKey: null,
         },
-        commitment: '',
-        identityNullifier: '',
-        identityTrapdoor: '',
+        commitment: null,
+        identityNullifier: null,
+        identityTrapdoor: null,
         identityPath: null,
     },
     pending: {
@@ -201,9 +196,9 @@ export const setSemaphoreID = (identity: {
         pubKey: string,
         privKey: Buffer|null,
     },
-    commitment: SnarkBigInt;
-    identityNullifier: string;
-    identityTrapdoor: string;
+    commitment: BigInt|null;
+    identityNullifier: BigInt|null;
+    identityTrapdoor: BigInt|null;
 }) => ({
     type: ActionTypes.SET_SEMAPHORE_ID,
     payload: identity,
@@ -212,13 +207,6 @@ export const setSemaphoreID = (identity: {
 export const setWeb3 = (web3: Web3 | null, account: string) => async (
     dispatch: ThunkDispatch<any, any, any>,
 ) => {
-    // if (event) {
-    //     await event.unsubscribe((err, result) => {
-    //         console.log('unsubscribed');
-    //     });
-    //     event = null;
-    // }
-
     dispatch(setAccount(account));
 
     dispatch({
@@ -257,9 +245,9 @@ export const setWeb3 = (web3: Web3 | null, account: string) => async (
                 pubKey: '',
                 privKey: null,
             },
-            identityNullifier: '',
-            identityTrapdoor: '',
-            commitment: '',
+            identityNullifier: null,
+            identityTrapdoor: null,
+            commitment: null,
         }));
         dispatch(setWeb3Loading(true));
         const gunUser = gun.user();
@@ -297,27 +285,23 @@ export const genENS = () => async (dispatch: ThunkDispatch<any, any, any>) => {
     }
 }
 
-export const genSemaphore = () => async (dispatch: ThunkDispatch<any, any, any>) => {
+export const genSemaphore = (groupId: 'TWITTER_UNCLEAR' | 'TWITTER_CONFIRMED' | 'TWITTER_NOT_SUFFICIENT') =>
+    async (dispatch: ThunkDispatch<any, any, any>) =>
+{
     dispatch(setUnlocking(true));
 
     try {
         const result: any = await dispatch(generateSemaphoreID(0));
         const commitment = await genIdentityCommitment(result);
 
-        await fetch(`${config.indexerAPI}/dev/semaphore`, {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-            },
-            body: JSON.stringify({
-                identityCommitment: commitment.toString(),
-            }),
-        });
+        const resp = await fetch(`${config.indexerAPI}/interrep/groups/${groupId}/path/${commitment.toString()}`);
+        const { payload: {data} } = await resp.json();
 
-        const resp = await fetch(`${config.indexerAPI}/dev/semaphore/${commitment.toString()}`);
-        const { payload: path } = await resp.json();
-
-        if (path) {
+        if (data) {
+            const path = {
+              path_elements: data.pathElements,
+              path_index: data.indices,
+            };
             dispatch({
                 type: ActionTypes.SET_SEMAPHORE_ID_PATH,
                 payload: path,
@@ -545,7 +529,6 @@ export const useLoggedIn = () => {
             && !!semaphore.keypair.pubKey
             && !!semaphore.identityNullifier
             && !!semaphore.identityTrapdoor
-            && !!semaphore.identityPath
             && !!semaphore.commitment;
 
         return !!(web3 && account && (hasGun || hasSemaphore));

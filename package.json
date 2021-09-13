@@ -6,8 +6,8 @@
   "scripts": {
     "dev-ui": "webpack-dev-server --config webpack.ui.config.js --hot --inline",
     "build-ui": "webpack --config webpack.ui.config.js",
-    "predev": "cp ./static/bn128.js ./node_modules/websnark/src/bn128.js",
-    "prebuild": "cp ./static/bn128.js ./node_modules/websnark/src/bn128.js",
+    "predev": "cp ./static/bn128.js ./node_modules/websnark/src/bn128.js & cp ./static/main.cjs ./node_modules/ffjavascript/build/main.cjs",
+    "prebuild": "cp ./static/bn128.js ./node_modules/websnark/src/bn128.js & cp ./static/main.cjs ./node_modules/ffjavascript/build/main.cjs",
     "dev": "NODE_ENV=development concurrently --kill-others-on-fail npm:dev-ui",
     "build": "NODE_ENV=production npm run build-ui"
   },
