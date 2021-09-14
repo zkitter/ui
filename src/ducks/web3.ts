@@ -5,7 +5,7 @@ import {AppRootState} from "../store/configureAppStore";
 import {Subscription} from "web3-core-subscriptions";
 import {Identity } from 'libsemaphore';
 import {
-    genIdentityCommitment_poseidon as genIdentityCommitment,
+    OrdinarySemaphore,
 } from "semaphore-lib";
 import {ThunkDispatch} from "redux-thunk";
 const {
@@ -20,8 +20,9 @@ import {
 } from "../util/crypto";
 import {defaultENS, defaultWeb3} from "../util/web3";
 import gun, {authenticateGun} from "../util/gun";
-import semethid from "semethid";
+import semethid from "@interrep/semethid";
 import config from "../util/config";
+OrdinarySemaphore.setHasher('poseidon');
 
 export const web3Modal = new Web3Modal({
     network: "main", // optional
@@ -291,8 +292,8 @@ export const genSemaphore = (groupId: 'TWITTER_UNCLEAR' | 'TWITTER_CONFIRMED' | 
     dispatch(setUnlocking(true));
 
     try {
-        const result: any = await dispatch(generateSemaphoreID(0));
-        const commitment = await genIdentityCommitment(result);
+        const result: any = await dispatch(generateSemaphoreID(groupId, 0));
+        const commitment = await OrdinarySemaphore.genIdentityCommitment(result);
 
         const resp = await fetch(`${config.indexerAPI}/interrep/groups/${groupId}/path/${commitment.toString()}`);
         const { payload: {data} } = await resp.json();
@@ -371,7 +372,7 @@ const _generateGunKeyPair = async (seed: string): Promise<{pub: string; priv: st
     return pair;
 }
 
-const generateSemaphoreID = (nonce = 0) => async (
+const generateSemaphoreID = (groupId: 'TWITTER_UNCLEAR' | 'TWITTER_CONFIRMED' | 'TWITTER_NOT_SUFFICIENT', nonce = 0) => async (
     dispatch: Dispatch, getState: () => AppRootState,
 ) => {
     const state = getState();
@@ -384,7 +385,7 @@ const generateSemaphoreID = (nonce = 0) => async (
     const identity: Identity = await semethid(
         // @ts-ignore
         (message: string) => web3.eth.personal.sign(message, account),
-        'TWITTER_UNCLEAR',
+        groupId,
         0,
     );
     return identity;
