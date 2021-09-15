@@ -1,4 +1,4 @@
-import React, {ReactElement, useCallback, useMemo, useState} from "react";
+import React, {ReactElement, useCallback, useEffect, useMemo, useState} from "react";
 import {
     CompositeDecorator, ContentBlock, ContentState, convertFromRaw, convertToRaw,
     DefaultDraftBlockRenderMap, EditorState,
@@ -20,18 +20,24 @@ import Avatar from "../Avatar";
 import classNames from "classnames";
 import debounce from "lodash.debounce";
 
-const blockRenderMap = DefaultDraftBlockRenderMap.merge(TableUtils.DraftBlockRenderMap);
-const linkifyPlugin = createLinkifyPlugin();
-const hashtagPlugin = createHashtagPlugin();
+
 
 export function DraftEditor(props: PluginEditorProps): ReactElement {
     const dispatch = useDispatch();
-    const { MentionSuggestions, mentionPlugin } = useMemo(() => {
+
+    const { MentionSuggestions, plugins, blockRenderMap } = useMemo(() => {
+        const blockRenderMap = DefaultDraftBlockRenderMap.merge(TableUtils.DraftBlockRenderMap);
+        const linkifyPlugin = createLinkifyPlugin();
+        const hashtagPlugin = createHashtagPlugin();
         const mentionPlugin = createMentionPlugin({
             mentionRegExp,
         });
         const { MentionSuggestions } = mentionPlugin;
-        return { mentionPlugin, MentionSuggestions };
+        return {
+            plugins: [linkifyPlugin, hashtagPlugin, mentionPlugin],
+            MentionSuggestions,
+            blockRenderMap,
+        };
     }, []);
 
     const [open, setOpen] = useState(false);
@@ -53,6 +59,14 @@ export function DraftEditor(props: PluginEditorProps): ReactElement {
 
     const debouncedOnSearchChange = debounce(onSearchChange, 500);
 
+    useEffect(() => {
+        return function() {
+            if (props.onChange) {
+                props.onChange(EditorState.createEmpty());
+            }
+        }
+    }, []);
+
     return (
         <>
             <DraftJSPluginEditor
@@ -68,10 +82,12 @@ export function DraftEditor(props: PluginEditorProps): ReactElement {
                     },
                 }}
                 {...props}
-                plugins={[linkifyPlugin, hashtagPlugin, mentionPlugin]}
+                plugins={plugins}
                 onChange={editorState => {
-                    props.onChange && props.onChange(editorState);
-                    return editorState;
+                    if (props.onChange) {
+                        props.onChange(editorState);
+                        return editorState;
+                    }
                 }}
             />
             <MentionSuggestions
