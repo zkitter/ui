@@ -1,0 +1,6 @@
+@import "../../util/variable";
+
+.icon {
+  @extend %row-nowrap;
+  align-items: center;
+}

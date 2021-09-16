@@ -1,4 +1,12 @@
-import React, {MouseEventHandler, ReactElement, ReactNode, ReactNodeArray, useEffect, useState} from "react";
+import React, {
+    MouseEventHandler,
+    ReactElement,
+    ReactNode,
+    ReactNodeArray,
+    useCallback,
+    useEffect,
+    useState
+} from "react";
 import classNames from "classnames";
 import "./menuable.scss";
 import Icon from "../Icon";
@@ -19,10 +27,12 @@ type ItemProps = {
     iconClassName?: string;
     onClick?: MouseEventHandler;
     disabled?: boolean;
+    children?: ItemProps[];
 }
 
 export default function Menuable(props: MenuableProps): ReactElement {
     const [isShowing, setShowing] = useState(false);
+    const [path, setPath] = useState<number[]>([]);
 
     useEffect(() => {
         if (isShowing) {
@@ -37,6 +47,32 @@ export default function Menuable(props: MenuableProps): ReactElement {
         }
     }, [isShowing]);
 
+    const goBack = useCallback((e) => {
+        e.stopPropagation();
+        const newPath = [...path];
+        newPath.pop();
+        setPath(newPath);
+    }, [path]);
+
+    const onItemClick = useCallback((e, item, i) => {
+        e.stopPropagation();
+        if (item.disabled) return;
+        if (item.children) {
+            setPath([...path, i]);
+        } else if (item.onClick) {
+            item.onClick(e);
+        }
+    }, [path]);
+
+    let items: ItemProps[] = props.items;
+
+    if (path) {
+        for (const pathIndex of path) {
+            if (items[pathIndex].children) {
+                items = items[pathIndex].children as ItemProps[];
+            }
+        }
+    }
 
     return (
         <div
@@ -52,22 +88,29 @@ export default function Menuable(props: MenuableProps): ReactElement {
             {
                 isShowing && (
                     <div className={classNames("rounded-xl border menuable__menu", props.menuClassName)}>
-                        {props.items.map((item, i) => (
+                        {!!path.length && (
+                            <div
+                                className={classNames(
+                                    "text-sm whitespace-nowrap cursor-pointer",
+                                    'flex flex-row flex-nowrap items-center',
+                                    "text-gray-500 hover:text-gray-800 menuable__menu__item",
+                                )}
+                                onClick={goBack}
+                            >
+                                <Icon fa="fas fa-caret-left" />
+                                <span className="ml-2">Go back</span>
+                            </div>
+                        )}
+                        {items.map((item, i) => (
                             <div
                                 key={i}
                                 className={classNames(
                                     "text-sm whitespace-nowrap",
                                     'flex flex-row flex-nowrap items-center',
                                     "menuable__menu__item",
-                                    {
-                                        'cursor-pointer': !item.disabled,
-                                    },
+                                    {'cursor-pointer': !item.disabled},
                                 )}
-                                onClick={e => {
-                                    e.stopPropagation();
-                                    if (item.disabled) return;
-                                    item.onClick && item.onClick(e);
-                                }}
+                                onClick={e => onItemClick(e, item, i)}
                             >
                                 <div
                                     className={classNames(

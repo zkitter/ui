@@ -10,14 +10,11 @@ import {
     useAccount,
     useENSFetching, useENSLoggedIn,
     useENSName,
-    useGunKey,
-    useLoggedIn,
-    useSemaphoreID,
+    useGunKey, useSemaphoreID,
     useWeb3Loading
 } from "../../ducks/web3";
 import Button from "../Button";
 import {useDispatch} from "react-redux";
-import Avatar from "../Avatar";
 import {useUser} from "../../ducks/users";
 import SnapshotPNG from "../../../static/icons/snapshot-logo.png";
 
@@ -30,9 +27,11 @@ export default function TopNav(): ReactElement {
     const ensFetching = useENSFetching();
     const dispatch = useDispatch();
     const history = useHistory();
+    const semaphoreId = useSemaphoreID();
 
     const showRegisterENSButton = !loggedIn && account && !web3Loading && !ensFetching && !ensName;
     const showAddTextRecordButton = !loggedIn && account && !web3Loading && !ensFetching && ensName && !gunKey.pub;
+    const showRegisterInterrepButton = !loggedIn && account && semaphoreId.commitment && !semaphoreId.identityPath;
 
     const updateTextRecord = useCallback(async () => {
         const gunPair: any = await dispatch(generateGunKeyPair(0));
@@ -71,6 +70,16 @@ export default function TopNav(): ReactElement {
             </div>
             <div className="flex flex-row flex-nowrap items-center flex-grow-0 flex-shrink-0">
                 {
+                    showRegisterInterrepButton && (
+                        <Button
+                            className="mr-2 border border-yellow-300 bg-yellow-50 text-yellow-500"
+                            onClick={() => window.open(`https://kovan.interrep.link`)}
+                        >
+                            Register with InterRep
+                        </Button>
+                    )
+                }
+                {
                     showRegisterENSButton && (
                         <Button
                             className="mr-2 border border-yellow-300 bg-yellow-50 text-yellow-500"
@@ -91,7 +100,7 @@ export default function TopNav(): ReactElement {
                     )
                 }
                 <Web3Button
-                    className={classNames("rounded-xl", {
+                    className={classNames("rounded-xl top-nav__web3-btn", {
                         'border border-gray-200': account,
                     })}
                 />
