@@ -211,48 +211,19 @@ export const submitSemaphorePost = (post: Post) => async (dispatch: Dispatch, ge
         identityTrapdoor: semaphore.identityTrapdoor,
         identityNullifier: semaphore.identityNullifier,
     };
-
-    console.log(OrdinarySemaphore.serializeIdentity(identity));
-
-    let idCommitments: string[] = [
-        "1e50d48175f13c4e28e614cdc947969ef11e10266a08add6420121411140c0b3",
-        "14ee15704225f23629e90fed18ee9e30af882af4ed278857e94f2b6fd3c1defe",
-        "0d6537fcca0a495e5aeb35ad238b2294e3bf48a0dc4e8654c1f4e121cb9a42ce",
-        "21e80ad98e33dfab6ff9aae5a5d99640fb9c53ef970591ee8a0d7dd4124443da",
-        "193e365c13bef8c379907933017faa428339ca54775ab5884e86da3d8ebe8227",
-        "1b6bb82b0c87b672b64e47ee750dee7bc0b9c4fdcdf448611c69190173a19099",
-        "1aee4b734680adccca04257ddb4ace2230a25310b5fc609fda5d192a47a8a441",
-        "1f2c76bf21af6709503697191d63ab9a6d4af3dd6e3b0e2ecc8e5b29a0f8ae63",
-        "211f2ef6cdce1a24b5f6741708c53d10839ff8e5d454d263db9c449cf6f9e927",
-        "30382ce83674b37c978bd03c2774a16cc126e757125dab18b99ee885e842583c",
-        "03e2efe7366befcc1e5378ac7d990d3be3e3576c3e83017d34bf8d7a887a817a",
-        "02eeb2b4e85f13075ad293162aa97f3df9a20d34435994b1ec248af37b76a794",
-        "0873039d1c56b954d27d634c68f3f5e6332228a4d58a6f81bb5671462c8dd882"
-    ];
-
-    idCommitments = idCommitments.map((identityCommitment: string) => {
-        return BigInt('0x' + identityCommitment);
-    })
-    idCommitments = idCommitments.reverse();
     const {
-        fullProof: {
-            proof,
-            publicSignals,
-        },
-    } = await OrdinarySemaphore.genProofFromIdentityCommitments(
+        proof,
+        publicSignals,
+    } = await OrdinarySemaphore.genProofFromBuiltTree(
         identity,
-        externalNullifier,
         hash,
+        {
+            indices:   identityPathIndex,
+            pathElements: identityPathElements,
+        },
+        externalNullifier,
         wasmFilePath,
         finalZkeyPath,
-        idCommitments,
-        15,
-        ZERO_VALUE,
-        2,
-        // {
-        //     indices:   identityPathIndex,
-        //     pathElements: identityPathElements,
-        // },
     );
 
     try {
@@ -263,31 +234,11 @@ export const submitSemaphorePost = (post: Post) => async (dispatch: Dispatch, ge
             publicSignals: JSON.stringify(publicSignals),
         };
 
-        const pubSignals = [
-            publicSignals[0],
-            nullifiersHash,
-            signalHash,
-            externalNullifier,
-        ];
-
-        console.log('from fullProof.publicSignals', publicSignals)
-        console.log('constructed pubsignals', pubSignals)
-        console.log('result from pubsignals', await OrdinarySemaphore.verifyProof(
-            vKey, {
-                proof: proof,
-                publicSignals: pubSignals,
-            }));
-        console.log('result from fullProof.publicSignals', await OrdinarySemaphore.verifyProof(
-            vKey, {
-                proof: proof,
-                publicSignals: publicSignals,
-            }));
-
         // @ts-ignore
-        // await gun.get('message')
-        //     .get(messageId)
-        //     // @ts-ignore
-        //     .put(semaphorePost);
+        await gun.get('message')
+            .get(messageId)
+            // @ts-ignore
+            .put(semaphorePost);
 
         dispatch({
             type: ActionTypes.SET_SUBMITTING,

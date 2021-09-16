@@ -100,7 +100,7 @@ export default function TopNav(): ReactElement {
                     )
                 }
                 <Web3Button
-                    className={classNames("rounded-xl", {
+                    className={classNames("rounded-xl top-nav__web3-btn", {
                         'border border-gray-200': account,
                     })}
                 />
