@@ -205,6 +205,11 @@ export const setSemaphoreID = (identity: {
     payload: identity,
 })
 
+export const setSemaphoreIDPath = (path: any) => ({
+    type: ActionTypes.SET_SEMAPHORE_ID_PATH,
+    payload: path,
+});
+
 export const setWeb3 = (web3: Web3 | null, account: string) => async (
     dispatch: ThunkDispatch<any, any, any>,
 ) => {
@@ -286,27 +291,24 @@ export const genENS = () => async (dispatch: ThunkDispatch<any, any, any>) => {
     }
 }
 
-export const genSemaphore = (groupId: 'TWITTER_UNCLEAR' | 'TWITTER_CONFIRMED' | 'TWITTER_NOT_SUFFICIENT') =>
+export const genSemaphore = (web2Provider: 'Twitter' | 'Github' | 'Reddit' = 'Twitter') =>
     async (dispatch: ThunkDispatch<any, any, any>) =>
 {
     dispatch(setUnlocking(true));
 
     try {
-        const result: any = await dispatch(generateSemaphoreID(groupId, 0));
+        const result: any = await dispatch(generateSemaphoreID(web2Provider, 0));
         const commitment = await OrdinarySemaphore.genIdentityCommitment(result);
 
-        const resp = await fetch(`${config.indexerAPI}/interrep/groups/${groupId}/path/${commitment.toString()}`);
-        const { payload: {data} } = await resp.json();
+        const resp = await fetch(`${config.indexerAPI}/interrep/${commitment.toString()}`);
+        const { payload: {data}, error } = await resp.json();
 
-        if (data) {
+        if (!error && data) {
             const path = {
               path_elements: data.pathElements,
               path_index: data.indices,
             };
-            dispatch({
-                type: ActionTypes.SET_SEMAPHORE_ID_PATH,
-                payload: path,
-            })
+            dispatch(setSemaphoreIDPath(path));
         }
 
         dispatch(setSemaphoreID({
@@ -372,7 +374,10 @@ const _generateGunKeyPair = async (seed: string): Promise<{pub: string; priv: st
     return pair;
 }
 
-const generateSemaphoreID = (groupId: 'TWITTER_UNCLEAR' | 'TWITTER_CONFIRMED' | 'TWITTER_NOT_SUFFICIENT', nonce = 0) => async (
+const generateSemaphoreID = (
+    web2Provider: 'Twitter' | 'Reddit' | 'Github' = 'Twitter',
+    nonce = 0,
+) => async (
     dispatch: Dispatch, getState: () => AppRootState,
 ) => {
     const state = getState();
@@ -385,7 +390,7 @@ const generateSemaphoreID = (groupId: 'TWITTER_UNCLEAR' | 'TWITTER_CONFIRMED' | 
     const identity: Identity = await semethid(
         // @ts-ignore
         (message: string) => web3.eth.personal.sign(message, account),
-        groupId,
+        web2Provider,
         0,
     );
     return identity;

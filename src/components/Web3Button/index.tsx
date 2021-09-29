@@ -12,7 +12,7 @@ import {
     useWeb3Unlocking,
     useENSFetching,
     setGunPrivateKey,
-    genENS, genSemaphore, setSemaphoreID, useSemaphoreID,
+    genENS, genSemaphore, setSemaphoreID, useSemaphoreID, setSemaphoreIDPath,
 } from "../../ducks/web3";
 import {useDispatch} from "react-redux";
 import classNames from "classnames";
@@ -21,6 +21,8 @@ import Icon from "../Icon";
 import Menuable from "../Menuable";
 import ENSLogoSVG from "../../../static/icons/ens-logo.svg";
 import TwitterLogoSVG from "../../../static/icons/twitter.svg";
+import RedditLogoSVG from "../../../static/icons/reddit.svg";
+import GithubLogoPNG from "../../../static/icons/github.png";
 import SpinnerGIF from "../../../static/icons/spinner.gif";
 import gun from "../../util/gun";
 
@@ -134,9 +136,9 @@ function Web3ButtonAction(props: Props): ReactElement {
     }, []);
 
     const unlockSemaphore = useCallback(async (
-        groupId: 'TWITTER_UNCLEAR' | 'TWITTER_CONFIRMED' | 'TWITTER_NOT_SUFFICIENT',
+        web2Provider: 'Twitter' | 'Github' | 'Reddit',
     ) => {
-        await dispatch(genSemaphore(groupId));
+        await dispatch(genSemaphore(web2Provider));
     }, []);
 
     const lock = useCallback(async () => {
@@ -151,6 +153,7 @@ function Web3ButtonAction(props: Props): ReactElement {
             identityTrapdoor: null,
         }))
         await dispatch(setGunPrivateKey(''));
+        await dispatch(setSemaphoreIDPath(null));
         setOpened(false);
     }, []);
 
@@ -173,19 +176,19 @@ function Web3ButtonAction(props: Props): ReactElement {
                             iconFA: 'fas fa-user-secret',
                             children: [
                                 {
-                                    label: 'Over 7000 followers',
+                                    label: 'Twitter',
                                     iconUrl: TwitterLogoSVG,
-                                    onClick: () => unlockSemaphore('TWITTER_CONFIRMED'),
+                                    onClick: () => unlockSemaphore('Twitter'),
                                 },
                                 {
-                                    label: '2 to 6999 followers',
-                                    iconUrl: TwitterLogoSVG,
-                                    onClick: () => unlockSemaphore('TWITTER_UNCLEAR'),
+                                    label: 'Github',
+                                    iconUrl: GithubLogoPNG,
+                                    onClick: () => unlockSemaphore('Github'),
                                 },
                                 {
-                                    label: 'Under 2 followers',
-                                    iconUrl: TwitterLogoSVG,
-                                    onClick: () => unlockSemaphore('TWITTER_NOT_SUFFICIENT'),
+                                    label: 'Reddit',
+                                    iconUrl: RedditLogoSVG,
+                                    onClick: () => unlockSemaphore('Reddit'),
                                 },
                             ],
                         }

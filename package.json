@@ -17,7 +17,7 @@
     "@draft-js-plugins/linkify": "^4.1.1",
     "@draft-js-plugins/mention": "^4.6.1",
     "@ensdomains/ensjs": "^2.0.1",
-    "@interrep/semethid": "^0.7.0",
+    "@interrep/semethid": "^0.8.1",
     "@snapshot-labs/snapshot.js": "^0.2.0",
     "bn.js": "^5.2.0",
     "classnames": "^2.3.1",
