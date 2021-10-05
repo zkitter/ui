@@ -3,12 +3,12 @@ import classNames from "classnames";
 import {EditorState} from 'draft-js';
 import Post from "../Post";
 import {useDispatch} from "react-redux";
-import {fetchHomeFeed, useGoToPost} from "../../ducks/posts";
+import {fetchHomeFeed, setPost, useGoToPost} from "../../ducks/posts";
 import "./home-feed.scss";
 import Editor from "../Editor";
 import {useLoggedIn} from "../../ducks/web3";
+import {Post as PostMessage} from "../../util/message";
 import {setDraft, submitPost, useDraft, useSubmitting} from "../../ducks/drafts";
-import {useHistory} from "react-router";
 import InfiniteScrollable from "../InfiniteScrollable";
 
 export default function HomeFeed(): ReactElement {
@@ -16,7 +16,6 @@ export default function HomeFeed(): ReactElement {
     const [offset, setOffset] = useState(0);
     const [order, setOrder] = useState<string[]>([]);
     const dispatch = useDispatch();
-    const history = useHistory();
     const loggedIn = useLoggedIn();
 
     useEffect(() => {
@@ -38,6 +37,13 @@ export default function HomeFeed(): ReactElement {
         }
     }, [limit, offset, order]);
 
+    const onSuccessPost = useCallback((post: PostMessage) => {
+        const hash = post.hash();
+        const messageId = post.creator ? post.creator + '/' + hash : hash;
+        dispatch(setPost(post));
+        setOrder([messageId, ...order]);
+    }, [order]);
+
     const gotoPost = useGoToPost();
 
     return (
@@ -49,7 +55,7 @@ export default function HomeFeed(): ReactElement {
             bottomOffset={128}
             onScrolledToBottom={fetchMore}
         >
-            <PostEditor />
+            <PostEditor onSuccessPost={onSuccessPost} />
             {
                 order.map((messageId, i) => {
                     return (
@@ -67,7 +73,9 @@ export default function HomeFeed(): ReactElement {
     );
 }
 
-function PostEditor(): ReactElement {
+function PostEditor(props: {
+    onSuccessPost: (post: PostMessage) => void;
+}): ReactElement {
     const dispatch = useDispatch();
     const loggedIn = useLoggedIn();
     const submitting = useSubmitting();
@@ -78,7 +86,11 @@ function PostEditor(): ReactElement {
     }, [draft]);
 
     const onPost = useCallback(async () => {
-        dispatch(submitPost());
+        const post: any = await dispatch(submitPost());
+
+        if (post) {
+            props.onSuccessPost(post);
+        }
     }, [draft]);
 
     return (

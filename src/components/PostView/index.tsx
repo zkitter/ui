@@ -5,7 +5,7 @@ import {
     fetchMeta,
     fetchPost,
     fetchPosts,
-    fetchReplies,
+    fetchReplies, setPost,
     useGoToPost,
     useMeta,
     usePost
@@ -16,7 +16,7 @@ import "./post-view.scss";
 import {useDispatch} from "react-redux";
 import Thread from "../Thread";
 import ParentThread from "../ParentThread";
-import {parseMessageId, PostMessageSubType} from "../../util/message";
+import {parseMessageId, Post as PostMessage, PostMessageSubType} from "../../util/message";
 import {useENSName, useLoggedIn} from "../../ducks/web3";
 import {fetchProposal} from "../../ducks/snapshot";
 
@@ -109,6 +109,14 @@ export default function PostView(props: Props): ReactElement {
         scrollEl.current.scrollTop = rect.height;
     }, [height, parentEl, scrollEl]);
 
+    const onSuccessPost = useCallback((post: PostMessage) => {
+        const hash = post.hash();
+        const messageId = post.creator ? post.creator + '/' + hash : hash;
+        dispatch(setPost(post));
+        if (post.payload.reference === reference) {
+            setOrder([...order, messageId]);
+        }
+    }, [order, reference]);
 
     return (
         <div
@@ -132,11 +140,13 @@ export default function PostView(props: Props): ReactElement {
                         <ParentThread
                             className="rounded-xl"
                             messageId={messageId}
+                            onSuccessPost={onSuccessPost}
                         />
                     </div>
                     <Post
                         className="rounded-xl"
                         messageId={messageId}
+                        onSuccessPost={onSuccessPost}
                         expand
                     />
                     {
@@ -148,6 +158,7 @@ export default function PostView(props: Props): ReactElement {
                                     postClassName="rounded-xl"
                                     messageId={messageId}
                                     clearObserver={clearObserver}
+                                    onSuccessPost={onSuccessPost}
                                     onClick={(e) => {
                                         e.stopPropagation();
                                         gotoPost(messageId);

@@ -2,7 +2,7 @@ import React, {MouseEventHandler, ReactElement, useEffect} from "react";
 import {fetchMeta, useGoToPost, usePost} from "../../ducks/posts";
 import Post from "../Post";
 import {useHistory} from "react-router";
-import {PostMessageSubType} from "../../util/message";
+import {Post as PostMessage, PostMessageSubType} from "../../util/message";
 import classNames from "classnames";
 import {useDispatch} from "react-redux";
 import {useLoggedIn} from "../../ducks/web3";
@@ -13,6 +13,7 @@ type Props = {
     className?: string;
     postClassName?: string;
     onClick?: MouseEventHandler;
+    onSuccessPost?: (post: PostMessage) => void;
     expand?: boolean;
 };
 
@@ -39,11 +40,13 @@ export default function ParentThread(props: Props): ReactElement {
             <ParentThread
                 className={props.className}
                 messageId={parent}
+                onSuccessPost={props.onSuccessPost}
             />
             <Post
                 messageId={parent}
                 className={classNames("cursor-pointer hover:bg-gray-50", props.className)}
                 onClick={() => gotoPost(parent)}
+                onSuccessPost={props.onSuccessPost}
                 isParent
             />
         </>

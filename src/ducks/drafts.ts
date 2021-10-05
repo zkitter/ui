@@ -283,7 +283,9 @@ export const submitPost = (reference = '') => async (dispatch: ThunkDispatch<any
     });
 
     if (semaphore.keypair.privKey) {
-        return dispatch(submitSemaphorePost(post));
+        await dispatch(submitSemaphorePost(post));
+        console.log({ post });
+        return post;
     }
 
     // @ts-ignore
@@ -309,6 +311,8 @@ export const submitPost = (reference = '') => async (dispatch: ThunkDispatch<any
         });
 
         dispatch(setDraft(EditorState.createEmpty(), reference));
+
+        return post;
     } catch (e) {
         dispatch({
             type: ActionTypes.SET_SUBMITTING,

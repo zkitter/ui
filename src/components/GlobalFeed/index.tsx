@@ -3,13 +3,14 @@ import classNames from "classnames";
 import {EditorState} from 'draft-js';
 import Post from "../Post";
 import {useDispatch} from "react-redux";
-import {fetchPosts, useGoToPost} from "../../ducks/posts";
+import {fetchPosts, setPost, useGoToPost} from "../../ducks/posts";
 import "./global-feed.scss";
 import Editor from "../Editor";
 import {useLoggedIn} from "../../ducks/web3";
 import {setDraft, submitPost, useDraft, useSubmitting} from "../../ducks/drafts";
 import {useHistory} from "react-router";
 import InfiniteScrollable from "../InfiniteScrollable";
+import {Post as PostMessage} from "../../util/message";
 
 export default function GlobalFeed(): ReactElement {
     const [limit, setLimit] = useState(20);
@@ -40,6 +41,13 @@ export default function GlobalFeed(): ReactElement {
         }
     }, [limit, offset, order]);
 
+    const onSuccessPost = useCallback((post: PostMessage) => {
+        const hash = post.hash();
+        const messageId = post.creator ? post.creator + '/' + hash : hash;
+        dispatch(setPost(post));
+        setOrder([messageId, ...order]);
+    }, [order]);
+
     return (
         <InfiniteScrollable
             className={classNames('flex-grow global-feed',
@@ -49,7 +57,7 @@ export default function GlobalFeed(): ReactElement {
             bottomOffset={128}
             onScrolledToBottom={fetchMore}
         >
-            <PostEditor />
+            <PostEditor onSuccessPost={onSuccessPost} />
             {
                 order.map((messageId, i) => {
                     return (
@@ -67,7 +75,9 @@ export default function GlobalFeed(): ReactElement {
     );
 }
 
-function PostEditor(): ReactElement {
+function PostEditor(props: {
+    onSuccessPost: (post: PostMessage) => void;
+}): ReactElement {
     const dispatch = useDispatch();
     const loggedIn = useLoggedIn();
     const submitting = useSubmitting();
@@ -78,7 +88,11 @@ function PostEditor(): ReactElement {
     }, [draft]);
 
     const onPost = useCallback(async () => {
-        dispatch(submitPost());
+        const post: any = await dispatch(submitPost());
+
+        if (post) {
+            props.onSuccessPost(post);
+        }
     }, [draft]);
 
     return (

@@ -4,7 +4,7 @@ import {useHistory, useParams} from "react-router";
 import {fetchPost, fetchReplies, useGoToPost, useMeta} from "../../ducks/posts";
 import classNames from "classnames";
 import Post from "../Post";
-import {parseMessageId} from "../../util/message";
+import {parseMessageId, Post as PostMessage} from "../../util/message";
 
 type Props = {
     level?: number;
@@ -14,6 +14,7 @@ type Props = {
     onClick?: MouseEventHandler;
     clearObserver?: () => void;
     expand?: boolean;
+    onSuccessPost?: (post: PostMessage) => void;
 };
 
 export default function Thread(props: Props): ReactElement {
@@ -60,6 +61,7 @@ export default function Thread(props: Props): ReactElement {
               className={classNames("hover:bg-gray-50", props.postClassName)}
               messageId={messageId}
               onClick={props.onClick}
+              onSuccessPost={props.onSuccessPost}
           />
           <div
               className={classNames(
@@ -71,7 +73,7 @@ export default function Thread(props: Props): ReactElement {
               {
                   order.map(messageId => {
                       return (
-                          <div className="pt-1 bg-white">
+                          <div key={messageId} className="pt-1 bg-white">
                               <Thread
                                   key={messageId}
                                   level={level + 1}
@@ -85,6 +87,7 @@ export default function Thread(props: Props): ReactElement {
                                       gotoPost(messageId);
                                   }}
                                   clearObserver={props.clearObserver}
+                                  onSuccessPost={props.onSuccessPost}
                               />
                           </div>
                       );

@@ -1,7 +1,16 @@
 import React, {MouseEventHandler, ReactElement, useCallback, useEffect, useState} from "react";
 import classNames from "classnames";
 import moment from "moment";
-import {fetchMeta, fetchPost, useMeta, usePost} from "../../ducks/posts";
+import {
+    fetchMeta,
+    fetchPost,
+    incrementLike,
+    incrementReply,
+    incrementRepost,
+    setPost,
+    useMeta,
+    usePost
+} from "../../ducks/posts";
 import {useUser} from "../../ducks/users";
 import Avatar from "../Avatar";
 import "../../util/variable.scss";
@@ -12,7 +21,7 @@ import {EditorState} from "draft-js";
 import Modal, {ModalContent, ModalHeader} from "../Modal";
 import {setDraft, submitModeration, submitPost, submitRepost, useDraft, useSubmitting} from "../../ducks/drafts";
 import {useDispatch} from "react-redux";
-import {ModerationMessageSubType, PostMessageSubType} from "../../util/message";
+import {ModerationMessageSubType, Post as PostMessage, PostMessageSubType} from "../../util/message";
 import {useGunKey, useLoggedIn} from "../../ducks/web3";
 import {useHistory} from "react-router";
 import Menuable from "../Menuable";
@@ -26,6 +35,7 @@ type Props = {
     onClick?: MouseEventHandler;
     expand?: boolean;
     isParent?: boolean;
+    onSuccessPost?: (post: PostMessage) => void;
 };
 
 export default function Post(props: Props): ReactElement {
@@ -91,6 +101,7 @@ export default function Post(props: Props): ReactElement {
 type ReplyEditorModalProps = {
     onClose: () => void;
     messageId: string;
+    onSuccessPost?: (post: PostMessage) => void;
 }
 
 function ReplyEditorModal(props: ReplyEditorModalProps): ReactElement {
@@ -105,7 +116,13 @@ function ReplyEditorModal(props: ReplyEditorModalProps): ReactElement {
     }, [messageId]);
 
     const submitReply = useCallback(async () => {
-        await dispatch(submitPost(messageId));
+        const post: any = await dispatch(submitPost(messageId));
+
+        if (post && props.onSuccessPost) {
+            props.onSuccessPost(post);
+        }
+
+        dispatch(incrementReply(props.messageId));
         dispatch(setDraft(EditorState.createEmpty(), messageId));
         onClose();
     }, [messageId, draft.editorState]);
@@ -226,6 +243,7 @@ export function ExpandedPost(props: Props): ReactElement {
                 <PostFooter
                     messageId={messageId}
                     className="mt-2 pt-3 border-t border-gray-200 w-full"
+                    onSuccessPost={props.onSuccessPost}
                     large
                 />
             </div>
@@ -373,6 +391,7 @@ export function RegularPost(props: Props): ReactElement {
                     </div>
                     <PostFooter
                         messageId={messageId}
+                        onSuccessPost={props.onSuccessPost}
                     />
                 </div>
             </div>
@@ -384,6 +403,7 @@ function PostFooter(props: {
     className?: string;
     messageId: string;
     large?: boolean;
+    onSuccessPost?: (post: PostMessage) => void;
 }): ReactElement {
     const {large, className, messageId} = props;
     const meta = useMeta(messageId);
@@ -394,10 +414,12 @@ function PostFooter(props: {
 
     const onLike = useCallback(() => {
         dispatch(submitModeration(messageId, ModerationMessageSubType.Like));
+        dispatch(incrementLike(messageId));
     }, [messageId]);
 
     const onRepost = useCallback(() => {
         dispatch(submitRepost(messageId));
+        dispatch(incrementRepost(messageId));
     }, [messageId]);
 
     return (
@@ -411,6 +433,7 @@ function PostFooter(props: {
             { showReply && (
                 <ReplyEditorModal
                     onClose={() => setShowReply(false)}
+                    onSuccessPost={props.onSuccessPost}
                     messageId={messageId}
                 />
             )}

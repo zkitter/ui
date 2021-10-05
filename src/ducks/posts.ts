@@ -15,6 +15,9 @@ enum ActionTypes {
     SET_POSTS = 'posts/setPosts',
     SET_POST = 'posts/setPost',
     SET_META = 'posts/setMeta',
+    INCREMENT_REPLY = 'posts/incrementReply',
+    INCREMENT_LIKE = 'posts/incrementLike',
+    INCREMENT_REPOST = 'posts/incrementRepost',
     APPEND_POSTS = 'posts/appendPosts',
 }
 
@@ -109,19 +112,36 @@ export const fetchPost = (messageId: string) =>
 
     if (!message) return null;
 
-    dispatch({
-        type: ActionTypes.SET_POST,
-        payload: new Post({
-            ...message,
-            creator: creator,
-        }),
-    });
+    dispatch(setPost(new Post({
+        ...message,
+        creator: creator,
+    })));
 
     return {
         ...message,
         creator: creator,
     };
 }
+
+export const setPost = (post: Post) => ({
+    type: ActionTypes.SET_POST,
+    payload: post,
+});
+
+export const incrementReply = (parentId: string) => ({
+    type: ActionTypes.INCREMENT_REPLY,
+    payload: parentId,
+});
+
+export const incrementLike = (parentId: string) => ({
+    type: ActionTypes.INCREMENT_LIKE,
+    payload: parentId,
+});
+
+export const incrementRepost = (parentId: string) => ({
+    type: ActionTypes.INCREMENT_REPOST,
+    payload: parentId,
+});
 
 export const fetchPosts = (creator?: string, limit = 10, offset = 0) =>
     async (
@@ -454,6 +474,12 @@ export default function posts(state = initialState, action: Action): State {
             return reduceSetMeta(state, action);
         case ActionTypes.APPEND_POSTS:
             return reduceAppendPosts(state, action);
+        case ActionTypes.INCREMENT_REPLY:
+            return reduceIncrementReply(state, action);
+        case ActionTypes.INCREMENT_REPOST:
+            return reduceIncrementRepost(state, action);
+        case ActionTypes.INCREMENT_LIKE:
+            return reduceIncrementLike(state, action);
         default:
             return state;
     }
@@ -502,6 +528,59 @@ function reduceSetMeta(state: State, action: Action): State {
         meta: {
             ...state.meta,
             [messageId]: meta
+        },
+    };
+}
+
+function reduceIncrementReply(state: State, action: Action): State {
+    const parentId = action.payload;
+    const meta = state.meta[parentId] || {};
+    const replyCount = meta.replyCount || 0;
+
+    return {
+        ...state,
+        meta: {
+            ...state.meta,
+            [parentId]: {
+                ...meta,
+                replyCount: Number(replyCount) + 1,
+            },
+        },
+    };
+}
+
+function reduceIncrementRepost(state: State, action: Action): State {
+    const parentId = action.payload;
+    const meta = state.meta[parentId] || {};
+    const repostCount = meta.repostCount || 0;
+
+    return {
+        ...state,
+        meta: {
+            ...state.meta,
+            [parentId]: {
+                ...meta,
+                repostCount: Number(repostCount) + 1,
+                reposted: true,
+            },
+        },
+    };
+}
+
+function reduceIncrementLike(state: State, action: Action): State {
+    const parentId = action.payload;
+    const meta = state.meta[parentId] || {};
+    const likeCount = meta.likeCount || 0;
+
+    return {
+        ...state,
+        meta: {
+            ...state.meta,
+            [parentId]: {
+                ...meta,
+                likeCount: Number(likeCount) + 1,
+                liked: true,
+            },
         },
     };
 }
