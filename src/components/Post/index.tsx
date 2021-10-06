@@ -195,14 +195,18 @@ export function ExpandedPost(props: Props): ReactElement {
                     )
                 }
                 <div className="mt-4 mb-2 text-xl w-full">
-                    <DraftEditor
-                        editorState={editorState}
-                        onChange={() => null}
-                        readOnly
-                    />
+                    {
+                        post.payload.content && (
+                            <DraftEditor
+                                editorState={editorState}
+                                onChange={() => null}
+                                readOnly
+                            />
+                        )
+                    }
                     {
                         post.payload.attachment && (
-                            <div className="post__attachment pb-2">
+                            <div className="post__attachment py-2">
                                 <URLPreview
                                     url={post.payload.attachment}
                                     showAll
@@ -349,25 +353,30 @@ export function RegularPost(props: Props): ReactElement {
                                 </div>
                             )
                         }
-                        <DraftEditor
-                            editorState={editorState}
-                            onChange={() => null}
-                            customStyleMap={{
-                                CODE: {
-                                    backgroundColor: '#f6f6f6',
-                                    color: '#1c1e21',
-                                    padding: '2px 4px',
-                                    margin: '0 2px',
-                                    borderRadius: '2px',
-                                    fontFamily: 'Roboto Mono, monospace',
-                                },
-                            }}
-                            readOnly
-                        />
+
+                        {
+                            post.payload.content && (
+                                <DraftEditor
+                                    editorState={editorState}
+                                    onChange={() => null}
+                                    customStyleMap={{
+                                        CODE: {
+                                            backgroundColor: '#f6f6f6',
+                                            color: '#1c1e21',
+                                            padding: '2px 4px',
+                                            margin: '0 2px',
+                                            borderRadius: '2px',
+                                            fontFamily: 'Roboto Mono, monospace',
+                                        },
+                                    }}
+                                    readOnly
+                                />
+                            )
+                        }
 
                         {
                             post.payload.attachment && (
-                                <div className="post__attachment pb-2">
+                                <div className="post__attachment py-2">
                                     <URLPreview
                                         url={post.payload.attachment}
                                     />

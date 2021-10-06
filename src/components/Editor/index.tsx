@@ -151,7 +151,7 @@ export default function Editor(props: Props): ReactElement {
 
                 {
                     draft.attachment && (
-                        <div className="editor__attachment pb-2">
+                        <div className="editor__attachment py-2">
                             <URLPreview
                                 url={draft.attachment}
                                 onRemove={() => onAddLink('')}
