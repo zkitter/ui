@@ -1,6 +1,9 @@
 $primary-color: #00d0ff;
 $black: #000;
 $white: #fff;
+$gray-800: mix($black, $white, 80);
+$gray-700: mix($black, $white, 70);
+$gray-600: mix($black, $white, 60);
 $gray-300: mix($black, $white, 30);
 $gray-200: mix($black, $white, 20);
 $gray-100: mix($black, $white, 10);

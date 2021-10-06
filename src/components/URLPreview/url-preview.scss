@@ -26,7 +26,6 @@
     position: relative;
     padding-top: 56.25%;
 
-
     &--showAll {
       padding-top: 0;
 
@@ -34,5 +33,36 @@
         position: relative;
       }
     }
+  }
+
+  &__link-container {
+    @extend %col-nowrap;
+  }
+
+  &__link-image {
+    padding-top: 56.25%;
+    background-size: contain;
+  }
+
+  &__link-content {
+    @extend %col-nowrap;
+    padding: .75rem 1rem;
+    font-size: .9375rem;
+    line-height: 1.35rem;
+  }
+
+  &__link-title {
+    font-weight: 600;
+    margin-bottom: .25rem;
+    text-overflow: ellipsis;
+    overflow: hidden;
+    max-height: 2.7rem;
+  }
+
+  &__link-desc {
+    color: $gray-600;
+    max-height: 4.05rem;
+    text-overflow: ellipsis;
+    overflow: hidden;
   }
 }
