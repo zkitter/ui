@@ -28,9 +28,10 @@ export default function URLPreview(props: Props): ReactElement {
 
     useEffect(() => {
         (async function onURLPreviewLoad() {
+            setPreview(null);
+            setImageSrc('');
+
             if (!url) {
-                setPreview(null);
-                setImageSrc('');
                 return;
             }
 
@@ -38,8 +39,6 @@ export default function URLPreview(props: Props): ReactElement {
                 if (await testImage(url)) {
                     setImageSrc(url);
                     return;
-                } else {
-                    setImageSrc('');
                 }
 
                 const resp = await fetch(`${config.indexerAPI}/preview?link=${encodeURI(url)}`);
@@ -68,14 +67,10 @@ export default function URLPreview(props: Props): ReactElement {
 
                     return;
                 }
-
-                setPreview(null);
             } catch (e) {
                 setImageSrc('');
                 setPreview(null);
             }
-
-
         })();
     }, [url]);
 
