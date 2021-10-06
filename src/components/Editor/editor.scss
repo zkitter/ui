@@ -46,4 +46,19 @@ div.public-DraftEditor-content {
     flex: 1 1 auto;
     width: 0;
   }
+
+  &__button {
+    @extend %row-nowrap;
+    //color: $gray-200;
+    height: 2rem;
+    cursor: pointer;
+    font-size: .9375rem;
+    align-content: center;
+    justify-content: center;
+    border-radius: 50%;
+
+    i {
+      align-self: center;
+    }
+  }
 }

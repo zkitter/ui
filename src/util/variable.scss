@@ -32,6 +32,10 @@ $gray-100: mix($black, $white, 10);
   line-height: 1.3125;
 }
 
+.z-200 {
+  z-index: 200;
+}
+
 .top-29 {
   top: 7.5rem;
 }

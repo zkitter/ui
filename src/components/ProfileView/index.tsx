@@ -23,7 +23,6 @@ import SnapshotLogoPNG from "../../../static/icons/snapshot-logo.png";
 import InfiniteScrollable from "../InfiniteScrollable";
 import Menuable from "../Menuable";
 import {fetchProposals} from "../../ducks/snapshot";
-import Proposal from "../Proposal";
 import SpinnerGif from "../../../static/icons/spinner.gif";
 
 export default function ProfileView(): ReactElement {
@@ -89,14 +88,6 @@ export default function ProfileView(): ReactElement {
                     'border border-gray-200 rounded-xl mb-1',
                 )}
             >
-                {user?.snapshot && (
-                    <ProfileMenuButton
-                        iconUrl={SnapshotLogoPNG}
-                        label="Proposals"
-                        onClick={() => history.push(`/${name}/proposals`)}
-                        active={subpath === 'proposals'}
-                    />
-                )}
                 <ProfileMenuButton
                     iconFa="fas fa-comment-alt"
                     label="Posts"
@@ -117,9 +108,6 @@ export default function ProfileView(): ReactElement {
                 />
             </div>
             <Switch>
-                <Route path="/:name/proposals">
-                    <ProposalList list={order} fetching={fetching} />
-                </Route>
                 <Route path="/:name">
                     <PostList list={order} fetching={fetching} />
                 </Route>
@@ -150,58 +138,6 @@ function ProfileMenuButton(props: {
             <span className="ml-2 font-semibold">{props.label}</span>
         </div>
     );
-}
-
-function ProposalList(props: { list: string[]; fetching: boolean }): ReactElement {
-    const history = useHistory();
-    const gotoProposal = useCallback((messageId: string) => {
-        if (messageId) {
-            history.push(`/proposal/${messageId}`)
-        }
-    }, []);
-
-    if (!props.list.length ) {
-        return props.fetching
-            ? (
-                <div
-                    className={classNames(
-                        'flex flex-row flex-nowrap items-center justify-center',
-                        'py-6 px-4 border border-gray-200 rounded-xl text-sm text-gray-300',
-                    )}
-                >
-                    <Icon url={SpinnerGif} size={3} />
-                </div>
-            )
-            : (
-                <div
-                    className={classNames(
-                        'flex flex-row flex-nowrap items-center justify-center',
-                        'py-6 px-4 border border-gray-200 rounded-xl text-sm text-gray-300',
-                    )}
-                >
-                    Nothing to see here yet
-                </div>
-            )
-    }
-
-
-
-    return (
-        <>
-            {
-                props.list.map(id => {
-                    return (
-                        <Proposal
-                            key={id}
-                            className="rounded-xl transition-colors mb-1 hover:border-gray-400 cursor-pointer border border-gray-200"
-                            id={id}
-                            onClick={() => gotoProposal(id)}
-                        />
-                    );
-                })
-            }
-        </>
-    )
 }
 
 function PostList(props: { list: string[]; fetching: boolean }): ReactElement {
@@ -674,9 +610,7 @@ function ProfileImageEditor(props: {
                 "justify-center items-center bg-gray-100",
                 "bg-cover bg-center bg-no-repeat",
             )}
-            style={{
-                backgroundImage: url ? `url(${url})` : undefined,
-            }}
+            style={{ backgroundImage: url ? `url(${url})` : undefined }}
         >
             <div
                 className="flex flex-row flex-nowrap items-center justify-center h-full w-full bg-black bg-opacity-30 rounded-full"
@@ -688,7 +622,6 @@ function ProfileImageEditor(props: {
                                 "flex flex-row flex-nowrap items-center justify-center",
                                 "rounded-full w-8 h-8",
                                 "bg-white text-white text-opacity-80 bg-opacity-20",
-                                // "hover:bg-opacity-40 hover:text-opacity-100",
                             )}
                             fa="fas fa-upload"
                             size={.75}

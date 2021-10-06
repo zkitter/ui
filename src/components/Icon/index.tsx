@@ -1,4 +1,4 @@
-import React, {MouseEventHandler, ReactElement} from "react";
+import React, {MouseEventHandler, ReactElement, ReactNode} from "react";
 import classNames from "classnames";
 import "./icon.scss";
 
@@ -8,6 +8,7 @@ type Props = {
     className?: string;
     size?: number;
     onClick?: MouseEventHandler;
+    children?: ReactNode;
 }
 
 export default function Icon(props: Props): ReactElement {
@@ -17,6 +18,7 @@ export default function Icon(props: Props): ReactElement {
         className = '',
         fa,
         onClick,
+        children,
     } = props;
 
     return (
@@ -36,6 +38,7 @@ export default function Icon(props: Props): ReactElement {
             onClick={onClick}
         >
             {fa && <i className={fa} style={{ fontSize: `${size}rem`}}/>}
+            {children}
         </div>
     );
 }

@@ -95,6 +95,7 @@ function PostEditor(props: {
 
     return (
         <Editor
+            messageId=""
             className={classNames("mb-1 transition-shadow border border-gray-200", {
                 'focus-within:border-gray-400': loggedIn,
             })}

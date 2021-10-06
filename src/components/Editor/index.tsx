@@ -12,8 +12,11 @@ import Avatar from "../Avatar";
 import Web3Button from "../Web3Button";
 import Button from "../Button";
 import {DraftEditor} from "../DraftEditor";
+import Icon from "../Icon";
+import Input from "../Input";
 
 type Props = {
+    messageId: string;
     editorState: EditorState;
     onChange?: (newEditorState: EditorState) => void;
     className?: string;
@@ -121,8 +124,22 @@ export default function Editor(props: Props): ReactElement {
 
                 />
                 <div className="flex flex-row flex-nowrap border-t pt-2">
-                    <div className="flex-grow pr-4 mr-4">
+                    <div className="flex-grow pr-4 mr-4 flex flex-row flex-nowrap items-center">
+                        <LinkIcon
 
+                        />
+                        {/*<Icon*/}
+                        {/*    className={classNames("editor__button w-8 h-8",*/}
+                        {/*        "hover:bg-blue-50 hover:text-blue-400",*/}
+                        {/*    )}*/}
+                        {/*    fa="far fa-image"*/}
+                        {/*/>*/}
+                        {/*<Icon*/}
+                        {/*    className={classNames("editor__button w-8 h-8",*/}
+                        {/*        "hover:bg-blue-50 hover:text-blue-400",*/}
+                        {/*    )}*/}
+                        {/*    fa="far fa-smile"*/}
+                        {/*/>*/}
                     </div>
                     <Button
                         btnType="primary"
@@ -137,3 +154,36 @@ export default function Editor(props: Props): ReactElement {
         </div>
     );
 };
+
+function LinkIcon(): ReactElement {
+    const [showingInput, showInput] = useState(false);
+
+    return (
+        <Icon
+            className={classNames("editor__button text-gray-400 w-8 h-8 relative",
+                {
+                    'bg-red-50 text-red-400': showingInput,
+                    'hover:bg-blue-50 hover:text-blue-400': !showingInput,
+                }
+            )}
+            fa={showingInput ? "fas fa-times" : "fas fa-link"}
+            onClick={() => showInput(!showingInput)}
+        >
+            {
+                showingInput && (
+                    <Input
+                        className="absolute w-80 bottom-10 left-0 z-200 border-2 text-black"
+                        onClick={e => e.stopPropagation()}
+                        autoFocus
+                    >
+                        <Icon
+                            className="pr-2 text-green-500"
+                            fa="fas fa-check"
+                            onClick={e => e.stopPropagation()}
+                        />
+                    </Input>
+                )
+            }
+        </Icon>
+    );
+}

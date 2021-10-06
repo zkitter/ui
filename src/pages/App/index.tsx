@@ -10,7 +10,6 @@ import ProfileView from "../../components/ProfileView";
 import HomeFeed from "../../components/HomeFeed";
 import DiscoverUserPanel from "../../components/DiscoverUserPanel";
 import {SnapshotAdminPanel, SnapshotMemberPanel} from "../../components/SnapshotPanels";
-import ProposalView from "../../components/ProposalView";
 import TagFeed from "../../components/TagFeed";
 import DiscoverTagPanel from "../../components/DiscoverTagPanel";
 
@@ -42,9 +41,6 @@ export default function App(): ReactElement {
                     </Route>
                     <Route path="/post/:hash">
                         <PostView />
-                    </Route>
-                    <Route path="/proposal/:proposalId">
-                        <ProposalView />
                     </Route>
                     {
                         !loggedIn
@@ -82,10 +78,6 @@ export default function App(): ReactElement {
                             <DiscoverUserPanel key="discover-user" />
                             <DiscoverTagPanel key="discover-tag" />
                         </Route>
-                        <Route path="/proposal/:proposalId">
-                            <DiscoverUserPanel key="discover-user" />
-                            <DiscoverTagPanel key="discover-tag" />
-                        </Route>
                         <Route path="/tag/:tagName">
                             <DiscoverUserPanel key="discover-user" />
                             <DiscoverTagPanel key="discover-tag" />
@@ -96,8 +88,6 @@ export default function App(): ReactElement {
                         </Route>
                         <Route path="/notifications"></Route>
                         <Route path="/:name">
-                            <SnapshotAdminPanel />
-                            <SnapshotMemberPanel />
                             <DiscoverUserPanel key="discover-user" />
                             <DiscoverTagPanel key="discover-tag" />
                         </Route>

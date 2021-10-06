@@ -25,7 +25,6 @@ import {ModerationMessageSubType, Post as PostMessage, PostMessageSubType} from 
 import {useGunKey, useLoggedIn} from "../../ducks/web3";
 import {useHistory} from "react-router";
 import Menuable from "../Menuable";
-import Proposal from "../Proposal";
 import {convertMarkdownToDraft, DraftEditor} from "../DraftEditor";
 
 
@@ -58,35 +57,6 @@ export default function Post(props: Props): ReactElement {
             dispatch(fetchMeta(messageId));
         }
     }, [messageId, post]);
-
-    if (originalPost?.subtype === PostMessageSubType.Repost) {
-        try {
-            const url = new URL(originalPost.payload.reference);
-            if (url?.hostname === 'snapshot.org') {
-                const [_, spaceId, __, proposalId] = url?.hash.split('/');
-                return (
-                    <Proposal
-                        {...props}
-                        id={proposalId}
-                        repostBy={originalPost.creator}
-                    />
-                );
-            }
-        } catch (e) {}
-    }
-
-    try {
-        const url = new URL(props.messageId);
-        if (url?.hostname === 'snapshot.org') {
-            const [_, spaceId, __, proposalId] = url?.hash.split('/');
-            return (
-                <Proposal
-                    {...props}
-                    id={proposalId}
-                />
-            );
-        }
-    } catch (e) {}
 
     if (!post) return <LoadingPost {...props} />;
 
@@ -137,6 +107,7 @@ function ReplyEditorModal(props: ReplyEditorModalProps): ReactElement {
             </ModalHeader>
             <ModalContent className="min-h-64">
                 <Editor
+                    messageId={messageId}
                     className="reply-editor"
                     editorState={draft.editorState}
                     onChange={updateDraft}
