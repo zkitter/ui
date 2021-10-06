@@ -13,34 +13,39 @@ export const authenticateGun = (keyPair: { pub: string; priv: string }) => {
 
 export const fetchMessage = async (soul: string): Promise<PostMessageOption> => {
     return new Promise(async (resolve, reject) => {
-        // @ts-ignore
-        const data: any = await gun.get(soul);
-
-        let payload: any | undefined;
-
-        const type = Message.getType(data.type);
-
-        if(data.payload) {
+        try {
             // @ts-ignore
-            payload = await gun.get(data.payload['#']);
-        }
+            const data: any = await gun.get(soul);
 
-        if (type === MessageType.Post) {
-            if (type === MessageType.Post) {
-                const subtype = Post.getSubtype(data.subtype);
+            let payload: any | undefined;
 
-                resolve({
-                    type: type as MessageType,
-                    subtype: subtype as PostMessageSubType,
-                    createdAt: new Date(Number(data.createdAt)),
-                    payload: {
-                        topic: payload?.topic,
-                        title: payload?.title,
-                        content: payload?.content,
-                        reference: payload?.reference,
-                    },
-                });
+            const type = Message.getType(data.type);
+
+            if(data.payload) {
+                // @ts-ignore
+                payload = await gun.get(data.payload['#']);
             }
+
+            if (type === MessageType.Post) {
+                if (type === MessageType.Post) {
+                    const subtype = Post.getSubtype(data.subtype);
+
+                    resolve({
+                        type: type as MessageType,
+                        subtype: subtype as PostMessageSubType,
+                        createdAt: new Date(Number(data.createdAt)),
+                        payload: {
+                            topic: payload?.topic,
+                            title: payload?.title,
+                            content: payload?.content,
+                            reference: payload?.reference,
+                            attachment: payload?.attachment,
+                        },
+                    });
+                }
+            }
+        } catch (e) {
+            reject(e);
         }
     });
 }

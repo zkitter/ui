@@ -20,8 +20,6 @@ import Avatar from "../Avatar";
 import classNames from "classnames";
 import debounce from "lodash.debounce";
 
-
-
 export function DraftEditor(props: PluginEditorProps): ReactElement {
     const dispatch = useDispatch();
 
@@ -84,7 +82,7 @@ export function DraftEditor(props: PluginEditorProps): ReactElement {
                 {...props}
                 plugins={plugins}
                 onChange={editorState => {
-                    if (props.onChange) {
+                    if (props.onChange && !props.readOnly) {
                         props.onChange(editorState);
                         return editorState;
                     }

@@ -26,6 +26,7 @@ import {useGunKey, useLoggedIn} from "../../ducks/web3";
 import {useHistory} from "react-router";
 import Menuable from "../Menuable";
 import {convertMarkdownToDraft, DraftEditor} from "../DraftEditor";
+import URLPreview from "../URLPreview";
 
 
 type Props = {
@@ -81,10 +82,6 @@ function ReplyEditorModal(props: ReplyEditorModalProps): ReactElement {
     const draft = useDraft(props.messageId);
     const submitting = useSubmitting();
 
-    const updateDraft = useCallback((newEditorState) => {
-        dispatch(setDraft(newEditorState, messageId));
-    }, [messageId]);
-
     const submitReply = useCallback(async () => {
         const post: any = await dispatch(submitPost(messageId));
 
@@ -93,7 +90,6 @@ function ReplyEditorModal(props: ReplyEditorModalProps): ReactElement {
         }
 
         dispatch(incrementReply(props.messageId));
-        dispatch(setDraft(EditorState.createEmpty(), messageId));
         onClose();
     }, [messageId, draft.editorState]);
 
@@ -110,7 +106,6 @@ function ReplyEditorModal(props: ReplyEditorModalProps): ReactElement {
                     messageId={messageId}
                     className="reply-editor"
                     editorState={draft.editorState}
-                    onChange={updateDraft}
                     onPost={submitReply}
                     loading={submitting}
                 />
@@ -205,6 +200,16 @@ export function ExpandedPost(props: Props): ReactElement {
                         onChange={() => null}
                         readOnly
                     />
+                    {
+                        post.payload.attachment && (
+                            <div className="post__attachment pb-2">
+                                <URLPreview
+                                    url={post.payload.attachment}
+                                    showAll
+                                />
+                            </div>
+                        )
+                    }
                 </div>
                 <div className="flex flex-row flex-nowrap items-center text-light w-full">
                     <div className="text-gray-500 my-2">
@@ -359,6 +364,16 @@ export function RegularPost(props: Props): ReactElement {
                             }}
                             readOnly
                         />
+
+                        {
+                            post.payload.attachment && (
+                                <div className="post__attachment pb-2">
+                                    <URLPreview
+                                        url={post.payload.attachment}
+                                    />
+                                </div>
+                            )
+                        }
                     </div>
                     <PostFooter
                         messageId={messageId}

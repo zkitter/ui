@@ -81,10 +81,6 @@ function PostEditor(props: {
     const submitting = useSubmitting();
     const draft = useDraft();
 
-    const onChange = useCallback((newEditorState: EditorState) => {
-        dispatch(setDraft(newEditorState));
-    }, [draft]);
-
     const onPost = useCallback(async () => {
         const post: any = await dispatch(submitPost());
 
@@ -100,7 +96,6 @@ function PostEditor(props: {
                 'focus-within:border-gray-400': loggedIn,
             })}
             editorState={draft.editorState}
-            onChange={onChange}
             onPost={onPost}
             loading={submitting}
         />

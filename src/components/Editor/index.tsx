@@ -14,11 +14,13 @@ import Button from "../Button";
 import {DraftEditor} from "../DraftEditor";
 import Icon from "../Icon";
 import Input from "../Input";
+import drafts, {setDraft, useDraft} from "../../ducks/drafts";
+import {useDispatch} from "react-redux";
+import URLPreview from "../URLPreview";
 
 type Props = {
     messageId: string;
     editorState: EditorState;
-    onChange?: (newEditorState: EditorState) => void;
     className?: string;
     disabled?: boolean;
     readOnly?: boolean;
@@ -28,18 +30,42 @@ type Props = {
 
 export default function Editor(props: Props): ReactElement {
     const {
+        messageId,
         editorState,
         disabled,
         readOnly,
         onPost,
         loading,
-        onChange = () => null,
     } = props;
 
     const address = useAccount();
     const loggedIn = useLoggedIn();
     const ensName = useENSName();
     const semaphoreId = useSemaphoreID();
+    const draft = useDraft(messageId);
+    const dispatch = useDispatch();
+
+    const isEmpty = !editorState.getCurrentContent().hasText() && !draft.attachment;
+
+    const onChange = useCallback((newEditorState: EditorState) => {
+        if (readOnly) return;
+
+        dispatch(setDraft({
+            editorState: newEditorState,
+            reference: messageId,
+            attachment: draft.attachment,
+        }));
+    }, [messageId, readOnly, draft]);
+
+    const onAddLink = useCallback((url: string) => {
+        if (readOnly) return;
+
+        dispatch(setDraft({
+            editorState: draft.editorState,
+            reference: draft.reference,
+            attachment: url,
+        }));
+    }, [messageId, readOnly, draft]);
 
     const handleKeyCommand: (command: string) => DraftHandleValue = useCallback((command: string): DraftHandleValue => {
         const newState = RichUtils.handleKeyCommand(editorState, command);
@@ -121,12 +147,25 @@ export default function Editor(props: Props): ReactElement {
                     handleKeyCommand={handleKeyCommand}
                     placeholder={readOnly ? '' : "Write here..."}
                     readOnly={readOnly || disabled}
-
                 />
+
+                {
+                    draft.attachment && (
+                        <div className="editor__attachment pb-2">
+                            <URLPreview
+                                url={draft.attachment}
+                                onRemove={() => onAddLink('')}
+                                editable
+                            />
+                        </div>
+                    )
+                }
+
                 <div className="flex flex-row flex-nowrap border-t pt-2">
                     <div className="flex-grow pr-4 mr-4 flex flex-row flex-nowrap items-center">
                         <LinkIcon
-
+                            onAddLink={onAddLink}
+                            link={draft.attachment}
                         />
                         {/*<Icon*/}
                         {/*    className={classNames("editor__button w-8 h-8",*/}
@@ -144,7 +183,7 @@ export default function Editor(props: Props): ReactElement {
                     <Button
                         btnType="primary"
                         onClick={onPost}
-                        disabled={!editorState.getCurrentContent().hasText()}
+                        disabled={isEmpty}
                         loading={loading}
                     >
                         Post
@@ -155,7 +194,10 @@ export default function Editor(props: Props): ReactElement {
     );
 };
 
-function LinkIcon(): ReactElement {
+function LinkIcon(props: {
+    onAddLink: (url: string) => void;
+    link?: string;
+}): ReactElement {
     const [showingInput, showInput] = useState(false);
 
     return (
@@ -174,12 +216,17 @@ function LinkIcon(): ReactElement {
                     <Input
                         className="absolute w-80 bottom-10 left-0 z-200 border-2 text-black"
                         onClick={e => e.stopPropagation()}
+                        onChange={e => props.onAddLink(e.target.value)}
+                        value={props.link}
                         autoFocus
                     >
                         <Icon
                             className="pr-2 text-green-500"
                             fa="fas fa-check"
-                            onClick={e => e.stopPropagation()}
+                            onClick={e => {
+                                e.stopPropagation();
+                                showInput(false);
+                            }}
                         />
                     </Input>
                 )
