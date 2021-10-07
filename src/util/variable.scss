@@ -58,3 +58,9 @@ $gray-100: mix($black, $white, 10);
 .min-h-64 {
   min-height: 16rem;
 }
+
+@media only screen and (max-width: 768px) {
+  .mobile-hidden {
+    display: none;
+  }
+}

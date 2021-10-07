@@ -63,8 +63,8 @@ export default function Post(props: Props): ReactElement {
 
     return (
         <>
-            { !expand && <RegularPost {...props} /> }
-            { !!expand && <ExpandedPost {...props} /> }
+            { !expand && <RegularPost key={props.messageId} {...props} /> }
+            { !!expand && <ExpandedPost key={props.messageId} {...props} /> }
         </>
     );
 }

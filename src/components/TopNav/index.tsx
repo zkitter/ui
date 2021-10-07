@@ -16,7 +16,6 @@ import {
 import Button from "../Button";
 import {useDispatch} from "react-redux";
 import {useUser} from "../../ducks/users";
-import SnapshotPNG from "../../../static/icons/snapshot-logo.png";
 
 export default function TopNav(): ReactElement {
     const account = useAccount();
@@ -26,12 +25,11 @@ export default function TopNav(): ReactElement {
     const web3Loading = useWeb3Loading();
     const ensFetching = useENSFetching();
     const dispatch = useDispatch();
-    const history = useHistory();
     const semaphoreId = useSemaphoreID();
 
-    const showRegisterENSButton = !loggedIn && account && !web3Loading && !ensFetching && !ensName;
-    const showAddTextRecordButton = !loggedIn && account && !web3Loading && !ensFetching && ensName && !gunKey.pub;
     const showRegisterInterrepButton = !loggedIn && account && semaphoreId.commitment && !semaphoreId.identityPath;
+    const showRegisterENSButton = !showRegisterInterrepButton && !loggedIn && account && !web3Loading && !ensFetching && !ensName;
+    const showAddTextRecordButton = !loggedIn && account && !web3Loading && !ensFetching && ensName && !gunKey.pub;
 
     const updateTextRecord = useCallback(async () => {
         const gunPair: any = await dispatch(generateGunKeyPair(0));
@@ -44,9 +42,9 @@ export default function TopNav(): ReactElement {
     return (
         <div
             className={classNames(
-                'h-20 bg-white flex-shrink-0',
+                'bg-white flex-shrink-0',
                 'flex', 'flex-row', 'flex-nowrap', 'items-center',
-                'p-4 border-b border-gray-200',
+                'border-b border-gray-200',
                 'top-nav'
             )}
         >
@@ -61,14 +59,15 @@ export default function TopNav(): ReactElement {
                     <Route path="/tag/:tagName" component={TagHeaderGroup} />
                     <Route path="/:name/status/:hash" component={PostHeaderGroup} />
                     <Route path="/post/:hash" component={PostHeaderGroup} />
-                    <Route path="/Proposal/:hash" component={ProposalHeaderGroup} />
                     <Route path="/:name" component={UserProfileHeaderGroup} />
                     <Route>
                         <DefaultHeaderGroup />
                     </Route>
                 </Switch>
             </div>
-            <div className="flex flex-row flex-nowrap items-center flex-grow-0 flex-shrink-0">
+            <div
+                className="flex flex-row flex-nowrap items-center flex-grow-0 flex-shrink-0 mx-4 h-20 mobile-hidden"
+            >
                 {
                     showRegisterInterrepButton && (
                         <Button
@@ -118,12 +117,13 @@ function DefaultHeaderGroup() {
             className={classNames(
                 "flex flex-row flex-nowrap items-center flex-shrink-0",
                 "rounded-xl border border-gray-200",
-                "p-1 overflow-hidden",
+                "p-1 mx-4 overflow-hidden",
                 "bg-white",
+                'mobile-hidden',
             )}
         >
-            { loggedIn && <TopNavIcon fa="fas fa-home" pathname="/home" /> }
-            { loggedIn && <TopNavIcon fa="fas fa-user" pathname={`/${ensName}/`} /> }
+            <TopNavIcon fa="fas fa-home" pathname="/home" disabled={!loggedIn} />
+            <TopNavIcon fa="fas fa-user" pathname={`/${ensName}/`} disabled={!loggedIn} />
             <TopNavIcon fa="fas fa-globe-asia" pathname="/explore" />
             {/*<TopNavIcon fa="fas fa-bell" pathname="/notifications" />*/}
         </div>
@@ -139,8 +139,8 @@ function UserProfileHeaderGroup() {
         <div
             className={classNames(
                 "flex flex-row flex-nowrap items-center flex-shrink-0",
-                "rounded-xl p-1 overflow-hidden",
-                "bg-white",
+                "rounded-xl p-1 mx-4 overflow-hidden",
+                "bg-white profile-header-group",
             )}
         >
             <Icon
@@ -149,13 +149,17 @@ function UserProfileHeaderGroup() {
                 onClick={() => history.push(`/`)}
             />
             <div
-                className="flex flex-row flex-nowrap items-center px-2 py-2"
+                className="flex flex-row flex-nowrap items-center px-2 py-2 profile-header-group__title-group"
             >
-                <div className="flex flex-col flex-nowrap justify-center ml-2">
-                    <div className="font-bold text-lg">
+                <div
+                    className="flex flex-col flex-nowrap justify-center ml-2"
+                >
+                    <div className="font-bold text-lg profile-header-group__title">
                         {user?.name || name}
                     </div>
-                    <div className="text-xs text-gray-500">{user?.meta.postingCount || 0} Posts</div>
+                    <div className="text-xs text-gray-500 profile-header-group__subtitle">
+                        {user?.meta.postingCount || 0} Posts
+                    </div>
                 </div>
             </div>
         </div>
@@ -171,8 +175,8 @@ function TagHeaderGroup() {
         <div
             className={classNames(
                 "flex flex-row flex-nowrap items-center flex-shrink-0",
-                "rounded-xl p-1 overflow-hidden",
-                "bg-white",
+                "rounded-xl p-1 mx-4 overflow-hidden",
+                "bg-white tag-header-group",
             )}
         >
             <Icon
@@ -184,7 +188,7 @@ function TagHeaderGroup() {
                 className="flex flex-row flex-nowrap items-center px-2 py-2"
             >
                 <div className="flex flex-col flex-nowrap justify-center ml-2">
-                    <div className="font-bold text-xl">
+                    <div className="font-bold text-xl tag-header-group__tag-text">
                         {tag}
                     </div>
                 </div>
@@ -200,8 +204,8 @@ function PostHeaderGroup() {
         <div
             className={classNames(
                 "flex flex-row flex-nowrap items-center flex-shrink-0",
-                "rounded-xl p-1 overflow-hidden",
-                "bg-white",
+                "rounded-xl p-1 mx-4 overflow-hidden",
+                "bg-white post-header-group",
             )}
         >
             <Icon
@@ -213,41 +217,8 @@ function PostHeaderGroup() {
                 className="flex flex-row flex-nowrap items-center px-2 py-2"
             >
                 <div className="flex flex-col flex-nowrap justify-center ml-2">
-                    <div className="font-bold text-xl">
+                    <div className="font-bold text-xl top-nav__text-title">
                         Post
-                    </div>
-                </div>
-            </div>
-        </div>
-    )
-}
-
-function ProposalHeaderGroup() {
-    const history = useHistory();
-
-    return (
-        <div
-            className={classNames(
-                "flex flex-row flex-nowrap items-center flex-shrink-0",
-                "rounded-xl p-1 overflow-hidden",
-                "bg-white",
-            )}
-        >
-            <Icon
-                className="w-8 h-8 flex flex-row items-center justify-center top-nav__back-icon"
-                fa="fas fa-chevron-left"
-                onClick={() => history.push(`/`)}
-            />
-            <div
-                className="flex flex-row flex-nowrap items-center px-2 py-2"
-            >
-                <Icon
-                    url={SnapshotPNG}
-                    size={1.5}
-                />
-                <div className="flex flex-col flex-nowrap justify-center ml-2">
-                    <div className="font-bold text-xl">
-                        Proposal
                     </div>
                 </div>
             </div>
@@ -258,6 +229,7 @@ function ProposalHeaderGroup() {
 type TopNavIconProps = {
     fa: string;
     pathname: string;
+    disabled?: boolean;
 }
 
 function TopNavIcon(props: TopNavIconProps): ReactElement {
@@ -271,9 +243,10 @@ function TopNavIcon(props: TopNavIconProps): ReactElement {
                 'top-nav__icon',
                 {
                     'shadow-sm top-nav__icon--selected': pathname === props.pathname,
+                    'top-nav__icon--disabled': props.disabled,
                 }
             )}
-            onClick={pathname !== props.pathname ? () => history.push(props.pathname) : undefined}
+            onClick={(pathname !== props.pathname && !props.disabled) ? () => history.push(props.pathname) : undefined}
             fa={props.fa}
             size={1.125}
         />
