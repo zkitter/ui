@@ -44,7 +44,7 @@ export default function ParentThread(props: Props): ReactElement {
             />
             <Post
                 messageId={parent}
-                className={classNames("cursor-pointer hover:bg-gray-50", props.className)}
+                className={classNames("cursor-pointer hover:bg-gray-50 parent-post", props.className)}
                 onClick={() => gotoPost(parent)}
                 onSuccessPost={props.onSuccessPost}
                 isParent

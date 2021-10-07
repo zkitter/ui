@@ -92,7 +92,7 @@ function PostEditor(props: {
     return (
         <Editor
             messageId=""
-            className={classNames("mb-1 transition-shadow border border-gray-200", {
+            className={classNames("mb-1 transition-shadow border border-gray-200 mobile-hidden", {
                 'focus-within:border-gray-400': loggedIn,
             })}
             editorState={draft.editorState}

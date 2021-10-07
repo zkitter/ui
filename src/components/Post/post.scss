@@ -89,9 +89,29 @@
     &__menu {
       margin-left: 1rem;
     }
+
+    &:last-of-type {
+      border-bottom: 1px solid $gray-100;
+    }
   }
 
   .post + .post {
     border-top: 1px solid $gray-100;
+  }
+
+
+
+  .thread__content{
+    .thread > .post {
+      border-left: .25rem solid $gray-100;
+
+      &:hover {
+        border-color: $gray-400;
+      }
+    }
+  }
+
+  .parent-post {
+    border-top: 0 !important;
   }
 }

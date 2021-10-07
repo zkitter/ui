@@ -1,4 +1,4 @@
-import React, {ReactElement, useCallback} from "react";
+import React, {ReactElement, useCallback, useEffect} from "react";
 import Icon from "../Icon";
 import classNames from "classnames";
 import "./top-nav.scss"
@@ -135,6 +135,11 @@ function UserProfileHeaderGroup() {
     const history = useHistory();
     const user = useUser(name);
 
+    const goBack = useCallback(() => {
+        if (history.action !== 'POP') return history.goBack();
+        history.push('/');
+    }, [history]);
+
     return (
         <div
             className={classNames(
@@ -146,7 +151,7 @@ function UserProfileHeaderGroup() {
             <Icon
                 className="w-8 h-8 flex flex-row items-center justify-center top-nav__back-icon"
                 fa="fas fa-chevron-left"
-                onClick={() => history.push(`/`)}
+                onClick={goBack}
             />
             <div
                 className="flex flex-row flex-nowrap items-center px-2 py-2 profile-header-group__title-group"
@@ -171,6 +176,11 @@ function TagHeaderGroup() {
     const {tagName} = useParams<{ tagName: string }>();
     const tag = decodeURIComponent(tagName);
 
+    const goBack = useCallback(() => {
+        if (history.action !== 'POP') return history.goBack();
+        history.push('/');
+    }, [history]);
+
     return (
         <div
             className={classNames(
@@ -182,7 +192,7 @@ function TagHeaderGroup() {
             <Icon
                 className="w-8 h-8 flex flex-row items-center justify-center top-nav__back-icon"
                 fa="fas fa-chevron-left"
-                onClick={() => history.push(`/`)}
+                onClick={goBack}
             />
             <div
                 className="flex flex-row flex-nowrap items-center px-2 py-2"
@@ -200,6 +210,11 @@ function TagHeaderGroup() {
 function PostHeaderGroup() {
     const history = useHistory();
 
+    const goBack = useCallback(() => {
+        if (history.action !== 'POP') return history.goBack();
+        history.push('/');
+    }, [history]);
+
     return (
         <div
             className={classNames(
@@ -211,7 +226,7 @@ function PostHeaderGroup() {
             <Icon
                 className="w-8 h-8 flex flex-row items-center justify-center top-nav__back-icon"
                 fa="fas fa-chevron-left"
-                onClick={() => history.push(`/`)}
+                onClick={goBack}
             />
             <div
                 className="flex flex-row flex-nowrap items-center px-2 py-2"

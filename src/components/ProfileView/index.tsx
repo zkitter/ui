@@ -19,11 +19,9 @@ import {ConnectionMessageSubType, ProfileMessageSubType} from "../../util/messag
 import Avatar from "../Avatar";
 import EtherScanSVG from "../../../static/icons/etherscan-logo-gray-500.svg";
 import SnapshotLogoSVG from "../../../static/icons/snapshot-logo-bw.svg";
-import SnapshotLogoPNG from "../../../static/icons/snapshot-logo.png";
 import InfiniteScrollable from "../InfiniteScrollable";
 import Menuable from "../Menuable";
 import {fetchProposals} from "../../ducks/snapshot";
-import SpinnerGif from "../../../static/icons/spinner.gif";
 
 export default function ProfileView(): ReactElement {
     const {name} = useParams<{name: string}>();
@@ -86,6 +84,7 @@ export default function ProfileView(): ReactElement {
                 className={classNames(
                     'flex flex-row flex-nowrap items-center justify-center',
                     'border border-gray-200 rounded-xl mb-1',
+                    'profile-menu',
                 )}
             >
                 <ProfileMenuButton
@@ -195,6 +194,7 @@ function ProfileCard(): ReactElement {
                     "flex flex-col flex-nowrap",
                     "rounded-xl border border-gray-200",
                     "overflow-hidden bg-white mb-1",
+                    'profile-card',
                 )}
             >
                 <div
@@ -228,6 +228,7 @@ function ProfileCard(): ReactElement {
                 "flex flex-col flex-nowrap",
                 "rounded-xl border border-gray-200",
                 "overflow-hidden bg-white mb-1",
+                'profile-card',
             )}
         >
             { showingEditor && <ProfileEditor onClose={() => showProfileEditor(false)} /> }
@@ -302,12 +303,12 @@ function ProfileCard(): ReactElement {
             <div className="px-4 py-3 text-light">
                 { user.bio }
             </div>
-            <div className="px-4 flex flex-row flex-nowrap">
+            <div className="px-4 flex flex-row flex-nowrap profile-view__datas">
                 {
                     !!user.joinedAt && (
                         <div className="profile-view__data-group flex flex-row flex-nowrap items-center text-light text-gray-500">
                             <Icon fa="far fa-calendar-alt"/>
-                            <div className="ml-2">
+                            <div className="ml-2 profile-view__data-group__value">
                                 {`Joined ${moment(Number(user.joinedAt)).format('MMMM YYYY')}`}
                             </div>
                         </div>
@@ -320,8 +321,8 @@ function ProfileCard(): ReactElement {
                             onClick={() => window.open(`https://etherscan.io/address/${user.address}`, '_blank')}
                         >
                             <Icon url={EtherScanSVG} />
-                            <div className="ml-2">
-                                {`Etherscan ${user.address.slice(0, 6)}...${user.address.slice(-4)}`}
+                            <div className="ml-2 profile-view__data-group__value">
+                                {`${user.address.slice(0, 6)}...${user.address.slice(-4)}`}
                             </div>
                         </div>
                     )
@@ -333,7 +334,7 @@ function ProfileCard(): ReactElement {
                             onClick={() => window.open(`https://snapshot.org/#/${user.ens}`, '_blank')}
                         >
                             <Icon url={SnapshotLogoSVG} />
-                            <div className="ml-2">
+                            <div className="ml-2 profile-view__data-group__value">
                                 {`Snapshot Space`}
                             </div>
                         </div>

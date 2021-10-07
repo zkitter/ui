@@ -9,3 +9,14 @@
     background: transparent;  /* Optional: just make scrollbar invisible */
   }
 }
+
+@media only screen and (max-width: 768px) {
+  .post-view {
+    margin: 0;
+    padding: 0;
+
+    &__container {
+      border: 0;
+    }
+  }
+}
