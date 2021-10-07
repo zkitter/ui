@@ -59,3 +59,11 @@ a {
     text-decoration: underline;
   }
 }
+
+@media only screen and (max-width: 768px) {
+  .app {
+    &__content {
+      width: 100%;
+    }
+  }
+}

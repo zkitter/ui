@@ -278,7 +278,9 @@ export function RegularPost(props: Props): ReactElement {
             {
                 originalPost?.subtype === PostMessageSubType.Repost
                     ? (
-                        <div className="flex flex-row flex-nowrap ml-9 mb-2 items-center text-xs text-gray-500 font-bold ml-6">
+                        <div
+                            className="post__meta flex flex-row flex-nowrap ml-9 mb-2 items-center text-xs text-gray-500 font-bold ml-6"
+                        >
                             <Icon className="mr-2" fa="fas fa-retweet" size={.75}/>
                             {originalPost.creator} Reposted
                         </div>
@@ -300,21 +302,21 @@ export function RegularPost(props: Props): ReactElement {
                         )
                     }
                 </div>
-                <div className="flex flex-col flex-nowrap items-start flex-grow flex-shrink">
+                <div className="flex flex-col flex-nowrap items-start flex-grow flex-shrink w-0">
                     <div
                         className="flex flex-row flex-nowrap items-center text-light w-full"
                     >
                         <div
-                            className="font-bold text-base mr-1 hover:underline"
+                            className="post__creator-name font-bold text-base mr-1 hover:underline"
                             onClick={gotoUserProfile}
                         >
                             {post.creator === '' ? 'Anonymous' : user.name}
                         </div>
-                        <div className="text-gray-400 mr-1" onClick={gotoUserProfile}>
+                        <div className="post__creator-username text-gray-400 mr-1" onClick={gotoUserProfile}>
                             {user.ens && `@${user.ens}`}
                         </div>
                         <div className="text-gray-400 mr-1">•</div>
-                        <div className="text-gray-400 hover:underline" onClick={gotoUserProfile}>
+                        <div className="post__timestamp text-gray-400 hover:underline" onClick={gotoUserProfile}>
                             {moment(post.createdAt).fromNow(true)}
                         </div>
                         <div className="flex flex-row flex-nowrap flex-grow flex-shrink justify-end">

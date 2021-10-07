@@ -43,6 +43,7 @@ export default function Avatar(props: Props): ReactElement {
                     'rounded-full',
                     'flex-shrink-0 flex-grow-0',
                     'bg-gray-800 text-gray-100',
+                    'avatar',
                     className,
                 )}
                 fa="fas fa-user-secret"

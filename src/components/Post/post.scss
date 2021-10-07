@@ -64,3 +64,34 @@
     min-height: 15rem;
   }
 }
+
+@media only screen and (max-width: 768px) {
+  .post {
+    margin-bottom: 0;
+    border: 0;
+    border-radius: 0;
+
+    &__creator-name {
+      overflow: hidden;
+      white-space: nowrap;
+    }
+
+    &__creator-username {
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    &__timestamp {
+      flex: 0 0 auto;
+    }
+
+    &__menu {
+      margin-left: 1rem;
+    }
+  }
+
+  .post + .post {
+    border-top: 1px solid $gray-100;
+  }
+}

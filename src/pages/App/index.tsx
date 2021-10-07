@@ -65,7 +65,7 @@ export default function App(): ReactElement {
                         <Redirect to="/explore" />
                     </Route>
                 </Switch>
-                <div className="app__meta-content">
+                <div className="app__meta-content mobile-hidden">
                     <Switch>
                         <Route path="/explore">
                             <DiscoverUserPanel key="discover-user" />
