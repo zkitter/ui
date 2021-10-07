@@ -100,7 +100,6 @@
   }
 
 
-
   .thread__content{
     .thread > .post {
       border-left: .25rem solid $gray-100;
@@ -113,5 +112,10 @@
 
   .parent-post {
     border-top: 0 !important;
+    border-bottom: 0 !important;
+  }
+
+  .thread:last-of-type {
+    border-bottom: 1px solid $gray-100;
   }
 }
