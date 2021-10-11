@@ -159,7 +159,7 @@ export const submitPost = (reference = '') => async (dispatch: ThunkDispatch<any
     const { drafts, web3 } = getState();
     const draft = drafts.map[reference];
     const {
-        ensName,
+        account,
         semaphore,
     } = web3;
 
@@ -171,7 +171,7 @@ export const submitPost = (reference = '') => async (dispatch: ThunkDispatch<any
     const post = new Post({
         type: MessageType.Post,
         subtype: reference ? PostMessageSubType.Reply : PostMessageSubType.Default,
-        creator: semaphore.keypair.privKey ? '' : ensName,
+        creator: semaphore.keypair.privKey ? '' : account,
         payload: {
             content: markdown,
             reference: reference,
@@ -227,7 +227,7 @@ export const submitRepost = (reference = '') => async (dispatch: Dispatch, getSt
 
     const { web3 } = getState();
     const {
-        ensName,
+        account,
     } = web3;
 
     // @ts-ignore
@@ -236,7 +236,7 @@ export const submitRepost = (reference = '') => async (dispatch: Dispatch, getSt
     const post = new Post({
         type: MessageType.Post,
         subtype: PostMessageSubType.Repost,
-        creator: ensName,
+        creator: account,
         payload: {
             reference: reference,
         },
@@ -279,7 +279,7 @@ export const submitModeration = (reference = '', subtype: ModerationMessageSubTy
 
     const { web3 } = getState();
     const {
-        ensName,
+        account,
     } = web3;
 
     // @ts-ignore
@@ -288,7 +288,7 @@ export const submitModeration = (reference = '', subtype: ModerationMessageSubTy
     const moderation = new Moderation({
         type: MessageType.Moderation,
         subtype: subtype,
-        creator: ensName,
+        creator: account,
         payload: {
             reference: reference,
         },
@@ -325,7 +325,7 @@ export const submitModeration = (reference = '', subtype: ModerationMessageSubTy
 export const submitConnection = (name: string, subtype: ConnectionMessageSubType) => async (dispatch: Dispatch, getState: () => AppRootState) => {
     const { web3 } = getState();
     const {
-        ensName,
+        account,
     } = web3;
     const gunUser = gun.user();
 
@@ -340,7 +340,7 @@ export const submitConnection = (name: string, subtype: ConnectionMessageSubType
     const connection = new Connection({
         type: MessageType.Connection,
         subtype: subtype,
-        creator: ensName,
+        creator: account,
         payload: {
             name: name,
         },
@@ -386,13 +386,13 @@ export const submitProfile = (
 
     const { web3 } = getState();
     const {
-        ensName,
+        account,
     } = web3;
 
     const post = new Profile({
         type: MessageType.Profile,
         subtype: subtype,
-        creator: ensName,
+        creator: account,
         payload: {
             key: key || '',
             value: value,

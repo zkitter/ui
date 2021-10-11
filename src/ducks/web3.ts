@@ -277,11 +277,11 @@ export const setWeb3 = (web3: Web3 | null, account: string) => async (
     });
 }
 
-export const genENS = () => async (dispatch: ThunkDispatch<any, any, any>) => {
+export const genENS = (nonce = 0) => async (dispatch: ThunkDispatch<any, any, any>) => {
     dispatch(setUnlocking(true));
 
     try {
-        const result: any = await dispatch(generateGunKeyPair(0));
+        const result: any = await dispatch(generateGunKeyPair(nonce));
         authenticateGun(result as any);
         dispatch(setGunPrivateKey(result.priv));
         dispatch(setUnlocking(false));

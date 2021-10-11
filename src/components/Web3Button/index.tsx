@@ -131,7 +131,7 @@ function Web3ButtonAction(props: Props): ReactElement {
 
     const [opened, setOpened] = useState(false);
 
-    const unlockENS = useCallback(async () => {
+    const genGunKey = useCallback(async () => {
         await dispatch(genENS());
     }, []);
 
@@ -166,10 +166,10 @@ function Web3ButtonAction(props: Props): ReactElement {
                     onClose={() => setOpened(false)}
                     items={[
                         {
-                            label: 'ENS',
-                            iconUrl: ensFetching ? SpinnerGIF : ENSLogoSVG,
-                            onClick: unlockENS,
-                            disabled: ensFetching || !ensName,
+                            label: 'Wallet',
+                            iconFA: 'fas fa-wallet',
+                            onClick: genGunKey,
+                            disabled: web3Loading,
                         },
                         {
                             label: 'Incognito (Beta)',

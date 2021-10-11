@@ -226,21 +226,13 @@ export const fetchRepliedBy = (creator: string, limit = 10, offset = 0) =>
 const processPosts = (posts: any[]) => async (dispatch: Dispatch) => {
     for (const post of posts) {
         if (post.subtype === PostMessageSubType.Repost) {
-            const {url} = parseMessageId(post.payload.reference);
-
-            if (url?.hostname === 'snapshot.org') {
-                const [_, spaceId, __, proposalId] = url?.hash.split('/');
-                // @ts-ignore
-                dispatch(fetchProposal(proposalId));
-            } else {
-                dispatch({
-                    type: ActionTypes.SET_META,
-                    payload: {
-                        messageId: post.payload.reference,
-                        meta: post.meta,
-                    },
-                });
-            }
+            dispatch({
+                type: ActionTypes.SET_META,
+                payload: {
+                    messageId: post.payload.reference,
+                    meta: post.meta,
+                },
+            });
         } else {
             dispatch({
                 type: ActionTypes.SET_META,
@@ -251,11 +243,14 @@ const processPosts = (posts: any[]) => async (dispatch: Dispatch) => {
             });
         }
 
+        const {creator} = parseMessageId(post.messageId);
+
         dispatch({
             type: ActionTypes.SET_POST,
             payload: new Post({
                 ...post,
-                createdAt: new Date(post.createdAt),
+                createdAt: new Date(Number(post.createdAt)),
+                creator: creator || '',
             }),
         });
 
@@ -306,7 +301,7 @@ export const fetchHomeFeed = (limit = 10, offset = 0) =>
             type: ActionTypes.SET_POST,
             payload: new Post({
                 ...post,
-                createdAt: new Date(post.createdAt),
+                createdAt: new Date(Number(post.createdAt)),
             }),
         });
     }
@@ -357,7 +352,7 @@ export const fetchTagFeed = (tagName: string, limit = 10, offset = 0) =>
                 type: ActionTypes.SET_POST,
                 payload: new Post({
                     ...post,
-                    createdAt: new Date(post.createdAt),
+                    createdAt: new Date(Number(post.createdAt)),
                 }),
             });
         }
@@ -405,7 +400,7 @@ export const fetchReplies = (reference: string, limit = 10, offset = 0) =>
             type: ActionTypes.SET_POST,
             payload: new Post({
                 ...post,
-                createdAt: new Date(post.createdAt),
+                createdAt: new Date(Number(post.createdAt)),
             }),
         });
     }
