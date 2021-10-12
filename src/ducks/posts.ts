@@ -52,13 +52,6 @@ const initialState: State = {
 export const fetchMeta = (messageId: string) => async (
     dispatch: ThunkDispatch<any, any, any>, getState: () => AppRootState
 ) => {
-    const {url} = parseMessageId(messageId);
-    if (url?.hostname === 'snapshot.org') {
-        const [_, spaceId, __, proposalId] = url?.hash.split('/');
-        await dispatch(fetchProposal(proposalId));
-        return;
-    }
-
     const {
         web3: {
             ensName,
@@ -439,15 +432,7 @@ export const useMeta = (messageId: string)  => {
 export const useGoToPost = () => {
     const history = useHistory();
     return useCallback((messageId: string) => {
-        const { creator, hash, url } = parseMessageId(messageId);
-
-        if (url) {
-            if (url.hostname === 'snapshot.org') {
-                const [_, spaceId, __, proposalId] = url?.hash.split('/');
-                history.push(`/proposal/${proposalId}`);
-                return;
-            }
-        }
+        const { creator, hash } = parseMessageId(messageId);
 
         if (!creator) {
             history.push(`/post/${hash}`);

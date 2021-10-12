@@ -18,6 +18,7 @@ type MenuableProps = {
     menuClassName?: string;
     onOpen?: () => void;
     onClose?: () => void;
+    opened?: boolean;
 }
 
 type ItemProps = {
@@ -31,21 +32,35 @@ type ItemProps = {
 }
 
 export default function Menuable(props: MenuableProps): ReactElement {
-    const [isShowing, setShowing] = useState(false);
+    const {
+        opened,
+    } = props;
+
+    const [isShowing, setShowing] = useState(!!props.opened);
     const [path, setPath] = useState<number[]>([]);
 
     useEffect(() => {
-        if (isShowing) {
-            props.onOpen && props.onOpen();
-            const cb = () => {
-                setShowing(false);
-                window.removeEventListener('click', cb);
-            };
-            window.addEventListener('click', cb);
-        } else {
-            props.onClose && props.onClose();
+        if (typeof opened !== 'undefined') {
+            setShowing(opened);
         }
-    }, [isShowing]);
+    }, [!!opened]);
+
+    const onClose = useCallback(() => {
+        props.onClose && props.onClose();
+        setShowing(false);
+    }, []);
+
+    const onOpen = useCallback(() => {
+        props.onOpen && props.onOpen();
+        setShowing(true);
+
+        const cb = () => {
+            onClose();
+            window.removeEventListener('click', cb);
+        };
+
+        window.addEventListener('click', cb);
+    }, [onClose]);
 
     const goBack = useCallback((e) => {
         e.stopPropagation();
@@ -81,7 +96,9 @@ export default function Menuable(props: MenuableProps): ReactElement {
             }, props.className)}
             onClick={e => {
                 e.stopPropagation();
-                setShowing(!isShowing);
+
+                if (isShowing) return onClose();
+                onOpen();
             }}
         >
             {props.children}

@@ -12,7 +12,7 @@ import {
     useWeb3Unlocking,
     useENSFetching,
     setGunPrivateKey,
-    genENS, genSemaphore, setSemaphoreID, useSemaphoreID, setSemaphoreIDPath,
+    loginGun, genSemaphore, setSemaphoreID, useSemaphoreID, setSemaphoreIDPath, useGunNonce, UserNotExistError,
 } from "../../ducks/web3";
 import {useDispatch} from "react-redux";
 import classNames from "classnames";
@@ -25,6 +25,7 @@ import RedditLogoSVG from "../../../static/icons/reddit.svg";
 import GithubLogoPNG from "../../../static/icons/github.png";
 import SpinnerGIF from "../../../static/icons/spinner.gif";
 import gun from "../../util/gun";
+import {useHistory, useLocation} from "react-router";
 
 type Props = {
     onConnect?: () => Promise<void>;
@@ -121,18 +122,30 @@ export default function Web3Button(props: Props): ReactElement {
 
 function Web3ButtonAction(props: Props): ReactElement {
     const account = useAccount({ uppercase: true });
-    const ensName = useENSName();
+    const gunNonce = useGunNonce();
     const web3Loading = useWeb3Loading();
     const web3Unlocking = useWeb3Unlocking();
-    const ensFetching = useENSFetching();
     const gunPair = useGunKey();
     const loggedIn = useLoggedIn();
     const dispatch = useDispatch();
+    const history = useHistory();
 
     const [opened, setOpened] = useState(false);
 
     const genGunKey = useCallback(async () => {
-        await dispatch(genENS());
+        try {
+            await dispatch(loginGun(gunNonce));
+        } catch (e) {
+            if (e === UserNotExistError) {
+                history.push('/signup');
+                setOpened(false);
+            }
+        }
+    }, [gunNonce]);
+
+    const gotoSignup = useCallback(async () => {
+        history.push('/signup');
+        setOpened(false);
     }, []);
 
     const unlockSemaphore = useCallback(async (
@@ -164,11 +177,12 @@ function Web3ButtonAction(props: Props): ReactElement {
                     menuClassName="web3-button__unlock-menu"
                     onOpen={() => setOpened(true)}
                     onClose={() => setOpened(false)}
+                    opened={opened}
                     items={[
                         {
-                            label: 'Wallet',
+                            label: !gunPair.joinedTx ? 'Signup' : 'Login',
                             iconFA: 'fas fa-wallet',
-                            onClick: genGunKey,
+                            onClick: !gunPair.joinedTx ? gotoSignup : genGunKey,
                             disabled: web3Loading,
                         },
                         {
@@ -224,7 +238,7 @@ function Web3ButtonAction(props: Props): ReactElement {
         }
     }
 
-    if (loggedIn) {
+    if (loggedIn || !gunPair.joinedTx) {
         return (
             <div
                 className={classNames(

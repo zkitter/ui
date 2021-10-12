@@ -22,6 +22,9 @@ import {defaultENS, defaultWeb3} from "../util/web3";
 import gun, {authenticateGun} from "../util/gun";
 import semethid from "@interrep/semethid";
 import config from "../util/config";
+import {getUser, User} from "./users";
+import {arbRegistrarABI} from "../util/abi";
+import {getIdentityHash, hashPubKey} from "../util/arb3";
 OrdinarySemaphore.setHasher('poseidon');
 
 export const web3Modal = new Web3Modal({
@@ -37,6 +40,7 @@ enum ActionTypes {
     SET_FETCHING_ENS = 'web3/setFetchingENS',
     SET_WEB3 = 'web3/setWeb3',
     SET_ACCOUNT = 'web3/setAccount',
+    SET_JOINED_TX = 'web3/setJoinedTx',
     SET_NETWORK = 'web3/setNetwork',
     SET_ENS_NAME = 'web3/setEnsName',
     SET_SOCIAL_KEY = 'web3/setSocialKey',
@@ -44,6 +48,7 @@ enum ActionTypes {
     SET_SEMAPHORE_ID = 'web3/setSemaphoreID',
     SET_SEMAPHORE_ID_PATH = 'web3/setSemaphoreIDPath',
     ADD_PENDING = 'web3/addPending',
+    SET_CREATE_RECORD_TX = 'web3/createRecordTx',
 }
 
 type Action = {
@@ -64,8 +69,11 @@ type State = {
     gun: {
         pub: string;
         priv: string;
+        nonce: number;
+        joinedTx: string;
     },
     semaphore: {
+        nonce: number;
         keypair: {
           pubKey: string;
           privKey: Buffer|null;
@@ -85,7 +93,7 @@ type State = {
     }
 }
 
-const initialState: State = {
+export const initialState: State = {
     web3: null,
     account: '',
     networkType: '',
@@ -94,10 +102,13 @@ const initialState: State = {
     fetchingENS: false,
     unlocking: false,
     gun: {
-      pub: '',
-      priv: '',
+        pub: '',
+        priv: '',
+        nonce: 0,
+        joinedTx: '',
     },
     semaphore: {
+        nonce: 0,
         keypair: {
           pubKey: '',
           privKey: null,
@@ -113,6 +124,8 @@ const initialState: State = {
 };
 
 let event: Subscription<any> | null;
+
+export const UserNotExistError = new Error('user not exist');
 
 export const connectWeb3 = () => async (dispatch: ThunkDispatch<any, any, any>) => {
     dispatch({
@@ -154,6 +167,11 @@ export const setUnlocking = (status: boolean) => ({
     payload: status,
 });
 
+export const setJoinedTx = (joinedTx: string) => ({
+    type: ActionTypes.SET_JOINED_TX,
+    payload: joinedTx,
+});
+
 export const setFetchingENS = (status: boolean) => ({
     type: ActionTypes.SET_FETCHING_ENS,
     payload: status,
@@ -170,6 +188,11 @@ export const setPendingTx = (txHash: string, key = '') => ({
 export const setENSName = (name: string) => ({
     type: ActionTypes.SET_ENS_NAME,
     payload: name,
+});
+
+export const createRecordTx = (txHash: string) => ({
+    type: ActionTypes.SET_CREATE_RECORD_TX,
+    payload: txHash,
 });
 
 export const setAccount = (account: string) => ({
@@ -213,6 +236,12 @@ export const setSemaphoreIDPath = (path: any) => ({
 export const setWeb3 = (web3: Web3 | null, account: string) => async (
     dispatch: ThunkDispatch<any, any, any>,
 ) => {
+    const user: any = await dispatch(getUser(account));
+
+    if (user?.joinedTx) {
+        dispatch(setJoinedTx(user.joinedTx));
+    }
+
     dispatch(setAccount(account));
 
     dispatch({
@@ -262,8 +291,11 @@ export const setWeb3 = (web3: Web3 | null, account: string) => async (
             gunUser.leave();
         }
         dispatch(setAccount(account));
+        const user: any = await dispatch(getUser(account));
+        if (user?.joinedTx) {
+            dispatch(setJoinedTx(user.joinedTx));
+        }
         await dispatch(lookupENS());
-
         dispatch(setWeb3Loading(false));
     });
 
@@ -277,14 +309,19 @@ export const setWeb3 = (web3: Web3 | null, account: string) => async (
     });
 }
 
-export const genENS = (nonce = 0) => async (dispatch: ThunkDispatch<any, any, any>) => {
+export const loginGun = (nonce = 0) => async (
+    dispatch: ThunkDispatch<any, any, any>,
+    getState: () => AppRootState,
+) => {
     dispatch(setUnlocking(true));
 
     try {
         const result: any = await dispatch(generateGunKeyPair(nonce));
-        authenticateGun(result as any);
+        dispatch(setGunPublicKey(result.pub));
         dispatch(setGunPrivateKey(result.priv));
+        authenticateGun(result as any);
         dispatch(setUnlocking(false));
+        return result;
     } catch (e) {
         dispatch(setUnlocking(false));
         throw e;
@@ -322,28 +359,39 @@ export const genSemaphore = (web2Provider: 'Twitter' | 'Github' | 'Reddit' = 'Tw
     }
 }
 
-export const addGunKeyToTextRecord = (pubkey: string) => async (dispatch: Dispatch, getState: () => AppRootState) => {
+export const updateIdentity = (publicKey: string) => async (dispatch: Dispatch, getState: () => AppRootState) => {
     const state = getState();
-    const { web3, account, ensName } = state.web3;
+    const { web3, account } = state.web3;
 
     if (!web3 || !account) {
         return Promise.reject(new Error('not connected to web3'));
     }
 
-    if (!ensName) {
-        return Promise.reject(new Error('no ens name'));
-    }
+    const hash = await getIdentityHash(account, publicKey);
 
-    const ens = new ENS({
-        provider: web3.currentProvider,
-        ensAddress: getEnsAddress('1'),
+    // @ts-ignore
+    const proof = await web3.eth.personal.sign(
+        hash,
+        account,
+    );
+
+    const resp = await fetch(`${config.indexerAPI}/v1/users`, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+           account,
+           publicKey,
+           proof,
+        }),
     });
 
-    const tx = await ens.name(ensName).setText('gun.social', pubkey);
+    const json = await resp.json();
 
-    dispatch(setPendingTx(tx.hash));
+    dispatch(createRecordTx(json.payload!.transactionHash!));
 
-    return tx;
+    return json;
 }
 
 export const generateGunKeyPair = (nonce = 0) =>
@@ -416,7 +464,6 @@ export const lookupENS = () => async (dispatch: Dispatch, getState: () => AppRoo
                     payload: text,
                 });
             }
-
         }
 
         if (name !== '0x0000000000000000000000000000000000000000') {
@@ -479,6 +526,14 @@ export default function web3(state = initialState, action: Action): State {
                     identityPath: action.payload,
                 },
             }
+        case ActionTypes.SET_JOINED_TX:
+            return {
+                ...state,
+                gun: {
+                    ...state.gun,
+                    joinedTx: action.payload,
+                },
+            };
         case ActionTypes.SET_FETCHING_ENS:
             return {
                 ...state,
@@ -493,6 +548,14 @@ export default function web3(state = initialState, action: Action): State {
             return {
                 ...state,
                 loading: action.payload,
+            };
+        case ActionTypes.SET_CREATE_RECORD_TX:
+            return {
+                ...state,
+                pending: {
+                    ...state.pending,
+                    createRecordTx: action.payload,
+                },
             };
         case ActionTypes.SET_GUN_PRIVATE_KEY:
             return {
@@ -535,13 +598,18 @@ export const useLoggedIn = () => {
             && !!semaphore.keypair.pubKey
             && !!semaphore.identityNullifier
             && !!semaphore.identityTrapdoor
-            && !!semaphore.commitment;
+            && !!semaphore.commitment
+            && !!semaphore.identityPath;
 
-        return !!(web3 && account && (hasGun || hasSemaphore));
+        if (hasSemaphore) return true;
+
+        if (!!(web3 && account && gun.joinedTx && (hasGun))) return true;
+
+        return false;
     }, deepEqual);
 }
 
-export const useENSLoggedIn = () => {
+export const useGunLoggedIn = () => {
     return useSelector((state: AppRootState) => {
         const {
             web3,
@@ -550,7 +618,7 @@ export const useENSLoggedIn = () => {
         } = state.web3;
 
         const hasGun = !!gun.priv && !!gun.pub;
-        return !!(web3 && account && (hasGun));
+        return !!(web3 && account && gun.joinedTx && (hasGun));
     }, deepEqual);
 }
 
@@ -578,6 +646,12 @@ export const useWeb3Loading = () => {
     }, deepEqual);
 }
 
+export const usePendingCreateTx = () => {
+    return useSelector((state: AppRootState) => {
+        return state.web3.pending.createRecordTx;
+    }, deepEqual);
+}
+
 export const useWeb3Unlocking = () => {
     return useSelector((state: AppRootState) => {
         return state.web3.unlocking;
@@ -596,9 +670,21 @@ export const useGunKey = (): State['gun'] => {
     }, deepEqual);
 }
 
+export const useGunNonce = (): number => {
+    return useSelector((state: AppRootState) => {
+        return state.web3.gun.nonce;
+    }, deepEqual);
+}
+
 export const useSemaphoreID = (): State['semaphore'] => {
     return useSelector((state: AppRootState) => {
         return state.web3.semaphore;
+    }, deepEqual);
+}
+
+export const useSemaphoreNonce = (): number => {
+    return useSelector((state: AppRootState) => {
+        return state.web3.semaphore.nonce;
     }, deepEqual);
 }
 

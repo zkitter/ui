@@ -4,22 +4,23 @@ import {useSelector} from "react-redux";
 import deepEqual from "fast-deep-equal";
 import config from "../util/config";
 import {defaultENS} from "../util/web3";
-import {setAdmins, setMembers, setSpace} from "./snapshot";
+import {ThunkDispatch} from "redux-thunk";
 
 enum ActionTypes {
     SET_USER = 'users/setUser',
     SET_USER_ADDRESS = 'users/setUserAddress',
 }
 
-type Action = {
+type Action<payload> = {
     type: ActionTypes;
-    payload?: any;
+    payload?: payload;
     meta?: any;
     error?: boolean;
 }
 
 export type User = {
-    ens: string;
+    username: string;
+    ens?: string;
     name: string;
     pubkey: string;
     address: string;
@@ -28,6 +29,8 @@ export type User = {
     bio: string;
     website: string;
     joinedAt: number;
+    joinedTx: string;
+    type: 'ens' | 'arbitrum' | '';
     meta: {
         blockedCount: number;
         blockingCount: number;
@@ -37,7 +40,6 @@ export type User = {
         followed: string | null;
         blocked: string | null;
     };
-    snapshot?: boolean;
 }
 
 type State = {
@@ -53,26 +55,43 @@ const initialState: State = {
 const fetchPromises: any = {};
 const cachedUser: any = {};
 
-export const fetchAddressByName = (ens: string) => async (dispatch: Dispatch, getState: () => AppRootState) => {
+export const fetchAddressByName = (ens: string) => async (dispatch: Dispatch) => {
     const address = await defaultENS.name(ens).getAddress();
     dispatch({
         type: ActionTypes.SET_USER_ADDRESS,
         payload: {
-            name: ens,
+            ens: ens,
             address: address === '0x0000000000000000000000000000000000000000' ? '' : address,
         },
     });
 }
 
-export const getUser = (ens: string) => async (dispatch: Dispatch, getState: () => AppRootState): Promise<User> => {
+export const watchUser = (username: string) => async (dispatch: ThunkDispatch<any, any, any>) => {
+    return new Promise(async (resolve, reject) => {
+        _getUser();
+
+        async function _getUser() {
+            const user: any = await dispatch(getUser(username));
+
+            if (!user?.joinedTx) {
+                setTimeout(_getUser, 5000);
+                return;
+            }
+
+            resolve(user);
+        }
+    });
+}
+
+export const getUser = (username: string) => async (dispatch: Dispatch, getState: () => AppRootState): Promise<User> => {
     const {
         web3: {
-            ensName,
+            account,
             gun: { pub, priv },
         },
     } = getState();
-    const contextualName = (ensName && pub && priv) ? ensName : undefined;
-    const key = contextualName + ens;
+    const contextualName = (account && pub && priv) ? account : undefined;
+    const key = contextualName + username;
 
     if (fetchPromises[key]) {
         return fetchPromises[key];
@@ -84,7 +103,7 @@ export const getUser = (ens: string) => async (dispatch: Dispatch, getState: () 
         if (cachedUser[key]) {
             payload = cachedUser[key];
         } else {
-            const resp = await fetch(`${config.indexerAPI}/v1/users/${ens}`, {
+            const resp = await fetch(`${config.indexerAPI}/v1/users/${username}`, {
                 method: 'GET',
                 // @ts-ignore
                 headers: {
@@ -94,7 +113,9 @@ export const getUser = (ens: string) => async (dispatch: Dispatch, getState: () 
             const json = await resp.json();
             // @ts-ignore
             payload = dispatch(processUserPayload(json.payload));
-            cachedUser[key] = payload;
+            if (payload?.joinedTx) {
+                cachedUser[key] = payload;
+            }
         }
 
         dispatch({
@@ -171,21 +192,18 @@ export const searchUsers = (query: string) => async (dispatch: Dispatch, getStat
 }
 
 const processUserPayload = (user: any) => (dispatch: Dispatch) => {
-    // @ts-ignore
-    dispatch(fetchAddressByName(user.ens));
-
-    const space = user.snapshotSpace;
-
     const payload: User = {
-        address: '',
-        ens: user.ens,
+        address: user.username,
+        username: user.username,
         name: user.name || '',
         pubkey: user.pubkey || '',
         bio: user.bio || '',
         profileImage: user.profileImage || '',
         coverImage: user.coverImage || '',
         website: user.website || '',
-        joinedAt: user.joinedAt,
+        joinedAt: user.joinedAt || '',
+        joinedTx: user.joinedTx || '',
+        type: user.type || '',
         meta: {
             followerCount: user.meta?.followerCount || 0,
             followingCount: user.meta?.followingCount || 0,
@@ -195,26 +213,12 @@ const processUserPayload = (user: any) => (dispatch: Dispatch) => {
             followed: user.meta?.followed || null,
             blocked: user.meta?.blocked || null,
         },
-        snapshot: !!space,
     };
 
     dispatch({
         type: ActionTypes.SET_USER,
         payload: payload,
     });
-
-    if (space) {
-        dispatch(setSpace({
-            ens: user.ens,
-            about: space.about,
-            avatar: space.avatar,
-            name: space.name,
-            network: space.network,
-            strategies: space.strategies,
-        }));
-        dispatch(setAdmins(user.ens, space.admins));
-        dispatch(setMembers(user.ens, space.members));
-    }
 
     return payload;
 }
@@ -228,7 +232,7 @@ export const useUser = (ens = ''): User | null => {
     return useSelector((state: AppRootState) => {
         if (ens === '') {
             return {
-                ens: '',
+                username: '',
                 name: '',
                 pubkey: '',
                 address: '',
@@ -237,6 +241,8 @@ export const useUser = (ens = ''): User | null => {
                 bio: '',
                 website: '',
                 joinedAt: 0,
+                joinedTx: '',
+                type: '',
                 meta: {
                     followerCount: 0,
                     followingCount: 0,
@@ -250,20 +256,14 @@ export const useUser = (ens = ''): User | null => {
         }
 
         const user = state.users.map[ens];
-        const space = state.snapshot.spaces[ens];
 
-        const val: User = {
-            ...user,
-            name: user?.name || space?.name || ens,
-            bio: user?.bio || space?.about || '',
-            profileImage: user?.profileImage || space?.avatar || '',
-        };
+        const val: User = user;
 
         return user ? val : null;
     }, deepEqual);
 }
 
-export default function users(state = initialState, action: Action): State {
+export default function users(state = initialState, action: Action<any>): State {
     switch (action.type) {
         case ActionTypes.SET_USER:
             return reduceSetUser(state, action);
@@ -274,32 +274,37 @@ export default function users(state = initialState, action: Action): State {
     }
 }
 
-function reduceSetUserAddress(state: State, action: Action): State {
-    const user = state.map[action.payload.name];
+function reduceSetUserAddress(state: State, action: Action<{  ens: string; address: string }>): State {
+    if (!action.payload) return state;
+
+    const user = state.map[action.payload.address];
 
     return {
         ...state,
         map: {
             ...state.map,
-            [action.payload.name]: {
+            [action.payload.address]: {
                 ...user,
-                ens: action.payload.name,
+                ens: action.payload.ens,
+                username: action.payload.address,
                 address: action.payload.address,
             },
         },
     };
 }
 
-function reduceSetUser(state: State, action: Action): State {
-    const user = state.map[action.payload.ens];
+function reduceSetUser(state: State, action: Action<User>): State {
+    if (!action.payload) return state;
+
+    const user = state.map[action.payload.username];
 
     return {
         ...state,
         map: {
             ...state.map,
-            [action.payload.ens]: {
+            [action.payload.username]: {
                 ...user,
-                ens: action.payload.ens,
+                username: action.payload.username,
                 name: action.payload.name,
                 pubkey: action.payload.pubkey,
                 bio: action.payload.bio,
@@ -307,6 +312,8 @@ function reduceSetUser(state: State, action: Action): State {
                 coverImage: action.payload.coverImage,
                 website: action.payload.website,
                 joinedAt: action.payload.joinedAt,
+                joinedTx: action.payload.joinedTx,
+                type: action.payload.type,
                 meta: {
                     followerCount: action.payload.meta?.followerCount || 0,
                     followingCount: action.payload.meta?.followingCount || 0,
@@ -316,7 +323,6 @@ function reduceSetUser(state: State, action: Action): State {
                     followed: action.payload.meta?.followed || null,
                     blocked: action.payload.meta?.blocked || null,
                 },
-                snapshot: action.payload.snapshot,
             },
         },
     };

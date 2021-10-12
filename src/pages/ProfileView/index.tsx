@@ -4,23 +4,23 @@ import {fetchLikedBy, fetchPost, fetchPosts, fetchRepliedBy, useGoToPost} from "
 import {useDispatch} from "react-redux";
 import {Route, Switch, useHistory, useLocation, useParams} from "react-router";
 import "./profile-view.scss";
-import Post from "../Post";
-import Button from "../Button";
-import Icon from "../Icon";
+import Post from "../../components/Post";
+import Button from "../../components/Button";
+import Icon from "../../components/Icon";
 import {getUser, setUser, useUser} from "../../ducks/users";
 import {useENSFetching, useENSName, useGunKey, useLoggedIn, useWeb3Loading} from "../../ducks/web3";
 import moment from "moment";
-import Modal, {ModalContent, ModalFooter, ModalHeader} from "../Modal";
-import Input from "../Input";
-import Textarea from "../Textarea";
+import Modal, {ModalContent, ModalFooter, ModalHeader} from "../../components/Modal";
+import Input from "../../components/Input";
+import Textarea from "../../components/Textarea";
 import deepEqual from "fast-deep-equal";
 import {submitConnection, submitProfile} from "../../ducks/drafts";
 import {ConnectionMessageSubType, ProfileMessageSubType} from "../../util/message";
-import Avatar from "../Avatar";
+import Avatar from "../../components/Avatar";
 import EtherScanSVG from "../../../static/icons/etherscan-logo-gray-500.svg";
 import SnapshotLogoSVG from "../../../static/icons/snapshot-logo-bw.svg";
-import InfiniteScrollable from "../InfiniteScrollable";
-import Menuable from "../Menuable";
+import InfiniteScrollable from "../../components/InfiniteScrollable";
+import Menuable from "../../components/Menuable";
 import {fetchProposals} from "../../ducks/snapshot";
 
 export default function ProfileView(): ReactElement {
@@ -327,19 +327,6 @@ function ProfileCard(): ReactElement {
                         </div>
                     )
                 }
-                {
-                    !!user.snapshot && (
-                        <div
-                            className="profile-view__data-group flex flex-row flex-nowrap items-center text-light text-gray-500 cursor-pointer hover:underline"
-                            onClick={() => window.open(`https://snapshot.org/#/${user.ens}`, '_blank')}
-                        >
-                            <Icon url={SnapshotLogoSVG} />
-                            <div className="ml-2 profile-view__data-group__value">
-                                {`Snapshot Space`}
-                            </div>
-                        </div>
-                    )
-                }
             </div>
             <div className="p-4 flex flex-row flex-nowrap item-center text-light">
                 <div className="flex flex-row flex-nowrap item-center">
@@ -493,7 +480,7 @@ function ProfileEditor(props: ProfileEditorProps): ReactElement {
     )
 }
 
-function CoverImageEditor(props: {
+export function CoverImageEditor(props: {
     url: string;
     onUrlChange: (url: string) => void;
     onFileChange: (file: File) => void;
@@ -561,7 +548,7 @@ function CoverImageEditor(props: {
             {
                 showingCoverInput && (
                     <Input
-                        className="absolute w-80 top-32 border-2"
+                        className="absolute w-80 top-32 border-2 z-200"
                         onChange={e => setUrl(e.target.value)}
                         value={url}
                         autoFocus
@@ -579,7 +566,7 @@ function CoverImageEditor(props: {
 }
 
 
-function ProfileImageEditor(props: {
+export function ProfileImageEditor(props: {
     url: string;
     onUrlChange: (url: string) => void;
     onFileChange: (file: File) => void;
