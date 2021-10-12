@@ -41,7 +41,6 @@ export default function Editor(props: Props): ReactElement {
 
     const address = useAccount();
     const loggedIn = useLoggedIn();
-    const ensName = useENSName();
     const semaphoreId = useSemaphoreID();
     const draft = useDraft(messageId);
     const dispatch = useDispatch();
@@ -155,7 +154,7 @@ export default function Editor(props: Props): ReactElement {
         >
             <Avatar
                 className="w-12 h-12 mr-3"
-                name={ensName}
+                address={address}
                 incognito={!!semaphoreId.keypair.privKey}
             />
             <div className="flex flex-col flex-nowrap w-full h-full editor__wrapper">

@@ -1,12 +1,14 @@
 import React, {ReactElement, useEffect, useState} from "react";
 import classNames from "classnames";
 import {useDispatch} from "react-redux";
-import {fetchUsers, useUser} from "../../ducks/users";
+import {fetchAddressByName, fetchUsers, useUser} from "../../ducks/users";
 import Avatar from "../Avatar";
 import "./discover-user.scss";
 import Icon from "../Icon";
 import SpinnerGIF from "../../../static/icons/spinner.gif";
 import {useHistory} from "react-router";
+import {getName, getHandle} from "../../util/user";
+import Web3 from "web3";
 
 export default function DiscoverUserPanel(): ReactElement {
     const [users, setUsers] = useState<string[]>([]);
@@ -39,20 +41,38 @@ export default function DiscoverUserPanel(): ReactElement {
 }
 
 function UserRow(props: {name: string}): ReactElement {
-    const user = useUser(props.name);
     const history = useHistory();
+    const [username, setUsername] = useState('');
+
+    const dispatch = useDispatch();
+    const user = useUser(username);
+
+    useEffect(() => {
+        (async () => {
+            if (!Web3.utils.isAddress(props.name)) {
+                const address: any = await dispatch(fetchAddressByName(props.name));
+                setUsername(address);
+            } else {
+                setUsername(props.name);
+            }
+        })();
+    }, [props.name]);
 
     if (!user) return <></>;
 
     return (
         <div
             className="flex flex-row flex-nowrap px-4 py-2 cursor-pointer hover:bg-black hover:bg-opacity-5 items-center"
-            onClick={() => history.push(`/${user.ens}/`)}
+            onClick={() => history.push(`/${user.ens || user.address}/`)}
         >
-            <Avatar name={user.ens} className="w-10 h-10 mr-3" />
+            <Avatar address={user.address} className="w-10 h-10 mr-3" />
             <div className="flex flex-col flex-nowrap justify-center">
-                <div className="font-bold text-md hover:underline">{user.name}</div>
-                <div className="text-sm text-gray-500">@{user.ens}</div>
+                <div className="font-bold text-md hover:underline">
+                    {getName(user, 8, 6)}
+                </div>
+                <div className="text-sm text-gray-500">
+                    @{getHandle(user, 8, 6)}
+                </div>
             </div>
         </div>
     )

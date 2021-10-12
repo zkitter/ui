@@ -1,4 +1,4 @@
-import React, {ReactElement, useCallback, useEffect} from "react";
+import React, {ReactElement, useCallback, useEffect, useState} from "react";
 import Icon from "../Icon";
 import classNames from "classnames";
 import "./top-nav.scss"
@@ -13,7 +13,9 @@ import {
 } from "../../ducks/web3";
 import Button from "../Button";
 import {useDispatch} from "react-redux";
-import {useUser} from "../../ducks/users";
+import {fetchAddressByName, useUser} from "../../ducks/users";
+import Web3 from "web3";
+import {getName} from "../../util/user";
 
 export default function TopNav(): ReactElement {
     const account = useAccount();
@@ -69,16 +71,16 @@ export default function TopNav(): ReactElement {
                         </Button>
                     )
                 }
-                {
-                    showRegisterENSButton && (
-                        <Button
-                            className="mr-2 border border-yellow-300 bg-yellow-50 text-yellow-500"
-                            onClick={() => window.open(`https://app.ens.domains/address/${account}`)}
-                        >
-                            Register ENS
-                        </Button>
-                    )
-                }
+                {/*{*/}
+                {/*    showRegisterENSButton && (*/}
+                {/*        <Button*/}
+                {/*            className="mr-2 border border-yellow-300 bg-yellow-50 text-yellow-500"*/}
+                {/*            onClick={() => window.open(`https://app.ens.domains/address/${account}`)}*/}
+                {/*        >*/}
+                {/*            Register ENS*/}
+                {/*        </Button>*/}
+                {/*    )*/}
+                {/*}*/}
                 <Web3Button
                     className={classNames("rounded-xl top-nav__web3-btn", {
                         'border border-gray-200': account,
@@ -114,8 +116,22 @@ function DefaultHeaderGroup() {
 
 function UserProfileHeaderGroup() {
     const {name} = useParams<{ name: string }>();
+    const [username, setUsername] = useState('');
+
+    const dispatch = useDispatch();
+    const user = useUser(username);
+
+    useEffect(() => {
+        (async () => {
+            if (!Web3.utils.isAddress(name)) {
+                const address: any = await dispatch(fetchAddressByName(name));
+                setUsername(address);
+            } else {
+                setUsername(name);
+            }
+        })();
+    }, [name]);
     const history = useHistory();
-    const user = useUser(name);
 
     const goBack = useCallback(() => {
         if (history.action !== 'POP') return history.goBack();
@@ -142,10 +158,10 @@ function UserProfileHeaderGroup() {
                     className="flex flex-col flex-nowrap justify-center ml-2"
                 >
                     <div className="font-bold text-lg profile-header-group__title">
-                        {user?.name || name}
+                        {getName(user)}
                     </div>
                     <div className="text-xs text-gray-500 profile-header-group__subtitle">
-                        {user?.meta.postingCount || 0} Posts
+                        {user?.meta?.postingCount || 0} Posts
                     </div>
                 </div>
             </div>

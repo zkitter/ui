@@ -1,3 +1,5 @@
+import {Dispatch} from "redux";
+
 const {
     default: ENS,
     getEnsAddress,
@@ -25,6 +27,23 @@ export const fetchNameByAddress = async (address: string) => {
     }
 
     const {name} = await defaultENS.getName(address);
-    cachedName[address] = name || null;
+
+    if (name) {
+        cachedName[address] = name || null;
+    }
+
     return name;
+}
+
+export const fetchAddressByName = async (ens: string)  => {
+    if (typeof cachedName[ens] !== 'undefined') {
+        return cachedName[ens];
+    }
+    const address = await defaultENS.name(ens).getAddress();
+
+    if (address) {
+        cachedName[ens] = address || null;
+    }
+
+    return address;
 }

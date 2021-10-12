@@ -15,10 +15,13 @@ const { markdownToDraft } = require('markdown-draft-js');
 import "./draft-js-editor.scss";
 import {useHistory} from "react-router";
 import {useDispatch} from "react-redux";
-import {searchUsers} from "../../ducks/users";
+import {fetchAddressByName, getUser, searchUsers, useUser} from "../../ducks/users";
 import Avatar from "../Avatar";
 import classNames from "classnames";
 import debounce from "lodash.debounce";
+import {getHandle, getName, getUsername} from "../../util/user";
+import Web3 from "web3";
+import {fetchNameByAddress} from "../../util/web3";
 
 export function DraftEditor(props: PluginEditorProps): ReactElement {
     const dispatch = useDispatch();
@@ -46,13 +49,19 @@ export function DraftEditor(props: PluginEditorProps): ReactElement {
     }, []);
 
     const onSearchChange = useCallback(async ({ value }: { value: string }) => {
-        let result: any = await dispatch(searchUsers(value));
-        result = result.map((r: any) => ({
-            name: '@' + r.ens,
-            profileImage: r.profileImage,
-            nickname: r.name,
-        }))
-        setSuggestions(defaultSuggestionsFilter(value, result));
+        const result: any = await dispatch(searchUsers(value));
+        const suggestions = [];
+
+        for (let r of result) {
+            const name = await fetchNameByAddress(r.address);
+            suggestions.push({
+                name: '@' + (name || r.address),
+                address: r.address,
+                profileImage: r.profileImage,
+                nickname: r.name,
+            });
+        }
+        setSuggestions(defaultSuggestionsFilter(value, suggestions));
     }, []);
 
     const debouncedOnSearchChange = debounce(onSearchChange, 500);
@@ -140,15 +149,32 @@ export const decorator = new CompositeDecorator([
         strategy: findMentionEntities,
         component: (props: any) => {
             const history = useHistory();
+            const nameOrAddress = props.decoratedText.slice(1);
+            const [username, setUsername] = useState('');
+            const dispatch = useDispatch();
+
+            useEffect(() => {
+                (async () => {
+                    if (!Web3.utils.isAddress(nameOrAddress)) {
+                        const address: any = await dispatch(fetchAddressByName(nameOrAddress));
+                        setUsername(address);
+                    } else {
+                        setUsername(nameOrAddress);
+                    }
+                })();
+            }, [nameOrAddress]);
+
+            const user = useUser(username);
+
             return (
                 <a
                     className="hashtag"
                     onClick={e => {
                         e.stopPropagation();
-                        history.push(`/${encodeURIComponent(props.decoratedText.slice(1))}/`)
+                        history.push(`/${encodeURIComponent(getUsername(user))}/`)
                     }}
                 >
-                    {props.children}
+                    @{getHandle(user)}
                 </a>
             );
         },
@@ -303,7 +329,9 @@ function Entry(props: EntryComponentProps): ReactElement {
         ...parentProps
     } = props;
 
-    const name = mention.name.slice(1);
+    const address = mention.address;
+
+    const user = useUser(address);
 
     return (
         // @ts-ignore
@@ -314,10 +342,10 @@ function Entry(props: EntryComponentProps): ReactElement {
             <div
                 className="flex flex-row flex-nowrap p-1 cursor-pointer items-center"
             >
-                <Avatar name={name} className="w-8 h-8 mr-2" />
+                <Avatar address={address} className="w-8 h-8 mr-2" />
                 <div className="flex flex-col flex-nowrap justify-center">
-                    <div className="font-bold text-sm hover:underline">{mention.nickname || name}</div>
-                    <div className="text-xs text-gray-500">{mention.name}</div>
+                    <div className="font-bold text-sm hover:underline">{getName(user)}</div>
+                    <div className="text-xs text-gray-500">@{getHandle(user)}</div>
                 </div>
             </div>
         </div>

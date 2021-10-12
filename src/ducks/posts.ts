@@ -10,6 +10,7 @@ import {Dispatch} from "redux";
 import {useHistory} from "react-router";
 import {useCallback} from "react";
 import {fetchProposal} from "./snapshot";
+import {parse} from "gun/examples/react-native/src/webview-crypto/serializeBinary";
 
 enum ActionTypes {
     SET_POSTS = 'posts/setPosts',
@@ -54,18 +55,18 @@ export const fetchMeta = (messageId: string) => async (
 ) => {
     const {
         web3: {
-            ensName,
+            account,
             gun: { pub, priv },
         },
     } = getState();
-    const [username, hash] = messageId.split('/');
+    const {hash} = parseMessageId(messageId);
 
     if (!hash) {
         return null;
     }
 
-    const contextualName = (ensName && pub && priv) ? ensName : undefined;
-    const resp = await fetch(`${config.indexerAPI}/v1/post/${hash || username}`, {
+    const contextualName = (account && pub && priv) ? account : undefined;
+    const resp = await fetch(`${config.indexerAPI}/v1/post/${hash}`, {
         method: 'GET',
         // @ts-ignore
         headers: {
@@ -144,12 +145,12 @@ export const fetchPosts = (creator?: string, limit = 10, offset = 0) =>
 {
     const {
         web3: {
-            ensName,
+            account,
             gun: { pub, priv },
         },
     } = getState();
     const creatorQuery = creator ? `&creator=${encodeURIComponent(creator)}` : '';
-    const contextualName = (ensName && pub && priv) ? ensName : undefined;
+    const contextualName = (account && pub && priv) ? account : undefined;
     const resp = await fetch(`${config.indexerAPI}/v1/posts?limit=${limit}&offset=${offset}${creatorQuery}`, {
         method: 'GET',
         // @ts-ignore
@@ -171,11 +172,11 @@ export const fetchLikedBy = (creator?: string, limit = 10, offset = 0) =>
 {
     const {
         web3: {
-            ensName,
+            account,
             gun: { pub, priv },
         },
     } = getState();
-    const contextualName = (ensName && pub && priv) ? ensName : undefined;
+    const contextualName = (account && pub && priv) ? account : undefined;
     const resp = await fetch(`${config.indexerAPI}/v1/${creator}/likes?limit=${limit}&offset=${offset}`, {
         method: 'GET',
         // @ts-ignore
@@ -198,11 +199,11 @@ export const fetchRepliedBy = (creator: string, limit = 10, offset = 0) =>
 {
     const {
         web3: {
-            ensName,
+            account,
             gun: { pub, priv },
         },
     } = getState();
-    const contextualName = (ensName && pub && priv) ? ensName : undefined;
+    const contextualName = (account && pub && priv) ? account : undefined;
     const resp = await fetch(`${config.indexerAPI}/v1/${creator}/replies?limit=${limit}&offset=${offset}`, {
         method: 'GET',
         // @ts-ignore
@@ -263,11 +264,11 @@ export const fetchHomeFeed = (limit = 10, offset = 0) =>
 {
     const {
         web3: {
-            ensName,
+            account,
             gun: { pub, priv },
         },
     } = getState();
-    const contextualName = (ensName && pub && priv) ? ensName : undefined;
+    const contextualName = (account && pub && priv) ? account : undefined;
     const resp = await fetch(`${config.indexerAPI}/v1/homefeed?limit=${limit}&offset=${offset}`, {
         method: 'GET',
         // @ts-ignore
@@ -314,11 +315,11 @@ export const fetchTagFeed = (tagName: string, limit = 10, offset = 0) =>
     {
         const {
             web3: {
-                ensName,
+                account,
                 gun: { pub, priv },
             },
         } = getState();
-        const contextualName = (ensName && pub && priv) ? ensName : undefined;
+        const contextualName = (account && pub && priv) ? account : undefined;
         const resp = await fetch(`${config.indexerAPI}/v1/tags/${encodeURIComponent(tagName)}?limit=${limit}&offset=${offset}`, {
             method: 'GET',
             // @ts-ignore
@@ -362,11 +363,11 @@ export const fetchReplies = (reference: string, limit = 10, offset = 0) =>
 {
     const {
         web3: {
-            ensName,
+            account,
             gun: { pub, priv },
         },
     } = getState();
-    const contextualName = (ensName && pub && priv) ? ensName : undefined;
+    const contextualName = (account && pub && priv) ? account : undefined;
     const resp = await fetch(`${config.indexerAPI}/v1/replies?limit=${limit}&offset=${offset}&parent=${encodeURIComponent(reference)}`, {
         method: 'GET',
         // @ts-ignore

@@ -20,6 +20,7 @@ import {CoverImageEditor, ProfileImageEditor} from "../ProfileView";
 import {submitProfile} from "../../ducks/drafts";
 import {ProfileMessageSubType} from "../../util/message";
 import {useHistory} from "react-router";
+import deepEqual from "fast-deep-equal";
 
 enum ViewType {
     welcome,
@@ -185,7 +186,6 @@ function UpdateTxView(props: { setViewType: (v: ViewType) => void}): ReactElemen
 
         try {
             await dispatch(updateIdentity(gun.pub));
-            props.setViewType(ViewType.createIdentity);
         } catch (e) {
             setErrorMessage(e.message);
         } finally {
@@ -248,6 +248,22 @@ function SetupProfileView(props: { setViewType: (v: ViewType) => void}): ReactEl
     const [website, setWebsite] = useState('');
     const [errorMessage, setErrorMessage] = useState('');
     const dispatch = useDispatch();
+
+    const dirty = !deepEqual(
+    {
+        name: user?.name,
+        bio: user?.bio,
+        website: user?.website,
+        coverImage: user?.coverImage,
+        profileImage: user?.profileImage,
+    },
+    {
+        name: name || account,
+        bio,
+        website,
+        coverImage: coverImageUrl,
+        profileImage: profileImageUrl,
+    });
 
     useEffect(() => {
         setName(user?.ens || user?.name || account);
@@ -355,6 +371,7 @@ function SetupProfileView(props: { setViewType: (v: ViewType) => void}): ReactEl
                 <Button
                     btnType="primary"
                     onClick={onSaveProfile}
+                    disabled={!dirty}
                 >
                     Next
                 </Button>

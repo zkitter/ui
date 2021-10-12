@@ -3,7 +3,7 @@ import {AppRootState} from "../store/configureAppStore";
 import {useSelector} from "react-redux";
 import deepEqual from "fast-deep-equal";
 import config from "../util/config";
-import {defaultENS} from "../util/web3";
+import {defaultENS, fetchNameByAddress, fetchAddressByName as _fetchAddressByName} from "../util/web3";
 import {ThunkDispatch} from "redux-thunk";
 
 enum ActionTypes {
@@ -56,7 +56,7 @@ const fetchPromises: any = {};
 const cachedUser: any = {};
 
 export const fetchAddressByName = (ens: string) => async (dispatch: Dispatch) => {
-    const address = await defaultENS.name(ens).getAddress();
+    const address = await _fetchAddressByName(ens);
     dispatch({
         type: ActionTypes.SET_USER_ADDRESS,
         payload: {
@@ -64,6 +64,7 @@ export const fetchAddressByName = (ens: string) => async (dispatch: Dispatch) =>
             address: address === '0x0000000000000000000000000000000000000000' ? '' : address,
         },
     });
+    return address;
 }
 
 export const watchUser = (username: string) => async (dispatch: ThunkDispatch<any, any, any>) => {
@@ -83,7 +84,7 @@ export const watchUser = (username: string) => async (dispatch: ThunkDispatch<an
     });
 }
 
-export const getUser = (username: string) => async (dispatch: Dispatch, getState: () => AppRootState): Promise<User> => {
+export const getUser = (address: string) => async (dispatch: Dispatch, getState: () => AppRootState): Promise<User> => {
     const {
         web3: {
             account,
@@ -91,7 +92,7 @@ export const getUser = (username: string) => async (dispatch: Dispatch, getState
         },
     } = getState();
     const contextualName = (account && pub && priv) ? account : undefined;
-    const key = contextualName + username;
+    const key = contextualName + address;
 
     if (fetchPromises[key]) {
         return fetchPromises[key];
@@ -103,7 +104,7 @@ export const getUser = (username: string) => async (dispatch: Dispatch, getState
         if (cachedUser[key]) {
             payload = cachedUser[key];
         } else {
-            const resp = await fetch(`${config.indexerAPI}/v1/users/${username}`, {
+            const resp = await fetch(`${config.indexerAPI}/v1/users/${address}`, {
                 method: 'GET',
                 // @ts-ignore
                 headers: {
@@ -111,8 +112,17 @@ export const getUser = (username: string) => async (dispatch: Dispatch, getState
                 },
             });
             const json = await resp.json();
+            const ens = await fetchNameByAddress(address)
+
+            dispatch({
+                type: ActionTypes.SET_USER_ADDRESS,
+                payload: {
+                    ens: ens,
+                    address: address,
+                },
+            });
             // @ts-ignore
-            payload = dispatch(processUserPayload(json.payload));
+            payload = dispatch(processUserPayload({...json.payload, ens}));
             if (payload?.joinedTx) {
                 cachedUser[key] = payload;
             }
@@ -134,11 +144,11 @@ export const getUser = (username: string) => async (dispatch: Dispatch, getState
 export const fetchUsers = () => async (dispatch: Dispatch, getState: () => AppRootState): Promise<string[]> => {
     const {
         web3: {
-            ensName,
+            account,
             gun: { pub, priv },
         },
     } = getState();
-    const contextualName = (ensName && pub && priv) ? ensName : undefined;
+    const contextualName = (account && pub && priv) ? account : undefined;
     const resp = await fetch(`${config.indexerAPI}/v1/users?limit=5`, {
         method: 'GET',
         // @ts-ignore
@@ -151,11 +161,21 @@ export const fetchUsers = () => async (dispatch: Dispatch, getState: () => AppRo
     const list: string[] = [];
 
     for (const user of json.payload) {
+        const ens = await fetchNameByAddress(user.address);
+
         // @ts-ignore
-        const payload = dispatch(processUserPayload(user));
-        const key = contextualName + user.ens;
+        const payload = dispatch(processUserPayload({...user, ens}));
+
+        dispatch({
+            type: ActionTypes.SET_USER_ADDRESS,
+            payload: {
+                ens: ens,
+                address: user.address,
+            },
+        });
+        const key = contextualName + user.address;
         cachedUser[key] = payload;
-        list.push(user.ens);
+        list.push(user.address);
     }
 
     return list;
@@ -164,11 +184,11 @@ export const fetchUsers = () => async (dispatch: Dispatch, getState: () => AppRo
 export const searchUsers = (query: string) => async (dispatch: Dispatch, getState: () => AppRootState): Promise<string[]> => {
     const {
         web3: {
-            ensName,
+            account,
             gun: { pub, priv },
         },
     } = getState();
-    const contextualName = (ensName && pub && priv) ? ensName : undefined;
+    const contextualName = (account && pub && priv) ? account : undefined;
     const resp = await fetch(`${config.indexerAPI}/v1/users/search/${encodeURIComponent(query)}`, {
         method: 'GET',
         // @ts-ignore
@@ -181,11 +201,20 @@ export const searchUsers = (query: string) => async (dispatch: Dispatch, getStat
     const list: string[] = [];
 
     for (const user of json.payload) {
+        const ens = await fetchNameByAddress(user.address)
         // @ts-ignore
-        const payload = dispatch(processUserPayload(user));
-        const key = contextualName + user.ens;
+        const payload = dispatch(processUserPayload({...user, ens}));
+
+        dispatch({
+            type: ActionTypes.SET_USER_ADDRESS,
+            payload: {
+                ens: ens,
+                address: user.address,
+            },
+        });
+        const key = contextualName + user.address;
         cachedUser[key] = payload;
-        list.push(user.ens);
+        list.push(user.address);
     }
 
     return json.payload;
@@ -194,6 +223,7 @@ export const searchUsers = (query: string) => async (dispatch: Dispatch, getStat
 const processUserPayload = (user: any) => (dispatch: Dispatch) => {
     const payload: User = {
         address: user.username,
+        ens: user.ens,
         username: user.username,
         name: user.name || '',
         pubkey: user.pubkey || '',
@@ -305,6 +335,7 @@ function reduceSetUser(state: State, action: Action<User>): State {
             [action.payload.username]: {
                 ...user,
                 username: action.payload.username,
+                address: action.payload.address,
                 name: action.payload.name,
                 pubkey: action.payload.pubkey,
                 bio: action.payload.bio,

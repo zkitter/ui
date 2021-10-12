@@ -23,7 +23,6 @@ import gun, {authenticateGun} from "../util/gun";
 import semethid from "@interrep/semethid";
 import config from "../util/config";
 import {getUser, User} from "./users";
-import {arbRegistrarABI} from "../util/abi";
 import {getIdentityHash, hashPubKey} from "../util/arb3";
 OrdinarySemaphore.setHasher('poseidon');
 
@@ -233,15 +232,21 @@ export const setSemaphoreIDPath = (path: any) => ({
     payload: path,
 });
 
-export const setWeb3 = (web3: Web3 | null, account: string) => async (
+export const fetchJoinedTx = (account: string) => async (
     dispatch: ThunkDispatch<any, any, any>,
+    getState: () => AppRootState,
 ) => {
     const user: any = await dispatch(getUser(account));
 
     if (user?.joinedTx) {
         dispatch(setJoinedTx(user.joinedTx));
     }
+}
 
+export const setWeb3 = (web3: Web3 | null, account: string) => async (
+    dispatch: ThunkDispatch<any, any, any>,
+) => {
+    dispatch(fetchJoinedTx(account))
     dispatch(setAccount(account));
 
     dispatch({
@@ -253,6 +258,7 @@ export const setWeb3 = (web3: Web3 | null, account: string) => async (
         dispatch(setAccount(''));
         dispatch(setNetwork(''));
         dispatch(setENSName(''));
+        dispatch(setJoinedTx(''));
         return;
     }
 
@@ -272,8 +278,10 @@ export const setWeb3 = (web3: Web3 | null, account: string) => async (
     });
 
     // @ts-ignore
-    web3.currentProvider.on('accountsChanged', async ([account]) => {
+    web3.currentProvider.on('accountsChanged', async ([acct]) => {
+        const account = Web3.utils.toChecksumAddress(acct);
         dispatch(setGunPublicKey(''));
+        dispatch(dispatch(setJoinedTx('')));
         dispatch(setGunPrivateKey(''));
         dispatch(setSemaphoreID({
             keypair: {

@@ -11,13 +11,12 @@ import {
     useMeta,
     usePost
 } from "../../ducks/posts";
-import {useUser} from "../../ducks/users";
+import {getUser, useUser} from "../../ducks/users";
 import Avatar from "../Avatar";
 import "../../util/variable.scss";
 import Icon from "../Icon";
 import "./post.scss";
 import Editor from "../Editor";
-import {EditorState} from "draft-js";
 import Modal, {ModalContent, ModalHeader} from "../Modal";
 import {setDraft, submitModeration, submitPost, submitRepost, useDraft, useSubmitting} from "../../ducks/drafts";
 import {useDispatch} from "react-redux";
@@ -27,6 +26,7 @@ import {useHistory} from "react-router";
 import Menuable from "../Menuable";
 import {convertMarkdownToDraft, DraftEditor} from "../DraftEditor";
 import URLPreview from "../URLPreview";
+import {getHandle, getName, getUsername} from "../../util/user";
 
 
 type Props = {
@@ -126,6 +126,7 @@ export function ExpandedPost(props: Props): ReactElement {
     const user = useUser(post?.creator);
     const history = useHistory();
     const [parentCreator, parentHash] = post?.payload.reference.split('/') || [];
+    const parentUser = useUser(parentCreator);
 
     const gotoUserProfile = useCallback(e => {
         if (!user?.ens) return;
@@ -151,7 +152,7 @@ export function ExpandedPost(props: Props): ReactElement {
             <div className="flex flex-row flex-nowrap flex-grow-0 flex-shrink-0">
                 <Avatar
                     className="mr-3 w-12 h-12"
-                    name={user.ens}
+                    address={user.address}
                     incognito={post.creator === ''}
                 />
                 <div className="flex flex-col flex-nowrap items-start text-light w-full cursor-pointer">
@@ -159,10 +160,10 @@ export function ExpandedPost(props: Props): ReactElement {
                         className="font-bold text-base mr-1 hover:underline"
                         onClick={gotoUserProfile}
                     >
-                        {user.name || 'Anonymous'}
+                        {post.creator === '' ? 'Anonymous' : getName(user)}
                     </div>
                     <div className="text-gray-400 mr-1" onClick={gotoUserProfile}>
-                        {user.ens && `@${user.ens}`}
+                        {getHandle(user)}
                     </div>
                 </div>
                 <div className="flex flex-row flex-nowrap flex-grow flex-shrink justify-end">
@@ -182,10 +183,10 @@ export function ExpandedPost(props: Props): ReactElement {
                                                 className="cursor-pointer hover:underline text-primary-color ml-1"
                                                 onClick={e => {
                                                     e.stopPropagation();
-                                                    history.push(`/${parentCreator}/`);
+                                                    history.push(`/${getUsername(parentUser)}/`);
                                                 }}
                                             >
-                                                {`@${parentCreator}`}
+                                                {`@${getHandle(parentUser)}`}
                                             </span>
                                         </span>
                                     )
@@ -244,15 +245,17 @@ export function RegularPost(props: Props): ReactElement {
         ? referencedPost
         : originalPost;
     let user = useUser(post?.creator);
+    let op = useUser(originalPost?.creator);
     const history = useHistory();
 
     const [parentCreator, parentHash] = post?.payload.reference.split('/') || [];
+    const parentUser = useUser(parentCreator);
 
     const gotoUserProfile = useCallback(e => {
-        if (!user?.ens) return;
+        if (!user) return;
         e.stopPropagation();
-        history.push(`/${user?.ens}/`);
-    }, [user?.ens]);
+        history.push(`/${user?.ens || user?.username}/`);
+    }, [user]);
 
     if (!post || !user) return <></>;
 
@@ -282,7 +285,7 @@ export function RegularPost(props: Props): ReactElement {
                             className="post__meta flex flex-row flex-nowrap ml-9 mb-2 items-center text-xs text-gray-500 font-bold ml-6"
                         >
                             <Icon className="mr-2" fa="fas fa-retweet" size={.75}/>
-                            {originalPost.creator} Reposted
+                            {getHandle(op)} Reposted
                         </div>
                     )
                     : null
@@ -291,7 +294,7 @@ export function RegularPost(props: Props): ReactElement {
                 <div>
                     <Avatar
                         className="mr-3 w-12 h-12"
-                        name={user.ens}
+                        address={user.username}
                         incognito={post.creator === ''}
                     />
                     {
@@ -310,10 +313,10 @@ export function RegularPost(props: Props): ReactElement {
                             className="post__creator-name font-bold text-base mr-1 hover:underline"
                             onClick={gotoUserProfile}
                         >
-                            {post.creator === '' ? 'Anonymous' : user.name}
+                            {post.creator === '' ? 'Anonymous' : getName(user)}
                         </div>
                         <div className="post__creator-username text-gray-400 mr-1" onClick={gotoUserProfile}>
-                            {user.ens && `@${user.ens}`}
+                            {getHandle(user)}
                         </div>
                         <div className="text-gray-400 mr-1">•</div>
                         <div className="post__timestamp text-gray-400 hover:underline" onClick={gotoUserProfile}>
@@ -343,10 +346,10 @@ export function RegularPost(props: Props): ReactElement {
                                                         className="cursor-pointer hover:underline text-primary-color ml-1"
                                                         onClick={e => {
                                                             e.stopPropagation();
-                                                            history.push(`/${parentCreator}/`);
+                                                            history.push(`/${getUsername(parentUser)}/`);
                                                         }}
                                                     >
-                                                        {`@${parentCreator}`}
+                                                        {`@${getHandle(parentUser)}`}
                                                     </span>
                                                 </span>
                                             )
@@ -482,13 +485,14 @@ function PostFooter(props: {
 
 function PostMenu(props: Props): ReactElement {
     const post = usePost(props.messageId);
+    const user = useUser(post?.creator);
 
     return (
         <Menuable
             className="post__menu"
             items={[
                 {
-                    label: `Block @${post?.creator}`,
+                    label: `Block @${getHandle(user)}`,
                     iconFA: 'fas fa-user-slash',
                     disabled: true,
                     iconClassName: 'text-gray-400',
