@@ -171,7 +171,7 @@ export const searchUsers = (query: string) => async (dispatch: Dispatch, getStat
         },
     } = getState();
     const contextualName = (account && pub && priv) ? account : undefined;
-    const resp = await fetch(`${config.indexerAPI}/v1/users/search/${encodeURIComponent(query)}`, {
+    const resp = await fetch(`${config.indexerAPI}/v1/users/search/${encodeURIComponent(query)}?limit=5`, {
         method: 'GET',
         // @ts-ignore
         headers: {
