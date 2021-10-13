@@ -154,7 +154,7 @@ export const fetchUsers = () => async (dispatch: Dispatch, getState: () => AppRo
 
     for (const user of json.payload) {
         // @ts-ignore
-        const payload = dispatch(processUserPayload({...user}));
+        const payload = dispatch(processUserPayload(user));
         const key = contextualName + user.address;
         cachedUser[key] = payload;
         list.push(user.address);
@@ -329,6 +329,7 @@ function reduceSetUser(state: State, action: Action<User>): State {
                 username: action.payload.username,
                 address: action.payload.address,
                 name: action.payload.name,
+                ens: action.payload.ens,
                 pubkey: action.payload.pubkey,
                 bio: action.payload.bio,
                 profileImage: action.payload.profileImage,

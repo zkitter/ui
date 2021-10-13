@@ -170,8 +170,10 @@ export const decorator = new CompositeDecorator([
                     if (!Web3.utils.isAddress(nameOrAddress)) {
                         const address: any = await dispatch(fetchAddressByName(nameOrAddress));
                         setUsername(address);
+                        dispatch(getUser(address));
                     } else {
                         setUsername(nameOrAddress);
+                        dispatch(getUser(nameOrAddress));
                     }
                 })();
             }, [nameOrAddress]);

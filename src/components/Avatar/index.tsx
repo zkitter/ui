@@ -43,7 +43,9 @@ export default function Avatar(props: Props): ReactElement {
     }, [name, address]);
 
     useEffect(() => {
-        dispatch(getUser(username));
+        if (username) {
+            dispatch(getUser(username));
+        }
     }, [username]);
 
     if (incognito) {
