@@ -21,7 +21,9 @@ import classNames from "classnames";
 import debounce from "lodash.debounce";
 import {getHandle, getName, getUsername} from "../../util/user";
 import Web3 from "web3";
-import {fetchNameByAddress} from "../../util/web3";
+
+let searchNonce = 0;
+let searchTimeout: any = null;
 
 export function DraftEditor(props: PluginEditorProps): ReactElement {
     const dispatch = useDispatch();
@@ -49,22 +51,32 @@ export function DraftEditor(props: PluginEditorProps): ReactElement {
     }, []);
 
     const onSearchChange = useCallback(async ({ value }: { value: string }) => {
-        const result: any = await dispatch(searchUsers(value));
-        const suggestions = [];
+        searchNonce++;
 
-        for (let r of result) {
-            const name = await fetchNameByAddress(r.address);
-            suggestions.push({
-                name: '@' + (name || r.address),
-                address: r.address,
-                profileImage: r.profileImage,
-                nickname: r.name,
-            });
+        if (searchTimeout) {
+            clearTimeout(searchTimeout);
+            searchTimeout = null;
         }
-        setSuggestions(defaultSuggestionsFilter(value, suggestions));
-    }, []);
 
-    const debouncedOnSearchChange = debounce(onSearchChange, 500);
+        searchTimeout = setTimeout(async () => {
+            clearTimeout(searchTimeout);
+            searchTimeout = null;
+            const result: any = await dispatch(searchUsers(value));
+            const suggestions = [];
+
+            for (let r of result) {
+                suggestions.push({
+                    name: '@' + (r.ens || r.address),
+                    address: r.address,
+                    profileImage: r.profileImage,
+                    nickname: r.name,
+                });
+            }
+
+            setSuggestions(suggestions);
+        }, 500);
+
+    }, []);
 
     useEffect(() => {
         return function() {
@@ -101,7 +113,7 @@ export function DraftEditor(props: PluginEditorProps): ReactElement {
                 open={open}
                 onOpenChange={onOpenChange}
                 suggestions={suggestions}
-                onSearchChange={debouncedOnSearchChange}
+                onSearchChange={onSearchChange}
                 // @ts-ignore
                 entryComponent={Entry}
                 onAddMention={() => {
@@ -110,7 +122,7 @@ export function DraftEditor(props: PluginEditorProps): ReactElement {
             />
         </>
     )
-};
+}
 
 export const decorator = new CompositeDecorator([
     {

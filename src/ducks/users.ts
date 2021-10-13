@@ -8,6 +8,7 @@ import {ThunkDispatch} from "redux-thunk";
 
 enum ActionTypes {
     SET_USER = 'users/setUser',
+    SET_FOLLOWED = 'users/setFollowed',
     SET_USER_ADDRESS = 'users/setUserAddress',
 }
 
@@ -112,17 +113,8 @@ export const getUser = (address: string) => async (dispatch: Dispatch, getState:
                 },
             });
             const json = await resp.json();
-            const ens = await fetchNameByAddress(address)
-
-            dispatch({
-                type: ActionTypes.SET_USER_ADDRESS,
-                payload: {
-                    ens: ens,
-                    address: address,
-                },
-            });
             // @ts-ignore
-            payload = dispatch(processUserPayload({...json.payload, ens}));
+            payload = dispatch(processUserPayload({...json.payload}));
             if (payload?.joinedTx) {
                 cachedUser[key] = payload;
             }
@@ -161,18 +153,8 @@ export const fetchUsers = () => async (dispatch: Dispatch, getState: () => AppRo
     const list: string[] = [];
 
     for (const user of json.payload) {
-        const ens = await fetchNameByAddress(user.address);
-
         // @ts-ignore
-        const payload = dispatch(processUserPayload({...user, ens}));
-
-        dispatch({
-            type: ActionTypes.SET_USER_ADDRESS,
-            payload: {
-                ens: ens,
-                address: user.address,
-            },
-        });
+        const payload = dispatch(processUserPayload({...user}));
         const key = contextualName + user.address;
         cachedUser[key] = payload;
         list.push(user.address);
@@ -201,17 +183,8 @@ export const searchUsers = (query: string) => async (dispatch: Dispatch, getStat
     const list: string[] = [];
 
     for (const user of json.payload) {
-        const ens = await fetchNameByAddress(user.address)
         // @ts-ignore
-        const payload = dispatch(processUserPayload({...user, ens}));
-
-        dispatch({
-            type: ActionTypes.SET_USER_ADDRESS,
-            payload: {
-                ens: ens,
-                address: user.address,
-            },
-        });
+        const payload = dispatch(processUserPayload({...user}));
         const key = contextualName + user.address;
         cachedUser[key] = payload;
         list.push(user.address);
@@ -219,6 +192,11 @@ export const searchUsers = (query: string) => async (dispatch: Dispatch, getStat
 
     return json.payload;
 }
+
+export const setFollowed = (address: string, followed: boolean): Action<{ address: string; followed: boolean }> => ({
+    type: ActionTypes.SET_FOLLOWED,
+    payload: {address, followed},
+});
 
 const processUserPayload = (user: any) => (dispatch: Dispatch) => {
     const payload: User = {
@@ -297,6 +275,20 @@ export default function users(state = initialState, action: Action<any>): State 
     switch (action.type) {
         case ActionTypes.SET_USER:
             return reduceSetUser(state, action);
+        case ActionTypes.SET_FOLLOWED:
+            return {
+                ...state,
+                map: {
+                    ...state.map,
+                    [action.payload.address]: {
+                        ...state.map[action.payload.address],
+                        meta: {
+                            ...state.map[action.payload.address]?.meta,
+                            followed: action.payload.followed,
+                        },
+                    },
+                },
+            };
         case ActionTypes.SET_USER_ADDRESS:
             return reduceSetUserAddress(state, action);
         default:

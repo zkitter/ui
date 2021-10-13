@@ -10,20 +10,20 @@ import {
     Moderation,
     ModerationMessageSubType,
     Post,
-    PostMessageSubType, Profile,
+    PostMessageSubType,
+    Profile,
     ProfileMessageSubType
 } from "../util/message";
 import gun from "../util/gun";
-import {
-    OrdinarySemaphore
-} from "semaphore-lib";
-
-OrdinarySemaphore.setHasher('poseidon');
-
+import {OrdinarySemaphore} from "semaphore-lib";
 import {ThunkDispatch} from "redux-thunk";
 import {markdownConvertOptions} from "../components/DraftEditor";
 import config from "../util/config";
 import {Identity} from "libsemaphore";
+import {setFollowed} from "./users";
+
+OrdinarySemaphore.setHasher('poseidon');
+
 const { draftToMarkdown } = require('markdown-draft-js');
 
 enum ActionTypes {
@@ -364,6 +364,10 @@ export const submitConnection = (name: string, subtype: ConnectionMessageSubType
             type: ActionTypes.SET_SUBMITTING,
             payload: false,
         });
+
+        if (connection.subtype === ConnectionMessageSubType.Follow) {
+            dispatch(setFollowed(connection.payload.name, true));
+        }
 
     } catch (e) {
         dispatch({
