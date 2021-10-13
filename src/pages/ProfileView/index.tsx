@@ -333,7 +333,10 @@ function ProfileCard(): ReactElement {
             <div className="px-4 flex flex-row flex-nowrap profile-view__datas">
                 {
                     !!user.joinedAt && (
-                        <div className="profile-view__data-group flex flex-row flex-nowrap items-center text-light text-gray-500">
+                        <div
+                            className="profile-view__data-group flex flex-row flex-nowrap items-center text-light text-gray-500 cursor-pointer hover:underline"
+                            onClick={() => window.open(`${config.arbitrumExplorer}/tx/${user.joinedTx}#eventlog`, '_blank')}
+                        >
                             <Icon fa="far fa-calendar-alt"/>
                             <div className="ml-2 profile-view__data-group__value">
                                 {`Joined ${moment(Number(user.joinedAt)).format('MMMM YYYY')}`}
@@ -345,11 +348,11 @@ function ProfileCard(): ReactElement {
                     !!user.joinedTx && (
                         <div
                             className="profile-view__data-group flex flex-row flex-nowrap items-center text-light text-gray-500 cursor-pointer hover:underline"
-                            onClick={() => window.open(`${config.arbitrumExplorer}/tx/${user.joinedTx}#eventlog`, '_blank')}
+                            onClick={() => window.open(`https://etherscan.io/address/${user.joinedTx}`, '_blank')}
                         >
                             <Icon url={EtherScanSVG} />
                             <div className="ml-2 profile-view__data-group__value">
-                                {`${user.joinedTx.slice(0, 6)}...${user.joinedTx.slice(-4)}`}
+                                {`${user.address.slice(0, 6)}...${user.address.slice(-4)}`}
                             </div>
                         </div>
                     )
