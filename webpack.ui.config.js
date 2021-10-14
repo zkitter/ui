@@ -15,6 +15,9 @@ const envPlugin = new webpack.EnvironmentPlugin({
     'WEB3_HTTP_PROVIDER': '',
     'ENS_RESOLVER': '',
     'INDEXER_API': '',
+    'ARB_HTTP_PROVIDER': '',
+    'ARB_REGISTRAR': '',
+    'ARB_EXPLORER': '',
     'GUN_PEERS': [],
 });
 
