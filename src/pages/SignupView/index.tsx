@@ -3,7 +3,7 @@ import "./signup.scss"
 import Button from "../../components/Button";
 import {
     createRecordTx,
-    loginGun,
+    loginGun, setJoinedTx,
     updateIdentity,
     useAccount,
     useGunKey, useGunLoggedIn,
@@ -66,8 +66,13 @@ function WelcomeView(props: { setViewType: (v: ViewType) => void}): ReactElement
     const history = useHistory();
 
     useEffect(() => {
+        if (user?.joinedTx) {
+            history.push('/');
+            return;
+        }
+
         if (loggedIn) {
-            history.push(`/${user?.ens || user?.username}`);
+            history.push(`/`);
         }
     }, [loggedIn, user]);
 
@@ -175,7 +180,9 @@ function UpdateTxView(props: { setViewType: (v: ViewType) => void}): ReactElemen
         (async () => {
             if (!account || !pendingTx) return;
             await watchTx(pendingTx);
-            await watchUser(account);
+            const d: any = await dispatch(watchUser(account));
+
+            dispatch(setJoinedTx(d.joinedTx));
             dispatch(createRecordTx(''));
             props.setViewType(ViewType.setupProfile);
         })();
@@ -384,8 +391,6 @@ function SetupProfileView(props: { setViewType: (v: ViewType) => void}): ReactEl
 
 function DoneView(props: { setViewType: (v: ViewType) => void}): ReactElement {
     const history = useHistory();
-    const account = useAccount();
-    const user = useUser(account);
 
     return (
         <div className="flex flex-col flex-nowrap flex-grow my-4 mx-8 signup__content signup__welcome">
@@ -399,7 +404,7 @@ function DoneView(props: { setViewType: (v: ViewType) => void}): ReactElement {
             <div className="flex-grow flex flex-row mt-8 flex-nowrap items-end justify-end">
                 <Button
                     btnType="primary"
-                    onClick={() => history.push(`/${user?.ens || user?.username}`)}
+                    onClick={() => history.push(`/`)}
                 >
                     Done
                 </Button>

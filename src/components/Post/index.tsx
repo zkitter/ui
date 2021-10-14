@@ -129,10 +129,10 @@ export function ExpandedPost(props: Props): ReactElement {
     const parentUser = useUser(parentCreator);
 
     const gotoUserProfile = useCallback(e => {
-        if (!user?.ens) return;
+        if (!user) return;
         e.stopPropagation();
-        history.push(`/${user?.ens}/`);
-    }, [user?.ens]);
+        history.push(`/${user?.ens || user?.username}/`);
+    }, [user]);
 
     if (!post || !user) return <></>;
 

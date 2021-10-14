@@ -5,6 +5,7 @@ import deepEqual from "fast-deep-equal";
 import config from "../util/config";
 import {defaultENS, fetchNameByAddress, fetchAddressByName as _fetchAddressByName} from "../util/web3";
 import {ThunkDispatch} from "redux-thunk";
+import {setJoinedTx} from "./web3";
 
 enum ActionTypes {
     SET_USER = 'users/setUser',
@@ -118,6 +119,8 @@ export const getUser = (address: string) => async (dispatch: Dispatch, getState:
             if (payload?.joinedTx) {
                 cachedUser[key] = payload;
             }
+
+            delete fetchPromises[key];
         }
 
         dispatch({
@@ -156,7 +159,9 @@ export const fetchUsers = () => async (dispatch: Dispatch, getState: () => AppRo
         // @ts-ignore
         const payload = dispatch(processUserPayload(user));
         const key = contextualName + user.address;
-        cachedUser[key] = payload;
+        if (payload?.joinedTx) {
+            cachedUser[key] = payload;
+        }
         list.push(user.address);
     }
 
@@ -186,7 +191,9 @@ export const searchUsers = (query: string) => async (dispatch: Dispatch, getStat
         // @ts-ignore
         const payload = dispatch(processUserPayload({...user}));
         const key = contextualName + user.address;
-        cachedUser[key] = payload;
+        if (payload?.joinedTx) {
+            cachedUser[key] = payload;
+        }
         list.push(user.address);
     }
 

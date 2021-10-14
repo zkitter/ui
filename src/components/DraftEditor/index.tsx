@@ -52,6 +52,7 @@ export function DraftEditor(props: PluginEditorProps): ReactElement {
 
     const onSearchChange = useCallback(async ({ value }: { value: string }) => {
         searchNonce++;
+        const oldNonce = searchNonce;
 
         if (searchTimeout) {
             clearTimeout(searchTimeout);
@@ -62,6 +63,7 @@ export function DraftEditor(props: PluginEditorProps): ReactElement {
             clearTimeout(searchTimeout);
             searchTimeout = null;
             const result: any = await dispatch(searchUsers(value));
+            if (oldNonce !== searchNonce) return;
             const suggestions = [];
 
             for (let r of result) {
