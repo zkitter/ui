@@ -1,5 +1,6 @@
 import {applyMiddleware, combineReducers, createStore} from "redux";
-import web3 from "../ducks/web3";
+import { save, load } from 'redux-localstorage-simple';
+import web3, {initialState as web3InitialState} from "../ducks/web3";
 import posts from "../ducks/posts";
 import users from "../ducks/users";
 import drafts from "../ducks/drafts";
@@ -17,13 +18,32 @@ const rootReducer = combineReducers({
 
 export type AppRootState = ReturnType<typeof rootReducer>;
 
+const createStoreWithMiddleware = process.env.NODE_ENV === 'development'
+    ? applyMiddleware(
+        thunk,
+        createLogger({
+            collapsed: (getState, action) => [''].includes(action.type),
+        }),
+        save({
+            states: ['web3.pending.createRecordTx'],
+        })
+    )(createStore)
+    : applyMiddleware(
+        thunk,
+        save({
+            states: ['web3.pending.createRecordTx'],
+        })
+    )(createStore);
+
+
 export default function configureAppStore() {
-    return createStore(
+    return createStoreWithMiddleware(
         rootReducer,
-        process.env.NODE_ENV === 'development'
-            ? applyMiddleware(thunk, createLogger({
-                collapsed: (getState, action) => [''].includes(action.type),
-            }))
-            : applyMiddleware(thunk),
+        load({
+            states: ['web3.pending.createRecordTx'],
+            preloadedState: {
+                web3: web3InitialState,
+            },
+        }),
     );
 }

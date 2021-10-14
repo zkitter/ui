@@ -10,6 +10,7 @@ import {Dispatch} from "redux";
 import {useHistory} from "react-router";
 import {useCallback} from "react";
 import {fetchProposal} from "./snapshot";
+import {parse} from "gun/examples/react-native/src/webview-crypto/serializeBinary";
 
 enum ActionTypes {
     SET_POSTS = 'posts/setPosts',
@@ -52,27 +53,20 @@ const initialState: State = {
 export const fetchMeta = (messageId: string) => async (
     dispatch: ThunkDispatch<any, any, any>, getState: () => AppRootState
 ) => {
-    const {url} = parseMessageId(messageId);
-    if (url?.hostname === 'snapshot.org') {
-        const [_, spaceId, __, proposalId] = url?.hash.split('/');
-        await dispatch(fetchProposal(proposalId));
-        return;
-    }
-
     const {
         web3: {
-            ensName,
+            account,
             gun: { pub, priv },
         },
     } = getState();
-    const [username, hash] = messageId.split('/');
+    const {hash} = parseMessageId(messageId);
 
     if (!hash) {
         return null;
     }
 
-    const contextualName = (ensName && pub && priv) ? ensName : undefined;
-    const resp = await fetch(`${config.indexerAPI}/v1/post/${hash || username}`, {
+    const contextualName = (account && pub && priv) ? account : undefined;
+    const resp = await fetch(`${config.indexerAPI}/v1/post/${hash}`, {
         method: 'GET',
         // @ts-ignore
         headers: {
@@ -151,12 +145,12 @@ export const fetchPosts = (creator?: string, limit = 10, offset = 0) =>
 {
     const {
         web3: {
-            ensName,
+            account,
             gun: { pub, priv },
         },
     } = getState();
     const creatorQuery = creator ? `&creator=${encodeURIComponent(creator)}` : '';
-    const contextualName = (ensName && pub && priv) ? ensName : undefined;
+    const contextualName = (account && pub && priv) ? account : undefined;
     const resp = await fetch(`${config.indexerAPI}/v1/posts?limit=${limit}&offset=${offset}${creatorQuery}`, {
         method: 'GET',
         // @ts-ignore
@@ -178,11 +172,11 @@ export const fetchLikedBy = (creator?: string, limit = 10, offset = 0) =>
 {
     const {
         web3: {
-            ensName,
+            account,
             gun: { pub, priv },
         },
     } = getState();
-    const contextualName = (ensName && pub && priv) ? ensName : undefined;
+    const contextualName = (account && pub && priv) ? account : undefined;
     const resp = await fetch(`${config.indexerAPI}/v1/${creator}/likes?limit=${limit}&offset=${offset}`, {
         method: 'GET',
         // @ts-ignore
@@ -205,11 +199,11 @@ export const fetchRepliedBy = (creator: string, limit = 10, offset = 0) =>
 {
     const {
         web3: {
-            ensName,
+            account,
             gun: { pub, priv },
         },
     } = getState();
-    const contextualName = (ensName && pub && priv) ? ensName : undefined;
+    const contextualName = (account && pub && priv) ? account : undefined;
     const resp = await fetch(`${config.indexerAPI}/v1/${creator}/replies?limit=${limit}&offset=${offset}`, {
         method: 'GET',
         // @ts-ignore
@@ -226,21 +220,13 @@ export const fetchRepliedBy = (creator: string, limit = 10, offset = 0) =>
 const processPosts = (posts: any[]) => async (dispatch: Dispatch) => {
     for (const post of posts) {
         if (post.subtype === PostMessageSubType.Repost) {
-            const {url} = parseMessageId(post.payload.reference);
-
-            if (url?.hostname === 'snapshot.org') {
-                const [_, spaceId, __, proposalId] = url?.hash.split('/');
-                // @ts-ignore
-                dispatch(fetchProposal(proposalId));
-            } else {
-                dispatch({
-                    type: ActionTypes.SET_META,
-                    payload: {
-                        messageId: post.payload.reference,
-                        meta: post.meta,
-                    },
-                });
-            }
+            dispatch({
+                type: ActionTypes.SET_META,
+                payload: {
+                    messageId: post.payload.reference,
+                    meta: post.meta,
+                },
+            });
         } else {
             dispatch({
                 type: ActionTypes.SET_META,
@@ -251,11 +237,14 @@ const processPosts = (posts: any[]) => async (dispatch: Dispatch) => {
             });
         }
 
+        const {creator} = parseMessageId(post.messageId);
+
         dispatch({
             type: ActionTypes.SET_POST,
             payload: new Post({
                 ...post,
-                createdAt: new Date(post.createdAt),
+                createdAt: new Date(Number(post.createdAt)),
+                creator: creator || '',
             }),
         });
 
@@ -275,11 +264,11 @@ export const fetchHomeFeed = (limit = 10, offset = 0) =>
 {
     const {
         web3: {
-            ensName,
+            account,
             gun: { pub, priv },
         },
     } = getState();
-    const contextualName = (ensName && pub && priv) ? ensName : undefined;
+    const contextualName = (account && pub && priv) ? account : undefined;
     const resp = await fetch(`${config.indexerAPI}/v1/homefeed?limit=${limit}&offset=${offset}`, {
         method: 'GET',
         // @ts-ignore
@@ -306,7 +295,7 @@ export const fetchHomeFeed = (limit = 10, offset = 0) =>
             type: ActionTypes.SET_POST,
             payload: new Post({
                 ...post,
-                createdAt: new Date(post.createdAt),
+                createdAt: new Date(Number(post.createdAt)),
             }),
         });
     }
@@ -326,11 +315,11 @@ export const fetchTagFeed = (tagName: string, limit = 10, offset = 0) =>
     {
         const {
             web3: {
-                ensName,
+                account,
                 gun: { pub, priv },
             },
         } = getState();
-        const contextualName = (ensName && pub && priv) ? ensName : undefined;
+        const contextualName = (account && pub && priv) ? account : undefined;
         const resp = await fetch(`${config.indexerAPI}/v1/tags/${encodeURIComponent(tagName)}?limit=${limit}&offset=${offset}`, {
             method: 'GET',
             // @ts-ignore
@@ -357,7 +346,7 @@ export const fetchTagFeed = (tagName: string, limit = 10, offset = 0) =>
                 type: ActionTypes.SET_POST,
                 payload: new Post({
                     ...post,
-                    createdAt: new Date(post.createdAt),
+                    createdAt: new Date(Number(post.createdAt)),
                 }),
             });
         }
@@ -374,11 +363,11 @@ export const fetchReplies = (reference: string, limit = 10, offset = 0) =>
 {
     const {
         web3: {
-            ensName,
+            account,
             gun: { pub, priv },
         },
     } = getState();
-    const contextualName = (ensName && pub && priv) ? ensName : undefined;
+    const contextualName = (account && pub && priv) ? account : undefined;
     const resp = await fetch(`${config.indexerAPI}/v1/replies?limit=${limit}&offset=${offset}&parent=${encodeURIComponent(reference)}`, {
         method: 'GET',
         // @ts-ignore
@@ -405,7 +394,7 @@ export const fetchReplies = (reference: string, limit = 10, offset = 0) =>
             type: ActionTypes.SET_POST,
             payload: new Post({
                 ...post,
-                createdAt: new Date(post.createdAt),
+                createdAt: new Date(Number(post.createdAt)),
             }),
         });
     }
@@ -444,15 +433,7 @@ export const useMeta = (messageId: string)  => {
 export const useGoToPost = () => {
     const history = useHistory();
     return useCallback((messageId: string) => {
-        const { creator, hash, url } = parseMessageId(messageId);
-
-        if (url) {
-            if (url.hostname === 'snapshot.org') {
-                const [_, spaceId, __, proposalId] = url?.hash.split('/');
-                history.push(`/proposal/${proposalId}`);
-                return;
-            }
-        }
+        const { creator, hash } = parseMessageId(messageId);
 
         if (!creator) {
             history.push(`/post/${hash}`);

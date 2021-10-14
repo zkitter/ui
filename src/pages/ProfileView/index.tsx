@@ -4,24 +4,27 @@ import {fetchLikedBy, fetchPost, fetchPosts, fetchRepliedBy, useGoToPost} from "
 import {useDispatch} from "react-redux";
 import {Route, Switch, useHistory, useLocation, useParams} from "react-router";
 import "./profile-view.scss";
-import Post from "../Post";
-import Button from "../Button";
-import Icon from "../Icon";
-import {getUser, setUser, useUser} from "../../ducks/users";
-import {useENSFetching, useENSName, useGunKey, useLoggedIn, useWeb3Loading} from "../../ducks/web3";
+import Post from "../../components/Post";
+import Button from "../../components/Button";
+import Icon from "../../components/Icon";
+import {fetchAddressByName, getUser, setUser, useUser} from "../../ducks/users";
+import {useAccount, useENSFetching, useENSName, useGunKey, useLoggedIn, useWeb3Loading} from "../../ducks/web3";
 import moment from "moment";
-import Modal, {ModalContent, ModalFooter, ModalHeader} from "../Modal";
-import Input from "../Input";
-import Textarea from "../Textarea";
+import Modal, {ModalContent, ModalFooter, ModalHeader} from "../../components/Modal";
+import Input from "../../components/Input";
+import Textarea from "../../components/Textarea";
 import deepEqual from "fast-deep-equal";
 import {submitConnection, submitProfile} from "../../ducks/drafts";
 import {ConnectionMessageSubType, ProfileMessageSubType} from "../../util/message";
-import Avatar from "../Avatar";
+import Avatar from "../../components/Avatar";
 import EtherScanSVG from "../../../static/icons/etherscan-logo-gray-500.svg";
 import SnapshotLogoSVG from "../../../static/icons/snapshot-logo-bw.svg";
-import InfiniteScrollable from "../InfiniteScrollable";
-import Menuable from "../Menuable";
+import InfiniteScrollable from "../../components/InfiniteScrollable";
+import Menuable from "../../components/Menuable";
 import {fetchProposals} from "../../ducks/snapshot";
+import Web3 from "web3";
+import {getHandle, getName} from "../../util/user";
+import config from "../../util/config";
 
 export default function ProfileView(): ReactElement {
     const {name} = useParams<{name: string}>();
@@ -29,21 +32,34 @@ export default function ProfileView(): ReactElement {
     const [limit, setLimit] = useState(20);
     const [offset, setOffset] = useState(0);
     const [order, setOrder] = useState<string[]>([]);
-    const dispatch = useDispatch();
     const history = useHistory();
     const loc = useLocation();
     const loggedIn = useLoggedIn();
     const subpath = loc.pathname.split('/')[2];
     const user = useUser(name);
+    const [username, setUsername] = useState('');
+
+    const dispatch = useDispatch();
+
+    useEffect(() => {
+        (async () => {
+            if (!Web3.utils.isAddress(name)) {
+                const address: any = await dispatch(fetchAddressByName(name));
+                setUsername(address);
+            } else {
+                setUsername(name);
+            }
+        })();
+    }, [name]);
 
     useEffect(() => {
         (async function onProfileViewViewMount() {
             setOrder([]);
             setOffset(0);
-            await dispatch(getUser(name));
+            await dispatch(getUser(username));
             await fetchMore(true);
         })();
-    }, [name, loggedIn, subpath]);
+    }, [username, loggedIn, subpath]);
 
     const fetchMore = useCallback(async (reset = false) => {
         setFetching(true);
@@ -53,23 +69,21 @@ export default function ProfileView(): ReactElement {
             fetchFn = fetchLikedBy;
         } else if (subpath === 'replies') {
             fetchFn = fetchRepliedBy;
-        } else if (subpath === 'proposals') {
-            fetchFn = fetchProposals;
         }
 
         if (reset) {
-            const messageIds: any = await dispatch(fetchFn(name, 20, 0));
+            const messageIds: any = await dispatch(fetchFn(username, 20, 0));
             setOffset(20);
             setOrder(messageIds);
         } else {
             if (order.length % limit) return;
-            const messageIds: any = await dispatch(fetchFn(name, limit, offset));
+            const messageIds: any = await dispatch(fetchFn(username, limit, offset));
             setOffset(offset + limit);
             setOrder(order.concat(messageIds));
         }
 
         setFetching(false);
-    }, [limit, offset, order, name, subpath]);
+    }, [limit, offset, order, username, subpath]);
 
     return (
         <InfiniteScrollable
@@ -175,17 +189,30 @@ function PostList(props: { list: string[]; fetching: boolean }): ReactElement {
 
 function ProfileCard(): ReactElement {
     const {name} = useParams<{name: string}>();
-    const user = useUser(name);
+
+    const [username, setUsername] = useState('');
+    const user = useUser(username);
     const loggedIn = useLoggedIn();
     const gunKey = useGunKey();
-    const ensName = useENSName();
-    const isCurrentUser = name === ensName;
+    const account = useAccount();
+    const isCurrentUser = username === account;
     const [showingEditor, showProfileEditor] = useState(false);
     const dispatch = useDispatch();
 
+    useEffect(() => {
+        (async () => {
+            if (!Web3.utils.isAddress(name)) {
+                const address: any = await dispatch(fetchAddressByName(name));
+                setUsername(address);
+            } else {
+                setUsername(name);
+            }
+        })();
+    }, [name]);
+
     const onFollow = useCallback(() => {
-        dispatch(submitConnection(name, ConnectionMessageSubType.Follow));
-    }, []);
+        dispatch(submitConnection(username, ConnectionMessageSubType.Follow));
+    }, [username]);
 
     if (!user) {
         return (
@@ -245,7 +272,7 @@ function ProfileCard(): ReactElement {
             <div className="flex flex-row flew-nowrap flex-shrink-0 items-end pl-4 relative -mt-15">
                 <Avatar
                     className="h-32 w-32 rounded-full border-4 border-white bg-gray-100"
-                    name={user.ens}
+                    address={user.address}
                 />
                 <div className="flex flex-row flex-nowrap flex-grow justify-end mb-4 mx-4">
                     {
@@ -278,7 +305,7 @@ function ProfileCard(): ReactElement {
                                 menuClassName="profile-view__menu"
                                 items={[
                                     {
-                                        label: `Block @${user?.ens}`,
+                                        label: `Block @${getName(user)}`,
                                         iconFA: 'fas fa-user-slash',
                                         disabled: true,
                                         iconClassName: 'text-gray-400',
@@ -297,8 +324,8 @@ function ProfileCard(): ReactElement {
 
             </div>
             <div className="px-4">
-                <div className="font-bold text-lg">{user.name}</div>
-                <div className="text-sm text-gray-500">@{user.ens}</div>
+                <div className="font-bold text-lg">{getName(user)}</div>
+                <div className="text-sm text-gray-500">@{getHandle(user)}</div>
             </div>
             <div className="px-4 py-3 text-light">
                 { user.bio }
@@ -306,7 +333,10 @@ function ProfileCard(): ReactElement {
             <div className="px-4 flex flex-row flex-nowrap profile-view__datas">
                 {
                     !!user.joinedAt && (
-                        <div className="profile-view__data-group flex flex-row flex-nowrap items-center text-light text-gray-500">
+                        <div
+                            className="profile-view__data-group flex flex-row flex-nowrap items-center text-light text-gray-500 cursor-pointer hover:underline"
+                            onClick={() => window.open(`${config.arbitrumExplorer}/tx/${user.joinedTx}#eventlog`, '_blank')}
+                        >
                             <Icon fa="far fa-calendar-alt"/>
                             <div className="ml-2 profile-view__data-group__value">
                                 {`Joined ${moment(Number(user.joinedAt)).format('MMMM YYYY')}`}
@@ -315,27 +345,14 @@ function ProfileCard(): ReactElement {
                     )
                 }
                 {
-                    !!user.address && (
+                    !!user.joinedTx && (
                         <div
                             className="profile-view__data-group flex flex-row flex-nowrap items-center text-light text-gray-500 cursor-pointer hover:underline"
-                            onClick={() => window.open(`https://etherscan.io/address/${user.address}`, '_blank')}
+                            onClick={() => window.open(`https://etherscan.io/address/${user.joinedTx}`, '_blank')}
                         >
                             <Icon url={EtherScanSVG} />
                             <div className="ml-2 profile-view__data-group__value">
                                 {`${user.address.slice(0, 6)}...${user.address.slice(-4)}`}
-                            </div>
-                        </div>
-                    )
-                }
-                {
-                    !!user.snapshot && (
-                        <div
-                            className="profile-view__data-group flex flex-row flex-nowrap items-center text-light text-gray-500 cursor-pointer hover:underline"
-                            onClick={() => window.open(`https://snapshot.org/#/${user.ens}`, '_blank')}
-                        >
-                            <Icon url={SnapshotLogoSVG} />
-                            <div className="ml-2 profile-view__data-group__value">
-                                {`Snapshot Space`}
                             </div>
                         </div>
                     )
@@ -367,8 +384,8 @@ function ProfileEditor(props: ProfileEditorProps): ReactElement {
     const [name, setName] = useState('');
     const [bio, setBio] = useState('');
     const [website, setWebsite] = useState('');
-    const ensName = useENSName();
-    const user = useUser(ensName);
+    const account = useAccount();
+    const user = useUser(account);
     const dispatch = useDispatch();
 
     const dirty = !deepEqual(
@@ -380,7 +397,7 @@ function ProfileEditor(props: ProfileEditorProps): ReactElement {
         profileImage: user?.profileImage,
     },
     {
-        name: name || ensName,
+        name: name || account,
         bio,
         website,
         coverImage: coverImageUrl,
@@ -493,7 +510,7 @@ function ProfileEditor(props: ProfileEditorProps): ReactElement {
     )
 }
 
-function CoverImageEditor(props: {
+export function CoverImageEditor(props: {
     url: string;
     onUrlChange: (url: string) => void;
     onFileChange: (file: File) => void;
@@ -561,7 +578,7 @@ function CoverImageEditor(props: {
             {
                 showingCoverInput && (
                     <Input
-                        className="absolute w-80 top-32 border-2"
+                        className="absolute w-80 top-32 border-2 z-200"
                         onChange={e => setUrl(e.target.value)}
                         value={url}
                         autoFocus
@@ -579,7 +596,7 @@ function CoverImageEditor(props: {
 }
 
 
-function ProfileImageEditor(props: {
+export function ProfileImageEditor(props: {
     url: string;
     onUrlChange: (url: string) => void;
     onFileChange: (file: File) => void;

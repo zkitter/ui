@@ -7,7 +7,7 @@ import {
 } from "draft-js";
 import classNames from "classnames";
 import "./editor.scss";
-import {useAccount, useENSName, useLoggedIn, useSemaphoreID} from "../../ducks/web3";
+import {useAccount, useENSName, useGunKey, useLoggedIn, useSemaphoreID} from "../../ducks/web3";
 import Avatar from "../Avatar";
 import Web3Button from "../Web3Button";
 import Button from "../Button";
@@ -17,6 +17,8 @@ import Input from "../Input";
 import drafts, {setDraft, useDraft} from "../../ducks/drafts";
 import {useDispatch} from "react-redux";
 import URLPreview from "../URLPreview";
+import SpinnerGif from "../../../static/icons/spinner.gif";
+import {useUser} from "../../ducks/users";
 
 type Props = {
     messageId: string;
@@ -40,10 +42,10 @@ export default function Editor(props: Props): ReactElement {
 
     const address = useAccount();
     const loggedIn = useLoggedIn();
-    const ensName = useENSName();
     const semaphoreId = useSemaphoreID();
     const draft = useDraft(messageId);
     const dispatch = useDispatch();
+    const gun = useGunKey();
 
     const isEmpty = !editorState.getCurrentContent().hasText() && !draft.attachment;
 
@@ -75,6 +77,22 @@ export default function Editor(props: Props): ReactElement {
         }
         return 'not-handled';
     }, [editorState]);
+
+    if (!disabled && gun.priv && gun.pub && !gun.joinedTx) {
+        return (
+            <div
+                className={classNames(
+                    'flex flex-col flex-nowrap items-center',
+                    'p-4',
+                    'bg-white',
+                    'rounded-xl',
+                    props.className,
+                )}
+            >
+                <Icon className="opacity-50" url={SpinnerGif} size={4} />
+            </div>
+        )
+    }
 
     if (!disabled && !loggedIn) {
         return (
@@ -137,7 +155,7 @@ export default function Editor(props: Props): ReactElement {
         >
             <Avatar
                 className="w-12 h-12 mr-3"
-                name={ensName}
+                address={address}
                 incognito={!!semaphoreId.keypair.privKey}
             />
             <div className="flex flex-col flex-nowrap w-full h-full editor__wrapper">

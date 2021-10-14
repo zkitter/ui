@@ -1,23 +1,21 @@
 import React, {ReactElement, useCallback, useEffect, useState} from "react";
 import classNames from "classnames";
 import {EditorState} from 'draft-js';
-import Post from "../Post";
+import Post from "../../components/Post";
 import {useDispatch} from "react-redux";
-import {fetchPosts, setPost, useGoToPost} from "../../ducks/posts";
-import "./global-feed.scss";
-import Editor from "../Editor";
+import {fetchHomeFeed, setPost, useGoToPost} from "../../ducks/posts";
+import "./home-feed.scss";
+import Editor from "../../components/Editor";
 import {useLoggedIn} from "../../ducks/web3";
-import {setDraft, submitPost, useDraft, useSubmitting} from "../../ducks/drafts";
-import {useHistory} from "react-router";
-import InfiniteScrollable from "../InfiniteScrollable";
 import {Post as PostMessage} from "../../util/message";
+import {setDraft, submitPost, useDraft, useSubmitting} from "../../ducks/drafts";
+import InfiniteScrollable from "../../components/InfiniteScrollable";
 
-export default function GlobalFeed(): ReactElement {
+export default function HomeFeed(): ReactElement {
     const [limit, setLimit] = useState(20);
     const [offset, setOffset] = useState(0);
     const [order, setOrder] = useState<string[]>([]);
     const dispatch = useDispatch();
-    const history = useHistory();
     const loggedIn = useLoggedIn();
 
     useEffect(() => {
@@ -26,16 +24,14 @@ export default function GlobalFeed(): ReactElement {
         })();
     }, [loggedIn]);
 
-    const gotoPost = useGoToPost();
-
     const fetchMore = useCallback(async (reset = false) => {
         if (reset) {
-            const messageIds: any = await dispatch(fetchPosts(undefined, 20, 0));
+            const messageIds: any = await dispatch(fetchHomeFeed(20, 0));
             setOffset(20);
             setOrder(messageIds);
         } else {
             if (order.length % limit) return;
-            const messageIds: any = await dispatch(fetchPosts(undefined, limit, offset));
+            const messageIds: any = await dispatch(fetchHomeFeed(limit, offset));
             setOffset(offset + limit);
             setOrder(order.concat(messageIds));
         }
@@ -48,9 +44,11 @@ export default function GlobalFeed(): ReactElement {
         setOrder([messageId, ...order]);
     }, [order]);
 
+    const gotoPost = useGoToPost();
+
     return (
         <InfiniteScrollable
-            className={classNames('flex-grow global-feed',
+            className={classNames('flex-grow home-feed',
                 'mx-4 py-2',
                 {},
             )}

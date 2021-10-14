@@ -1,25 +1,25 @@
-import React, {ReactElement, useCallback, useEffect} from "react";
+import React, {ReactElement, useCallback, useEffect, useState} from "react";
 import Icon from "../Icon";
 import classNames from "classnames";
 import "./top-nav.scss"
 import {Route, Switch, useHistory, useLocation, useParams} from "react-router";
 import Web3Button from "../Web3Button";
 import {
-    addGunKeyToTextRecord,
-    generateGunKeyPair,
     useAccount,
-    useENSFetching, useENSLoggedIn,
+    useENSFetching, useGunLoggedIn,
     useENSName,
     useGunKey, useSemaphoreID,
     useWeb3Loading
 } from "../../ducks/web3";
 import Button from "../Button";
 import {useDispatch} from "react-redux";
-import {useUser} from "../../ducks/users";
+import {fetchAddressByName, useUser} from "../../ducks/users";
+import Web3 from "web3";
+import {getName} from "../../util/user";
 
 export default function TopNav(): ReactElement {
     const account = useAccount();
-    const loggedIn = useENSLoggedIn();
+    const loggedIn = useGunLoggedIn();
     const ensName = useENSName();
     const gunKey = useGunKey();
     const web3Loading = useWeb3Loading();
@@ -29,15 +29,6 @@ export default function TopNav(): ReactElement {
 
     const showRegisterInterrepButton = !loggedIn && account && semaphoreId.commitment && !semaphoreId.identityPath;
     const showRegisterENSButton = !showRegisterInterrepButton && !loggedIn && account && !web3Loading && !ensFetching && !ensName;
-    const showAddTextRecordButton = !loggedIn && account && !web3Loading && !ensFetching && ensName && !gunKey.pub;
-
-    const updateTextRecord = useCallback(async () => {
-        const gunPair: any = await dispatch(generateGunKeyPair(0));
-
-        if (gunPair.pub) {
-            await dispatch(addGunKeyToTextRecord(gunPair.pub));
-        }
-    }, [])
 
     return (
         <div
@@ -59,6 +50,8 @@ export default function TopNav(): ReactElement {
                     <Route path="/tag/:tagName" component={TagHeaderGroup} />
                     <Route path="/:name/status/:hash" component={PostHeaderGroup} />
                     <Route path="/post/:hash" component={PostHeaderGroup} />
+                    <Route path="/signup" component={DefaultHeaderGroup} />
+                    <Route path="/notification" component={DefaultHeaderGroup} />
                     <Route path="/:name" component={UserProfileHeaderGroup} />
                     <Route>
                         <DefaultHeaderGroup />
@@ -78,26 +71,16 @@ export default function TopNav(): ReactElement {
                         </Button>
                     )
                 }
-                {
-                    showRegisterENSButton && (
-                        <Button
-                            className="mr-2 border border-yellow-300 bg-yellow-50 text-yellow-500"
-                            onClick={() => window.open(`https://app.ens.domains/address/${account}`)}
-                        >
-                            Register ENS
-                        </Button>
-                    )
-                }
-                {
-                    showAddTextRecordButton && (
-                        <Button
-                            className="mr-2 border border-yellow-300 bg-yellow-50 text-yellow-500"
-                            onClick={updateTextRecord}
-                        >
-                            Create Record
-                        </Button>
-                    )
-                }
+                {/*{*/}
+                {/*    showRegisterENSButton && (*/}
+                {/*        <Button*/}
+                {/*            className="mr-2 border border-yellow-300 bg-yellow-50 text-yellow-500"*/}
+                {/*            onClick={() => window.open(`https://app.ens.domains/address/${account}`)}*/}
+                {/*        >*/}
+                {/*            Register ENS*/}
+                {/*        </Button>*/}
+                {/*    )*/}
+                {/*}*/}
                 <Web3Button
                     className={classNames("rounded-xl top-nav__web3-btn", {
                         'border border-gray-200': account,
@@ -109,8 +92,9 @@ export default function TopNav(): ReactElement {
 }
 
 function DefaultHeaderGroup() {
-    const loggedIn = useENSLoggedIn();
+    const loggedIn = useGunLoggedIn();
     const ensName = useENSName();
+    const account = useAccount();
 
     return (
         <div
@@ -123,7 +107,7 @@ function DefaultHeaderGroup() {
             )}
         >
             <TopNavIcon fa="fas fa-home" pathname="/home" disabled={!loggedIn} />
-            <TopNavIcon fa="fas fa-user" pathname={`/${ensName}/`} disabled={!loggedIn} />
+            <TopNavIcon fa="fas fa-user" pathname={`/${ensName || account}/`} disabled={!loggedIn} />
             <TopNavIcon fa="fas fa-globe-asia" pathname="/explore" />
             {/*<TopNavIcon fa="fas fa-bell" pathname="/notifications" />*/}
         </div>
@@ -132,8 +116,22 @@ function DefaultHeaderGroup() {
 
 function UserProfileHeaderGroup() {
     const {name} = useParams<{ name: string }>();
+    const [username, setUsername] = useState('');
+
+    const dispatch = useDispatch();
+    const user = useUser(username);
+
+    useEffect(() => {
+        (async () => {
+            if (!Web3.utils.isAddress(name)) {
+                const address: any = await dispatch(fetchAddressByName(name));
+                setUsername(address);
+            } else {
+                setUsername(name);
+            }
+        })();
+    }, [name]);
     const history = useHistory();
-    const user = useUser(name);
 
     const goBack = useCallback(() => {
         if (history.action !== 'POP') return history.goBack();
@@ -160,10 +158,10 @@ function UserProfileHeaderGroup() {
                     className="flex flex-col flex-nowrap justify-center ml-2"
                 >
                     <div className="font-bold text-lg profile-header-group__title">
-                        {user?.name || name}
+                        {getName(user)}
                     </div>
                     <div className="text-xs text-gray-500 profile-header-group__subtitle">
-                        {user?.meta.postingCount || 0} Posts
+                        {user?.meta?.postingCount || 0} Posts
                     </div>
                 </div>
             </div>

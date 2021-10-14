@@ -1,0 +1,13 @@
+@import "../../util/variable";
+
+.signup {
+  width: 32rem;
+  max-height: 40rem;
+  height: fit-content;
+
+  &__profile-content {
+    flex: 1 1 auto;
+    height: 28rem;
+    overflow-y: auto;
+  }
+}

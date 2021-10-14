@@ -1,22 +1,22 @@
-import React, {ReactElement, useEffect} from "react";
-import {Redirect, Route, Switch} from "react-router";
+import React, {ReactElement, ReactNode, useEffect} from "react";
+import {Redirect, Route, RouteProps, Switch} from "react-router";
 import TopNav from "../../components/TopNav";
-import GlobalFeed from "../../components/GlobalFeed";
+import GlobalFeed from "../GlobalFeed";
 import "./app.scss";
-import {connectWeb3, useENSLoggedIn, web3Modal} from "../../ducks/web3";
+import {connectWeb3, useGunLoggedIn, web3Modal} from "../../ducks/web3";
 import {useDispatch} from "react-redux";
-import PostView from "../../components/PostView";
-import ProfileView from "../../components/ProfileView";
-import HomeFeed from "../../components/HomeFeed";
+import PostView from "../PostView";
+import ProfileView from "../ProfileView";
+import HomeFeed from "../HomeFeed";
 import DiscoverUserPanel from "../../components/DiscoverUserPanel";
-import {SnapshotAdminPanel, SnapshotMemberPanel} from "../../components/SnapshotPanels";
 import TagFeed from "../../components/TagFeed";
 import DiscoverTagPanel from "../../components/DiscoverTagPanel";
 import Icon from "../../components/Icon";
+import SignupView from "../SignupView";
 
 export default function App(): ReactElement {
     const dispatch = useDispatch();
-    const loggedIn = useENSLoggedIn();
+    const loggedIn = useGunLoggedIn();
 
     useEffect(() => {
         (async function onAppMount() {
@@ -43,21 +43,13 @@ export default function App(): ReactElement {
                     <Route path="/post/:hash">
                         <PostView />
                     </Route>
-                    {
-                        !loggedIn
-                            ? (
-                                <Route path="/home">
-                                    <Redirect to="/" />
-                                </Route>
-                            )
-                            : (
-                                <Route path="/home">
-                                    <HomeFeed />
-                                </Route>
-                            )
-                    }
-
-                    <Route path="/notifications"></Route>
+                    <AuthRoute path="/home">
+                        <HomeFeed />
+                    </AuthRoute>
+                    <Route path="/notifications" />
+                    <Route path="/signup">
+                        <SignupView />
+                    </Route>
                     <Route path="/:name">
                         <ProfileView />
                     </Route>
@@ -65,75 +57,80 @@ export default function App(): ReactElement {
                         <Redirect to="/explore" />
                     </Route>
                 </Switch>
-                <div className="app__meta-content mobile-hidden">
-                    <Switch>
-                        <Route path="/explore">
-                            <DiscoverUserPanel key="discover-user" />
-                            <DiscoverTagPanel key="discover-tag" />
-                        </Route>
-                        <Route path="/:name/status/:hash">
-                            <DiscoverUserPanel key="discover-user" />
-                            <DiscoverTagPanel key="discover-tag" />
-                        </Route>
-                        <Route path="/post/:hash">
-                            <DiscoverUserPanel key="discover-user" />
-                            <DiscoverTagPanel key="discover-tag" />
-                        </Route>
-                        <Route path="/tag/:tagName">
-                            <DiscoverUserPanel key="discover-user" />
-                            <DiscoverTagPanel key="discover-tag" />
-                        </Route>
-                        <Route path="/home">
-                            <DiscoverUserPanel key="discover-user" />
-                            <DiscoverTagPanel key="discover-tag" />
-                        </Route>
-                        <Route path="/notifications"></Route>
-                        <Route path="/:name">
-                            <DiscoverUserPanel key="discover-user" />
-                            <DiscoverTagPanel key="discover-tag" />
-                        </Route>
-                        <Route path="/">
-                            <Redirect to="/explore" />
-                        </Route>
-                    </Switch>
-                    <div className="app__meta-content__footer p-2 my-2 flex flex-row">
-                        <div className="text-gray-500 text-xs flex flex-row flex-nowrap mr-4 items-center">
-                            <Icon className="mr-2" fa="fab fa-github" />
-                            <a
-                                className="text-gray-500"
-                                href="https://github.com/autism-org"
-                                target="_blank"
-                            >
-                                Github
-                            </a>
-                        </div>
-                        <div className="text-gray-500 text-xs flex flex-row flex-nowrap mr-4 items-center">
-                            <Icon className="mr-2" fa="fab fa-twitter" />
-                            <a
-                                className="text-gray-500"
-                                href="https://twitter.com/AutismDev"
-                                target="_blank"
-                            >
-                                Twitter
-                            </a>
-                        </div>
-                        <div className="text-gray-500 text-xs flex flex-row flex-nowrap items-center">
-                            <Icon className="mr-2" fa="fab fa-discord" />
-                            <a
-                                className="text-gray-500"
-                                href="https://discord.com/invite/GVP9MghwXc"
-                                target="_blank"
-                            >
-                                Discord
-                            </a>
-                        </div>
-                        {/*<Icon*/}
-                        {/*    className="text-gray-300 hover:text-gray-600 transition-colors cursor-pointer"*/}
-                        {/*    fa="fab fa-github"*/}
-                        {/*/>*/}
-                    </div>
-                </div>
+                <Switch>
+                    <Route path="/explore" component={DefaultMetaPanels} />
+                    <Route path="/:name/status/:hash" component={DefaultMetaPanels} />
+                    <Route path="/post/:hash" component={DefaultMetaPanels} />
+                    <Route path="/tag/:tagName" component={DefaultMetaPanels} />
+                    <Route path="/home" component={DefaultMetaPanels} />
+                    <Route path="/notifications" />
+                    <Route path="/signup" />
+                    <Route path="/:name" component={DefaultMetaPanels} />
+                    <Route path="/">
+                        <Redirect to="/explore" />
+                    </Route>
+                </Switch>
             </div>
         </div>
     )
+}
+
+function AuthRoute(props: {
+    redirect?: string;
+} & RouteProps): ReactElement {
+    const { redirect = '/', ...routeProps} = props;
+    const loggedIn = useGunLoggedIn();
+
+    if (loggedIn) {
+        return (
+            <Route {...routeProps} />
+        )
+    }
+
+    return (
+        <Route {...routeProps}>
+            <Redirect to={redirect} />
+        </Route>
+    )
+}
+
+function DefaultMetaPanels(): ReactElement {
+    return (
+        <div className="app__meta-content mobile-hidden">
+            <DiscoverUserPanel key="discover-user" />
+            <DiscoverTagPanel key="discover-tag" />
+            <div className="app__meta-content__footer p-2 my-2 flex flex-row">
+                <div className="text-gray-500 text-xs flex flex-row flex-nowrap mr-4 items-center">
+                    <Icon className="mr-2" fa="fab fa-github" />
+                    <a
+                        className="text-gray-500"
+                        href="https://github.com/autism-org"
+                        target="_blank"
+                    >
+                        Github
+                    </a>
+                </div>
+                <div className="text-gray-500 text-xs flex flex-row flex-nowrap mr-4 items-center">
+                    <Icon className="mr-2" fa="fab fa-twitter" />
+                    <a
+                        className="text-gray-500"
+                        href="https://twitter.com/AutismDev"
+                        target="_blank"
+                    >
+                        Twitter
+                    </a>
+                </div>
+                <div className="text-gray-500 text-xs flex flex-row flex-nowrap items-center">
+                    <Icon className="mr-2" fa="fab fa-discord" />
+                    <a
+                        className="text-gray-500"
+                        href="https://discord.com/invite/GVP9MghwXc"
+                        target="_blank"
+                    >
+                        Discord
+                    </a>
+                </div>
+            </div>
+        </div>
+    );
 }

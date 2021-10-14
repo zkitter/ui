@@ -1,10 +1,11 @@
-import React, {ReactElement, useEffect} from "react";
+import React, {ReactElement, useEffect, useState} from "react";
 import makeBlockie from 'ethereum-blockies-base64';
 import classNames from "classnames";
 import Icon from "../Icon";
 import {fetchAddressByName, getUser, useUser} from "../../ducks/users";
 import {useDispatch} from "react-redux";
 import {useSpace} from "../../ducks/snapshot";
+import Web3 from "web3";
 
 type Props = {
     name?: string;
@@ -25,15 +26,27 @@ export default function Avatar(props: Props): ReactElement {
         className,
     } = props;
 
-    const user = useUser(name);
+    const [username, setUsername] = useState('');
+
     const dispatch = useDispatch();
+    const user = useUser(username);
 
     useEffect(() => {
-        if (name) {
-            dispatch(getUser(name));
-            dispatch(fetchAddressByName(name));
+        (async () => {
+            if (name && !Web3.utils.isAddress(name)) {
+                const addr: any = await dispatch(fetchAddressByName(name));
+                setUsername(addr);
+            } else if (address) {
+                setUsername(address);
+            }
+        })();
+    }, [name, address]);
+
+    useEffect(() => {
+        if (username) {
+            dispatch(getUser(username));
         }
-    }, [name]);
+    }, [username]);
 
     if (incognito) {
         return (
@@ -51,7 +64,7 @@ export default function Avatar(props: Props): ReactElement {
         )
     }
 
-    if (!user && !address) {
+    if (!user) {
         return (
             <div
                 className={classNames(
@@ -68,12 +81,9 @@ export default function Avatar(props: Props): ReactElement {
 
     let imageUrl = user?.profileImage;
 
-    if (!user?.profileImage && user?.address) {
-        imageUrl = CACHE[user.address] ? CACHE[user.address] : makeBlockie(user.address);
-        CACHE[user?.address] = imageUrl;
-    } else if (address) {
-        imageUrl = CACHE[address] ? CACHE[address] : makeBlockie(address);
-        CACHE[address] = imageUrl;
+    if (!user?.profileImage && username) {
+        imageUrl = CACHE[username] ? CACHE[username] : makeBlockie(username);
+        CACHE[username] = imageUrl;
     }
 
     if (imageUrl) {
