@@ -22,7 +22,7 @@ const createStoreWithMiddleware = process.env.NODE_ENV === 'development'
     ? applyMiddleware(
         thunk,
         createLogger({
-            collapsed: (getState, action) => [''].includes(action.type),
+            collapsed: true,
         }),
         save({
             states: ['web3.pending.createRecordTx'],

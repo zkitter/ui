@@ -18,13 +18,13 @@ import {submitConnection, submitProfile} from "../../ducks/drafts";
 import {ConnectionMessageSubType, ProfileMessageSubType} from "../../util/message";
 import Avatar from "../../components/Avatar";
 import EtherScanSVG from "../../../static/icons/etherscan-logo-gray-500.svg";
-import SnapshotLogoSVG from "../../../static/icons/snapshot-logo-bw.svg";
 import InfiniteScrollable from "../../components/InfiniteScrollable";
 import Menuable from "../../components/Menuable";
-import {fetchProposals} from "../../ducks/snapshot";
 import Web3 from "web3";
 import {getHandle, getName} from "../../util/user";
 import config from "../../util/config";
+
+let t: any = null;
 
 export default function ProfileView(): ReactElement {
     const {name} = useParams<{name: string}>();
@@ -52,17 +52,11 @@ export default function ProfileView(): ReactElement {
         })();
     }, [name]);
 
-    useEffect(() => {
-        (async function onProfileViewViewMount() {
-            setOrder([]);
-            setOffset(0);
-            await dispatch(getUser(username));
-            await fetchMore(true);
-        })();
-    }, [username, loggedIn, subpath]);
-
     const fetchMore = useCallback(async (reset = false) => {
+        if (!username) return;
+
         setFetching(true);
+
         let fetchFn: any = fetchPosts;
 
         if (subpath === 'likes') {
@@ -84,6 +78,26 @@ export default function ProfileView(): ReactElement {
 
         setFetching(false);
     }, [limit, offset, order, username, subpath]);
+
+    useEffect(() => {
+        (async function onProfileViewViewMount() {
+            setOrder([]);
+            setOffset(0);
+
+            if (t) {
+                clearTimeout(t);
+            }
+
+            t = setTimeout(() => {
+                fetchMore(true);
+                t = null;
+            }, 100);
+
+            if (username) {
+                dispatch(getUser(username));
+            }
+        })();
+    }, [loggedIn, subpath, username]);
 
     return (
         <InfiniteScrollable
