@@ -9,7 +9,7 @@ import {ThunkDispatch} from "redux-thunk";
 import {Dispatch} from "redux";
 import Web3Modal from "web3modal";
 import {generateGunKeyPairFromHex, validateGunPublicKey,} from "../util/crypto";
-import {defaultENS, defaultWeb3} from "../util/web3";
+import {defaultENS, defaultWeb3, fetchNameByAddress} from "../util/web3";
 import gun, {authenticateGun} from "../util/gun";
 import semethid from "@interrep/semethid";
 import config from "../util/config";
@@ -464,18 +464,7 @@ export const lookupENS = () => async (dispatch: Dispatch, getState: () => AppRoo
     if (!account) return;
 
     try {
-        const {name} = await defaultENS.getName(account);
-
-        if (name) {
-            const text = await defaultENS.name(name).getText('gun.social');
-
-            if (await validateGunPublicKey(text)) {
-                dispatch({
-                    type: ActionTypes.SET_SOCIAL_KEY,
-                    payload: text,
-                });
-            }
-        }
+        const name = await fetchNameByAddress(account);
 
         if (name !== '0x0000000000000000000000000000000000000000') {
             dispatch(setENSName(name || ''));
@@ -604,6 +593,10 @@ export const useLoggedIn = () => {
             semaphore,
         } = state.web3;
 
+        const { worker: { unlocked } } = state;
+
+        if (unlocked) return true;
+
         const hasGun = !!gun.priv && !!gun.pub;
         const hasSemaphore = !!semaphore.keypair.privKey
             && !!semaphore.keypair.pubKey
@@ -628,6 +621,12 @@ export const useGunLoggedIn = () => {
             gun,
         } = state.web3;
 
+        const { unlocked, selected, identities } = state.worker;
+
+        if (unlocked && selected && identities.find(id => id.publicKey === selected)) {
+            return true;
+        }
+
         const hasGun = !!gun.priv && !!gun.pub;
         return !!(web3 && account && gun.joinedTx && (hasGun));
     }, deepEqual);
@@ -636,12 +635,21 @@ export const useGunLoggedIn = () => {
 export const useAccount = (opt?: { uppercase?: boolean }) => {
     return useSelector((state: AppRootState) => {
         const account = state.web3.account;
+        const {selected, identities, unlocked} = state.worker;
+        let address = account;
 
-        if (!account) return '';
+        if (unlocked) {
+            const selectedId = identities.find(id => id.publicKey === selected);
+            if (selectedId) {
+                address = selectedId.address;
+            }
+        }
+
+        if (!address) return '';
 
         return opt?.uppercase
-            ? `0x${state.web3.account.slice(-40).toUpperCase()}`
-            : state.web3.account;
+            ? `0x${address.slice(-40).toUpperCase()}`
+            : address;
     }, deepEqual);
 }
 
@@ -709,8 +717,12 @@ export const useHasLocal = () => {
     return useSelector((state: AppRootState) => {
         const {
             web3: { account },
-            worker: { identities },
+            worker: { identities, unlocked, selected },
         } = state;
+
+        if (unlocked && selected) {
+            return true;
+        }
 
         if (!account) return false;
 

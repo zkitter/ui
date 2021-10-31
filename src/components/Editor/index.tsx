@@ -109,9 +109,7 @@ export default function Editor(props: Props): ReactElement {
                     Connect to a wallet to make a post
                 </div>
                 <Web3Button
-                    className={classNames("rounded-xl", {
-                        'border border-gray-100': address,
-                    })}
+                    className={classNames("rounded-xl border border-gray-100")}
                 />
             </div>
         )

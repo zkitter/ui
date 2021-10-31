@@ -1,4 +1,4 @@
-import React, {ReactElement, useCallback, useState} from "react";
+import React, {ReactElement, useCallback, useEffect, useState} from "react";
 import "./web3-btn.scss";
 import Button from "../Button";
 import {
@@ -18,14 +18,18 @@ import {useDispatch} from "react-redux";
 import classNames from "classnames";
 import Avatar from "../Avatar";
 import Icon from "../Icon";
-import Menuable from "../Menuable";
+import Menuable, {ItemProps} from "../Menuable";
 import ENSLogoSVG from "../../../static/icons/ens-logo.svg";
 import TwitterLogoSVG from "../../../static/icons/twitter.svg";
 import RedditLogoSVG from "../../../static/icons/reddit.svg";
 import GithubLogoPNG from "../../../static/icons/github.png";
 import SpinnerGIF from "../../../static/icons/spinner.gif";
 import gun from "../../util/gun";
-import {useHistory, useLocation} from "react-router";
+import {useHistory} from "react-router";
+import {ellipsify} from "../../util/user";
+import {useIdentities, useSelectedLocalId, useWorkerUnlocked} from "../../ducks/worker";
+import LoginModal from "../LoginModal";
+import {fetchNameByAddress} from "../../util/web3";
 
 type Props = {
     onConnect?: () => Promise<void>;
@@ -36,36 +40,26 @@ type Props = {
 
 export default function Web3Button(props: Props): ReactElement {
     const account = useAccount({ uppercase: true });
-    const ensName = useENSName();
+    // const ensName = useENSName();
     const web3Loading = useWeb3Loading();
     const semaphoreId = useSemaphoreID();
     const dispatch = useDispatch();
+    const ids = useIdentities();
+    const selectedLocalId = useSelectedLocalId();
+    const [ensName, setEnsName] = useState('');
+
+    useEffect(() => {
+        (async () => {
+            const address = selectedLocalId?.address || account;
+            const ens = await fetchNameByAddress(address);
+            setEnsName(ens);
+        })();
+    }, [account, selectedLocalId]);
 
     const disconnect = useCallback(async () => {
         await dispatch(setWeb3(null, ''));
         return props.onDisconnect && props.onDisconnect();
     }, []);
-
-    const connect = useCallback(async () => {
-        await dispatch(connectWeb3());
-        return props.onConnect && props.onConnect();
-    }, []);
-
-    if (!account) {
-        return (
-            <Button
-                className={classNames(
-                    'font-semibold',
-                    'web3-button',
-                    props.className,
-                )}
-                onClick={connect}
-                disabled={web3Loading}
-            >
-                Connect to a wallet
-            </Button>
-        );
-    }
 
     let btnContent;
 
@@ -83,11 +77,24 @@ export default function Web3Button(props: Props): ReactElement {
                 <Avatar className="ml-2" name={ensName} />
             </>
         )
+    } else if (selectedLocalId) {
+        btnContent = (
+            <>
+                <div>{ellipsify(selectedLocalId.address)}</div>
+                <Avatar className="ml-2" address={selectedLocalId.address} />
+            </>
+        )
+    } else if (account) {
+        btnContent = (
+            <>
+                <div>{ellipsify(account)}</div>
+                <Avatar className="ml-2" address={account} />
+            </>
+        )
     } else {
         btnContent = (
             <>
-                <div>{`${account.slice(0, 6)}...${account.slice(-4)}`}</div>
-                <Avatar className="ml-2" address={account} />
+                <div>Connect to a wallet</div>
             </>
         )
     }
@@ -100,7 +107,7 @@ export default function Web3Button(props: Props): ReactElement {
                 props.className,
             )}
         >
-            <Web3ButtonAction {...props} />
+            <Web3ButtonLeft {...props} />
             <Button
                 className={classNames(
                     'text-black',
@@ -120,39 +127,12 @@ export default function Web3Button(props: Props): ReactElement {
     )
 }
 
-function Web3ButtonAction(props: Props): ReactElement {
-    const account = useAccount({ uppercase: true });
-    const gunNonce = useGunNonce();
+function Web3ButtonLeft(props: Props): ReactElement {
     const web3Loading = useWeb3Loading();
-    const web3Unlocking = useWeb3Unlocking();
     const gunPair = useGunKey();
     const loggedIn = useLoggedIn();
     const dispatch = useDispatch();
-    const history = useHistory();
-
     const [opened, setOpened] = useState(false);
-
-    const genGunKey = useCallback(async () => {
-        try {
-            await dispatch(loginGun(gunNonce));
-        } catch (e) {
-            if (e === UserNotExistError) {
-                history.push('/signup');
-                setOpened(false);
-            }
-        }
-    }, [gunNonce]);
-
-    const gotoSignup = useCallback(async () => {
-        history.push('/signup');
-        setOpened(false);
-    }, []);
-
-    const unlockSemaphore = useCallback(async (
-        web2Provider: 'Twitter' | 'Github' | 'Reddit',
-    ) => {
-        await dispatch(genSemaphore(web2Provider));
-    }, []);
 
     const lock = useCallback(async () => {
         gun.user().leave();
@@ -170,72 +150,15 @@ function Web3ButtonAction(props: Props): ReactElement {
         setOpened(false);
     }, []);
 
-    if (!loggedIn && !web3Loading) {
-        if (!gunPair.priv) {
-            return (
-                <Menuable
-                    menuClassName="web3-button__unlock-menu"
-                    onOpen={() => setOpened(true)}
-                    onClose={() => setOpened(false)}
-                    opened={opened}
-                    items={[
-                        {
-                            label: !gunPair.joinedTx ? 'Signup' : 'Login',
-                            iconFA: 'fas fa-wallet',
-                            onClick: !gunPair.joinedTx ? gotoSignup : genGunKey,
-                            disabled: web3Loading,
-                        },
-                        {
-                            label: 'Incognito (Beta)',
-                            iconFA: 'fas fa-user-secret',
-                            children: [
-                                {
-                                    label: 'Twitter',
-                                    iconUrl: TwitterLogoSVG,
-                                    onClick: () => unlockSemaphore('Twitter'),
-                                },
-                                {
-                                    label: 'Github',
-                                    iconUrl: GithubLogoPNG,
-                                    onClick: () => unlockSemaphore('Github'),
-                                },
-                                {
-                                    label: 'Reddit',
-                                    iconUrl: RedditLogoSVG,
-                                    onClick: () => unlockSemaphore('Reddit'),
-                                },
-                            ],
-                        }
-                    ]}
-                >
-                    <div
-                        className={classNames(
-                            "flex flex-row flex-nowrap items-center",
-                            "web3-button__alt-action",
-                        )}
-                    >
-                        {
-                            web3Unlocking
-                                ? <Icon url={SpinnerGIF} size={2} />
-                                : (
-                                    <Icon
-                                        className={classNames(
-                                            "hover:text-green-500 transition-colors",
-                                            {
-                                                "text-green-500": opened,
-                                            }
-                                        )}
-                                        fa={classNames({
-                                            "fas fa-unlock": opened,
-                                            "fas fa-lock": !opened,
-                                        })}
-                                    />
-                                )
-                        }
-                    </div>
-                </Menuable>
-            )
-        }
+
+    if (!loggedIn) {
+        return (
+            <UnauthButton
+                {...props}
+                opened={opened}
+                setOpened={setOpened}
+            />
+        );
     }
 
     if (loggedIn || !gunPair.joinedTx) {
@@ -260,4 +183,160 @@ function Web3ButtonAction(props: Props): ReactElement {
     }
 
     return <></>;
+}
+
+function UnauthButton(props: {
+    onConnect?: () => Promise<void>;
+    opened: boolean;
+    setOpened: (opened: boolean) => void;
+}): ReactElement {
+    const { opened, setOpened } = props;
+    const account = useAccount();
+    const gunNonce = useGunNonce();
+    const web3Loading = useWeb3Loading();
+    const web3Unlocking = useWeb3Unlocking();
+    const gunPair = useGunKey();
+    const dispatch = useDispatch();
+    const history = useHistory();
+    const selectedLocalId = useSelectedLocalId();
+    const [showingLogin, setShowingLogin] = useState(false);
+
+    const connectWallet = useCallback(async () => {
+        await dispatch(connectWeb3());
+        return props.onConnect && props.onConnect();
+    }, []);
+
+    const genGunKey = useCallback(async () => {
+        try {
+            await dispatch(loginGun(gunNonce));
+        } catch (e) {
+            if (e === UserNotExistError) {
+                history.push('/signup');
+                setOpened(false);
+            }
+        }
+    }, [gunNonce]);
+
+    const gotoSignup = useCallback(async () => {
+        history.push('/signup');
+        setOpened(false);
+    }, []);
+
+    const unlockSemaphore = useCallback(async (
+        web2Provider: 'Twitter' | 'Github' | 'Reddit',
+    ) => {
+        await dispatch(genSemaphore(web2Provider));
+    }, []);
+
+    let items: ItemProps[] = [];
+
+    if (selectedLocalId) {
+        items.push({
+            label: 'Local Storage',
+            iconFA: 'fas fa-folder',
+            onClick: () => setShowingLogin(true),
+        });
+    }
+
+    if (account) {
+        items = items.concat([
+            {
+                label: 'Wallet',
+                iconFA: 'fas fa-wallet',
+                onClick: !gunPair.joinedTx ? gotoSignup : genGunKey,
+                disabled: web3Loading,
+            },
+            {
+                label: 'Incognito (Beta)',
+                iconFA: 'fas fa-user-secret',
+                disabled: web3Loading,
+                children: [
+                    {
+                        label: 'Twitter',
+                        iconUrl: TwitterLogoSVG,
+                        onClick: () => unlockSemaphore('Twitter'),
+                    },
+                    {
+                        label: 'Github',
+                        iconUrl: GithubLogoPNG,
+                        onClick: () => unlockSemaphore('Github'),
+                    },
+                    {
+                        label: 'Reddit',
+                        iconUrl: RedditLogoSVG,
+                        onClick: () => unlockSemaphore('Reddit'),
+                    },
+                ],
+            }
+        ]);
+    }
+
+    if (!account && !selectedLocalId) {
+        return (
+            <div
+                className={classNames(
+                    "flex flex-row flex-nowrap items-center",
+                    "web3-button__alt-action",
+                )}
+                onClick={connectWallet}
+            >
+                {
+                    !web3Loading && (
+                        <Icon
+                            className={classNames(
+                                "hover:text-green-500 transition-colors",
+                            )}
+                            fa="fas fa-plug"
+                        />
+                    )
+                }
+            </div>
+        )
+    }
+
+    return (
+        <>
+            { showingLogin && (
+                <LoginModal
+                    onClose={() => {
+                        setShowingLogin(false);
+                        setOpened(false);
+                    }}
+                />
+            )}
+            <Menuable
+                menuClassName="web3-button__unlock-menu"
+                onOpen={() => setOpened(true)}
+                onClose={() => setOpened(false)}
+                opened={opened}
+                items={items}
+            >
+                <div
+                    className={classNames(
+                        "flex flex-row flex-nowrap items-center",
+                        "web3-button__alt-action",
+                    )}
+                >
+                    {
+                        web3Unlocking
+                            ? <Icon url={SpinnerGIF} size={2} />
+                            : (
+                                <Icon
+                                    className={classNames(
+                                        "hover:text-green-500 transition-colors",
+                                        {
+                                            "text-green-500": opened,
+                                        }
+                                    )}
+                                    fa={classNames({
+                                        "fas fa-unlock": opened,
+                                        "fas fa-lock": !opened,
+                                    })}
+                                />
+                            )
+                    }
+                </div>
+            </Menuable>
+        </>
+    );
 }

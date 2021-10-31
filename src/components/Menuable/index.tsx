@@ -21,7 +21,7 @@ type MenuableProps = {
     opened?: boolean;
 }
 
-type ItemProps = {
+export type ItemProps = {
     label: string;
     iconUrl?: string;
     iconFA?: string;

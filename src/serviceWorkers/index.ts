@@ -20,6 +20,8 @@ global.addEventListener('activate', async () => {
             return;
         }
 
+        const client = e.source;
+
         // @ts-ignore
         const handler = handlers[action?.type];
         const nonce = action.nonce;
@@ -31,7 +33,7 @@ global.addEventListener('activate', async () => {
                 nonce: nonce as number,
             };
             // @ts-ignore
-            e.source.postMessage({
+            client.postMessage({
                 target: 'rpc',
                 response: resp,
             });
@@ -42,7 +44,7 @@ global.addEventListener('activate', async () => {
                 error: true,
             };
             // @ts-ignore
-            e.source.postMessage({
+            client.postMessage({
                 target: 'rpc',
                 response: resp,
             });

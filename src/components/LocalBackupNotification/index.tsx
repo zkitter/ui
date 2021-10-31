@@ -5,6 +5,7 @@ import {getIdentities, getIdentityStatus} from "../../serviceWorkers/util";
 import {useHasLocal, useLoggedIn} from "../../ducks/web3";
 import {useHistory} from "react-router";
 import {postWorkerMessage} from "../../util/sw";
+import {Identity} from "../../serviceWorkers/identity";
 
 export default function LocalBackupNotification(): ReactElement {
     const loggedIn = useLoggedIn();
@@ -12,8 +13,8 @@ export default function LocalBackupNotification(): ReactElement {
     const history = useHistory();
 
     const onCreateLocalBackup = useCallback(async () => {
-        const identities = await postWorkerMessage(getIdentities());
-        const {unlocked} = await postWorkerMessage(getIdentityStatus());
+        const identities = await postWorkerMessage<Identity[]>(getIdentities());
+        const {unlocked} = await postWorkerMessage<{unlocked: boolean}>(getIdentityStatus());
 
         if (!identities.length && !unlocked) {
             history.push('/create-local-backup');

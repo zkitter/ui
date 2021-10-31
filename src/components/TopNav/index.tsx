@@ -9,26 +9,21 @@ import {
     useENSFetching, useGunLoggedIn,
     useENSName,
     useGunKey, useSemaphoreID,
-    useWeb3Loading
 } from "../../ducks/web3";
 import Button from "../Button";
 import {useDispatch} from "react-redux";
 import {fetchAddressByName, useUser} from "../../ducks/users";
 import Web3 from "web3";
 import {getName} from "../../util/user";
+import {useSelectedLocalId, useWorkerUnlocked} from "../../ducks/worker";
+import {fetchNameByAddress} from "../../util/web3";
 
 export default function TopNav(): ReactElement {
     const account = useAccount();
     const loggedIn = useGunLoggedIn();
-    const ensName = useENSName();
-    const gunKey = useGunKey();
-    const web3Loading = useWeb3Loading();
-    const ensFetching = useENSFetching();
-    const dispatch = useDispatch();
     const semaphoreId = useSemaphoreID();
 
     const showRegisterInterrepButton = !loggedIn && account && semaphoreId.commitment && !semaphoreId.identityPath;
-    const showRegisterENSButton = !showRegisterInterrepButton && !loggedIn && account && !web3Loading && !ensFetching && !ensName;
 
     return (
         <div
@@ -72,20 +67,8 @@ export default function TopNav(): ReactElement {
                         </Button>
                     )
                 }
-                {/*{*/}
-                {/*    showRegisterENSButton && (*/}
-                {/*        <Button*/}
-                {/*            className="mr-2 border border-yellow-300 bg-yellow-50 text-yellow-500"*/}
-                {/*            onClick={() => window.open(`https://app.ens.domains/address/${account}`)}*/}
-                {/*        >*/}
-                {/*            Register ENS*/}
-                {/*        </Button>*/}
-                {/*    )*/}
-                {/*}*/}
                 <Web3Button
-                    className={classNames("rounded-xl top-nav__web3-btn", {
-                        'border border-gray-200': account,
-                    })}
+                    className={classNames("rounded-xl top-nav__web3-btn border border-gray-200")}
                 />
             </div>
         </div>
@@ -94,8 +77,22 @@ export default function TopNav(): ReactElement {
 
 function DefaultHeaderGroup() {
     const loggedIn = useGunLoggedIn();
-    const ensName = useENSName();
     const account = useAccount();
+    const selectedLocalId = useSelectedLocalId();
+    const [ensName, setEnsName] = useState('');
+
+    let address = '';
+
+    if (loggedIn) {
+        address = selectedLocalId?.address || account;
+    }
+
+    useEffect(() => {
+        (async () => {
+            const ens = await fetchNameByAddress(address);
+            setEnsName(ens);
+        })();
+    }, [address]);
 
     return (
         <div
@@ -108,7 +105,7 @@ function DefaultHeaderGroup() {
             )}
         >
             <TopNavIcon fa="fas fa-home" pathname="/home" disabled={!loggedIn} />
-            <TopNavIcon fa="fas fa-user" pathname={`/${ensName || account}/`} disabled={!loggedIn} />
+            <TopNavIcon fa="fas fa-user" pathname={`/${ensName || address}/`} disabled={!loggedIn} />
             <TopNavIcon fa="fas fa-globe-asia" pathname="/explore" />
             {/*<TopNavIcon fa="fas fa-bell" pathname="/notifications" />*/}
         </div>

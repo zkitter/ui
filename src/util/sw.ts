@@ -20,7 +20,7 @@ export async function createServiceWorker() {
                     if (!promise) return;
 
                     if (response.error) {
-                        promise.reject(response.payload);
+                        promise.reject(new Error(response.payload));
                     } else {
                         promise.resolve(response.payload);
                     }
@@ -34,7 +34,7 @@ export async function createServiceWorker() {
     })
 }
 
-export async function postWorkerMessage(workerAction: WorkerAction<any>): Promise<any> {
+export async function postWorkerMessage<data>(workerAction: WorkerAction<any>): Promise<data> {
     return new Promise((resolve, reject) => {
         navigator.serviceWorker.controller?.postMessage({
             ...workerAction,
