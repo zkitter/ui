@@ -6,8 +6,8 @@ const path = require('path');
 const isProd = process.env.NODE_ENV === 'production';
 
 const devServerEntries = [
-    'webpack-dev-server/client?http://localhost:8080',
-    'webpack/hot/only-dev-server',
+    // 'webpack-dev-server/client?http://localhost:8080',
+    // 'webpack/hot/only-dev-server',
 ];
 
 const envPlugin = new webpack.EnvironmentPlugin({
@@ -72,10 +72,19 @@ module.exports = [
     {
         target: 'web',
         mode: isProd ? 'production' : 'development',
-        entry: [
-            ...(isProd ? [] : devServerEntries),
-            `./src/app.tsx`,
-        ],
+        entry: {
+            app: path.join(__dirname, 'src', 'app.tsx'),
+            serviceWorker: path.join(__dirname, 'src', 'serviceWorkers', 'index.ts'),
+        },
+        // [
+        //     ...(isProd ? [] : devServerEntries),
+        //     `./src/app.tsx`,
+        // ],
+        output: {
+            path: __dirname + '/build',
+            publicPath: isProd ? '/' : 'http://localhost:8080/',
+            filename: `[name].js`,
+        },
         devtool: 'source-map',
         resolve: {
             extensions: ['.ts', '.tsx', '.js', '.jsx', '.png', '.svg'],
@@ -98,11 +107,6 @@ module.exports = [
                 ...rules,
                 ...rendererRules,
             ],
-        },
-        output: {
-            path: __dirname + '/build',
-            publicPath: isProd ? '/' : 'http://localhost:8080/',
-            filename: `app.js`,
         },
         plugins: [
             envPlugin,

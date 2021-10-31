@@ -6,10 +6,13 @@ import {useDispatch} from "react-redux";
 import {fetchHomeFeed, setPost, useGoToPost} from "../../ducks/posts";
 import "./home-feed.scss";
 import Editor from "../../components/Editor";
-import {useLoggedIn} from "../../ducks/web3";
+import {useHasLocal, useLoggedIn} from "../../ducks/web3";
 import {Post as PostMessage} from "../../util/message";
 import {setDraft, submitPost, useDraft, useSubmitting} from "../../ducks/drafts";
 import InfiniteScrollable from "../../components/InfiniteScrollable";
+import NotificationBox from "../../components/NotificationBox";
+import Button from "../../components/Button";
+import LocalBackupNotification from "../../components/LocalBackupNotification";
 
 export default function HomeFeed(): ReactElement {
     const [limit, setLimit] = useState(20);
@@ -17,6 +20,7 @@ export default function HomeFeed(): ReactElement {
     const [order, setOrder] = useState<string[]>([]);
     const dispatch = useDispatch();
     const loggedIn = useLoggedIn();
+    const hasLocalBackup = useHasLocal();
 
     useEffect(() => {
         (async function onGlobalFeedMount() {
@@ -55,6 +59,7 @@ export default function HomeFeed(): ReactElement {
             bottomOffset={128}
             onScrolledToBottom={fetchMore}
         >
+            <LocalBackupNotification />
             <PostEditor onSuccessPost={onSuccessPost} />
             {
                 order.map((messageId, i) => {
@@ -71,7 +76,7 @@ export default function HomeFeed(): ReactElement {
             }
         </InfiniteScrollable>
     );
-}
+};
 
 function PostEditor(props: {
     onSuccessPost: (post: PostMessage) => void;

@@ -3,27 +3,19 @@ import {useSelector} from "react-redux";
 import deepEqual from "fast-deep-equal";
 import {AppRootState} from "../store/configureAppStore";
 import {Subscription} from "web3-core-subscriptions";
-import {Identity } from 'libsemaphore';
-import {
-    OrdinarySemaphore,
-} from "semaphore-lib";
+import {Identity} from 'libsemaphore';
+import {OrdinarySemaphore,} from "semaphore-lib";
 import {ThunkDispatch} from "redux-thunk";
-const {
-    default: ENS,
-    getEnsAddress,
-} = require('@ensdomains/ensjs');
 import {Dispatch} from "redux";
 import Web3Modal from "web3modal";
-import {
-    generateGunKeyPairFromHex,
-    validateGunPublicKey,
-} from "../util/crypto";
+import {generateGunKeyPairFromHex, validateGunPublicKey,} from "../util/crypto";
 import {defaultENS, defaultWeb3} from "../util/web3";
 import gun, {authenticateGun} from "../util/gun";
 import semethid from "@interrep/semethid";
 import config from "../util/config";
-import {getUser, User} from "./users";
-import {getIdentityHash, hashPubKey} from "../util/arb3";
+import {getUser} from "./users";
+import {getIdentityHash} from "../util/arb3";
+
 OrdinarySemaphore.setHasher('poseidon');
 
 export const web3Modal = new Web3Modal({
@@ -243,22 +235,54 @@ export const fetchJoinedTx = (account: string) => async (
     }
 }
 
+const reset = () => (dispatch: Dispatch) => {
+    dispatch(setAccount(''));
+    dispatch(setNetwork(''));
+    dispatch(setENSName(''));
+    dispatch(setJoinedTx(''));
+    dispatch(setGunPublicKey(''));
+    dispatch(setGunPrivateKey(''));
+    dispatch(setSemaphoreID({
+        keypair: {
+            pubKey: '',
+            privKey: null,
+        },
+        identityNullifier: null,
+        identityTrapdoor: null,
+        commitment: null,
+    }));
+}
+
+const refreshAccount = () => async (
+    dispatch: ThunkDispatch<any, any, any>,
+    getState: () => AppRootState,
+) => {
+    const { web3: { web3 } } = getState();
+
+    if (!web3) {
+        dispatch(reset());
+        return;
+    }
+
+    const [account] = await web3.eth.getAccounts();
+
+    if (account) {
+        dispatch(setAccount(account));
+        await dispatch(fetchJoinedTx(account))
+        await dispatch(lookupENS());
+    }
+}
+
 export const setWeb3 = (web3: Web3 | null, account: string) => async (
     dispatch: ThunkDispatch<any, any, any>,
 ) => {
-    dispatch(fetchJoinedTx(account))
-    dispatch(setAccount(account));
-
     dispatch({
         type: ActionTypes.SET_WEB3,
         payload: web3,
     });
 
     if (!web3) {
-        dispatch(setAccount(''));
-        dispatch(setNetwork(''));
-        dispatch(setENSName(''));
-        dispatch(setJoinedTx(''));
+        dispatch(reset());
         return;
     }
 
@@ -270,50 +294,29 @@ export const setWeb3 = (web3: Web3 | null, account: string) => async (
 
     const networkType = await web3.eth.net.getNetworkType();
 
-    dispatch(lookupENS());
-
-    dispatch({
-        type: ActionTypes.SET_NETWORK,
-        payload: networkType,
-    });
+    await dispatch(refreshAccount());
+    dispatch(setNetwork(networkType));
 
     // @ts-ignore
     web3.currentProvider.on('accountsChanged', async ([acct]) => {
         const account = Web3.utils.toChecksumAddress(acct);
-        dispatch(setGunPublicKey(''));
-        dispatch(dispatch(setJoinedTx('')));
-        dispatch(setGunPrivateKey(''));
-        dispatch(setSemaphoreID({
-            keypair: {
-                pubKey: '',
-                privKey: null,
-            },
-            identityNullifier: null,
-            identityTrapdoor: null,
-            commitment: null,
-        }));
+        dispatch(reset());
         dispatch(setWeb3Loading(true));
         const gunUser = gun.user();
+
         // @ts-ignore
         if (gunUser.is) {
             gunUser.leave();
         }
-        dispatch(setAccount(account));
-        const user: any = await dispatch(getUser(account));
-        if (user?.joinedTx) {
-            dispatch(setJoinedTx(user.joinedTx));
-        }
-        await dispatch(lookupENS());
+
+        await dispatch(refreshAccount());
         dispatch(setWeb3Loading(false));
     });
 
     // @ts-ignore
-    web3.currentProvider.on('networkChanged', async () => {
+    web3.currentProvider.on('chainChanged', async () => {
         const networkType = await web3.eth.net.getNetworkType();
-        dispatch({
-            type: ActionTypes.SET_NETWORK,
-            payload: networkType,
-        });
+        dispatch(setNetwork(networkType));
     });
 }
 
@@ -699,5 +702,18 @@ export const useSemaphoreNonce = (): number => {
 export const useNetworkType = () => {
     return useSelector((state: AppRootState) => {
         return state.web3.networkType;
+    }, deepEqual);
+}
+
+export const useHasLocal = () => {
+    return useSelector((state: AppRootState) => {
+        const {
+            web3: { account },
+            worker: { identities },
+        } = state;
+
+        if (!account) return false;
+
+        return !!identities.find(({ address }) => address === account);
     }, deepEqual);
 }

@@ -16,9 +16,8 @@ import "./post-view.scss";
 import {useDispatch} from "react-redux";
 import Thread from "../../components/Thread";
 import ParentThread from "../../components/ParentThread";
-import {parseMessageId, Post as PostMessage, PostMessageSubType} from "../../util/message";
+import {Post as PostMessage, PostMessageSubType} from "../../util/message";
 import {useENSName, useLoggedIn} from "../../ducks/web3";
-import {fetchProposal} from "../../ducks/snapshot";
 
 type Props = {
 

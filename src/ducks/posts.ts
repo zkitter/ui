@@ -9,8 +9,6 @@ import config from "../util/config";
 import {Dispatch} from "redux";
 import {useHistory} from "react-router";
 import {useCallback} from "react";
-import {fetchProposal} from "./snapshot";
-import {parse} from "gun/examples/react-native/src/webview-crypto/serializeBinary";
 
 enum ActionTypes {
     SET_POSTS = 'posts/setPosts',

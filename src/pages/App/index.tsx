@@ -1,4 +1,4 @@
-import React, {ReactElement, ReactNode, useEffect} from "react";
+import React, {ReactElement, useEffect} from "react";
 import {Redirect, Route, RouteProps, Switch} from "react-router";
 import TopNav from "../../components/TopNav";
 import GlobalFeed from "../GlobalFeed";
@@ -12,18 +12,35 @@ import DiscoverUserPanel from "../../components/DiscoverUserPanel";
 import TagFeed from "../../components/TagFeed";
 import DiscoverTagPanel from "../../components/DiscoverTagPanel";
 import Icon from "../../components/Icon";
-import SignupView from "../SignupView";
+import SignupView, {ViewType} from "../SignupView";
+import {syncWorker} from "../../ducks/worker";
+import store from "../../store/configureAppStore";
 
 export default function App(): ReactElement {
     const dispatch = useDispatch();
-    const loggedIn = useGunLoggedIn();
 
     useEffect(() => {
         (async function onAppMount() {
+
+            dispatch(syncWorker());
+
             if (web3Modal.cachedProvider) {
                 await dispatch(connectWeb3());
             }
         })();
+    }, []);
+
+    useEffect(() => {
+        navigator.serviceWorker.addEventListener('message', event => {
+            const data = event.data;
+
+            if (!data) return;
+
+            if (data.target === 'redux') {
+                const action = data.action;
+                dispatch(action);
+            }
+        });
     }, []);
 
     return (
@@ -47,6 +64,9 @@ export default function App(): ReactElement {
                         <HomeFeed />
                     </AuthRoute>
                     <Route path="/notifications" />
+                    <Route path="/create-local-backup">
+                        <SignupView viewType={ViewType.localBackup} />
+                    </Route>
                     <Route path="/signup">
                         <SignupView />
                     </Route>
@@ -64,11 +84,9 @@ export default function App(): ReactElement {
                     <Route path="/tag/:tagName" component={DefaultMetaPanels} />
                     <Route path="/home" component={DefaultMetaPanels} />
                     <Route path="/notifications" />
+                    <Route path="/create-local-backup" />
                     <Route path="/signup" />
                     <Route path="/:name" component={DefaultMetaPanels} />
-                    <Route path="/">
-                        <Redirect to="/explore" />
-                    </Route>
                 </Switch>
             </div>
         </div>

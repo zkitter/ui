@@ -6,14 +6,14 @@ import users from "../ducks/users";
 import drafts from "../ducks/drafts";
 import thunk from "redux-thunk";
 import {createLogger} from "redux-logger";
-import snapshot from "../ducks/snapshot";
+import worker from "../ducks/worker";
 
 const rootReducer = combineReducers({
     web3,
     posts,
     users,
     drafts,
-    snapshot,
+    worker,
 });
 
 export type AppRootState = ReturnType<typeof rootReducer>;
@@ -36,7 +36,7 @@ const createStoreWithMiddleware = process.env.NODE_ENV === 'development'
     )(createStore);
 
 
-export default function configureAppStore() {
+function configureAppStore() {
     return createStoreWithMiddleware(
         rootReducer,
         load({
@@ -47,3 +47,7 @@ export default function configureAppStore() {
         }),
     );
 }
+
+const store = configureAppStore();
+
+export default store;

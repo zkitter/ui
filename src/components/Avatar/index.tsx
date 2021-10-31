@@ -4,7 +4,6 @@ import classNames from "classnames";
 import Icon from "../Icon";
 import {fetchAddressByName, getUser, useUser} from "../../ducks/users";
 import {useDispatch} from "react-redux";
-import {useSpace} from "../../ducks/snapshot";
 import Web3 from "web3";
 
 type Props = {

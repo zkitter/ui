@@ -21,17 +21,24 @@ import {submitProfile} from "../../ducks/drafts";
 import {ProfileMessageSubType} from "../../util/message";
 import {useHistory} from "react-router";
 import deepEqual from "fast-deep-equal";
+import {addIdentity, setPassphrase} from "../../serviceWorkers/util";
+import {postWorkerMessage} from "../../util/sw";
 
-enum ViewType {
+export enum ViewType {
     welcome,
     createIdentity,
     updateTx,
     setupProfile,
+    localBackup,
     done,
 }
 
-export default function SignupView(): ReactElement {
-    const [viewType, setViewType] = useState<ViewType>(ViewType.welcome);
+type Props = {
+    viewType?: ViewType;
+}
+
+export default function SignupView(props: Props): ReactElement {
+    const [viewType, setViewType] = useState<ViewType>(props.viewType || ViewType.welcome);
     let content;
 
     switch (viewType) {
@@ -46,6 +53,9 @@ export default function SignupView(): ReactElement {
             break;
         case ViewType.setupProfile:
             content = <SetupProfileView setViewType={setViewType} />;
+            break;
+        case ViewType.localBackup:
+            content = <LocalBackupView setViewType={setViewType} />;
             break;
         case ViewType.done:
             content = <DoneView setViewType={setViewType} />;
@@ -379,6 +389,90 @@ function SetupProfileView(props: { setViewType: (v: ViewType) => void}): ReactEl
                     btnType="primary"
                     onClick={onSaveProfile}
                     disabled={!dirty}
+                >
+                    Next
+                </Button>
+            </div>
+        </div>
+    )
+}
+
+function LocalBackupView(props: {
+    setViewType: (v: ViewType) => void;
+    isOnboarding?: boolean;
+}): ReactElement {
+    const account = useAccount();
+    const gunNonce = useGunNonce();
+    const {pub, priv} = useGunKey();
+    const dispatch = useDispatch();
+    const [pw, setPw] = useState('');
+    const [errorMessage, setErrorMessage] = useState('');
+    const [confirmPw, setConfirmPw] = useState('');
+    const history = useHistory();
+
+    const valid = !!pw && pw === confirmPw;
+
+    const create = useCallback(async () => {
+        try {
+            if (!valid) return;
+            await postWorkerMessage(setPassphrase(pw));
+            await postWorkerMessage(addIdentity({
+                type: 'gun',
+                address: account,
+                nonce: gunNonce,
+                publicKey: pub,
+                privateKey: priv,
+            }));
+
+            if (!props.isOnboarding) {
+                history.push('/');
+            }
+        } catch (e) {
+            setErrorMessage(e.message);
+        }
+    }, [pw, confirmPw, account, gunNonce, pub, priv, props.isOnboarding]);
+
+    return (
+        <div className="flex flex-col flex-nowrap flex-grow my-4 mx-8 signup__content signup__welcome">
+            <div className="flex flex-row items-center justify-center my-4">
+                <div className="text-xl mr-2">🗄️</div>
+                <div className="text-xl font-semibold">Local Backup</div>
+            </div>
+            <div className="my-4">
+                Create an encrypted copy of your identity locally. Next time you login on this device, you won't need to connect to your wallet and sign a message.
+            </div>
+            <div className="my-4">
+                Your identity is encrypted using your password, and is stored in a separate local process. Never is ever shared with anyone.
+            </div>
+            <div className="my-2">
+                <Input
+                    className="border relative mx-4 mt-4 mb-8"
+                    type="password"
+                    label="Password"
+                    onChange={e => setPw(e.target.value)}
+                    value={pw}
+                />
+                <Input
+                    className="border relative mx-4 mt-4 mb-8"
+                    type="password"
+                    label="Confirm Password"
+                    onChange={e => setConfirmPw(e.target.value)}
+                    value={confirmPw}
+                />
+            </div>
+            { errorMessage && <span className="text-red-500 text-sm my-2 text-center">{errorMessage}</span>}
+            <div className="flex-grow flex flex-row mt-2 flex-nowrap items-end justify-end">
+                <Button
+                    btnType="secondary"
+                    className="mr-4"
+                    onClick={() => props.setViewType(ViewType.done)}
+                >
+                    Skip
+                </Button>
+                <Button
+                    btnType="primary"
+                    disabled={!valid}
+                    onClick={create}
                 >
                     Next
                 </Button>
