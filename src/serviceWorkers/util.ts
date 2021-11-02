@@ -5,6 +5,7 @@ export enum ServiceWorkerActionType {
     ADD_IDENTITY = 'serviceWorker/identity/addIdentity',
     SET_PASSPHRASE = 'serviceWorker/identity/setPassphrase',
     GET_IDENTITY = 'serviceWorker/identity/getIdentity',
+    SELECT_IDENTITY = 'serviceWorker/identity/selectIdentity',
     GET_IDENTITIES = 'serviceWorker/identity/getIdentities',
     GET_IDENTITY_STATUS = 'serviceWorker/identity/getStatus',
 }
@@ -36,6 +37,11 @@ export const getIdentity = (account: string): WorkerAction<string> => ({
 export const addIdentity = (identity: Identity): WorkerAction<Identity> => ({
     type: ServiceWorkerActionType.ADD_IDENTITY,
     payload: identity,
+});
+
+export const selectIdentity = (pubkey: string): WorkerAction<string> => ({
+    type: ServiceWorkerActionType.SELECT_IDENTITY,
+    payload: pubkey,
 });
 
 export const setPassphrase = (passphrase: string): WorkerAction<string> => ({

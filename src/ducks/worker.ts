@@ -108,6 +108,6 @@ export const useSelectedLocalId = () => {
             return identities.find((id) => id.publicKey === selected);
         }
 
-        return identities[0];
+        return null;
     }, deepEqual);
 }

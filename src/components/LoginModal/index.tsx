@@ -7,6 +7,7 @@ import {setPassphrase} from "../../serviceWorkers/util";
 
 type Props = {
     onClose: () => void;
+    onSuccess?: () => void;
 }
 
 export default function LoginModal(props: Props): ReactElement {
@@ -17,8 +18,10 @@ export default function LoginModal(props: Props): ReactElement {
         try {
             setErrorMessage('');
             await postWorkerMessage(setPassphrase(password));
+            props.onSuccess && props.onSuccess();
             props.onClose();
         } catch (e) {
+            console.log(e);
             setErrorMessage(e.message);
         }
     }, [password]);
@@ -40,6 +43,7 @@ export default function LoginModal(props: Props): ReactElement {
                     onChange={e => {
                         setPassword(e.target.value);
                     }}
+                    autoFocus
                 />
             </ModalContent>
             { errorMessage && <div className="error-message text-xs text-center text-red-500 m-2">{errorMessage}</div> }

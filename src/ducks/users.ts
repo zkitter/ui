@@ -243,14 +243,18 @@ export const setUser = (user: User) => ({
     payload: user,
 })
 
-export const useUser = (ens = ''): User | null => {
+export const useUser = (address = ''): User | null => {
     return useSelector((state: AppRootState) => {
-        if (ens === '') {
+        const user = state.users.map[address];
+
+        const val: User = user;
+
+        if (!user) {
             return {
-                username: '',
+                username: address,
                 name: '',
                 pubkey: '',
-                address: '',
+                address: address,
                 coverImage: '',
                 profileImage: '',
                 bio: '',
@@ -270,11 +274,7 @@ export const useUser = (ens = ''): User | null => {
             }
         }
 
-        const user = state.users.map[ens];
-
-        const val: User = user;
-
-        return user ? val : null;
+        return user;
     }, deepEqual);
 }
 

@@ -1,4 +1,4 @@
-import React, {ReactElement, useCallback, useEffect, useState} from "react";
+import React, {ReactElement, ReactNode, useCallback, useEffect, useState} from "react";
 import "./web3-btn.scss";
 import Button from "../Button";
 import {
@@ -16,7 +16,7 @@ import {
 } from "../../ducks/web3";
 import {useDispatch} from "react-redux";
 import classNames from "classnames";
-import Avatar from "../Avatar";
+import Avatar, {getImageUrl} from "../Avatar";
 import Icon from "../Icon";
 import Menuable, {ItemProps} from "../Menuable";
 import ENSLogoSVG from "../../../static/icons/ens-logo.svg";
@@ -26,10 +26,14 @@ import GithubLogoPNG from "../../../static/icons/github.png";
 import SpinnerGIF from "../../../static/icons/spinner.gif";
 import gun from "../../util/gun";
 import {useHistory} from "react-router";
-import {ellipsify} from "../../util/user";
+import {ellipsify, getHandle, getName, getUsername} from "../../util/user";
 import {useIdentities, useSelectedLocalId, useWorkerUnlocked} from "../../ducks/worker";
 import LoginModal from "../LoginModal";
 import {fetchNameByAddress} from "../../util/web3";
+import {User, useUser} from "../../ducks/users";
+import {addIdentity, selectIdentity} from "../../serviceWorkers/util";
+import {postWorkerMessage} from "../../util/sw";
+import {Identity} from "../../serviceWorkers/identity";
 
 type Props = {
     onConnect?: () => Promise<void>;
@@ -40,21 +44,20 @@ type Props = {
 
 export default function Web3Button(props: Props): ReactElement {
     const account = useAccount({ uppercase: true });
-    // const ensName = useENSName();
     const web3Loading = useWeb3Loading();
     const semaphoreId = useSemaphoreID();
     const dispatch = useDispatch();
-    const ids = useIdentities();
     const selectedLocalId = useSelectedLocalId();
     const [ensName, setEnsName] = useState('');
 
     useEffect(() => {
         (async () => {
-            const address = selectedLocalId?.address || account;
-            const ens = await fetchNameByAddress(address);
+            if (!account) return;
+            setEnsName('');
+            const ens = await fetchNameByAddress(account);
             setEnsName(ens);
         })();
-    }, [account, selectedLocalId]);
+    }, [account]);
 
     const disconnect = useCallback(async () => {
         await dispatch(setWeb3(null, ''));
@@ -74,21 +77,21 @@ export default function Web3Button(props: Props): ReactElement {
         btnContent = (
             <>
                 <div>{ensName}</div>
-                <Avatar className="ml-2" name={ensName} />
+                <Avatar className="ml-2 w-6 h-6" name={ensName} />
             </>
         )
     } else if (selectedLocalId) {
         btnContent = (
             <>
                 <div>{ellipsify(selectedLocalId.address)}</div>
-                <Avatar className="ml-2" address={selectedLocalId.address} />
+                <Avatar className="ml-2 w-6 h-6" address={selectedLocalId.address} />
             </>
         )
     } else if (account) {
         btnContent = (
             <>
                 <div>{ellipsify(account)}</div>
-                <Avatar className="ml-2" address={account} />
+                <Avatar className="ml-2 w-6 h-6" address={account} />
             </>
         )
     } else {
@@ -131,6 +134,7 @@ function Web3ButtonLeft(props: Props): ReactElement {
     const web3Loading = useWeb3Loading();
     const gunPair = useGunKey();
     const loggedIn = useLoggedIn();
+    const account = useAccount();
     const dispatch = useDispatch();
     const [opened, setOpened] = useState(false);
 
@@ -163,43 +167,40 @@ function Web3ButtonLeft(props: Props): ReactElement {
 
     if (loggedIn || !gunPair.joinedTx) {
         return (
-            <div
-                className={classNames(
-                    "flex flex-row flex-nowrap items-center",
-                    "transition-colors",
-                    "web3-button__alt-action",
-                )}
-                onClick={lock}
+            <UserMenuable
+                opened={opened}
+                setOpened={setOpened}
             >
                 <Icon
                     className={classNames(
-                        "text-green-500 hover:text-red-500",
+                        "text-gray-500 hover:text-gray-800",
                         "transition-colors",
                     )}
-                    fa="fas fa-unlock"
+                    fa="fas fa-ellipsis-h"
                 />
-            </div>
+            </UserMenuable>
         );
     }
 
     return <></>;
 }
 
-function UnauthButton(props: {
+
+function UserMenuable(props: {
     onConnect?: () => Promise<void>;
     opened: boolean;
     setOpened: (opened: boolean) => void;
+    children: ReactNode;
 }): ReactElement {
     const { opened, setOpened } = props;
     const account = useAccount();
     const gunNonce = useGunNonce();
     const web3Loading = useWeb3Loading();
-    const web3Unlocking = useWeb3Unlocking();
     const gunPair = useGunKey();
     const dispatch = useDispatch();
     const history = useHistory();
     const selectedLocalId = useSelectedLocalId();
-    const [showingLogin, setShowingLogin] = useState(false);
+    const identities = useIdentities();
 
     const connectWallet = useCallback(async () => {
         await dispatch(connectWeb3());
@@ -230,16 +231,20 @@ function UnauthButton(props: {
 
     let items: ItemProps[] = [];
 
-    if (selectedLocalId) {
+    if (identities.length) {
         items.push({
-            label: 'Local Storage',
-            iconFA: 'fas fa-folder',
-            onClick: () => setShowingLogin(true),
+            label: '',
+            className: 'local-users-menu',
+            component: (
+                <UserMenu
+                    setOpened={setOpened}
+                />
+            )
         });
     }
 
     if (account) {
-        items = items.concat([
+        const children = [
             {
                 label: 'Wallet',
                 iconFA: 'fas fa-wallet',
@@ -268,7 +273,25 @@ function UnauthButton(props: {
                     },
                 ],
             }
-        ]);
+        ];
+
+        if (identities.length) {
+            items.push({
+                label: 'Add new identity',
+                iconFA: 'fas fa-plus',
+                disabled: web3Loading,
+                children: children,
+            });
+        } else {
+            items = items.concat(children);
+        }
+    } else {
+        items.push({
+            label: 'Connect to wallet',
+            iconFA: 'fas fa-plug',
+            onClick: connectWallet,
+            disabled: web3Loading,
+        })
     }
 
     if (!account && !selectedLocalId) {
@@ -296,14 +319,6 @@ function UnauthButton(props: {
 
     return (
         <>
-            { showingLogin && (
-                <LoginModal
-                    onClose={() => {
-                        setShowingLogin(false);
-                        setOpened(false);
-                    }}
-                />
-            )}
             <Menuable
                 menuClassName="web3-button__unlock-menu"
                 onOpen={() => setOpened(true)}
@@ -317,26 +332,173 @@ function UnauthButton(props: {
                         "web3-button__alt-action",
                     )}
                 >
-                    {
-                        web3Unlocking
-                            ? <Icon url={SpinnerGIF} size={2} />
-                            : (
-                                <Icon
-                                    className={classNames(
-                                        "hover:text-green-500 transition-colors",
-                                        {
-                                            "text-green-500": opened,
-                                        }
-                                    )}
-                                    fa={classNames({
-                                        "fas fa-unlock": opened,
-                                        "fas fa-lock": !opened,
-                                    })}
-                                />
-                            )
-                    }
+                    { props.children }
                 </div>
             </Menuable>
         </>
+    );
+}
+
+function UserMenu(props: {
+    setOpened: (opened: boolean) => void;
+}): ReactElement {
+    const identities = useIdentities();
+    const selectedLocalId = useSelectedLocalId();
+    const unlocked = useWorkerUnlocked();
+    const [showingLogin, setShowingLogin] = useState(false);
+    const [publicKey, setPublicKey] = useState('');
+    const selectedUser = useUser(selectedLocalId?.address);
+
+    const openLogin = useCallback(async (pubkey: string) => {
+
+        if (unlocked) {
+            await postWorkerMessage(selectIdentity(pubkey));
+            props.setOpened(false);
+            return;
+        }
+        setShowingLogin(true);
+        setPublicKey(pubkey);
+    }, [unlocked]);
+
+    const onClose = useCallback(async () => {
+        setShowingLogin(false);
+        setPublicKey('');
+    }, [publicKey]);
+
+    const onSuccess = useCallback(async () => {
+        await postWorkerMessage(selectIdentity(publicKey));
+        props.setOpened(false);
+    }, [publicKey]);
+
+    return (
+        <>
+            { showingLogin && <LoginModal onClose={onClose} onSuccess={onSuccess} /> }
+            <div className="flex flex-col flex-nowrap w-full">
+                {
+                    selectedLocalId && (
+                        <div
+                            className={classNames(
+                                "local-users-menu__selected-item border-b mb-2"
+                            )}
+                        >
+                            <Avatar className="w-20 h-20 mb-2" address={selectedUser?.address} />
+                            <div className="flex flex-col flex-nowrap items-center">
+                                <div className="text-base font-bold">{getName(selectedUser)}</div>
+                                <div className="text-sm">@{getHandle(selectedUser)}</div>
+                            </div>
+                        </div>
+                    )
+                }
+                <div className="border-b w-full pb-2 mb-2 local-users-menu__container">
+                    {
+                        identities.map(id => {
+                            if (unlocked && id.publicKey === selectedLocalId?.publicKey) {
+                                return null;
+                            }
+
+                            return (
+                                <UserMenuItem
+                                    key={id.publicKey}
+                                    identity={id}
+                                    openLogin={() => openLogin(id.publicKey)}
+                                />
+                            );
+                        })
+                    }
+                </div>
+            </div>
+        </>
+    )
+};
+
+function UserMenuItem(props: {
+    identity: Identity;
+    openLogin: () => void;
+}) {
+    const {identity, openLogin} = props;
+    const user = useUser(identity.address);
+
+    return (
+        <div
+            className={classNames(
+                "flex flex-row flex-nowrap items-center",
+                "hover:bg-gray-50 cursor-pointer",
+                "local-users-menu__item"
+            )}
+            onClick={openLogin}
+        >
+            <Avatar className="w-9 h-9 mr-2" address={user?.username} />
+            <div className="flex flex-col flex-nowrap">
+                <div className="text-sm font-bold">{getName(user)}</div>
+                <div className="text-xs">@{getHandle(user)}</div>
+            </div>
+        </div>
+    );
+}
+
+function UnauthButton(props: {
+    onConnect?: () => Promise<void>;
+    opened: boolean;
+    setOpened: (opened: boolean) => void;
+}): ReactElement {
+    const { opened, setOpened } = props;
+    const account = useAccount();
+    const web3Loading = useWeb3Loading();
+    const web3Unlocking = useWeb3Unlocking();
+    const dispatch = useDispatch();
+    const selectedLocalId = useSelectedLocalId();
+
+    const connectWallet = useCallback(async () => {
+        await dispatch(connectWeb3());
+        return props.onConnect && props.onConnect();
+    }, []);
+
+    if (!account && !selectedLocalId) {
+        return (
+            <div
+                className={classNames(
+                    "flex flex-row flex-nowrap items-center",
+                    "web3-button__alt-action",
+                )}
+                onClick={connectWallet}
+            >
+                {
+                    !web3Loading && (
+                        <Icon
+                            className={classNames(
+                                "hover:text-green-500 transition-colors",
+                            )}
+                            fa="fas fa-plug"
+                        />
+                    )
+                }
+            </div>
+        )
+    }
+
+    return (
+        <UserMenuable
+            opened={opened}
+            setOpened={setOpened}
+        >
+            {
+                web3Unlocking
+                    ? <Icon url={SpinnerGIF} size={2} />
+                    : (
+                        <Icon
+                            className={classNames(
+                                "hover:text-green-500 transition-colors",
+                                {
+                                    "text-green-500": opened,
+                                }
+                            )}
+                            fa={classNames({
+                                "fas fa-unlock": opened,
+                                "fas fa-lock": !opened,
+                            })}
+                        />
+                    )
+            }
+        </UserMenuable>
     );
 }

@@ -1,7 +1,7 @@
 import {GenericService} from "../util/svc";
 import {decrypt, encrypt} from "../util/encrypt";
 import {pushReduxAction} from "./util";
-import {setIdentities, setUnlocked} from "../ducks/worker";
+import {setIdentities, setSelectedId, setUnlocked} from "../ducks/worker";
 
 export type Identity = {
     type: 'gun',
@@ -50,13 +50,10 @@ export class IdentityService extends GenericService {
 
     async getStatus() {
         this.ensure();
-        const identities = await this.getIdentities();
 
         return {
             unlocked: !!this.passphrase,
-            currentIdentity: identities.length
-                ? this.currentIdentity || identities[0]
-                : null,
+            currentIdentity: this.currentIdentity,
         };
     }
 
@@ -65,11 +62,28 @@ export class IdentityService extends GenericService {
         const identities = await this.getIdentities({ danger: true });
 
         for (let id of identities) {
-            decrypt(id.privateKey, passphrase);
+            if (!decrypt(id.privateKey, passphrase)) {
+                throw new Error('invalid passphrase');
+            }
         }
 
         this.passphrase = passphrase
         await pushReduxAction(setUnlocked(true));
+    }
+
+    async selectIdentity(pubkey: string) {
+        this.ensure();
+        const identities = await this.getIdentities();
+
+        for (let id of identities) {
+            if (id.publicKey === pubkey) {
+                this.currentIdentity = id;
+                await pushReduxAction(setSelectedId(id.publicKey));
+                return;
+            }
+        }
+
+        throw new Error(`cannot find identity with pubkey ${pubkey}`);
     }
 
     async addIdentity(identity: Identity) {

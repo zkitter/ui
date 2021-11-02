@@ -2,7 +2,7 @@ import React, {ReactElement, useEffect, useState} from "react";
 import makeBlockie from 'ethereum-blockies-base64';
 import classNames from "classnames";
 import Icon from "../Icon";
-import {fetchAddressByName, getUser, useUser} from "../../ducks/users";
+import {fetchAddressByName, getUser, User, useUser} from "../../ducks/users";
 import {useDispatch} from "react-redux";
 import Web3 from "web3";
 
@@ -78,23 +78,7 @@ export default function Avatar(props: Props): ReactElement {
         );
     }
 
-    let imageUrl = user?.profileImage;
-
-    if (!user?.profileImage && username) {
-        imageUrl = CACHE[username] ? CACHE[username] : makeBlockie(username);
-        CACHE[username] = imageUrl;
-    }
-
-    if (imageUrl) {
-        try {
-            const avatar = new URL(imageUrl);
-            if (avatar.protocol === 'ipfs:') {
-                imageUrl = `https://ipfs.io/ipfs/${avatar.pathname.slice(2)}`;
-            } else {
-                imageUrl = avatar.href;
-            }
-        } catch (e) {}
-    }
+    const imageUrl = getImageUrl(user);
 
     return (
         <div
@@ -112,4 +96,28 @@ export default function Avatar(props: Props): ReactElement {
 
         </div>
     )
+}
+
+export function getImageUrl (user: User | null): string {
+    if (!user) return '';
+
+    let imageUrl = user?.profileImage;
+
+    if (!user?.profileImage && user.username) {
+        imageUrl = CACHE[user.username] ? CACHE[user.username] : makeBlockie(user.username);
+        CACHE[user.username] = imageUrl;
+    }
+
+    if (imageUrl) {
+        try {
+            const avatar = new URL(imageUrl);
+            if (avatar.protocol === 'ipfs:') {
+                imageUrl = `https://ipfs.io/ipfs/${avatar.pathname.slice(2)}`;
+            } else {
+                imageUrl = avatar.href;
+            }
+        } catch (e) {}
+    }
+
+    return imageUrl;
 }

@@ -26,9 +26,11 @@ export type ItemProps = {
     iconUrl?: string;
     iconFA?: string;
     iconClassName?: string;
+    className?: string;
     onClick?: MouseEventHandler;
     disabled?: boolean;
     children?: ItemProps[];
+    component?: ReactNode;
 }
 
 export default function Menuable(props: MenuableProps): ReactElement {
@@ -110,7 +112,7 @@ export default function Menuable(props: MenuableProps): ReactElement {
                                 className={classNames(
                                     "text-sm whitespace-nowrap cursor-pointer",
                                     'flex flex-row flex-nowrap items-center',
-                                    "text-gray-500 hover:text-gray-800 menuable__menu__item",
+                                    "text-gray-500 hover:text-gray-800 hover:bg-gray-50 menuable__menu__item",
                                 )}
                                 onClick={goBack}
                             >
@@ -124,36 +126,45 @@ export default function Menuable(props: MenuableProps): ReactElement {
                                 className={classNames(
                                     "text-sm whitespace-nowrap",
                                     'flex flex-row flex-nowrap items-center',
-                                    "menuable__menu__item",
+                                    "menuable__menu__item hover:bg-gray-50 ",
                                     {'cursor-pointer': !item.disabled},
+                                    item.className,
                                 )}
                                 onClick={e => onItemClick(e, item, i)}
                             >
-                                <div
-                                    className={classNames(
-                                        "flex-grow",
-                                        {
-                                            'text-gray-500 hover:text-gray-800 hover:font-semibold': !item.disabled,
-                                            'text-gray-200': item.disabled,
-                                        },
-                                    )}
-                                >
-                                    { item.label }
-                                </div>
                                 {
-                                    (item.iconUrl || item.iconFA) && (
-                                        <Icon
-                                            fa={item.iconFA}
-                                            url={item.iconUrl}
-                                            className={classNames(
-                                                'ml-4',
+                                    item.component
+                                        ? item.component
+                                        : (
+                                            <>
+                                                <div
+                                                    className={classNames(
+                                                        "flex-grow",
+                                                        {
+                                                            'text-gray-500 hover:text-gray-800 hover:font-semibold': !item.disabled,
+                                                            'text-gray-200': item.disabled,
+                                                        },
+                                                    )}
+                                                >
+                                                    { item.label }
+                                                </div>
                                                 {
-                                                    'opacity-50': item.disabled,
-                                                },
-                                                item.iconClassName,
-                                            )}
-                                        />
-                                    )
+                                                    (item.iconUrl || item.iconFA) && (
+                                                        <Icon
+                                                            fa={item.iconFA}
+                                                            url={item.iconUrl}
+                                                            className={classNames(
+                                                                'ml-4',
+                                                                {
+                                                                    'opacity-50': item.disabled,
+                                                                },
+                                                                item.iconClassName,
+                                                            )}
+                                                        />
+                                                    )
+                                                }
+                                            </>
+                                        )
                                 }
                             </div>
                         ))}
