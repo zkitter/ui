@@ -3,6 +3,7 @@ import {Action} from "redux";
 
 export enum ServiceWorkerActionType {
     ADD_IDENTITY = 'serviceWorker/identity/addIdentity',
+    SET_IDENTITY = 'serviceWorker/identity/setIdentity',
     SET_PASSPHRASE = 'serviceWorker/identity/setPassphrase',
     GET_IDENTITY = 'serviceWorker/identity/getIdentity',
     SELECT_IDENTITY = 'serviceWorker/identity/selectIdentity',
@@ -36,6 +37,11 @@ export const getIdentity = (account: string): WorkerAction<string> => ({
 
 export const addIdentity = (identity: Identity): WorkerAction<Identity> => ({
     type: ServiceWorkerActionType.ADD_IDENTITY,
+    payload: identity,
+});
+
+export const setIdentity = (identity: Identity | null): WorkerAction<Identity | null> => ({
+    type: ServiceWorkerActionType.SET_IDENTITY,
     payload: identity,
 });
 

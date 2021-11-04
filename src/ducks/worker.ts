@@ -21,7 +21,7 @@ export type Action<payload> = {
 
 export type State = {
     unlocked: boolean;
-    selected: string | null;
+    selected: Identity | null;
     identities: Identity[];
 }
 
@@ -42,7 +42,7 @@ export const syncWorker = () => async (dispatch: Dispatch) => {
     dispatch(setUnlocked(unlocked));
 
     if (currentIdentity) {
-        dispatch(setSelectedId(currentIdentity.publicKey));
+        dispatch(setSelectedId(currentIdentity));
     }
 }
 
@@ -56,9 +56,9 @@ export const setUnlocked = (unlocked: boolean): Action<boolean> => ({
     payload: unlocked,
 });
 
-export const setSelectedId = (pubkey: string): Action<string> => ({
+export const setSelectedId = (id: Identity | null): Action<Identity | null> => ({
     type: ActionType.SET_SELECTED_ID,
-    payload: pubkey,
+    payload: id,
 });
 
 
@@ -98,16 +98,25 @@ export const useWorkerUnlocked = () => {
 
 export const useSelectedLocalId = () => {
     return useSelector((state: AppRootState) => {
-        const { worker: { selected, identities } } = state;
-
-        if (!identities.length) {
-            return null;
-        }
+        const { worker: { selected } } = state;
 
         if (selected) {
-            return identities.find((id) => id.publicKey === selected);
+            return selected;
         }
 
         return null;
+    }, deepEqual);
+}
+
+export const useHasIdConnected = () => {
+    return useSelector((state: AppRootState) => {
+        const { worker: { selected } } = state;
+        const { web3: { account } } = state;
+
+        if (selected?.address === account) {
+            return true;
+        }
+
+        return false;
     }, deepEqual);
 }

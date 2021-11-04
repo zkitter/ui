@@ -1,5 +1,5 @@
 import React, {
-    MouseEventHandler,
+    MouseEvent,
     ReactElement,
     ReactNode,
     ReactNodeArray,
@@ -27,7 +27,7 @@ export type ItemProps = {
     iconFA?: string;
     iconClassName?: string;
     className?: string;
-    onClick?: MouseEventHandler;
+    onClick?: (e: MouseEvent, reset: () => void) => void;
     disabled?: boolean;
     children?: ItemProps[];
     component?: ReactNode;
@@ -44,6 +44,9 @@ export default function Menuable(props: MenuableProps): ReactElement {
     useEffect(() => {
         if (typeof opened !== 'undefined') {
             setShowing(opened);
+            if (!opened) {
+                setPath([]);
+            }
         }
     }, [!!opened]);
 
@@ -77,7 +80,7 @@ export default function Menuable(props: MenuableProps): ReactElement {
         if (item.children) {
             setPath([...path, i]);
         } else if (item.onClick) {
-            item.onClick(e);
+            item.onClick(e, () => setPath([]));
         }
     }, [path]);
 

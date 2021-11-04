@@ -71,6 +71,15 @@ export class IdentityService extends GenericService {
         await pushReduxAction(setUnlocked(true));
     }
 
+    async setIdentity(identity: Identity | null) {
+        this.currentIdentity = identity;
+        await pushReduxAction(setSelectedId(identity));
+        if (!identity) {
+            this.passphrase = '';
+            await pushReduxAction(setUnlocked(false));
+        }
+    }
+
     async selectIdentity(pubkey: string) {
         this.ensure();
         const identities = await this.getIdentities();
@@ -78,7 +87,7 @@ export class IdentityService extends GenericService {
         for (let id of identities) {
             if (id.publicKey === pubkey) {
                 this.currentIdentity = id;
-                await pushReduxAction(setSelectedId(id.publicKey));
+                await pushReduxAction(setSelectedId(id));
                 return;
             }
         }

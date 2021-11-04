@@ -538,27 +538,17 @@ function reduceAppendPosts(state: State, action: Action): State {
     };
 }
 
-function getContextNameFromState(state: AppRootState): string | undefined {
+export function getContextNameFromState(state: AppRootState): string {
     const {
-        web3: {
-            account,
-            gun: { pub, priv },
-        },
         worker: {
-            unlocked,
-            identities,
             selected,
         },
     } = state;
+
     let contextualName = undefined;
 
-    if (unlocked) {
-        const selectedId = identities.find(id => id.publicKey === selected);
-        if (selectedId) {
-            contextualName = selectedId.address;
-        }
-    } else if (account && pub && priv) {
-        contextualName = account;
+    if (selected) {
+        contextualName = selected.address;
     }
 
     return contextualName;

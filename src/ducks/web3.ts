@@ -15,6 +15,8 @@ import semethid from "@interrep/semethid";
 import config from "../util/config";
 import {getUser} from "./users";
 import {getIdentityHash} from "../util/arb3";
+import {postWorkerMessage} from "../util/sw";
+import {setIdentity} from "../serviceWorkers/util";
 
 OrdinarySemaphore.setHasher('poseidon');
 
@@ -235,7 +237,7 @@ export const fetchJoinedTx = (account: string) => async (
     }
 }
 
-const reset = () => (dispatch: Dispatch) => {
+const reset = () => async (dispatch: Dispatch) => {
     dispatch(setAccount(''));
     dispatch(setNetwork(''));
     dispatch(setENSName(''));
@@ -299,7 +301,6 @@ export const setWeb3 = (web3: Web3 | null, account: string) => async (
 
     // @ts-ignore
     web3.currentProvider.on('accountsChanged', async ([acct]) => {
-        const account = Web3.utils.toChecksumAddress(acct);
         dispatch(reset());
         dispatch(setWeb3Loading(true));
         const gunUser = gun.user();
@@ -325,11 +326,21 @@ export const loginGun = (nonce = 0) => async (
     getState: () => AppRootState,
 ) => {
     dispatch(setUnlocking(true));
+    const {
+        web3: {account},
+    } = getState();
 
     try {
         const result: any = await dispatch(generateGunKeyPair(nonce));
-        dispatch(setGunPublicKey(result.pub));
-        dispatch(setGunPrivateKey(result.priv));
+        await postWorkerMessage(setIdentity({
+            type: 'gun',
+            address: account,
+            publicKey: result.pub,
+            privateKey: result.priv,
+            nonce: nonce,
+        }))
+        // dispatch(setGunPublicKey(result.pub));
+        // dispatch(setGunPrivateKey(result.priv));
         authenticateGun(result as any);
         dispatch(setUnlocking(false));
         return result;
@@ -593,9 +604,9 @@ export const useLoggedIn = () => {
             semaphore,
         } = state.web3;
 
-        const { worker: { unlocked } } = state;
+        const { worker: { selected } } = state;
 
-        if (unlocked) return true;
+        if (selected) return true;
 
         const hasGun = !!gun.priv && !!gun.pub;
         const hasSemaphore = !!semaphore.keypair.privKey
@@ -623,7 +634,7 @@ export const useGunLoggedIn = () => {
 
         const { unlocked, selected, identities } = state.worker;
 
-        if (unlocked && selected && identities.find(id => id.publicKey === selected)) {
+        if (selected?.type === 'gun') {
             return true;
         }
 
@@ -638,11 +649,8 @@ export const useAccount = (opt?: { uppercase?: boolean }) => {
         const {selected, identities, unlocked} = state.worker;
         let address = account;
 
-        if (unlocked) {
-            const selectedId = identities.find(id => id.publicKey === selected);
-            if (selectedId) {
-                address = selectedId.address;
-            }
+        if (selected) {
+            address = selected.address;
         }
 
         if (!address) return '';
@@ -720,12 +728,8 @@ export const useHasLocal = () => {
             worker: { identities, unlocked, selected },
         } = state;
 
-        if (unlocked && selected) {
-            return true;
-        }
+        if (!selected) return false;
 
-        if (!account) return false;
-
-        return !!identities.find(({ address }) => address === account);
+        return !!identities.find(({ address }) => address === selected.address);
     }, deepEqual);
 }

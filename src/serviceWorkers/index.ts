@@ -65,6 +65,10 @@ const handlers = {
         return app.exec('identity', 'addIdentity', action.payload);
     },
 
+    [ServiceWorkerActionType.SET_IDENTITY]: async (app: AppService, action: WorkerAction<Identity>) => {
+        return app.exec('identity', 'setIdentity', action.payload);
+    },
+
     [ServiceWorkerActionType.SELECT_IDENTITY]: async (app: AppService, action: WorkerAction<string>) => {
         return app.exec('identity', 'selectIdentity', action.payload);
     },

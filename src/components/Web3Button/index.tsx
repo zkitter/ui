@@ -27,11 +27,11 @@ import SpinnerGIF from "../../../static/icons/spinner.gif";
 import gun from "../../util/gun";
 import {useHistory} from "react-router";
 import {ellipsify, getHandle, getName, getUsername} from "../../util/user";
-import {useIdentities, useSelectedLocalId, useWorkerUnlocked} from "../../ducks/worker";
+import {useHasIdConnected, useIdentities, useSelectedLocalId, useWorkerUnlocked} from "../../ducks/worker";
 import LoginModal from "../LoginModal";
 import {fetchNameByAddress} from "../../util/web3";
 import {User, useUser} from "../../ducks/users";
-import {addIdentity, selectIdentity} from "../../serviceWorkers/util";
+import {addIdentity, selectIdentity, setIdentity} from "../../serviceWorkers/util";
 import {postWorkerMessage} from "../../util/sw";
 import {Identity} from "../../serviceWorkers/identity";
 
@@ -43,7 +43,7 @@ type Props = {
 }
 
 export default function Web3Button(props: Props): ReactElement {
-    const account = useAccount({ uppercase: true });
+    const account = useAccount();
     const web3Loading = useWeb3Loading();
     const semaphoreId = useSemaphoreID();
     const dispatch = useDispatch();
@@ -200,6 +200,7 @@ function UserMenuable(props: {
     const dispatch = useDispatch();
     const history = useHistory();
     const selectedLocalId = useSelectedLocalId();
+    const hasIdConnected = useHasIdConnected();
     const identities = useIdentities();
 
     const connectWallet = useCallback(async () => {
@@ -207,13 +208,13 @@ function UserMenuable(props: {
         return props.onConnect && props.onConnect();
     }, []);
 
-    const genGunKey = useCallback(async () => {
+    const genGunKey = useCallback(async (e, reset) => {
         try {
             await dispatch(loginGun(gunNonce));
+            reset();
         } catch (e) {
             if (e === UserNotExistError) {
-                history.push('/signup');
-                setOpened(false);
+                await gotoSignup();
             }
         }
     }, [gunNonce]);
@@ -227,6 +228,22 @@ function UserMenuable(props: {
         web2Provider: 'Twitter' | 'Github' | 'Reddit',
     ) => {
         await dispatch(genSemaphore(web2Provider));
+    }, []);
+
+    const logout = useCallback(async () => {
+        gun.user().leave();
+        await dispatch(setSemaphoreID({
+            keypair: {
+                pubKey: '',
+                privKey: null,
+            },
+            commitment: null,
+            identityNullifier: null,
+            identityTrapdoor: null,
+        }))
+        await dispatch(setGunPrivateKey(''));
+        await dispatch(setSemaphoreIDPath(null));
+        await postWorkerMessage(setIdentity(null));
     }, []);
 
     let items: ItemProps[] = [];
@@ -243,7 +260,7 @@ function UserMenuable(props: {
         });
     }
 
-    if (account) {
+    if (account && !hasIdConnected) {
         const children = [
             {
                 label: 'Wallet',
@@ -285,12 +302,20 @@ function UserMenuable(props: {
         } else {
             items = items.concat(children);
         }
-    } else {
+    } else if (!account) {
         items.push({
             label: 'Connect to wallet',
             iconFA: 'fas fa-plug',
             onClick: connectWallet,
             disabled: web3Loading,
+        })
+    }
+
+    if (selectedLocalId) {
+        items.push({
+            label: 'Logout',
+            iconFA: 'fas fa-sign-out-alt',
+            onClick: logout,
         })
     }
 
@@ -350,10 +375,8 @@ function UserMenu(props: {
     const selectedUser = useUser(selectedLocalId?.address);
 
     const openLogin = useCallback(async (pubkey: string) => {
-
         if (unlocked) {
             await postWorkerMessage(selectIdentity(pubkey));
-            props.setOpened(false);
             return;
         }
         setShowingLogin(true);
@@ -367,7 +390,6 @@ function UserMenu(props: {
 
     const onSuccess = useCallback(async () => {
         await postWorkerMessage(selectIdentity(publicKey));
-        props.setOpened(false);
     }, [publicKey]);
 
     return (

@@ -6,6 +6,7 @@ import config from "../util/config";
 import {defaultENS, fetchNameByAddress, fetchAddressByName as _fetchAddressByName} from "../util/web3";
 import {ThunkDispatch} from "redux-thunk";
 import {setJoinedTx} from "./web3";
+import {getContextNameFromState} from "./posts";
 
 enum ActionTypes {
     SET_USER = 'users/setUser',
@@ -87,13 +88,7 @@ export const watchUser = (username: string) => async (dispatch: ThunkDispatch<an
 }
 
 export const getUser = (address: string) => async (dispatch: Dispatch, getState: () => AppRootState): Promise<User> => {
-    const {
-        web3: {
-            account,
-            gun: { pub, priv },
-        },
-    } = getState();
-    const contextualName = (account && pub && priv) ? account : undefined;
+    const contextualName = getContextNameFromState(getState());
     const key = contextualName + address;
 
     if (fetchPromises[key]) {
@@ -137,13 +132,7 @@ export const getUser = (address: string) => async (dispatch: Dispatch, getState:
 }
 
 export const fetchUsers = () => async (dispatch: Dispatch, getState: () => AppRootState): Promise<string[]> => {
-    const {
-        web3: {
-            account,
-            gun: { pub, priv },
-        },
-    } = getState();
-    const contextualName = (account && pub && priv) ? account : undefined;
+    const contextualName = getContextNameFromState(getState());
     const resp = await fetch(`${config.indexerAPI}/v1/users?limit=5`, {
         method: 'GET',
         // @ts-ignore
@@ -169,13 +158,7 @@ export const fetchUsers = () => async (dispatch: Dispatch, getState: () => AppRo
 }
 
 export const searchUsers = (query: string) => async (dispatch: Dispatch, getState: () => AppRootState): Promise<string[]> => {
-    const {
-        web3: {
-            account,
-            gun: { pub, priv },
-        },
-    } = getState();
-    const contextualName = (account && pub && priv) ? account : undefined;
+    const contextualName = getContextNameFromState(getState());
     const resp = await fetch(`${config.indexerAPI}/v1/users/search/${encodeURIComponent(query)}?limit=5`, {
         method: 'GET',
         // @ts-ignore
