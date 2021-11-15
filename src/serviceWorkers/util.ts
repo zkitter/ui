@@ -9,6 +9,7 @@ export enum ServiceWorkerActionType {
     SELECT_IDENTITY = 'serviceWorker/identity/selectIdentity',
     GET_IDENTITIES = 'serviceWorker/identity/getIdentities',
     GET_IDENTITY_STATUS = 'serviceWorker/identity/getStatus',
+    GET_CURRENT_IDENTITY = 'serviceWorker/identity/getCurrentIdentity',
 }
 
 export type WorkerAction<payload> = {
@@ -48,6 +49,10 @@ export const setIdentity = (identity: Identity | null): WorkerAction<Identity | 
 export const selectIdentity = (pubkey: string): WorkerAction<string> => ({
     type: ServiceWorkerActionType.SELECT_IDENTITY,
     payload: pubkey,
+});
+
+export const getCurrentIdentity = (): WorkerAction<any> => ({
+    type: ServiceWorkerActionType.GET_CURRENT_IDENTITY,
 });
 
 export const setPassphrase = (passphrase: string): WorkerAction<string> => ({

@@ -338,9 +338,7 @@ export const loginGun = (nonce = 0) => async (
             publicKey: result.pub,
             privateKey: result.priv,
             nonce: nonce,
-        }))
-        // dispatch(setGunPublicKey(result.pub));
-        // dispatch(setGunPrivateKey(result.priv));
+        }));
         authenticateGun(result as any);
         dispatch(setUnlocking(false));
         return result;

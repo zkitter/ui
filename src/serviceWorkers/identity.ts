@@ -57,9 +57,27 @@ export class IdentityService extends GenericService {
         };
     }
 
+    async getCurrentIdentity() {
+        return this.currentIdentity;
+    }
+
+    wrapIdentity(id: Identity): Identity {
+        if (this.passphrase) {
+            return {
+                ...id,
+                privateKey: decrypt(id.privateKey, this.passphrase),
+            }
+        }
+
+        return {
+            ...id,
+            privateKey: '',
+        };
+    }
+
     async setPassphrase(passphrase: string) {
         this.ensure();
-        const identities = await this.getIdentities({ danger: true });
+        const identities = await this.getIdentities();
 
         for (let id of identities) {
             if (!decrypt(id.privateKey, passphrase)) {
@@ -86,9 +104,9 @@ export class IdentityService extends GenericService {
 
         for (let id of identities) {
             if (id.publicKey === pubkey) {
-                this.currentIdentity = id;
-                await pushReduxAction(setSelectedId(id));
-                return;
+                this.currentIdentity = this.wrapIdentity(id);
+                await pushReduxAction(setSelectedId(this.currentIdentity));
+                return this.currentIdentity;
             }
         }
 
@@ -141,13 +159,13 @@ export class IdentityService extends GenericService {
                     type: id.type,
                     nonce: id.nonce,
                     publicKey: id.public_key,
-                    privateKey: '',
+                    privateKey: id.private_key,
                 });
             }
         });
     }
 
-    async getIdentities(opt?: {danger: boolean}): Promise<Identity[]> {
+    async getIdentities(): Promise<Identity[]> {
         this.ensure();
         return new Promise(async (resolve, reject) => {
             const tx = this.db?.transaction("identity", "readwrite");
@@ -164,7 +182,7 @@ export class IdentityService extends GenericService {
                             type: id.type,
                             nonce: id.nonce,
                             publicKey: id.public_key,
-                            privateKey: opt?.danger ? id.private_key : '',
+                            privateKey: id.private_key,
                         }
                     });
                 resolve(ids);

@@ -538,7 +538,7 @@ function reduceAppendPosts(state: State, action: Action): State {
     };
 }
 
-export function getContextNameFromState(state: AppRootState): string {
+export function getContextNameFromState(state: AppRootState): string | undefined {
     const {
         worker: {
             selected,

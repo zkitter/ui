@@ -1,4 +1,4 @@
-import React, {ReactElement, useEffect} from "react";
+import React, {ReactElement, useEffect, useState} from "react";
 import {Redirect, Route, RouteProps, Switch} from "react-router";
 import TopNav from "../../components/TopNav";
 import GlobalFeed from "../GlobalFeed";
@@ -13,11 +13,14 @@ import TagFeed from "../../components/TagFeed";
 import DiscoverTagPanel from "../../components/DiscoverTagPanel";
 import Icon from "../../components/Icon";
 import SignupView, {ViewType} from "../SignupView";
-import {syncWorker} from "../../ducks/worker";
-import store from "../../store/configureAppStore";
+import {syncWorker, useSelectedLocalId} from "../../ducks/worker";
+import gun, {authenticateGun} from "../../util/gun";
+import {Identity} from "../../serviceWorkers/identity";
 
 export default function App(): ReactElement {
     const dispatch = useDispatch();
+    const selected = useSelectedLocalId();
+    const [lastSelected, setLastSelected] = useState<Identity | null>(null);
 
     useEffect(() => {
         (async function onAppMount() {
@@ -29,6 +32,24 @@ export default function App(): ReactElement {
             }
         })();
     }, []);
+
+    useEffect(() => {
+        if (!selected) {
+            //@ts-ignore
+            if (gun.user().is) {
+                gun.user().leave();
+            }
+            return;
+        }
+
+        if (lastSelected?.privateKey !== selected?.privateKey) {
+            authenticateGun({
+                pub: selected.publicKey,
+                priv: selected.privateKey,
+            });
+            setLastSelected(selected);
+        }
+    }, [selected, lastSelected])
 
     useEffect(() => {
         navigator.serviceWorker.addEventListener('message', event => {

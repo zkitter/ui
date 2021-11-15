@@ -16,22 +16,21 @@ import {
 } from "../../ducks/web3";
 import {useDispatch} from "react-redux";
 import classNames from "classnames";
-import Avatar, {getImageUrl} from "../Avatar";
+import Avatar from "../Avatar";
 import Icon from "../Icon";
 import Menuable, {ItemProps} from "../Menuable";
-import ENSLogoSVG from "../../../static/icons/ens-logo.svg";
 import TwitterLogoSVG from "../../../static/icons/twitter.svg";
 import RedditLogoSVG from "../../../static/icons/reddit.svg";
 import GithubLogoPNG from "../../../static/icons/github.png";
 import SpinnerGIF from "../../../static/icons/spinner.gif";
-import gun from "../../util/gun";
+import gun, {authenticateGun} from "../../util/gun";
 import {useHistory} from "react-router";
-import {ellipsify, getHandle, getName, getUsername} from "../../util/user";
+import {ellipsify, getHandle, getName} from "../../util/user";
 import {useHasIdConnected, useIdentities, useSelectedLocalId, useWorkerUnlocked} from "../../ducks/worker";
 import LoginModal from "../LoginModal";
 import {fetchNameByAddress} from "../../util/web3";
-import {User, useUser} from "../../ducks/users";
-import {addIdentity, selectIdentity, setIdentity} from "../../serviceWorkers/util";
+import {useUser} from "../../ducks/users";
+import {selectIdentity, setIdentity} from "../../serviceWorkers/util";
 import {postWorkerMessage} from "../../util/sw";
 import {Identity} from "../../serviceWorkers/identity";
 
@@ -231,7 +230,11 @@ function UserMenuable(props: {
     }, []);
 
     const logout = useCallback(async () => {
-        gun.user().leave();
+        // @ts-ignore
+        if (gun.user().is) {
+            gun.user().leave();
+        }
+
         await dispatch(setSemaphoreID({
             keypair: {
                 pubKey: '',
@@ -373,6 +376,7 @@ function UserMenu(props: {
     const [showingLogin, setShowingLogin] = useState(false);
     const [publicKey, setPublicKey] = useState('');
     const selectedUser = useUser(selectedLocalId?.address);
+    const dispatch = useDispatch();
 
     const openLogin = useCallback(async (pubkey: string) => {
         if (unlocked) {
@@ -389,8 +393,18 @@ function UserMenu(props: {
     }, [publicKey]);
 
     const onSuccess = useCallback(async () => {
-        await postWorkerMessage(selectIdentity(publicKey));
+        const id: any = await postWorkerMessage(selectIdentity(publicKey));
+        if (id) {
+            authenticateGun({
+                pub: id.publicKey,
+                priv: id.privateKey,
+            });
+        }
     }, [publicKey]);
+
+    const availableIds = identities.filter(id => {
+        return id.publicKey !== selectedLocalId?.publicKey;
+    })
 
     return (
         <>
@@ -411,23 +425,23 @@ function UserMenu(props: {
                         </div>
                     )
                 }
-                <div className="border-b w-full pb-2 mb-2 local-users-menu__container">
-                    {
-                        identities.map(id => {
-                            if (unlocked && id.publicKey === selectedLocalId?.publicKey) {
-                                return null;
+                {
+                    !!availableIds.length && (
+                        <div className="border-b w-full pb-2 mb-2 local-users-menu__container">
+                            {
+                                availableIds.map(id => {
+                                    return (
+                                        <UserMenuItem
+                                            key={id.publicKey}
+                                            identity={id}
+                                            openLogin={() => openLogin(id.publicKey)}
+                                        />
+                                    );
+                                })
                             }
-
-                            return (
-                                <UserMenuItem
-                                    key={id.publicKey}
-                                    identity={id}
-                                    openLogin={() => openLogin(id.publicKey)}
-                                />
-                            );
-                        })
-                    }
-                </div>
+                        </div>
+                    )
+                }
             </div>
         </>
     )

@@ -23,6 +23,7 @@ import {useHistory} from "react-router";
 import deepEqual from "fast-deep-equal";
 import {addIdentity, setPassphrase} from "../../serviceWorkers/util";
 import {postWorkerMessage} from "../../util/sw";
+import {useSelectedLocalId} from "../../ducks/worker";
 
 export enum ViewType {
     welcome,
@@ -401,28 +402,20 @@ function LocalBackupView(props: {
     setViewType: (v: ViewType) => void;
     isOnboarding?: boolean;
 }): ReactElement {
-    const account = useAccount();
-    const gunNonce = useGunNonce();
-    const {pub, priv} = useGunKey();
     const dispatch = useDispatch();
     const [pw, setPw] = useState('');
     const [errorMessage, setErrorMessage] = useState('');
     const [confirmPw, setConfirmPw] = useState('');
     const history = useHistory();
+    const selected = useSelectedLocalId();
 
     const valid = !!pw && pw === confirmPw;
 
     const create = useCallback(async () => {
         try {
-            if (!valid) return;
+            if (!valid || !selected) return;
             await postWorkerMessage(setPassphrase(pw));
-            await postWorkerMessage(addIdentity({
-                type: 'gun',
-                address: account,
-                nonce: gunNonce,
-                publicKey: pub,
-                privateKey: priv,
-            }));
+            await postWorkerMessage(addIdentity(selected));
 
             if (!props.isOnboarding) {
                 history.push('/');
@@ -430,7 +423,7 @@ function LocalBackupView(props: {
         } catch (e) {
             setErrorMessage(e.message);
         }
-    }, [pw, confirmPw, account, gunNonce, pub, priv, props.isOnboarding]);
+    }, [pw, confirmPw, selected, props.isOnboarding]);
 
     return (
         <div className="flex flex-col flex-nowrap flex-grow my-4 mx-8 signup__content signup__welcome">
