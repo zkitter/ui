@@ -6,17 +6,16 @@ import {Route, Switch, useHistory, useLocation, useParams} from "react-router";
 import Web3Button from "../Web3Button";
 import {
     useAccount,
-    useENSFetching, useGunLoggedIn,
-    useENSName,
-    useGunKey, useSemaphoreID,
+    useGunLoggedIn,
+    useSemaphoreID,
 } from "../../ducks/web3";
-import Button from "../Button";
 import {useDispatch} from "react-redux";
 import {fetchAddressByName, useUser} from "../../ducks/users";
 import Web3 from "web3";
 import {getName} from "../../util/user";
-import {useSelectedLocalId, useWorkerUnlocked} from "../../ducks/worker";
+import {useSelectedLocalId} from "../../ducks/worker";
 import {fetchNameByAddress} from "../../util/web3";
+import Logo from "../../../static/icons/favicon.png";
 
 export default function TopNav(): ReactElement {
     const account = useAccount();
@@ -57,22 +56,50 @@ export default function TopNav(): ReactElement {
             <div
                 className="flex flex-row flex-nowrap items-center flex-grow-0 flex-shrink-0 mx-4 h-20 mobile-hidden"
             >
-                {
-                    showRegisterInterrepButton && (
-                        <Button
-                            className="mr-2 border border-yellow-300 bg-yellow-50 text-yellow-500"
-                            onClick={() => window.open(`https://kovan.interrep.link`)}
-                        >
-                            Register with InterRep
-                        </Button>
-                    )
-                }
+                <NavIconRow />
                 <Web3Button
                     className={classNames("rounded-xl top-nav__web3-btn border border-gray-200")}
                 />
             </div>
         </div>
     );
+}
+
+function NavIconRow() {
+    const loggedIn = useGunLoggedIn();
+    const account = useAccount();
+    const selectedLocalId = useSelectedLocalId();
+    const [ensName, setEnsName] = useState('');
+
+    let address = '';
+
+    if (loggedIn) {
+        address = selectedLocalId?.address || account;
+    }
+
+    useEffect(() => {
+        (async () => {
+            const ens = await fetchNameByAddress(address);
+            setEnsName(ens);
+        })();
+    }, [address]);
+
+    return (
+        <div
+            className={classNames(
+                "flex flex-row flex-nowrap items-center flex-shrink-0",
+                "rounded-xl border border-gray-100",
+                "p-1 mx-4 overflow-hidden",
+                "bg-white",
+                'mobile-hidden',
+            )}
+        >
+            <TopNavIcon fa="fas fa-home" pathname="/home" disabled={!loggedIn} />
+            <TopNavIcon fa="fas fa-user" pathname={`/${ensName || address}/`} disabled={!loggedIn} />
+            <TopNavIcon fa="fas fa-globe-asia" pathname="/explore" />
+            {/*<TopNavIcon fa="fas fa-bell" pathname="/notifications" />*/}
+        </div>
+    )
 }
 
 function DefaultHeaderGroup() {
@@ -98,16 +125,14 @@ function DefaultHeaderGroup() {
         <div
             className={classNames(
                 "flex flex-row flex-nowrap items-center flex-shrink-0",
-                "rounded-xl border border-gray-200",
                 "p-1 mx-4 overflow-hidden",
                 "bg-white",
-                'mobile-hidden',
             )}
         >
-            <TopNavIcon fa="fas fa-home" pathname="/home" disabled={!loggedIn} />
-            <TopNavIcon fa="fas fa-user" pathname={`/${ensName || address}/`} disabled={!loggedIn} />
-            <TopNavIcon fa="fas fa-globe-asia" pathname="/explore" />
-            {/*<TopNavIcon fa="fas fa-bell" pathname="/notifications" />*/}
+            <Icon
+                url={Logo}
+                size={2}
+            />
         </div>
     )
 }
@@ -253,7 +278,7 @@ function TopNavIcon(props: TopNavIconProps): ReactElement {
                 'flex', 'flex-row', 'items-center', 'justify-center',
                 'top-nav__icon',
                 {
-                    'shadow-sm top-nav__icon--selected': pathname === props.pathname,
+                    'top-nav__icon--selected': pathname === props.pathname,
                     'top-nav__icon--disabled': props.disabled,
                 }
             )}

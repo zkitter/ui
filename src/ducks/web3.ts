@@ -82,7 +82,9 @@ type State = {
         } | null;
     };
     pending: {
-        createRecordTx: string;
+        createRecordTx: {
+            [address: string]: string;
+        };
     }
 }
 
@@ -112,7 +114,7 @@ export const initialState: State = {
         identityPath: null,
     },
     pending: {
-        createRecordTx: '',
+        createRecordTx: {},
     },
 };
 
@@ -409,6 +411,10 @@ export const updateIdentity = (publicKey: string) => async (dispatch: Dispatch, 
 
     const json = await resp.json();
 
+    if (resp.status !== 200) {
+        throw new Error(json.payload);
+    }
+
     dispatch(createRecordTx(json.payload!.transactionHash!));
 
     return json;
@@ -563,7 +569,9 @@ export default function web3(state = initialState, action: Action): State {
                 ...state,
                 pending: {
                     ...state.pending,
-                    createRecordTx: action.payload,
+                    createRecordTx: {
+                        [state.account]: action.payload,
+                    },
                 },
             };
         case ActionTypes.SET_GUN_PRIVATE_KEY:
@@ -641,6 +649,13 @@ export const useGunLoggedIn = () => {
     }, deepEqual);
 }
 
+export const useWeb3Account = () => {
+    return useSelector((state: AppRootState) => {
+        const account = state.web3.account;
+        return account;
+    }, deepEqual);
+}
+
 export const useAccount = (opt?: { uppercase?: boolean }) => {
     return useSelector((state: AppRootState) => {
         const account = state.web3.account;
@@ -673,7 +688,8 @@ export const useWeb3Loading = () => {
 
 export const usePendingCreateTx = () => {
     return useSelector((state: AppRootState) => {
-        return state.web3.pending.createRecordTx;
+        const { web3: { account }} = state;
+        return state.web3.pending.createRecordTx[account];
     }, deepEqual);
 }
 

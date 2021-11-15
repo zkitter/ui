@@ -16,6 +16,7 @@ import SignupView, {ViewType} from "../SignupView";
 import {syncWorker, useSelectedLocalId} from "../../ducks/worker";
 import gun, {authenticateGun} from "../../util/gun";
 import {Identity} from "../../serviceWorkers/identity";
+import BottomNav from "../../components/BottomNav";
 
 export default function App(): ReactElement {
     const dispatch = useDispatch();
@@ -110,6 +111,7 @@ export default function App(): ReactElement {
                     <Route path="/:name" component={DefaultMetaPanels} />
                 </Switch>
             </div>
+            <BottomNav />
         </div>
     )
 }

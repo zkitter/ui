@@ -1,0 +1,62 @@
+@import "../../util/variable";
+
+.bottom-nav {
+  display: none;
+
+  @media only screen and (max-width: 768px) {
+    display: flex !important;
+    flex-flow: row nowrap;
+    height: 3.25rem;
+    border-top: 1px solid $gray-100;
+    align-items: center;
+    flex: 0 0 auto;
+    padding: .5rem;
+  }
+
+  &__icon {
+    flex: 1 0 auto;
+    height: 2rem;
+    width: 2rem;
+    transition: background-color 100ms ease-in-out,
+    color 100ms ease-in-out;
+
+    &:hover {
+      color: $primary-color;
+    }
+
+    &--selected {
+      color: $primary-color;
+    }
+
+    &--disabled {
+      color: $gray-100;
+
+      &:hover,
+      &:active {
+        background: transparent;
+        color: $gray-100;
+      }
+    }
+  }
+
+  &__web3-icon {
+    @extend %row-nowrap;
+    flex: 1 1 auto;
+    background-color: transparent !important;
+    justify-content: center;
+
+    .web3-button {
+      &__unlock-menu {
+        bottom: 3.5rem;
+        top: auto !important;
+        right: .25rem;
+        position: fixed;
+        left: auto !important;
+      }
+
+      &__content {
+        display: none !important;
+      }
+    }
+  }
+}

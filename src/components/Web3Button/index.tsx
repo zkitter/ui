@@ -115,6 +115,7 @@ export default function Web3Button(props: Props): ReactElement {
                     'text-black',
                     'bg-white',
                     'font-inter',
+                    'web3-button__content',
                     {
                         'text-gray-100 bg-gray-800': semaphoreId.keypair.privKey,
                     }
@@ -130,10 +131,8 @@ export default function Web3Button(props: Props): ReactElement {
 }
 
 function Web3ButtonLeft(props: Props): ReactElement {
-    const web3Loading = useWeb3Loading();
     const gunPair = useGunKey();
     const loggedIn = useLoggedIn();
-    const account = useAccount();
     const dispatch = useDispatch();
     const [opened, setOpened] = useState(false);
 
@@ -418,8 +417,10 @@ function UserMenu(props: {
                             )}
                         >
                             <Avatar className="w-20 h-20 mb-2" address={selectedUser?.address} />
-                            <div className="flex flex-col flex-nowrap items-center">
-                                <div className="text-base font-bold">{getName(selectedUser)}</div>
+                            <div className="flex flex-col flex-nowrap items-center w-full">
+                                <div className="text-base font-bold w-full truncate text-center">
+                                    {getName(selectedUser)}
+                                </div>
                                 <div className="text-sm">@{getHandle(selectedUser)}</div>
                             </div>
                         </div>
@@ -464,8 +465,8 @@ function UserMenuItem(props: {
             onClick={openLogin}
         >
             <Avatar className="w-9 h-9 mr-2" address={user?.username} />
-            <div className="flex flex-col flex-nowrap">
-                <div className="text-sm font-bold">{getName(user)}</div>
+            <div className="flex flex-col flex-nowrap w-0 flex-grow">
+                <div className="text-sm font-bold truncate">{getName(user)}</div>
                 <div className="text-xs">@{getHandle(user)}</div>
             </div>
         </div>
