@@ -23,6 +23,7 @@ import TwitterLogoSVG from "../../../static/icons/twitter.svg";
 import RedditLogoSVG from "../../../static/icons/reddit.svg";
 import GithubLogoPNG from "../../../static/icons/github.png";
 import SpinnerGIF from "../../../static/icons/spinner.gif";
+import MetamaskSVG from "../../../static/icons/metamask-fox.svg";
 import gun, {authenticateGun} from "../../util/gun";
 import {useHistory} from "react-router";
 import {ellipsify, getHandle, getName} from "../../util/user";
@@ -33,6 +34,10 @@ import {useUser} from "../../ducks/users";
 import {selectIdentity, setIdentity} from "../../serviceWorkers/util";
 import {postWorkerMessage} from "../../util/sw";
 import {Identity} from "../../serviceWorkers/identity";
+import QrReader from "react-qr-reader";
+import QRScanner from "../QRScanner";
+import Modal from "../Modal";
+import ExportPrivateKeyModal from "../ExportPrivateKeyModal";
 
 type Props = {
     onConnect?: () => Promise<void>;
@@ -200,6 +205,7 @@ function UserMenuable(props: {
     const selectedLocalId = useSelectedLocalId();
     const hasIdConnected = useHasIdConnected();
     const identities = useIdentities();
+    const [showingScanner, showScanner] = useState(false);
 
     const connectWallet = useCallback(async () => {
         await dispatch(connectWeb3());
@@ -291,6 +297,11 @@ function UserMenuable(props: {
                         onClick: () => unlockSemaphore('Reddit'),
                     },
                 ],
+            },
+            {
+                label: 'QR Code',
+                iconFA: 'fas fa-qrcode',
+                onClick: () => showScanner(true),
             }
         ];
 
@@ -346,6 +357,13 @@ function UserMenuable(props: {
 
     return (
         <>
+            {
+                showingScanner && (
+                    <Modal onClose={() => showScanner(false)}>
+                        <QRScanner />
+                    </Modal>
+                )
+            }
             <Menuable
                 menuClassName="web3-button__unlock-menu"
                 onOpen={() => setOpened(true)}
@@ -373,9 +391,9 @@ function UserMenu(props: {
     const selectedLocalId = useSelectedLocalId();
     const unlocked = useWorkerUnlocked();
     const [showingLogin, setShowingLogin] = useState(false);
+    const [showingExportPrivateKey, showExportPrivateKey] = useState(false);
     const [publicKey, setPublicKey] = useState('');
     const selectedUser = useUser(selectedLocalId?.address);
-    const dispatch = useDispatch();
 
     const openLogin = useCallback(async (pubkey: string) => {
         if (unlocked) {
@@ -392,6 +410,10 @@ function UserMenu(props: {
     }, [publicKey]);
 
     const onSuccess = useCallback(async () => {
+        if (showingExportPrivateKey) {
+            return;
+        }
+
         const id: any = await postWorkerMessage(selectIdentity(publicKey));
         if (id) {
             authenticateGun({
@@ -399,7 +421,7 @@ function UserMenu(props: {
                 priv: id.privateKey,
             });
         }
-    }, [publicKey]);
+    }, [publicKey, showingExportPrivateKey]);
 
     const availableIds = identities.filter(id => {
         return id.publicKey !== selectedLocalId?.publicKey;
@@ -408,6 +430,9 @@ function UserMenu(props: {
     return (
         <>
             { showingLogin && <LoginModal onClose={onClose} onSuccess={onSuccess} /> }
+            { !showingLogin && showingExportPrivateKey && (
+                <ExportPrivateKeyModal onClose={() => showExportPrivateKey(false)} />
+            )}
             <div className="flex flex-col flex-nowrap w-full">
                 {
                     selectedLocalId && (
@@ -417,6 +442,17 @@ function UserMenu(props: {
                             )}
                         >
                             <Avatar className="w-20 h-20 mb-2" address={selectedUser?.address} />
+                            <Button
+                                className="my-2"
+                                btnType="secondary"
+                                onClick={() => {
+                                    showExportPrivateKey(true);
+                                    setShowingLogin(true);
+                                }}
+                                small
+                            >
+                                Export Private Key
+                            </Button>
                             <div className="flex flex-col flex-nowrap items-center w-full">
                                 <div className="text-base font-bold w-full truncate text-center">
                                     {getName(selectedUser)}
@@ -484,6 +520,7 @@ function UnauthButton(props: {
     const web3Unlocking = useWeb3Unlocking();
     const dispatch = useDispatch();
     const selectedLocalId = useSelectedLocalId();
+    const [showingScanner, showScanner] = useState(false);
 
     const connectWallet = useCallback(async () => {
         await dispatch(connectWeb3());
@@ -492,24 +529,44 @@ function UnauthButton(props: {
 
     if (!account && !selectedLocalId) {
         return (
-            <div
-                className={classNames(
-                    "flex flex-row flex-nowrap items-center",
-                    "web3-button__alt-action",
-                )}
-                onClick={connectWallet}
-            >
+            <>
                 {
-                    !web3Loading && (
-                        <Icon
-                            className={classNames(
-                                "hover:text-green-500 transition-colors",
-                            )}
-                            fa="fas fa-plug"
-                        />
+                    showingScanner && (
+                        <Modal onClose={() => showScanner(false)}>
+                            <QRScanner />
+                        </Modal>
                     )
                 }
-            </div>
+                <Menuable
+                    className={classNames(
+                        "flex flex-row flex-nowrap items-center",
+                        "web3-button__alt-action",
+                    )}
+                    items={[
+                        {
+                            label: 'Metamask',
+                            iconUrl: MetamaskSVG,
+                            onClick: connectWallet,
+                        },
+                        {
+                            label: 'QR Code',
+                            iconFA: 'fas fa-qrcode',
+                            onClick: () => showScanner(true),
+                        }
+                    ]}
+                >
+                    {
+                        !web3Loading && (
+                            <Icon
+                                className={classNames(
+                                    "hover:text-green-500 transition-colors",
+                                )}
+                                fa="fas fa-plug"
+                            />
+                        )
+                    }
+                </Menuable>
+            </>
         )
     }
 

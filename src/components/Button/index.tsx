@@ -8,6 +8,7 @@ type Props = {
     className?: string;
     btnType?: 'primary' | 'secondary' | '';
     loading?: boolean;
+    small?: boolean;
 } & ButtonHTMLAttributes<HTMLButtonElement>;
 
 export default function Button(props: Props): ReactElement {
@@ -30,6 +31,7 @@ export default function Button(props: Props): ReactElement {
                     'button--primary': btnType === 'primary',
                     'button--secondary': btnType === 'secondary',
                     'cursor-default': disabled || loading,
+                    'button--small': !!props.small,
                 },
                 className,
             )}

@@ -57,6 +57,17 @@
       &__content {
         display: none !important;
       }
+
+      &__alt-action {
+        .menuable__menu {
+          bottom: 3.5rem;
+          top: auto !important;
+          right: .25rem;
+          position: fixed;
+          left: auto !important;
+        }
+      }
     }
   }
+
 }
