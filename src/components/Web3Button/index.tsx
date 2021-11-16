@@ -521,13 +521,14 @@ function UnauthButton(props: {
     const dispatch = useDispatch();
     const selectedLocalId = useSelectedLocalId();
     const [showingScanner, showScanner] = useState(false);
+    const identities = useIdentities();
 
     const connectWallet = useCallback(async () => {
         await dispatch(connectWeb3());
         return props.onConnect && props.onConnect();
     }, []);
 
-    if (!account && !selectedLocalId) {
+    if (!account && !selectedLocalId && !identities.length) {
         return (
             <>
                 {
