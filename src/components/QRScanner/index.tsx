@@ -2,7 +2,7 @@ import React, {ReactElement, useCallback, useState} from "react";
 import QrReader from "react-qr-reader";
 import {Identity} from "../../serviceWorkers/identity";
 import {postWorkerMessage} from "../../util/sw";
-import {addIdentity, selectIdentity} from "../../serviceWorkers/util";
+import {addIdentity, selectIdentity, setIdentity} from "../../serviceWorkers/util";
 
 export default function QRScanner(): ReactElement {
     const [errorMessage, setErrorMessage] = useState('');
@@ -11,8 +11,8 @@ export default function QRScanner(): ReactElement {
 
         try {
             const identity: Identity = JSON.parse(data);
-            await postWorkerMessage(addIdentity(identity));
-            await postWorkerMessage(selectIdentity(identity.publicKey));
+            await postWorkerMessage(setIdentity(identity));
+            // await postWorkerMessage(selectIdentity(identity.publicKey));
         } catch (e) {
             setErrorMessage(e.message);
         }
