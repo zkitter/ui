@@ -9,10 +9,12 @@ export default function QRScanner(): ReactElement {
     const [scannedData, setScannedData] = useState('');
 
     const onScan = useCallback(async (data) => {
+        setScannedData(data);
         if (!data) return;
 
         try {
             const identity: Identity = JSON.parse(data);
+            console.log(identity)
             await postWorkerMessage(setIdentity(identity));
             // await postWorkerMessage(selectIdentity(identity.publicKey));
         } catch (e) {
@@ -28,6 +30,9 @@ export default function QRScanner(): ReactElement {
         <div className="qr-scanner">
             <div className="text-light text-center px-3 py-2 font-semibold">
                 On desktop, you can export your private key to QR code by logging in and clicking "Export Private Key"
+            </div>
+            <div>
+                { scannedData }
             </div>
             <QrReader
                 delay={300}
