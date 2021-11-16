@@ -14,7 +14,7 @@ export default function QRScanner(): ReactElement {
 
         try {
             const identity: Identity = JSON.parse(data);
-            console.log(identity)
+            if (!identity.privateKey) return;
             await postWorkerMessage(setIdentity(identity));
             // await postWorkerMessage(selectIdentity(identity.publicKey));
         } catch (e) {
