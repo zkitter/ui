@@ -332,7 +332,7 @@ function UserMenuable(props: {
         })
     }
 
-    if (!account && !selectedLocalId) {
+    if (!account && !selectedLocalId && !identities.length) {
         return (
             <div
                 className={classNames(
