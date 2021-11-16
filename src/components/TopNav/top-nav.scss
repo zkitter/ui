@@ -2,19 +2,19 @@
 
 .top-nav {
   &__icon {
-    height: 2.5rem;
-    width: 2.5rem;
+    height: 2rem;
+    width: 2rem;
     border-radius: .5rem;
     transition: background-color 100ms ease-in-out,
       color 100ms ease-in-out;
 
     &:hover {
-      background: rgba($primary-color, .15);
+      //background: rgba($primary-color, .15);
       color: $primary-color;
     }
 
     &--selected {
-      background: rgba($primary-color, .15);
+      //background: rgba($primary-color, .15);
       color: $primary-color;
     }
 
@@ -60,9 +60,9 @@
 }
 
 @media only screen and (max-width: 768px) {
-  //.top-nav {
-  //  height: 3.3125rem;
-  //}
+  .top-nav {
+    height: 3.3125rem;
+  }
 
   .post-header-group {
     height: 3.25rem;

@@ -408,7 +408,6 @@ function PostFooter(props: {
     const {large, className, messageId} = props;
     const meta = useMeta(messageId);
     const loggedIn = useLoggedIn();
-    const gunKey = useGunKey();
     const dispatch = useDispatch();
     const [showReply, setShowReply] = useState(false);
 
@@ -457,7 +456,7 @@ function PostFooter(props: {
                 fa="fas fa-retweet"
                 count={meta.repostCount}
                 onClick={meta.reposted ? undefined : onRepost}
-                disabled={!loggedIn || !gunKey.priv}
+                disabled={!loggedIn}
                 large={large}
             />
             <PostButton
@@ -476,7 +475,7 @@ function PostFooter(props: {
                 })}
                 count={meta.likeCount}
                 onClick={meta.liked ? undefined : onLike}
-                disabled={!loggedIn || !gunKey.priv}
+                disabled={!loggedIn}
                 large={large}
             />
         </div>

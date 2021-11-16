@@ -1,4 +1,4 @@
-import React, {ReactElement, ReactNode, useEffect} from "react";
+import React, {ReactElement, useEffect, useState} from "react";
 import {Redirect, Route, RouteProps, Switch} from "react-router";
 import TopNav from "../../components/TopNav";
 import GlobalFeed from "../GlobalFeed";
@@ -12,18 +12,57 @@ import DiscoverUserPanel from "../../components/DiscoverUserPanel";
 import TagFeed from "../../components/TagFeed";
 import DiscoverTagPanel from "../../components/DiscoverTagPanel";
 import Icon from "../../components/Icon";
-import SignupView from "../SignupView";
+import SignupView, {ViewType} from "../SignupView";
+import {syncWorker, useSelectedLocalId} from "../../ducks/worker";
+import gun, {authenticateGun} from "../../util/gun";
+import {Identity} from "../../serviceWorkers/identity";
+import BottomNav from "../../components/BottomNav";
 
 export default function App(): ReactElement {
     const dispatch = useDispatch();
-    const loggedIn = useGunLoggedIn();
+    const selected = useSelectedLocalId();
+    const [lastSelected, setLastSelected] = useState<Identity | null>(null);
 
     useEffect(() => {
         (async function onAppMount() {
+
+            dispatch(syncWorker());
+
             if (web3Modal.cachedProvider) {
                 await dispatch(connectWeb3());
             }
         })();
+    }, []);
+
+    useEffect(() => {
+        if (!selected) {
+            //@ts-ignore
+            if (gun.user().is) {
+                gun.user().leave();
+            }
+            return;
+        }
+
+        if (lastSelected?.privateKey !== selected?.privateKey) {
+            authenticateGun({
+                pub: selected.publicKey,
+                priv: selected.privateKey,
+            });
+            setLastSelected(selected);
+        }
+    }, [selected, lastSelected])
+
+    useEffect(() => {
+        navigator.serviceWorker.addEventListener('message', event => {
+            const data = event.data;
+
+            if (!data) return;
+
+            if (data.target === 'redux') {
+                const action = data.action;
+                dispatch(action);
+            }
+        });
     }, []);
 
     return (
@@ -47,6 +86,9 @@ export default function App(): ReactElement {
                         <HomeFeed />
                     </AuthRoute>
                     <Route path="/notifications" />
+                    <Route path="/create-local-backup">
+                        <SignupView viewType={ViewType.localBackup} />
+                    </Route>
                     <Route path="/signup">
                         <SignupView />
                     </Route>
@@ -64,13 +106,12 @@ export default function App(): ReactElement {
                     <Route path="/tag/:tagName" component={DefaultMetaPanels} />
                     <Route path="/home" component={DefaultMetaPanels} />
                     <Route path="/notifications" />
+                    <Route path="/create-local-backup" />
                     <Route path="/signup" />
                     <Route path="/:name" component={DefaultMetaPanels} />
-                    <Route path="/">
-                        <Redirect to="/explore" />
-                    </Route>
                 </Switch>
             </div>
+            <BottomNav />
         </div>
     )
 }

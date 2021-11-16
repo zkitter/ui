@@ -207,7 +207,6 @@ function ProfileCard(): ReactElement {
     const [username, setUsername] = useState('');
     const user = useUser(username);
     const loggedIn = useLoggedIn();
-    const gunKey = useGunKey();
     const account = useAccount();
     const isCurrentUser = username === account;
     const [showingEditor, showProfileEditor] = useState(false);
@@ -294,7 +293,7 @@ function ProfileCard(): ReactElement {
                             <Button
                                 btnType="secondary"
                                 className="mr-2"
-                                disabled={!loggedIn || !gunKey.priv}
+                                disabled={!loggedIn}
                                 onClick={() => showProfileEditor(true)}
                             >
                                 Edit Profile
@@ -306,7 +305,7 @@ function ProfileCard(): ReactElement {
                             <Button
                                 btnType={user.meta?.followed ? "secondary" : "primary"}
                                 className="mr-2"
-                                disabled={!loggedIn || !gunKey.priv}
+                                disabled={!loggedIn}
                                 onClick={user.meta?.followed ? undefined : onFollow}
                             >
                                 {user.meta?.followed ? 'Followed' : 'Follow'}

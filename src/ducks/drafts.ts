@@ -156,12 +156,17 @@ export const submitPost = (reference = '') => async (dispatch: ThunkDispatch<any
         payload: true,
     });
 
-    const { drafts, web3 } = getState();
+    const { drafts, web3, worker } = getState();
     const draft = drafts.map[reference];
     const {
-        account,
         semaphore,
     } = web3;
+
+    const {
+        selected,
+    } = worker;
+
+    const account = selected?.address;
 
     if (!draft) return;
 
@@ -181,7 +186,6 @@ export const submitPost = (reference = '') => async (dispatch: ThunkDispatch<any
 
     if (semaphore.keypair.privKey) {
         await dispatch(submitSemaphorePost(post));
-        console.log({ post });
         return post;
     }
 
@@ -225,10 +229,13 @@ export const submitRepost = (reference = '') => async (dispatch: Dispatch, getSt
         payload: true,
     });
 
-    const { web3 } = getState();
+    const { web3, worker } = getState();
+
     const {
-        account,
-    } = web3;
+        selected,
+    } = worker;
+
+    const account = selected?.address;
 
     // @ts-ignore
     if (!gun.user().is) return;
@@ -277,10 +284,13 @@ export const submitModeration = (reference = '', subtype: ModerationMessageSubTy
         payload: true,
     });
 
-    const { web3 } = getState();
+    const { web3, worker } = getState();
+
     const {
-        account,
-    } = web3;
+        selected,
+    } = worker;
+
+    const account = selected?.address;
 
     // @ts-ignore
     if (!gun.user().is) return;
@@ -323,10 +333,13 @@ export const submitModeration = (reference = '', subtype: ModerationMessageSubTy
 
 
 export const submitConnection = (name: string, subtype: ConnectionMessageSubType) => async (dispatch: Dispatch, getState: () => AppRootState) => {
-    const { web3 } = getState();
+    const { web3, worker } = getState();
+
     const {
-        account,
-    } = web3;
+        selected,
+    } = worker;
+
+    const account = selected?.address;
     const gunUser = gun.user();
 
     // @ts-ignore
@@ -388,10 +401,13 @@ export const submitProfile = (
         payload: true,
     });
 
-    const { web3 } = getState();
+    const { web3, worker } = getState();
+
     const {
-        account,
-    } = web3;
+        selected,
+    } = worker;
+
+    const account = selected?.address;
 
     const post = new Profile({
         type: MessageType.Profile,

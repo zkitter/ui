@@ -3,21 +3,29 @@ import * as React from 'react';
 import * as ReactDOM from 'react-dom';
 import {Provider} from 'react-redux';
 import {BrowserRouter} from 'react-router-dom';
-import configureAppStore from "./store/configureAppStore";
-// import Dev from "./pages/Dev";
+import store from "./store/configureAppStore";
 import App from "./pages/App";
 import "./util/gun";
-const store = configureAppStore();
+import {createServiceWorker} from "./util/sw";
 
-ReactDOM.render(
-    <Provider store={store}>
-        <BrowserRouter>
-            <App />
-        </BrowserRouter>
-    </Provider>,
-    document.getElementById('root'),
-);
+(async () => {
+    if ('serviceWorker' in navigator) {
+        await createServiceWorker();
+    }
+
+    ReactDOM.render(
+        <Provider store={store}>
+            <BrowserRouter>
+                <App />
+            </BrowserRouter>
+        </Provider>,
+        document.getElementById('root'),
+    );
+})();
+
+
 
 if ((module as any).hot) {
     (module as any).hot.accept();
 }
+

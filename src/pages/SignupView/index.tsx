@@ -6,9 +6,8 @@ import {
     loginGun, setJoinedTx,
     updateIdentity,
     useAccount,
-    useGunKey, useGunLoggedIn,
     useGunNonce,
-    usePendingCreateTx
+    usePendingCreateTx, useWeb3Account
 } from "../../ducks/web3";
 import {useDispatch} from "react-redux";
 import config from "../../util/config";
@@ -21,17 +20,25 @@ import {submitProfile} from "../../ducks/drafts";
 import {ProfileMessageSubType} from "../../util/message";
 import {useHistory} from "react-router";
 import deepEqual from "fast-deep-equal";
+import {addIdentity, setPassphrase} from "../../serviceWorkers/util";
+import {postWorkerMessage} from "../../util/sw";
+import {useIdentities, useSelectedLocalId, useWorkerUnlocked} from "../../ducks/worker";
 
-enum ViewType {
+export enum ViewType {
     welcome,
     createIdentity,
     updateTx,
     setupProfile,
+    localBackup,
     done,
 }
 
-export default function SignupView(): ReactElement {
-    const [viewType, setViewType] = useState<ViewType>(ViewType.welcome);
+type Props = {
+    viewType?: ViewType;
+}
+
+export default function SignupView(props: Props): ReactElement {
+    const [viewType, setViewType] = useState<ViewType>(props.viewType || ViewType.welcome);
     let content;
 
     switch (viewType) {
@@ -47,6 +54,9 @@ export default function SignupView(): ReactElement {
         case ViewType.setupProfile:
             content = <SetupProfileView setViewType={setViewType} />;
             break;
+        case ViewType.localBackup:
+            content = <LocalBackupView setViewType={setViewType} isOnboarding />;
+            break;
         case ViewType.done:
             content = <DoneView setViewType={setViewType} />;
             break;
@@ -60,8 +70,7 @@ export default function SignupView(): ReactElement {
 }
 
 function WelcomeView(props: { setViewType: (v: ViewType) => void}): ReactElement {
-    const loggedIn = useGunLoggedIn();
-    const account = useAccount();
+    const account = useWeb3Account();
     const user = useUser(account);
     const history = useHistory();
 
@@ -70,11 +79,7 @@ function WelcomeView(props: { setViewType: (v: ViewType) => void}): ReactElement
             history.push('/');
             return;
         }
-
-        if (loggedIn) {
-            history.push(`/`);
-        }
-    }, [loggedIn, user]);
+    }, [user]);
 
     return (
         <div className="flex flex-col flex-nowrap flex-grow my-4 mx-8 signup__content signup__welcome">
@@ -105,7 +110,7 @@ function CreateIdentityView(props: { setViewType: (v: ViewType) => void}): React
     const [errorMessage, setErrorMessage] = useState('');
     const [creating, setCreating] = useState(false);
     const dispatch = useDispatch();
-    const account = useAccount();
+    const account = useWeb3Account();
     const user = useUser(account);
     const history = useHistory();
 
@@ -156,25 +161,27 @@ function CreateIdentityView(props: { setViewType: (v: ViewType) => void}): React
 }
 
 function UpdateTxView(props: { setViewType: (v: ViewType) => void}): ReactElement {
-    const account = useAccount();
-    const gun = useGunKey();
+    const account = useWeb3Account();
     const [errorMessage, setErrorMessage] = useState('');
     const [hash, setHash] = useState('');
     const [updating, setUpdating] = useState(false);
     const dispatch = useDispatch();
     const pendingTx = usePendingCreateTx();
     const user = useUser(account);
+    const selected = useSelectedLocalId();
 
     useEffect(() => {
         (async () => {
             try {
-                const hash = await getIdentityHash(account, gun.pub);
+                if (!selected?.publicKey) throw new Error('invalid public key');
+
+                const hash = await getIdentityHash(account, selected?.publicKey);
                 setHash(hash);
             } catch (e) {
                 setErrorMessage(e.message);
             }
         })();
-    }, [account, gun.pub]);
+    }, [account, selected?.publicKey]);
 
     useEffect(() => {
         (async () => {
@@ -192,13 +199,16 @@ function UpdateTxView(props: { setViewType: (v: ViewType) => void}): ReactElemen
         setUpdating(true);
 
         try {
-            await dispatch(updateIdentity(gun.pub));
+            if (!selected?.publicKey) {
+                throw new Error('invalid publicKey');
+            }
+            await dispatch(updateIdentity(selected?.publicKey));
         } catch (e) {
             setErrorMessage(e.message);
         } finally {
             setUpdating(false);
         }
-    }, [gun.pub]);
+    }, [selected?.publicKey]);
 
     return (
         <div className="flex flex-col flex-nowrap flex-grow my-4 mx-8 signup__content signup__welcome">
@@ -313,7 +323,7 @@ function SetupProfileView(props: { setViewType: (v: ViewType) => void}): ReactEl
                 bio: bio,
             }));
 
-            props.setViewType(ViewType.done);
+            props.setViewType(ViewType.localBackup);
         } catch (e) {
             setErrorMessage(e.message);
         }
@@ -381,6 +391,123 @@ function SetupProfileView(props: { setViewType: (v: ViewType) => void}): ReactEl
                     disabled={!dirty}
                 >
                     Next
+                </Button>
+            </div>
+        </div>
+    )
+}
+
+function LocalBackupView(props: {
+    setViewType: (v: ViewType) => void;
+    isOnboarding?: boolean;
+}): ReactElement {
+    const dispatch = useDispatch();
+    const [pw, setPw] = useState('');
+    const [errorMessage, setErrorMessage] = useState('');
+    const [confirmPw, setConfirmPw] = useState('');
+    const history = useHistory();
+    const selected = useSelectedLocalId();
+    const unlocked = useWorkerUnlocked();
+    const identities = useIdentities();
+
+    let valid = false;
+
+    if (unlocked) {
+        valid = true;
+    } else if (identities.length) {
+        valid = !!pw;
+    } else {
+        valid = !!pw && pw === confirmPw
+    }
+
+    const create = useCallback(async () => {
+        try {
+            if (!valid || !selected) return;
+
+            if (!unlocked) {
+                await postWorkerMessage(setPassphrase(pw));
+            }
+
+            await postWorkerMessage(addIdentity(selected));
+
+            if (!props.isOnboarding) {
+                history.push('/');
+            } else {
+                props.setViewType(ViewType.done);
+            }
+        } catch (e) {
+            setErrorMessage(e.message);
+        }
+    }, [pw, confirmPw, selected, props.isOnboarding, unlocked]);
+
+    const onSkip = useCallback(() => {
+        if (!props.isOnboarding) {
+            history.goBack();
+        } else {
+            props.setViewType(ViewType.done);
+        }
+    }, [props.isOnboarding]);
+
+    return (
+        <div className="flex flex-col flex-nowrap flex-grow my-4 mx-8 signup__content signup__welcome">
+            <div className="flex flex-row items-center justify-center my-4">
+                <div className="text-xl mr-2">🗄️</div>
+                <div className="text-xl font-semibold">Local Backup</div>
+            </div>
+            <div className="my-4">
+                Create an encrypted copy of your identity locally. Next time you login on this device, you won't need to connect to your wallet and sign a message.
+            </div>
+            <div className="my-4">
+                Your identity is encrypted using your password, and is stored in a separate local process. Never is ever shared with anyone.
+            </div>
+            {
+                identities.length && !unlocked && (
+                    <div className="my-2">
+                        <Input
+                            className="border relative mx-4 mt-4 mb-8"
+                            type="password"
+                            label="Enter Password"
+                            onChange={e => setPw(e.target.value)}
+                            value={pw}
+                        />
+                    </div>
+                )
+            }
+            {
+                (!identities.length && !unlocked) &&  (
+                    <div className="my-2">
+                        <Input
+                            className="border relative mx-4 mt-4 mb-8"
+                            type="password"
+                            label="Password"
+                            onChange={e => setPw(e.target.value)}
+                            value={pw}
+                        />
+                        <Input
+                            className="border relative mx-4 mt-4 mb-8"
+                            type="password"
+                            label="Confirm Password"
+                            onChange={e => setConfirmPw(e.target.value)}
+                            value={confirmPw}
+                        />
+                    </div>
+                )
+            }
+            { errorMessage && <span className="text-red-500 text-sm my-2 text-center">{errorMessage}</span>}
+            <div className="flex-grow flex flex-row mt-2 flex-nowrap items-end justify-end">
+                <Button
+                    btnType="secondary"
+                    className="mr-4"
+                    onClick={onSkip}
+                >
+                    Skip
+                </Button>
+                <Button
+                    btnType="primary"
+                    disabled={!valid}
+                    onClick={create}
+                >
+                    Create Backup
                 </Button>
             </div>
         </div>

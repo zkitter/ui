@@ -3,27 +3,21 @@ import {useSelector} from "react-redux";
 import deepEqual from "fast-deep-equal";
 import {AppRootState} from "../store/configureAppStore";
 import {Subscription} from "web3-core-subscriptions";
-import {Identity } from 'libsemaphore';
-import {
-    OrdinarySemaphore,
-} from "semaphore-lib";
+import {Identity} from 'libsemaphore';
+import {OrdinarySemaphore,} from "semaphore-lib";
 import {ThunkDispatch} from "redux-thunk";
-const {
-    default: ENS,
-    getEnsAddress,
-} = require('@ensdomains/ensjs');
 import {Dispatch} from "redux";
 import Web3Modal from "web3modal";
-import {
-    generateGunKeyPairFromHex,
-    validateGunPublicKey,
-} from "../util/crypto";
-import {defaultENS, defaultWeb3} from "../util/web3";
+import {generateGunKeyPairFromHex, validateGunPublicKey,} from "../util/crypto";
+import {defaultENS, defaultWeb3, fetchNameByAddress} from "../util/web3";
 import gun, {authenticateGun} from "../util/gun";
 import semethid from "@interrep/semethid";
 import config from "../util/config";
-import {getUser, User} from "./users";
-import {getIdentityHash, hashPubKey} from "../util/arb3";
+import {getUser} from "./users";
+import {getIdentityHash} from "../util/arb3";
+import {postWorkerMessage} from "../util/sw";
+import {setIdentity} from "../serviceWorkers/util";
+
 OrdinarySemaphore.setHasher('poseidon');
 
 export const web3Modal = new Web3Modal({
@@ -88,7 +82,9 @@ type State = {
         } | null;
     };
     pending: {
-        createRecordTx: string;
+        createRecordTx: {
+            [address: string]: string;
+        };
     }
 }
 
@@ -118,7 +114,7 @@ export const initialState: State = {
         identityPath: null,
     },
     pending: {
-        createRecordTx: '',
+        createRecordTx: {},
     },
 };
 
@@ -243,22 +239,54 @@ export const fetchJoinedTx = (account: string) => async (
     }
 }
 
+const reset = () => async (dispatch: Dispatch) => {
+    dispatch(setAccount(''));
+    dispatch(setNetwork(''));
+    dispatch(setENSName(''));
+    dispatch(setJoinedTx(''));
+    dispatch(setGunPublicKey(''));
+    dispatch(setGunPrivateKey(''));
+    dispatch(setSemaphoreID({
+        keypair: {
+            pubKey: '',
+            privKey: null,
+        },
+        identityNullifier: null,
+        identityTrapdoor: null,
+        commitment: null,
+    }));
+}
+
+const refreshAccount = () => async (
+    dispatch: ThunkDispatch<any, any, any>,
+    getState: () => AppRootState,
+) => {
+    const { web3: { web3 } } = getState();
+
+    if (!web3) {
+        dispatch(reset());
+        return;
+    }
+
+    const [account] = await web3.eth.getAccounts();
+
+    if (account) {
+        dispatch(setAccount(account));
+        await dispatch(fetchJoinedTx(account))
+        await dispatch(lookupENS());
+    }
+}
+
 export const setWeb3 = (web3: Web3 | null, account: string) => async (
     dispatch: ThunkDispatch<any, any, any>,
 ) => {
-    dispatch(fetchJoinedTx(account))
-    dispatch(setAccount(account));
-
     dispatch({
         type: ActionTypes.SET_WEB3,
         payload: web3,
     });
 
     if (!web3) {
-        dispatch(setAccount(''));
-        dispatch(setNetwork(''));
-        dispatch(setENSName(''));
-        dispatch(setJoinedTx(''));
+        dispatch(reset());
         return;
     }
 
@@ -270,50 +298,28 @@ export const setWeb3 = (web3: Web3 | null, account: string) => async (
 
     const networkType = await web3.eth.net.getNetworkType();
 
-    dispatch(lookupENS());
-
-    dispatch({
-        type: ActionTypes.SET_NETWORK,
-        payload: networkType,
-    });
+    await dispatch(refreshAccount());
+    dispatch(setNetwork(networkType));
 
     // @ts-ignore
     web3.currentProvider.on('accountsChanged', async ([acct]) => {
-        const account = Web3.utils.toChecksumAddress(acct);
-        dispatch(setGunPublicKey(''));
-        dispatch(dispatch(setJoinedTx('')));
-        dispatch(setGunPrivateKey(''));
-        dispatch(setSemaphoreID({
-            keypair: {
-                pubKey: '',
-                privKey: null,
-            },
-            identityNullifier: null,
-            identityTrapdoor: null,
-            commitment: null,
-        }));
+        dispatch(reset());
         dispatch(setWeb3Loading(true));
         const gunUser = gun.user();
+
         // @ts-ignore
         if (gunUser.is) {
             gunUser.leave();
         }
-        dispatch(setAccount(account));
-        const user: any = await dispatch(getUser(account));
-        if (user?.joinedTx) {
-            dispatch(setJoinedTx(user.joinedTx));
-        }
-        await dispatch(lookupENS());
+
+        await dispatch(refreshAccount());
         dispatch(setWeb3Loading(false));
     });
 
     // @ts-ignore
-    web3.currentProvider.on('networkChanged', async () => {
+    web3.currentProvider.on('chainChanged', async () => {
         const networkType = await web3.eth.net.getNetworkType();
-        dispatch({
-            type: ActionTypes.SET_NETWORK,
-            payload: networkType,
-        });
+        dispatch(setNetwork(networkType));
     });
 }
 
@@ -322,11 +328,19 @@ export const loginGun = (nonce = 0) => async (
     getState: () => AppRootState,
 ) => {
     dispatch(setUnlocking(true));
+    const {
+        web3: {account},
+    } = getState();
 
     try {
         const result: any = await dispatch(generateGunKeyPair(nonce));
-        dispatch(setGunPublicKey(result.pub));
-        dispatch(setGunPrivateKey(result.priv));
+        await postWorkerMessage(setIdentity({
+            type: 'gun',
+            address: account,
+            publicKey: result.pub,
+            privateKey: result.priv,
+            nonce: nonce,
+        }));
         authenticateGun(result as any);
         dispatch(setUnlocking(false));
         return result;
@@ -397,6 +411,10 @@ export const updateIdentity = (publicKey: string) => async (dispatch: Dispatch, 
 
     const json = await resp.json();
 
+    if (resp.status !== 200) {
+        throw new Error(json.payload);
+    }
+
     dispatch(createRecordTx(json.payload!.transactionHash!));
 
     return json;
@@ -461,18 +479,7 @@ export const lookupENS = () => async (dispatch: Dispatch, getState: () => AppRoo
     if (!account) return;
 
     try {
-        const {name} = await defaultENS.getName(account);
-
-        if (name) {
-            const text = await defaultENS.name(name).getText('gun.social');
-
-            if (await validateGunPublicKey(text)) {
-                dispatch({
-                    type: ActionTypes.SET_SOCIAL_KEY,
-                    payload: text,
-                });
-            }
-        }
+        const name = await fetchNameByAddress(account);
 
         if (name !== '0x0000000000000000000000000000000000000000') {
             dispatch(setENSName(name || ''));
@@ -562,7 +569,9 @@ export default function web3(state = initialState, action: Action): State {
                 ...state,
                 pending: {
                     ...state.pending,
-                    createRecordTx: action.payload,
+                    createRecordTx: {
+                        [state.account]: action.payload,
+                    },
                 },
             };
         case ActionTypes.SET_GUN_PRIVATE_KEY:
@@ -601,6 +610,10 @@ export const useLoggedIn = () => {
             semaphore,
         } = state.web3;
 
+        const { worker: { selected } } = state;
+
+        if (selected) return true;
+
         const hasGun = !!gun.priv && !!gun.pub;
         const hasSemaphore = !!semaphore.keypair.privKey
             && !!semaphore.keypair.pubKey
@@ -625,20 +638,39 @@ export const useGunLoggedIn = () => {
             gun,
         } = state.web3;
 
+        const { unlocked, selected, identities } = state.worker;
+
+        if (selected?.type === 'gun') {
+            return true;
+        }
+
         const hasGun = !!gun.priv && !!gun.pub;
         return !!(web3 && account && gun.joinedTx && (hasGun));
+    }, deepEqual);
+}
+
+export const useWeb3Account = () => {
+    return useSelector((state: AppRootState) => {
+        const account = state.web3.account;
+        return account;
     }, deepEqual);
 }
 
 export const useAccount = (opt?: { uppercase?: boolean }) => {
     return useSelector((state: AppRootState) => {
         const account = state.web3.account;
+        const {selected, identities, unlocked} = state.worker;
+        let address = account;
 
-        if (!account) return '';
+        if (selected) {
+            address = selected.address;
+        }
+
+        if (!address) return '';
 
         return opt?.uppercase
-            ? `0x${state.web3.account.slice(-40).toUpperCase()}`
-            : state.web3.account;
+            ? `0x${address.slice(-40).toUpperCase()}`
+            : address;
     }, deepEqual);
 }
 
@@ -656,7 +688,8 @@ export const useWeb3Loading = () => {
 
 export const usePendingCreateTx = () => {
     return useSelector((state: AppRootState) => {
-        return state.web3.pending.createRecordTx;
+        const { web3: { account }} = state;
+        return state.web3.pending.createRecordTx[account];
     }, deepEqual);
 }
 
@@ -699,5 +732,18 @@ export const useSemaphoreNonce = (): number => {
 export const useNetworkType = () => {
     return useSelector((state: AppRootState) => {
         return state.web3.networkType;
+    }, deepEqual);
+}
+
+export const useHasLocal = () => {
+    return useSelector((state: AppRootState) => {
+        const {
+            web3: { account },
+            worker: { identities, unlocked, selected },
+        } = state;
+
+        if (!selected) return false;
+
+        return !!identities.find(({ address }) => address === selected.address);
     }, deepEqual);
 }

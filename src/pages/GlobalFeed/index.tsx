@@ -1,24 +1,23 @@
 import React, {ReactElement, useCallback, useEffect, useState} from "react";
 import classNames from "classnames";
-import {EditorState} from 'draft-js';
 import Post from "../../components/Post";
 import {useDispatch} from "react-redux";
 import {fetchPosts, setPost, useGoToPost} from "../../ducks/posts";
 import "./global-feed.scss";
 import Editor from "../../components/Editor";
-import {useLoggedIn} from "../../ducks/web3";
+import {useHasLocal, useLoggedIn} from "../../ducks/web3";
 import {setDraft, submitPost, useDraft, useSubmitting} from "../../ducks/drafts";
-import {useHistory} from "react-router";
 import InfiniteScrollable from "../../components/InfiniteScrollable";
 import {Post as PostMessage} from "../../util/message";
+import LocalBackupNotification from "../../components/LocalBackupNotification";
 
 export default function GlobalFeed(): ReactElement {
     const [limit, setLimit] = useState(20);
     const [offset, setOffset] = useState(0);
     const [order, setOrder] = useState<string[]>([]);
     const dispatch = useDispatch();
-    const history = useHistory();
     const loggedIn = useLoggedIn();
+    const hasLocalBackup = useHasLocal();
 
     useEffect(() => {
         (async function onGlobalFeedMount() {
@@ -57,6 +56,7 @@ export default function GlobalFeed(): ReactElement {
             bottomOffset={128}
             onScrolledToBottom={fetchMore}
         >
+            <LocalBackupNotification />
             <PostEditor onSuccessPost={onSuccessPost} />
             {
                 order.map((messageId, i) => {

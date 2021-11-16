@@ -9,8 +9,6 @@ import config from "../util/config";
 import {Dispatch} from "redux";
 import {useHistory} from "react-router";
 import {useCallback} from "react";
-import {fetchProposal} from "./snapshot";
-import {parse} from "gun/examples/react-native/src/webview-crypto/serializeBinary";
 
 enum ActionTypes {
     SET_POSTS = 'posts/setPosts',
@@ -53,19 +51,14 @@ const initialState: State = {
 export const fetchMeta = (messageId: string) => async (
     dispatch: ThunkDispatch<any, any, any>, getState: () => AppRootState
 ) => {
-    const {
-        web3: {
-            account,
-            gun: { pub, priv },
-        },
-    } = getState();
     const {hash} = parseMessageId(messageId);
 
     if (!hash) {
         return null;
     }
 
-    const contextualName = (account && pub && priv) ? account : undefined;
+    const contextualName = getContextNameFromState(getState());
+
     const resp = await fetch(`${config.indexerAPI}/v1/post/${hash}`, {
         method: 'GET',
         // @ts-ignore
@@ -143,14 +136,8 @@ export const fetchPosts = (creator?: string, limit = 10, offset = 0) =>
         getState: () => AppRootState,
     ) =>
 {
-    const {
-        web3: {
-            account,
-            gun: { pub, priv },
-        },
-    } = getState();
     const creatorQuery = creator ? `&creator=${encodeURIComponent(creator)}` : '';
-    const contextualName = (account && pub && priv) ? account : undefined;
+    const contextualName = getContextNameFromState(getState());
     const resp = await fetch(`${config.indexerAPI}/v1/posts?limit=${limit}&offset=${offset}${creatorQuery}`, {
         method: 'GET',
         // @ts-ignore
@@ -170,13 +157,7 @@ export const fetchLikedBy = (creator?: string, limit = 10, offset = 0) =>
         getState: () => AppRootState,
     ) =>
 {
-    const {
-        web3: {
-            account,
-            gun: { pub, priv },
-        },
-    } = getState();
-    const contextualName = (account && pub && priv) ? account : undefined;
+    const contextualName = getContextNameFromState(getState());
     const resp = await fetch(`${config.indexerAPI}/v1/${creator}/likes?limit=${limit}&offset=${offset}`, {
         method: 'GET',
         // @ts-ignore
@@ -197,13 +178,7 @@ export const fetchRepliedBy = (creator: string, limit = 10, offset = 0) =>
         getState: () => AppRootState,
     ) =>
 {
-    const {
-        web3: {
-            account,
-            gun: { pub, priv },
-        },
-    } = getState();
-    const contextualName = (account && pub && priv) ? account : undefined;
+    const contextualName = getContextNameFromState(getState());
     const resp = await fetch(`${config.indexerAPI}/v1/${creator}/replies?limit=${limit}&offset=${offset}`, {
         method: 'GET',
         // @ts-ignore
@@ -262,13 +237,7 @@ export const fetchHomeFeed = (limit = 10, offset = 0) =>
         getState: () => AppRootState,
     ) =>
 {
-    const {
-        web3: {
-            account,
-            gun: { pub, priv },
-        },
-    } = getState();
-    const contextualName = (account && pub && priv) ? account : undefined;
+    const contextualName = getContextNameFromState(getState());
     const resp = await fetch(`${config.indexerAPI}/v1/homefeed?limit=${limit}&offset=${offset}`, {
         method: 'GET',
         // @ts-ignore
@@ -312,62 +281,50 @@ export const fetchTagFeed = (tagName: string, limit = 10, offset = 0) =>
         dispatch: ThunkDispatch<any, any, any>,
         getState: () => AppRootState,
     ) =>
-    {
-        const {
-            web3: {
-                account,
-                gun: { pub, priv },
-            },
-        } = getState();
-        const contextualName = (account && pub && priv) ? account : undefined;
-        const resp = await fetch(`${config.indexerAPI}/v1/tags/${encodeURIComponent(tagName)}?limit=${limit}&offset=${offset}`, {
-            method: 'GET',
-            // @ts-ignore
-            headers: {
-                'x-contextual-name': contextualName,
+{
+    const contextualName = getContextNameFromState(getState());
+    const resp = await fetch(`${config.indexerAPI}/v1/tags/${encodeURIComponent(tagName)}?limit=${limit}&offset=${offset}`, {
+        method: 'GET',
+        // @ts-ignore
+        headers: {
+            'x-contextual-name': contextualName,
+        },
+    });
+    const json = await resp.json();
+
+    for (const post of json.payload) {
+        const [creator, hash] = post.messageId.split('/');
+
+        dispatch({
+            type: ActionTypes.SET_META,
+            payload: {
+                messageId: post.subtype === PostMessageSubType.Repost
+                    ? post.payload.reference
+                    : post.messageId,
+                meta: post.meta,
             },
         });
-        const json = await resp.json();
 
-        for (const post of json.payload) {
-            const [creator, hash] = post.messageId.split('/');
-
-            dispatch({
-                type: ActionTypes.SET_META,
-                payload: {
-                    messageId: post.subtype === PostMessageSubType.Repost
-                        ? post.payload.reference
-                        : post.messageId,
-                    meta: post.meta,
-                },
-            });
-
-            dispatch({
-                type: ActionTypes.SET_POST,
-                payload: new Post({
-                    ...post,
-                    createdAt: new Date(Number(post.createdAt)),
-                }),
-            });
-        }
-
-        setTimeout(() => {
-            json.payload.forEach((post: any) => dispatch(fetchPost(post.messageId)));
-        }, 0);
-
-        return json.payload.map((post: any) => post.messageId);
+        dispatch({
+            type: ActionTypes.SET_POST,
+            payload: new Post({
+                ...post,
+                createdAt: new Date(Number(post.createdAt)),
+            }),
+        });
     }
+
+    setTimeout(() => {
+        json.payload.forEach((post: any) => dispatch(fetchPost(post.messageId)));
+    }, 0);
+
+    return json.payload.map((post: any) => post.messageId);
+}
 
 export const fetchReplies = (reference: string, limit = 10, offset = 0) =>
     async (dispatch: ThunkDispatch<any, any, any>, getState: () => AppRootState) =>
 {
-    const {
-        web3: {
-            account,
-            gun: { pub, priv },
-        },
-    } = getState();
-    const contextualName = (account && pub && priv) ? account : undefined;
+    const contextualName = getContextNameFromState(getState());
     const resp = await fetch(`${config.indexerAPI}/v1/replies?limit=${limit}&offset=${offset}&parent=${encodeURIComponent(reference)}`, {
         method: 'GET',
         // @ts-ignore
@@ -579,4 +536,20 @@ function reduceAppendPosts(state: State, action: Action): State {
         ...state,
         ...posts,
     };
+}
+
+export function getContextNameFromState(state: AppRootState): string | undefined {
+    const {
+        worker: {
+            selected,
+        },
+    } = state;
+
+    let contextualName = undefined;
+
+    if (selected) {
+        contextualName = selected.address;
+    }
+
+    return contextualName;
 }

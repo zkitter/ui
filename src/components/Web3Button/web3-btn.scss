@@ -42,3 +42,27 @@
     }
   }
 }
+
+.local-users-menu {
+  padding: 0 !important;
+
+  &__container {
+    max-height: 15rem;
+    overflow-y: auto;
+  }
+
+  &__item {
+    width: 100%;
+    padding: .5rem 1rem;
+  }
+
+  &__selected-item {
+    @extend %col-nowrap;
+    align-items: center;
+    padding: .5rem 1rem 1rem;
+  }
+
+  &:hover {
+    background-color: transparent !important;
+  }
+}

@@ -7,6 +7,13 @@ import config from "./config";
 const gun = Gun(config.gunPeers);
 
 export const authenticateGun = (keyPair: { pub: string; priv: string }) => {
+    console.log(keyPair)
+
+    // @ts-ignore
+    if (gun.user().is) {
+        gun.user().leave();
+    }
+
     // @ts-ignore
     return gun.user().auth(keyPair);
 }

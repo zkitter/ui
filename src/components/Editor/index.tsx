@@ -19,6 +19,7 @@ import {useDispatch} from "react-redux";
 import URLPreview from "../URLPreview";
 import SpinnerGif from "../../../static/icons/spinner.gif";
 import {useUser} from "../../ducks/users";
+import {useSelectedLocalId} from "../../ducks/worker";
 
 type Props = {
     messageId: string;
@@ -46,7 +47,6 @@ export default function Editor(props: Props): ReactElement {
     const draft = useDraft(messageId);
     const dispatch = useDispatch();
     const gun = useGunKey();
-
     const isEmpty = !editorState.getCurrentContent().hasText() && !draft.attachment;
 
     const onChange = useCallback((newEditorState: EditorState) => {
@@ -109,9 +109,7 @@ export default function Editor(props: Props): ReactElement {
                     Connect to a wallet to make a post
                 </div>
                 <Web3Button
-                    className={classNames("rounded-xl", {
-                        'border border-gray-100': address,
-                    })}
+                    className={classNames("rounded-xl border border-gray-100")}
                 />
             </div>
         )
