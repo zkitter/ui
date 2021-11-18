@@ -26,30 +26,36 @@ export class IdentityService extends GenericService {
         this.currentIdentity = null;
     }
 
-    ensure() {
+    async ensure() {
+        // this.db = await this.getDB();
         if (!this.db) {
             throw new Error('identity db is not initialized');
         }
     }
 
+    async getDB(): Promise<IDBDatabase> {
+        return new Promise(async (resolve) => {
+            const req = indexedDB.open(STORAGE_KEY, 1);
+
+            req.onupgradeneeded = () => {
+                const db = req.result;
+                const store = db.createObjectStore('identity', { keyPath: 'public_key' });
+                store.createIndex('by_address', 'address');
+                resolve(db);
+            }
+
+            req.onsuccess = async () => {
+                resolve(req.result);
+            }
+        })
+    }
+
     async start() {
-        const req = indexedDB.open(STORAGE_KEY, 1);
-
-        req.onupgradeneeded = () => {
-            const db = req.result;
-            const store = db.createObjectStore('identity', { keyPath: 'public_key' });
-            store.createIndex('by_address', 'address');
-            this.db = db;
-        }
-
-        req.onsuccess = async () => {
-            this.db = req.result;
-        }
-
+        this.db = await this.getDB();
     }
 
     async getStatus() {
-        this.ensure();
+        await this.ensure();
 
         return {
             unlocked: !!this.passphrase,
@@ -76,7 +82,7 @@ export class IdentityService extends GenericService {
     }
 
     async setPassphrase(passphrase: string) {
-        this.ensure();
+        await this.ensure();
         const identities = await this.getIdentities();
 
         for (let id of identities) {
@@ -99,7 +105,7 @@ export class IdentityService extends GenericService {
     }
 
     async selectIdentity(pubkey: string) {
-        this.ensure();
+        await this.ensure();
         const identities = await this.getIdentities();
 
         for (let id of identities) {
@@ -114,7 +120,7 @@ export class IdentityService extends GenericService {
     }
 
     async addIdentity(identity: Identity) {
-        this.ensure();
+        await this.ensure();
 
         if (!this.passphrase) throw new Error('identity store is locked');
         if (!identity.publicKey) throw new Error('missing publicKey');
@@ -136,7 +142,7 @@ export class IdentityService extends GenericService {
     }
 
     async getIdentityByAddress(address: string) {
-        this.ensure();
+        await this.ensure();
         return new Promise(async (resolve, reject) => {
             const tx = this.db?.transaction("identity", "readwrite");
             const store = tx?.objectStore("identity");
@@ -166,7 +172,7 @@ export class IdentityService extends GenericService {
     }
 
     async getIdentities(): Promise<Identity[]> {
-        this.ensure();
+        await this.ensure();
         return new Promise(async (resolve, reject) => {
             const tx = this.db?.transaction("identity", "readwrite");
             const store = tx?.objectStore("identity");
