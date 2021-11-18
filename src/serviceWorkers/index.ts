@@ -26,12 +26,10 @@ async function getApp() {
 }
 
 global.addEventListener('activate', async () => {
-    console.log('activate');
     await getApp();
 });
 
 global.addEventListener('message', async (e) => {
-    console.log('worker received', e);
     const action: WorkerAction<any> = e.data;
 
     if (!action || action.target !== 'autism-web' || !e.source) {
