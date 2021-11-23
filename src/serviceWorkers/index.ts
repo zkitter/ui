@@ -6,50 +6,66 @@ import {ServiceWorkerActionType, WorkerAction, WorkerResponse} from "./util";
 
 const global: ServiceWorkerGlobalScope = self as any;
 
-global.addEventListener('activate', async () => {
+let root: null | AppService = null;
+
+async function getApp() {
+    if (root) {
+        return root;
+    }
+
     const app = new AppService();
 
     app.add('identity', new IdentityService());
 
     await app.start();
 
-    self.addEventListener('message', async (e) => {
-        const action: WorkerAction<any> = e.data;
+    root = app;
 
-        if (!action || action.target !== 'autism-web' || !e.source) {
-            return;
-        }
+    return root;
 
-        const client = e.source;
+}
 
+global.addEventListener('activate', async () => {
+    await getApp();
+});
+
+global.addEventListener('message', async (e) => {
+    const action: WorkerAction<any> = e.data;
+
+    if (!action || action.target !== 'autism-web' || !e.source) {
+        return;
+    }
+
+    const client = e.source;
+
+    // @ts-ignore
+    const handler = handlers[action?.type];
+    const nonce = action.nonce;
+    const app = await getApp();
+
+    try {
+        const payload = await handler(app, action);
+        const resp: WorkerResponse<any> = {
+            payload: payload,
+            nonce: nonce as number,
+        };
         // @ts-ignore
-        const handler = handlers[action?.type];
-        const nonce = action.nonce;
-
-        try {
-            const payload = await handler(app, action);
-            const resp: WorkerResponse<any> = {
-                payload: payload,
-                nonce: nonce as number,
-            };
-            // @ts-ignore
-            client.postMessage({
-                target: 'rpc',
-                response: resp,
-            });
-        } catch (e) {
-            const resp: WorkerResponse<any> = {
-                payload: e.message,
-                nonce: nonce as number,
-                error: true,
-            };
-            // @ts-ignore
-            client.postMessage({
-                target: 'rpc',
-                response: resp,
-            });
-        }
-    });
+        client.postMessage({
+            target: 'rpc',
+            response: resp,
+        });
+    } catch (e) {
+        const resp: WorkerResponse<any> = {
+            payload: e.message,
+            nonce: nonce as number,
+            error: true,
+        };
+        // @ts-ignore
+        client.postMessage({
+            target: 'rpc',
+            response: resp,
+        });
+    }
 });
 
 const handlers = {

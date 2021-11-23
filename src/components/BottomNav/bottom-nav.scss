@@ -2,6 +2,11 @@
 
 .bottom-nav {
   display: none;
+  position: fixed;
+  bottom: 0;
+  width: 100%;
+  background-color: $white;
+  z-index: 900;
 
   @media only screen and (max-width: 768px) {
     display: flex !important;

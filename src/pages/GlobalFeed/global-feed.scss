@@ -6,6 +6,14 @@
     width: 0;  /* Remove scrollbar space */
     background: transparent;  /* Optional: just make scrollbar invisible */
   }
+
+  .editor {
+    @media only screen and (max-width: 768px) {
+      border: none !important;
+      border-bottom: 1px solid rgba(229,231,235,var(--tw-border-opacity)) !important;
+      border-radius: 0 !important;
+    }
+  }
 }
 
 @media only screen and (max-width: 768px) {
