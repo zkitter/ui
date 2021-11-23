@@ -381,7 +381,7 @@ function SetupProfileView(props: { setViewType: (v: ViewType) => void}): ReactEl
                 <Button
                     btnType="secondary"
                     className="mr-4"
-                    onClick={() => props.setViewType(ViewType.done)}
+                    onClick={() => props.setViewType(ViewType.localBackup)}
                 >
                     Skip
                 </Button>
