@@ -211,10 +211,6 @@ export const setGunPrivateKey = (privateKey: string) => ({
 });
 
 export const setSemaphoreID = (identity: {
-    keypair: {
-        pubKey: string,
-        privKey: Buffer|null,
-    },
     commitment: BigInt|null;
     identityNullifier: BigInt|null;
     identityTrapdoor: BigInt|null;
@@ -247,10 +243,6 @@ const reset = () => async (dispatch: Dispatch) => {
     dispatch(setGunPublicKey(''));
     dispatch(setGunPrivateKey(''));
     dispatch(setSemaphoreID({
-        keypair: {
-            pubKey: '',
-            privKey: null,
-        },
         identityNullifier: null,
         identityTrapdoor: null,
         commitment: null,
@@ -351,29 +343,41 @@ export const loginGun = (nonce = 0) => async (
 }
 
 export const genSemaphore = (web2Provider: 'Twitter' | 'Github' | 'Reddit' = 'Twitter') =>
-    async (dispatch: ThunkDispatch<any, any, any>) =>
+    async (dispatch: ThunkDispatch<any, any, any>, getState: () => AppRootState) =>
 {
     dispatch(setUnlocking(true));
 
     try {
-        const result: any = await dispatch(generateSemaphoreID(web2Provider, 0));
-        const commitment = await OrdinarySemaphore.genIdentityCommitment(result);
-
+        const nonce = 0;
+        const { web3: { account }} = getState();
+        const result: any = await dispatch(generateSemaphoreID(web2Provider, nonce));
+        const commitment = await result.genIdentityCommitment();
         const resp = await fetch(`${config.indexerAPI}/interrep/${commitment.toString()}`);
-        const { payload: {data}, error } = await resp.json();
+        const { payload: {data, name}, error } = await resp.json();
+
+        let path = null;
+        let groupName = '';
 
         if (!error && data) {
-            const path = {
-              path_elements: data.pathElements,
-              path_index: data.indices,
+            path = {
+                path_elements: data.pathElements,
+                path_index: data.indices,
+                root: data.root,
             };
-            dispatch(setSemaphoreIDPath(path));
+            groupName = name;
         }
 
-        dispatch(setSemaphoreID({
-            ...result,
-            commitment,
-        }));
+        postWorkerMessage(setIdentity({
+            type: 'interrep',
+            address: account,
+            nonce: nonce,
+            provider: web2Provider,
+            name: groupName,
+            identityPath: path,
+            identityCommitment: commitment.toString(),
+            serializedIdentity: result.serializeIdentity(),
+        }))
+
         dispatch(setUnlocking(false));
     } catch (e) {
         dispatch(setUnlocking(false));
@@ -461,12 +465,13 @@ const generateSemaphoreID = (
         return Promise.reject(new Error('not connected to web3'));
     }
 
-    const identity: Identity = await semethid(
+    const identity = await semethid(
         // @ts-ignore
         (message: string) => web3.eth.personal.sign(message, account),
         web2Provider,
         0,
     );
+
     return identity;
 }
 
@@ -613,18 +618,6 @@ export const useLoggedIn = () => {
         const { worker: { selected } } = state;
 
         if (selected) return true;
-
-        const hasGun = !!gun.priv && !!gun.pub;
-        const hasSemaphore = !!semaphore.keypair.privKey
-            && !!semaphore.keypair.pubKey
-            && !!semaphore.identityNullifier
-            && !!semaphore.identityTrapdoor
-            && !!semaphore.commitment
-            && !!semaphore.identityPath;
-
-        if (hasSemaphore) return true;
-
-        if (!!(web3 && account && gun.joinedTx && (hasGun))) return true;
 
         return false;
     }, deepEqual);

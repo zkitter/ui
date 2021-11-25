@@ -43,13 +43,16 @@ export default function App(): ReactElement {
             return;
         }
 
-        if (lastSelected?.privateKey !== selected?.privateKey) {
-            authenticateGun({
-                pub: selected.publicKey,
-                priv: selected.privateKey,
-            });
-            setLastSelected(selected);
+        if (lastSelected?.type === 'gun' && selected?.type === 'gun') {
+            if (lastSelected?.privateKey !== selected?.privateKey) {
+                authenticateGun({
+                    pub: selected.publicKey,
+                    priv: selected.privateKey,
+                });
+                setLastSelected(selected);
+            }
         }
+
     }, [selected, lastSelected])
 
     useEffect(() => {

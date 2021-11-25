@@ -1,4 +1,6 @@
 import {useSelector} from "react-redux";
+import { ZkIdentity } from "@libsem/identity";
+const {  Semaphore, genExternalNullifier, genSignalHash } = require("@libsem/protocols");
 import {AppRootState} from "../store/configureAppStore";
 import deepEqual from "fast-deep-equal";
 import {convertToRaw, EditorState} from "draft-js";
@@ -21,6 +23,7 @@ import {markdownConvertOptions} from "../components/DraftEditor";
 import config from "../util/config";
 import {Identity} from "libsemaphore";
 import {setFollowed} from "./users";
+import {genSemaphoreProof} from "../util/crypto";
 
 OrdinarySemaphore.setHasher('poseidon');
 
@@ -76,17 +79,19 @@ export const emptyDraft = (reference?: string): Action<Draft> => ({
 export const submitSemaphorePost = (post: Post) => async (dispatch: Dispatch, getState: () => AppRootState) => {
     const state = getState();
     const {
-        semaphore,
-    } = state.web3;
-    const identityCommitment = semaphore.commitment;
-    const identityNullifier = semaphore.identityNullifier;
-    const identityTrapdoor = semaphore.identityTrapdoor;
-    const identityPathElements = semaphore.identityPath?.path_elements;
-    const identityPathIndex = semaphore.identityPath?.path_index;
-    const privKey = semaphore.keypair?.privKey;
-    const pubKey = semaphore.keypair?.pubKey;
+        selected,
+    } = state.worker;
 
-    if (!identityCommitment || !identityPathElements || !identityPathIndex || !privKey || !pubKey || !identityTrapdoor || !identityNullifier) {
+    if (selected?.type !== 'interrep') throw new Error('Not in incognito mode');
+
+    const zkIdentity = ZkIdentity.genFromSerialized(selected.serializedIdentity);
+    const {identityTrapdoor, identityNullifier} = zkIdentity.getIdentity();
+    const identityCommitment = selected.identityCommitment;
+    const identityPathElements = selected.identityPath?.path_elements;
+    const identityPathIndex = selected.identityPath?.path_index;
+    const root = selected.identityPath?.root;
+
+    if (!identityCommitment || !identityPathElements || !identityPathIndex || !identityTrapdoor || !identityNullifier) {
         return null;
     }
 
@@ -95,30 +100,27 @@ export const submitSemaphorePost = (post: Post) => async (dispatch: Dispatch, ge
         hash,
         ...json
     } = post.toJSON();
-    const externalNullifier = OrdinarySemaphore.genExternalNullifier('POST');
 
+    const externalNullifier = genExternalNullifier('POST');
+    // const signalHash = genSignalHash(hash);
     const wasmFilePath = `${config.indexerAPI}/dev/semaphore_wasm`;
     const finalZkeyPath = `${config.indexerAPI}/dev/semaphore_final_zkey`;
 
-    const identity: Identity = {
-        keypair: semaphore.keypair as any,
-        identityTrapdoor: semaphore.identityTrapdoor,
-        identityNullifier: semaphore.identityNullifier,
-    };
-    const {
-        proof,
-        publicSignals,
-    } = await OrdinarySemaphore.genProofFromBuiltTree(
-        identity,
-        hash,
+    const witness = Semaphore.genWitness(
+        zkIdentity,
         {
-            indices:   identityPathIndex,
+            indices: identityPathIndex,
             pathElements: identityPathElements,
         },
         externalNullifier,
-        wasmFilePath,
-        finalZkeyPath,
+        hash,
+        true
     );
+
+    const {
+        proof,
+        publicSignals,
+    } = await genSemaphoreProof(witness, wasmFilePath, finalZkeyPath);
 
     try {
         // @ts-ignore
@@ -127,6 +129,8 @@ export const submitSemaphorePost = (post: Post) => async (dispatch: Dispatch, ge
             proof: JSON.stringify(proof),
             publicSignals: JSON.stringify(publicSignals),
         };
+
+        console.log(semaphorePost);
 
         // @ts-ignore
         await gun.get('message')
@@ -176,7 +180,7 @@ export const submitPost = (reference = '') => async (dispatch: ThunkDispatch<any
     const post = new Post({
         type: MessageType.Post,
         subtype: reference ? PostMessageSubType.Reply : PostMessageSubType.Default,
-        creator: semaphore.keypair.privKey ? '' : account,
+        creator: selected?.type === 'interrep' ? '' : account,
         payload: {
             content: markdown,
             reference: reference,
@@ -184,7 +188,7 @@ export const submitPost = (reference = '') => async (dispatch: ThunkDispatch<any
         },
     });
 
-    if (semaphore.keypair.privKey) {
+    if (selected?.type === 'interrep') {
         await dispatch(submitSemaphorePost(post));
         return post;
     }

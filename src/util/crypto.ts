@@ -1,6 +1,7 @@
 import EC from "elliptic";
 import {genPubKey, Identity} from 'libsemaphore';
 import {IProof, IWitnessData} from "semaphore-lib/src/index";
+import {builder} from "./witness_calculator";
 const snarkjs = require('snarkjs');
 const { groth16 } = snarkjs;
 
@@ -103,31 +104,26 @@ export const generateSemaphoreIDFromHex = async (hashHex: string) => {
     }
 }
 
-export const genProof_fastSemaphore = async (
-    identity: Identity,
-    signalHash: BigInt,
-    indices: any[],
-    pathElements: any[],
-    externalNullifier: string,
-    depth: number,
-    zeroValue: BigInt,
-    leavesPerNode: number,
-    wasmFilePath: string,
-    finalZkeyPath: string,
-): Promise<IWitnessData> => {
-    const grothInput: any = {
-        identity_pk: identity.keypair.pubKey,
-        identity_nullifier: identity.identityNullifier,
-        identity_trapdoor: identity.identityTrapdoor,
-        identity_path_index: indices,
-        path_elements: pathElements,
-        external_nullifier: externalNullifier,
-        signal_hash: signalHash,
-    }
 
-    const fullProof: IProof = await groth16.fullProve(grothInput, wasmFilePath, finalZkeyPath);
-    return {
-        fullProof,
-        root: BigInt('0x25dbb126efebb0fab9fb02d19fc8ca09a61b7e85535bf26e9f6891676cf9aaa8'),
-    }
+export const genWnts = async(input: any, wasmFilePath: string): Promise<Uint8Array> => {
+    const resp = await fetch(wasmFilePath);
+    const buffer = await resp.arrayBuffer();
+
+    return new Promise((resolve, reject) => {
+        builder(buffer)
+            .then(async witnessCalculator => {
+                const buff= await witnessCalculator.calculateWTNSBin(input, 0);
+                resolve(buff);
+            }).catch((error) => {
+            reject(error);
+        });
+    })
+}
+
+export const genSemaphoreProof = async(grothInput: any, wasmFilePath: string, finalZkeyPath: string) => {
+    const wntsBuff = await genWnts(grothInput, wasmFilePath);
+    const resp = await fetch(finalZkeyPath);
+    const arrayBuffer = await resp.arrayBuffer();
+    const { proof, publicSignals } = await groth16.prove(new Uint8Array(arrayBuffer), wntsBuff, null);
+    return { proof, publicSignals };
 }

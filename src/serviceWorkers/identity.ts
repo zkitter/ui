@@ -3,13 +3,32 @@ import {decrypt, encrypt} from "../util/encrypt";
 import {pushReduxAction} from "./util";
 import {setIdentities, setSelectedId, setUnlocked} from "../ducks/worker";
 
-export type Identity = {
+export type GunIdentity = {
     type: 'gun',
     address: string;
     nonce: number;
     publicKey: string;
     privateKey: string;
 }
+
+export type InterrepIdentity = {
+    type: 'interrep',
+    address: string;
+    nonce: number;
+    provider: string;
+    name: string;
+    identityPath: {
+        path_elements: string[];
+        path_index: number[];
+        root: string;
+    } | null;
+    identityCommitment: string;
+    serializedIdentity: string;
+}
+
+export type Identity =
+    | GunIdentity
+    | InterrepIdentity;
 
 const STORAGE_KEY = 'identity_ls';
 
@@ -39,7 +58,12 @@ export class IdentityService extends GenericService {
 
             req.onupgradeneeded = () => {
                 const db = req.result;
-                const store = db.createObjectStore('identity', { keyPath: 'public_key' });
+                const store = db.createObjectStore(
+                    'identity',
+                    {
+                        keyPath: 'public_key',
+                    }
+                );
                 store.createIndex('by_address', 'address');
                 resolve(db);
             }
@@ -68,17 +92,16 @@ export class IdentityService extends GenericService {
     }
 
     wrapIdentity(id: Identity): Identity {
-        if (this.passphrase) {
+        if (id.type === 'gun') {
             return {
                 ...id,
-                privateKey: decrypt(id.privateKey, this.passphrase),
+                privateKey: this.passphrase
+                    ? decrypt(id.privateKey, this.passphrase)
+                    : '',
             }
         }
 
-        return {
-            ...id,
-            privateKey: '',
-        };
+        return id;
     }
 
     async setPassphrase(passphrase: string) {
@@ -86,8 +109,10 @@ export class IdentityService extends GenericService {
         const identities = await this.getIdentities();
 
         for (let id of identities) {
-            if (!decrypt(id.privateKey, passphrase)) {
-                throw new Error('invalid passphrase');
+            if (id.type === 'gun') {
+                if (!decrypt(id.privateKey, passphrase)) {
+                    throw new Error('invalid passphrase');
+                }
             }
         }
 
@@ -109,11 +134,14 @@ export class IdentityService extends GenericService {
         const identities = await this.getIdentities();
 
         for (let id of identities) {
-            if (id.publicKey === pubkey) {
-                this.currentIdentity = this.wrapIdentity(id);
-                await pushReduxAction(setSelectedId(this.currentIdentity));
-                return this.currentIdentity;
+            if (id.type === 'gun') {
+                if (id.publicKey === pubkey) {
+                    this.currentIdentity = this.wrapIdentity(id);
+                    await pushReduxAction(setSelectedId(this.currentIdentity));
+                    return this.currentIdentity;
+                }
             }
+
         }
 
         throw new Error(`cannot find identity with pubkey ${pubkey}`);
@@ -123,20 +151,23 @@ export class IdentityService extends GenericService {
         await this.ensure();
 
         if (!this.passphrase) throw new Error('identity store is locked');
-        if (!identity.publicKey) throw new Error('missing publicKey');
-        if (!identity.privateKey) throw new Error('missing privateKey');
         if (typeof identity.nonce !== 'number') throw new Error('invalid nonce');
 
         const tx = this.db?.transaction("identity", "readwrite");
         const store = tx?.objectStore("identity");
 
-        store?.put({
-            type: identity.type,
-            address: identity.address,
-            nonce: identity.nonce,
-            public_key: identity.publicKey,
-            private_key: encrypt(identity.privateKey, this.passphrase),
-        });
+        if (identity.type === 'gun') {
+            if (!identity.publicKey) throw new Error('missing publicKey');
+            if (!identity.privateKey) throw new Error('missing privateKey');
+
+            store?.put({
+                type: identity.type,
+                address: identity.address,
+                nonce: identity.nonce,
+                public_key: identity.publicKey,
+                private_key: encrypt(identity.privateKey, this.passphrase),
+            });
+        }
 
         await pushReduxAction(setIdentities(await this.getIdentities()));
     }
