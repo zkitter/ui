@@ -27,6 +27,8 @@ import Menuable, {ItemProps} from "../../components/Menuable";
 import Web3 from "web3";
 import {getHandle, getName} from "../../util/user";
 import config from "../../util/config";
+import {verifyTweet} from "../../util/twitter";
+import {ViewType} from "../ConnectTwitterView";
 
 let t: any = null;
 
@@ -217,6 +219,7 @@ function ProfileCard(): ReactElement {
     const dispatch = useDispatch();
     const history = useHistory();
     const twitterHandle = useConnectedTwitter(username);
+    const [verifiedTwitter, setVerifiedTwitter] = useState(false);
 
     useEffect(() => {
         (async () => {
@@ -228,6 +231,14 @@ function ProfileCard(): ReactElement {
             }
         })();
     }, [name]);
+
+    useEffect(() => {
+        (async () => {
+            const verified = await verifyTweet(user?.address, user?.twitterVerification);
+            setVerifiedTwitter(verified);
+        })();
+
+    }, [user]);
 
     const onFollow = useCallback(() => {
         dispatch(submitConnection(username, ConnectionMessageSubType.Follow));
@@ -388,7 +399,7 @@ function ProfileCard(): ReactElement {
                     !!user.joinedTx && (
                         <div
                             className="profile-view__data-group flex flex-row flex-nowrap items-center text-light text-gray-500 cursor-pointer hover:underline"
-                            onClick={() => window.open(`https://etherscan.io/address/${user.joinedTx}`, '_blank')}
+                            onClick={() => window.open(`https://etherscan.io/address/${user.address}`, '_blank')}
                         >
                             <Icon url={EtherScanSVG} />
                             <div className="ml-2 profile-view__data-group__value">
@@ -398,7 +409,7 @@ function ProfileCard(): ReactElement {
                     )
                 }
                 {
-                    !!user.twitterVerification && (
+                    !!verifiedTwitter && (
                         <div
                             className="profile-view__data-group flex flex-row flex-nowrap items-center text-light text-gray-500 cursor-pointer"
                             onClick={() => window.open(user.twitterVerification, '_blank')}

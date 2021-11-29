@@ -12,6 +12,8 @@ import {useDispatch} from "react-redux";
 import {submitProfile} from "../../ducks/drafts";
 import {ProfileMessageSubType} from "../../util/message";
 import {useHistory} from "react-router";
+import {verifyTweet} from "../../util/twitter";
+import {getHandle} from "../../util/user";
 
 export enum ViewType {
     welcome,
@@ -157,17 +159,41 @@ function VerifyView(props: {
     const [errorMessage, setErrorMessage] = useState('');
     const [posting, setPosting] = useState(false);
     const { twitterAuth } = props;
+    const [existing, setExisting] = useState<string>('');
     const selected = useSelectedLocalId();
     const account = useAccount();
     const dispatch = useDispatch();
+    const history = useHistory();
     const user = useUser(account);
+    const existingUser = useUser(existing)
     const status = `I am verifying my account on #autism\nhttps://auti.sm/${account}/`;
 
     useEffect(() => {
-        if (user?.twitterVerification) {
-            props.setViewType(ViewType.done);
-        }
-    }, [user]);
+        (async () => {
+            if (user?.twitterVerification) {
+                const verified = await verifyTweet(account, user?.twitterVerification);
+
+                if (verified) {
+                    props.setViewType(ViewType.done);
+                }
+            }
+        })();
+
+    }, [user, account]);
+
+    useEffect(() => {
+        if (!twitterAuth?.username) return setExisting('');
+
+        (async () => {
+            const resp = await fetch(`${config.indexerAPI}/twitter/check?username=${twitterAuth.username}`);
+            const json = await resp.json();
+            if (json?.payload) {
+                setExisting(json.payload.account);
+            } else {
+                setExisting('');
+            }
+        })();
+    }, [twitterAuth?.username]);
 
     const onVerify = useCallback(async () => {
         if (!user) return;
@@ -194,8 +220,10 @@ function VerifyView(props: {
             }
 
             if (!json?.error && json?.payload) {
-                await dispatch(submitProfile(ProfileMessageSubType.TwitterVerification, json.payload));
-
+                const [twitterHandle, _, tweetId] = json.payload
+                    .replace('https://twitter.com/', '')
+                    .split('/');
+                await dispatch(submitProfile(ProfileMessageSubType.TwitterVerification, tweetId, twitterHandle));
                 dispatch(setUser({
                     ...user,
                     twitterVerification: json.payload,
@@ -208,6 +236,37 @@ function VerifyView(props: {
         }
 
     }, [account, status, user]);
+
+    if (existing !== account) {
+        return (
+            <div className="flex flex-col flex-nowrap flex-grow my-4 mx-8 signup__content signup__welcome">
+                <div className="flex flex-row items-center justify-center my-4">
+                    <div className="text-xl mr-2">
+                        <Icon url={TwitterLogo} size={1.25} />
+                    </div>
+                    <div className="text-xl font-semibold">Already connected</div>
+                </div>
+                <div className="my-4 text-center">
+                    <span>{`The twitter handle ${twitterAuth?.username} is already associated with`}</span>
+                    <a className="ml-2" onClick={() => history.push(`/${existing}/`)}>
+                        @{getHandle(user)}
+                    </a>
+                </div>
+                { errorMessage && <span className="text-red-500 text-sm my-2 text-center">{errorMessage}</span>}
+                <div className="flex-grow flex flex-row mt-8 mb-4 flex-nowrap items-center justify-center">
+                    <Button
+                        btnType="secondary"
+                        className="mr-4"
+                        onClick={props.onResetAuth}
+                        disabled={posting}
+                    >
+                        Reset
+                    </Button>
+
+                </div>
+            </div>
+        );
+    }
 
     return (
         <div className="flex flex-col flex-nowrap flex-grow my-4 mx-8 signup__content signup__welcome">
