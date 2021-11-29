@@ -14,6 +14,7 @@ import {ProfileMessageSubType} from "../../util/message";
 import {useHistory} from "react-router";
 import {verifyTweet} from "../../util/twitter";
 import {getHandle} from "../../util/user";
+import {signWithP256} from "../../util/crypto";
 
 export enum ViewType {
     welcome,
@@ -35,13 +36,23 @@ export default function ConnectTwitterView(props: Props): ReactElement {
         profileImageUrlHttps: string;
         screenName: string;
     }|null>(null);
+    const selected = useSelectedLocalId();
 
     useEffect(() => {
         (async function() {
             try {
+                let signature = '';
+                if (selected?.type === 'gun') {
+                    signature = signWithP256(selected.privateKey, selected.address) + '.' + selected.address;
+                }
+
                 const resp = await fetch(`${config.indexerAPI}/twitter/session`, {
                     credentials: 'include',
+                    headers: {
+                        'X-SIGNED-ADDRESS': signature,
+                    },
                 });
+
                 const json: any = await resp.json();
 
                 if (json?.error) {
@@ -64,7 +75,7 @@ export default function ConnectTwitterView(props: Props): ReactElement {
                 setFetching(false);
             }
         })();
-    }, []);
+    }, [selected]);
 
     const onResetAuth = useCallback(async () => {
         const resp = await fetch(`${config.indexerAPI}/oauth/reset`, {

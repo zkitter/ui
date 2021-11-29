@@ -17,6 +17,28 @@ export const hexToArrayBuf = (hex: string): ArrayBuffer => {
     return hexToUintArray(hex).buffer;
 }
 
+export const signWithP256 = (base64PrivateKey: string, data: string) => {
+    const buff = base64ToArrayBuffer(base64PrivateKey);
+    const hex = Buffer.from(buff).toString('hex');
+    const ec = new EC.ec('p256');
+    const key = ec.keyFromPrivate(hex);
+    const msgHash = Buffer.from(data, 'utf-8').toString('hex');
+    const signature = key.sign(msgHash);
+    return Buffer.from(signature.toDER()).toString('hex');
+}
+
+export function base64ToArrayBuffer(base64: string): ArrayBuffer {
+    const binary_string = window.atob(
+        base64.replace(/_/g, '/').replace(/-/g, '+')
+    );
+    const len = binary_string.length;
+    const bytes = new Uint8Array( len );
+    for (let i = 0; i < len; i++)        {
+        bytes[i] = binary_string.charCodeAt(i);
+    }
+    return bytes.buffer;
+}
+
 export const arrayBufToBase64UrlEncode = (buf: ArrayBuffer) => {
     let binary = '';
     const bytes = new Uint8Array(buf);
@@ -72,7 +94,6 @@ export const generateGunKeyPairFromHex = async (hashHex: string): Promise<{pub: 
     const pubHex = pubPoint.encode('hex', false);
     const pubX = arrayBufToBase64UrlEncode(hexToArrayBuf(pubHex).slice(1, 33));
     const pubY = arrayBufToBase64UrlEncode(hexToArrayBuf(pubHex).slice(33, 66));
-
     return {
         priv: arrayBufToBase64UrlEncode(Buffer.from(hashHex, 'hex')),
         pub: `${pubX}.${pubY}`,

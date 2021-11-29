@@ -37,6 +37,7 @@ import {Identity} from "../../serviceWorkers/identity";
 import QRScanner from "../QRScanner";
 import Modal from "../Modal";
 import ExportPrivateKeyModal from "../ExportPrivateKeyModal";
+import config from "../../util/config";
 
 type Props = {
     onConnect?: () => Promise<void>;
@@ -250,6 +251,9 @@ function UserMenuable(props: {
         await dispatch(setGunPrivateKey(''));
         await dispatch(setSemaphoreIDPath(null));
         await postWorkerMessage(setIdentity(null));
+        await fetch(`${config.indexerAPI}/oauth/reset`, {
+            credentials: 'include',
+        });
     }, []);
 
     let items: ItemProps[] = [];
