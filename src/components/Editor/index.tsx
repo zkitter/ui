@@ -20,6 +20,7 @@ import URLPreview from "../URLPreview";
 import SpinnerGif from "../../../static/icons/spinner.gif";
 import {useUser} from "../../ducks/users";
 import {useSelectedLocalId} from "../../ducks/worker";
+import {useHistory} from "react-router";
 
 type Props = {
     messageId: string;
@@ -46,6 +47,7 @@ export default function Editor(props: Props): ReactElement {
     const draft = useDraft(messageId);
     const dispatch = useDispatch();
     const gun = useGunKey();
+    const history = useHistory();
     const selectedId = useSelectedLocalId();
     const isEmpty = !editorState.getCurrentContent().hasText() && !draft.attachment;
 
@@ -90,6 +92,27 @@ export default function Editor(props: Props): ReactElement {
                 )}
             >
                 <Icon className="opacity-50" url={SpinnerGif} size={4} />
+            </div>
+        )
+    }
+
+    if (selectedId?.type === 'interrep' && !selectedId.identityPath) {
+        return (
+            <div
+                className={classNames(
+                    'flex flex-col flex-nowrap items-center',
+                    'p-4',
+                    'bg-white',
+                    'rounded-xl',
+                    props.className,
+                )}
+            >
+                <div className="mt-2 mb-4 text-gray-800">
+                    Join Interrep to make a post
+                </div>
+                <Button btnType="primary" onClick={() => history.push('/onboarding/interrep')}>
+                    Join Interrep
+                </Button>
             </div>
         )
     }

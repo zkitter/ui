@@ -462,7 +462,7 @@ function LocalBackupView(props: {
                 Your identity is encrypted using your password, and is stored in a separate local process. Never is ever shared with anyone.
             </div>
             {
-                identities.length && !unlocked && (
+                !!identities.length && !unlocked && (
                     <div className="my-2">
                         <Input
                             className="border relative mx-4 mt-4 mb-8"

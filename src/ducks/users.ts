@@ -29,6 +29,7 @@ export type User = {
     address: string;
     coverImage: string;
     profileImage: string;
+    twitterVerification: string;
     bio: string;
     website: string;
     joinedAt: number;
@@ -198,6 +199,7 @@ const processUserPayload = (user: any) => (dispatch: Dispatch) => {
         bio: user.bio || '',
         profileImage: user.profileImage || '',
         coverImage: user.coverImage || '',
+        twitterVerification: user.twitterVerification || '',
         website: user.website || '',
         joinedAt: user.joinedAt || '',
         joinedTx: user.joinedTx || '',
@@ -224,7 +226,18 @@ const processUserPayload = (user: any) => (dispatch: Dispatch) => {
 export const setUser = (user: User) => ({
     type: ActionTypes.SET_USER,
     payload: user,
-})
+});
+
+export const useConnectedTwitter = (address = '') => {
+    return useSelector((state: AppRootState) => {
+        const user = state.users.map[address];
+
+        if (!user?.twitterVerification) return null;
+
+        const [twitterHandle] = user.twitterVerification.replace('https://twitter.com/', '').split('/');
+        return twitterHandle;
+    }, deepEqual);
+}
 
 export const useUser = (address = ''): User | null => {
     return useSelector((state: AppRootState) => {
@@ -240,6 +253,7 @@ export const useUser = (address = ''): User | null => {
                 address: address,
                 coverImage: '',
                 profileImage: '',
+                twitterVerification: '',
                 bio: '',
                 website: '',
                 joinedAt: 0,
@@ -323,6 +337,7 @@ function reduceSetUser(state: State, action: Action<User>): State {
                 pubkey: action.payload.pubkey,
                 bio: action.payload.bio,
                 profileImage: action.payload.profileImage,
+                twitterVerification: action.payload.twitterVerification,
                 coverImage: action.payload.coverImage,
                 website: action.payload.website,
                 joinedAt: action.payload.joinedAt,
