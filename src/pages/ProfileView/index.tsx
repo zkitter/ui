@@ -8,7 +8,15 @@ import Post from "../../components/Post";
 import Button from "../../components/Button";
 import Icon from "../../components/Icon";
 import {fetchAddressByName, getUser, setUser, useUser} from "../../ducks/users";
-import {useAccount, useENSFetching, useENSName, useGunKey, useLoggedIn, useWeb3Loading} from "../../ducks/web3";
+import {
+    useAccount,
+    useCanNonPostMessage,
+    useENSFetching,
+    useENSName,
+    useGunKey,
+    useLoggedIn,
+    useWeb3Loading
+} from "../../ducks/web3";
 import moment from "moment";
 import Modal, {ModalContent, ModalFooter, ModalHeader} from "../../components/Modal";
 import Input from "../../components/Input";
@@ -207,6 +215,7 @@ function ProfileCard(): ReactElement {
     const [username, setUsername] = useState('');
     const user = useUser(username);
     const loggedIn = useLoggedIn();
+    const canNonPostMessage = useCanNonPostMessage();
     const account = useAccount();
     const isCurrentUser = username === account;
     const [showingEditor, showProfileEditor] = useState(false);
@@ -293,7 +302,7 @@ function ProfileCard(): ReactElement {
                             <Button
                                 btnType="secondary"
                                 className="mr-2"
-                                disabled={!loggedIn}
+                                disabled={!canNonPostMessage}
                                 onClick={() => showProfileEditor(true)}
                             >
                                 Edit Profile
@@ -305,7 +314,7 @@ function ProfileCard(): ReactElement {
                             <Button
                                 btnType={user.meta?.followed ? "secondary" : "primary"}
                                 className="mr-2"
-                                disabled={!loggedIn}
+                                disabled={!canNonPostMessage}
                                 onClick={user.meta?.followed ? undefined : onFollow}
                             >
                                 {user.meta?.followed ? 'Followed' : 'Follow'}

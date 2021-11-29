@@ -343,7 +343,7 @@ export const loginGun = (nonce = 0) => async (
 }
 
 export const genSemaphore = (web2Provider: 'Twitter' | 'Github' | 'Reddit' = 'Twitter') =>
-    async (dispatch: ThunkDispatch<any, any, any>, getState: () => AppRootState) =>
+    async (dispatch: ThunkDispatch<any, any, any>, getState: () => AppRootState): Promise<boolean> =>
 {
     dispatch(setUnlocking(true));
 
@@ -379,6 +379,8 @@ export const genSemaphore = (web2Provider: 'Twitter' | 'Github' | 'Reddit' = 'Tw
         }))
 
         dispatch(setUnlocking(false));
+
+        return !!path;
     } catch (e) {
         dispatch(setUnlocking(false));
         throw e;
@@ -606,20 +608,33 @@ export const useWeb3 = () => {
     }, deepEqual);
 }
 
-export const useLoggedIn = () => {
+export const useCanNonPostMessage = () => {
     return useSelector((state: AppRootState) => {
-        const {
-            web3,
-            account,
-            gun,
-            semaphore,
-        } = state.web3;
-
         const { worker: { selected } } = state;
 
-        if (selected) return true;
+        if (!selected) return false;
 
-        return false;
+        if (selected.type === 'interrep') {
+            return false;
+        }
+
+        return true;
+    }, deepEqual);
+}
+
+export const useLoggedIn = () => {
+    return useSelector((state: AppRootState) => {
+        const { worker: { selected } } = state;
+
+        if (!selected) return false;
+
+        if (selected.type === 'interrep') {
+            if (!selected.identityPath || !selected.serializedIdentity) {
+                return false;
+            }
+        }
+
+        return true;
     }, deepEqual);
 }
 

@@ -102,13 +102,13 @@ export const submitSemaphorePost = (post: Post) => async (dispatch: Dispatch, ge
     } = post.toJSON();
 
     const externalNullifier = genExternalNullifier('POST');
-    // const signalHash = genSignalHash(hash);
     const wasmFilePath = `${config.indexerAPI}/dev/semaphore_wasm`;
     const finalZkeyPath = `${config.indexerAPI}/dev/semaphore_final_zkey`;
 
     const witness = Semaphore.genWitness(
         zkIdentity,
         {
+            root: root,
             indices: identityPathIndex,
             pathElements: identityPathElements,
         },
@@ -129,8 +129,6 @@ export const submitSemaphorePost = (post: Post) => async (dispatch: Dispatch, ge
             proof: JSON.stringify(proof),
             publicSignals: JSON.stringify(publicSignals),
         };
-
-        console.log(semaphorePost);
 
         // @ts-ignore
         await gun.get('message')

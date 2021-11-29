@@ -137,6 +137,7 @@ function Web3ButtonLeft(props: Props): ReactElement {
     const gunPair = useGunKey();
     const loggedIn = useLoggedIn();
     const dispatch = useDispatch();
+    const selectedLocalId = useSelectedLocalId();
     const [opened, setOpened] = useState(false);
 
     const lock = useCallback(async () => {
@@ -152,7 +153,7 @@ function Web3ButtonLeft(props: Props): ReactElement {
     }, []);
 
 
-    if (!loggedIn) {
+    if (!selectedLocalId) {
         return (
             <UnauthButton
                 {...props}
@@ -162,7 +163,7 @@ function Web3ButtonLeft(props: Props): ReactElement {
         );
     }
 
-    if (loggedIn || !gunPair.joinedTx) {
+    if (selectedLocalId) {
         return (
             <UserMenuable
                 opened={opened}
@@ -226,7 +227,12 @@ function UserMenuable(props: {
     const unlockSemaphore = useCallback(async (
         web2Provider: 'Twitter' | 'Github' | 'Reddit',
     ) => {
-        await dispatch(genSemaphore(web2Provider));
+        const hasPath = await dispatch(genSemaphore(web2Provider));
+
+        if (!hasPath) {
+            history.push('/onboarding/interrep');
+        }
+
         setOpened(false);
     }, []);
 
@@ -278,16 +284,16 @@ function UserMenuable(props: {
                         iconUrl: TwitterLogoSVG,
                         onClick: () => unlockSemaphore('Twitter'),
                     },
-                    {
-                        label: 'Github',
-                        iconUrl: GithubLogoPNG,
-                        onClick: () => unlockSemaphore('Github'),
-                    },
-                    {
-                        label: 'Reddit',
-                        iconUrl: RedditLogoSVG,
-                        onClick: () => unlockSemaphore('Reddit'),
-                    },
+                    // {
+                    //     label: 'Github',
+                    //     iconUrl: GithubLogoPNG,
+                    //     onClick: () => unlockSemaphore('Github'),
+                    // },
+                    // {
+                    //     label: 'Reddit',
+                    //     iconUrl: RedditLogoSVG,
+                    //     onClick: () => unlockSemaphore('Reddit'),
+                    // },
                 ],
             },
             {
@@ -488,7 +494,7 @@ function CurrentUserItem(props: {
                 onClick={props.onShowExportPrivateKey}
                 small
             >
-                Export Private Key
+                Link Device
             </Button>
             <div className="flex flex-col flex-nowrap items-center w-full">
                 <div className="text-base font-bold w-full truncate text-center">
@@ -501,7 +507,7 @@ function CurrentUserItem(props: {
                 <div className="text-sm">
                     {
                         selectedLocalId.type === 'interrep'
-                            ? `${selectedLocalId.provider} (${selectedLocalId.name})`
+                            ? `${selectedLocalId.provider}${selectedLocalId.name ? ` (${selectedLocalId.name})` : ''}`
                             : `@${getHandle(selectedUser)}`
                     }
 

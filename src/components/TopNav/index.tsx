@@ -45,6 +45,7 @@ export default function TopNav(): ReactElement {
                     <Route path="/:name/status/:hash" component={PostHeaderGroup} />
                     <Route path="/post/:hash" component={PostHeaderGroup} />
                     <Route path="/create-local-backup" component={DefaultHeaderGroup} />
+                    <Route path="/onboarding/interrep" component={DefaultHeaderGroup} />
                     <Route path="/signup" component={DefaultHeaderGroup} />
                     <Route path="/notification" component={DefaultHeaderGroup} />
                     <Route path="/:name" component={UserProfileHeaderGroup} />

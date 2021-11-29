@@ -173,6 +173,7 @@ function UpdateTxView(props: { setViewType: (v: ViewType) => void}): ReactElemen
     useEffect(() => {
         (async () => {
             try {
+                if (selected?.type !== 'gun') return;
                 if (!selected?.publicKey) throw new Error('invalid public key');
 
                 const hash = await getIdentityHash(account, selected?.publicKey);
@@ -181,7 +182,7 @@ function UpdateTxView(props: { setViewType: (v: ViewType) => void}): ReactElemen
                 setErrorMessage(e.message);
             }
         })();
-    }, [account, selected?.publicKey]);
+    }, [account, selected]);
 
     useEffect(() => {
         (async () => {
@@ -199,7 +200,7 @@ function UpdateTxView(props: { setViewType: (v: ViewType) => void}): ReactElemen
         setUpdating(true);
 
         try {
-            if (!selected?.publicKey) {
+            if (selected?.type !== 'gun' || !selected?.publicKey) {
                 throw new Error('invalid publicKey');
             }
             await dispatch(updateIdentity(selected?.publicKey));
@@ -208,7 +209,7 @@ function UpdateTxView(props: { setViewType: (v: ViewType) => void}): ReactElemen
         } finally {
             setUpdating(false);
         }
-    }, [selected?.publicKey]);
+    }, [selected]);
 
     return (
         <div className="flex flex-col flex-nowrap flex-grow my-4 mx-8 signup__content signup__welcome">

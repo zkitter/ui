@@ -17,6 +17,7 @@ import {syncWorker, useSelectedLocalId} from "../../ducks/worker";
 import gun, {authenticateGun} from "../../util/gun";
 import {Identity} from "../../serviceWorkers/identity";
 import BottomNav from "../../components/BottomNav";
+import InterrepOnboarding from "../InterrepOnboarding";
 
 export default function App(): ReactElement {
     const dispatch = useDispatch();
@@ -92,6 +93,9 @@ export default function App(): ReactElement {
                     <Route path="/create-local-backup">
                         <SignupView viewType={ViewType.localBackup} />
                     </Route>
+                    <Route path="/onboarding/interrep">
+                        <InterrepOnboarding />
+                    </Route>
                     <Route path="/signup">
                         <SignupView />
                     </Route>
@@ -110,6 +114,7 @@ export default function App(): ReactElement {
                     <Route path="/home" component={DefaultMetaPanels} />
                     <Route path="/notifications" />
                     <Route path="/create-local-backup" />
+                    <Route path="/onboarding/interrep" />
                     <Route path="/signup" />
                     <Route path="/:name" component={DefaultMetaPanels} />
                 </Switch>

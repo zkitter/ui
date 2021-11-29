@@ -20,9 +20,13 @@ export default function Input(props: Props): ReactElement {
     return (
         <div
             className={classNames(
-                'focus-within:border-gray-400 bg-white',
+                'bg-white',
                 "rounded-lg input-group",
                 className,
+                {
+                    'input-group--readOnly': inputProps.readOnly,
+                    'focus-within:border-gray-400 ': !inputProps.readOnly,
+                }
             )}
         >
             { label && <div className="input-group__label text-gray-800">{label}</div> }
@@ -30,7 +34,9 @@ export default function Input(props: Props): ReactElement {
                 className="w-full flex flex-row flex-nowrap items-center"
             >
                 <input
-                    className="bg-transparent rounded-xl flex-grow flex-shrink"
+                    className={classNames("bg-transparent rounded-xl flex-grow flex-shrink", {
+                        'cursor-default': inputProps.readOnly,
+                    })}
                     {...inputProps}
                 />
                 {children}

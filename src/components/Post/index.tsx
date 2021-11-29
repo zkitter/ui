@@ -21,7 +21,7 @@ import Modal, {ModalContent, ModalHeader} from "../Modal";
 import {setDraft, submitModeration, submitPost, submitRepost, useDraft, useSubmitting} from "../../ducks/drafts";
 import {useDispatch} from "react-redux";
 import {ModerationMessageSubType, Post as PostMessage, PostMessageSubType} from "../../util/message";
-import {useGunKey, useLoggedIn} from "../../ducks/web3";
+import {useCanNonPostMessage, useGunKey, useLoggedIn} from "../../ducks/web3";
 import {useHistory} from "react-router";
 import Menuable from "../Menuable";
 import {convertMarkdownToDraft, DraftEditor} from "../DraftEditor";
@@ -408,6 +408,7 @@ function PostFooter(props: {
     const {large, className, messageId} = props;
     const meta = useMeta(messageId);
     const loggedIn = useLoggedIn();
+    const canNonPostMessage = useCanNonPostMessage();
     const dispatch = useDispatch();
     const [showReply, setShowReply] = useState(false);
 
@@ -456,7 +457,7 @@ function PostFooter(props: {
                 fa="fas fa-retweet"
                 count={meta.repostCount}
                 onClick={meta.reposted ? undefined : onRepost}
-                disabled={!loggedIn}
+                disabled={!canNonPostMessage}
                 large={large}
             />
             <PostButton
@@ -475,7 +476,7 @@ function PostFooter(props: {
                 })}
                 count={meta.likeCount}
                 onClick={meta.liked ? undefined : onLike}
-                disabled={!loggedIn}
+                disabled={!canNonPostMessage}
                 large={large}
             />
         </div>
