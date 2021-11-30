@@ -13,6 +13,7 @@ import InfiniteScrollable from "../../components/InfiniteScrollable";
 import NotificationBox from "../../components/NotificationBox";
 import Button from "../../components/Button";
 import LocalBackupNotification from "../../components/LocalBackupNotification";
+import {useSelectedLocalId} from "../../ducks/worker";
 
 export default function HomeFeed(): ReactElement {
     const [limit, setLimit] = useState(20);
@@ -21,12 +22,13 @@ export default function HomeFeed(): ReactElement {
     const dispatch = useDispatch();
     const loggedIn = useLoggedIn();
     const hasLocalBackup = useHasLocal();
+    const selected = useSelectedLocalId();
 
     useEffect(() => {
         (async function onGlobalFeedMount() {
             await fetchMore(true);
         })();
-    }, [loggedIn]);
+    }, [selected]);
 
     const fetchMore = useCallback(async (reset = false) => {
         if (reset) {

@@ -29,6 +29,7 @@ import {getHandle, getName} from "../../util/user";
 import config from "../../util/config";
 import {verifyTweet} from "../../util/twitter";
 import {ViewType} from "../ConnectTwitterView";
+import {useSelectedLocalId} from "../../ducks/worker";
 
 let t: any = null;
 
@@ -41,6 +42,7 @@ export default function ProfileView(): ReactElement {
     const history = useHistory();
     const loc = useLocation();
     const loggedIn = useLoggedIn();
+    const selected = useSelectedLocalId();
     const subpath = loc.pathname.split('/')[2];
     const user = useUser(name);
     const [username, setUsername] = useState('');
@@ -103,7 +105,7 @@ export default function ProfileView(): ReactElement {
                 dispatch(getUser(username));
             }
         })();
-    }, [loggedIn, subpath, username]);
+    }, [selected, subpath, username]);
 
     return (
         <InfiniteScrollable
