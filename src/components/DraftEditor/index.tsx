@@ -182,6 +182,10 @@ export const decorator = new CompositeDecorator([
 
             const user = useUser(username);
 
+            if (!user?.address || user?.address === "0x0000000000000000000000000000000000000000") {
+                return <></>;
+            }
+
             return (
                 <a
                     className="hashtag"

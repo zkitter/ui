@@ -310,8 +310,12 @@ export function RegularPost(props: Props): ReactElement {
                                         className="post__creator-name text-base mr-1 flex flex-row items-center"
                                         onClick={() => window.open(`https://twitter.com/${post?.creator}`, '_blank')}
                                     >
-                                        <span className="hover:underline font-normal">@{post.creator}</span>
-                                        <span className="ml-1 font-light text-gray-500">from twitter.com</span>
+                                        <span className="hover:underline font-bold">
+                                            {post.creator}
+                                        </span>
+                                        <span className="ml-1 font-light text-light text-gray-500">
+                                            from twitter.com
+                                        </span>
                                     </div>
                                 )
                                 : (
