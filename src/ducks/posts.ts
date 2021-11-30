@@ -1,6 +1,6 @@
-import {parseMessageId, Post, PostMessageOption, PostMessageSubType} from "../util/message";
+import {MessageType, parseMessageId, Post, PostMessageOption, PostMessageSubType} from "../util/message";
 import {fetchMessage} from "../util/gun";
-import {getUser, User} from "./users";
+import {getUser} from "./users";
 import {ThunkDispatch} from "redux-thunk";
 import {AppRootState} from "../store/configureAppStore";
 import {useSelector} from "react-redux";
@@ -336,6 +336,16 @@ export const fetchReplies = (reference: string, limit = 10, offset = 0) =>
 
     for (const post of json.payload) {
         const [creator, hash] = post.messageId.split('/');
+        const p = new Post({
+            ...post,
+            createdAt: new Date(Number(post.createdAt)),
+        });
+
+        if (post.type === '@TWEET@') {
+            // @ts-ignore
+            p.type = '@TWEET@';
+            p.creator = creator;
+        }
 
         dispatch({
             type: ActionTypes.SET_META,
@@ -349,10 +359,7 @@ export const fetchReplies = (reference: string, limit = 10, offset = 0) =>
 
         dispatch({
             type: ActionTypes.SET_POST,
-            payload: new Post({
-                ...post,
-                createdAt: new Date(Number(post.createdAt)),
-            }),
+            payload: p,
         });
     }
 
@@ -389,8 +396,14 @@ export const useMeta = (messageId: string)  => {
 
 export const useGoToPost = () => {
     const history = useHistory();
+    const posts = usePosts();
     return useCallback((messageId: string) => {
         const { creator, hash } = parseMessageId(messageId);
+        const post = posts.map[messageId];
+
+        if (post?.type === MessageType._TWEET) {
+            return;
+        }
 
         if (!creator) {
             history.push(`/post/${hash}`);

@@ -1,4 +1,4 @@
-import React, {ReactElement, useCallback, useState} from "react";
+import React, {ReactElement, useCallback, useEffect, useState} from "react";
 import {
     convertFromRaw,
     DraftHandleValue,
@@ -14,13 +14,15 @@ import Button from "../Button";
 import {DraftEditor} from "../DraftEditor";
 import Icon from "../Icon";
 import Input from "../Input";
-import drafts, {setDraft, useDraft} from "../../ducks/drafts";
+import drafts, {setDraft, setMirror, useDraft, useMirror} from "../../ducks/drafts";
 import {useDispatch} from "react-redux";
 import URLPreview from "../URLPreview";
 import SpinnerGif from "../../../static/icons/spinner.gif";
 import {useUser} from "../../ducks/users";
 import {useSelectedLocalId} from "../../ducks/worker";
 import {useHistory} from "react-router";
+import Checkbox from "../Checkbox";
+import {getSession, verifyTweet} from "../../util/twitter";
 
 type Props = {
     messageId: string;
@@ -38,11 +40,11 @@ export default function Editor(props: Props): ReactElement {
         editorState,
         disabled,
         readOnly,
-        onPost,
         loading,
     } = props;
 
     const address = useAccount();
+    const user = useUser(address);
     const loggedIn = useLoggedIn();
     const draft = useDraft(messageId);
     const dispatch = useDispatch();
@@ -50,16 +52,67 @@ export default function Editor(props: Props): ReactElement {
     const history = useHistory();
     const selectedId = useSelectedLocalId();
     const isEmpty = !editorState.getCurrentContent().hasText() && !draft.attachment;
+    const mirror = useMirror();
+
+    const [errorMessage, setErrorMessage] = useState('');
+    const [verifying, setVerifying] = useState(true);
+    const [verified, setVerified] = useState(false);
+    const [verifiedSession, setVerifiedSession] = useState('');
+    const selected = useSelectedLocalId();
+
+    useEffect(() => {
+        (async function() {
+            setVerified(false);
+            setVerifiedSession('');
+            setVerifying(true);
+            dispatch(setMirror(false));
+
+            if (!selected) return;
+
+            let session;
+
+            try {
+                session = await getSession(selected);
+
+                if (session) {
+                    setVerifiedSession(session.username);
+                    dispatch(setMirror(!!localStorage.getItem(`${session.username}_should_mirror`)));
+                }
+            } catch (e) {
+                console.error(e);
+            }
+
+            if (await verifyTweet(user?.address, user?.twitterVerification, session?.username)) {
+                setVerified(true);
+            }
+
+            setVerifying(false);
+        })();
+    }, [selected, user]);
 
     const onChange = useCallback((newEditorState: EditorState) => {
         if (readOnly) return;
-
+        setErrorMessage('');
         dispatch(setDraft({
             editorState: newEditorState,
             reference: messageId,
             attachment: draft.attachment,
         }));
     }, [messageId, readOnly, draft]);
+
+    const onSetMirror = useCallback(async (e) => {
+        const checked = e.target.checked;
+
+        if (!verifiedSession || !verified) {
+            history.push('/connect/twitter');
+            return;
+        }
+
+        if (verified) {
+            localStorage.setItem(`${verifiedSession}_should_mirror`, checked ? '1': '');
+            dispatch(setMirror(checked));
+        }
+    }, [verified, verifiedSession]);
 
     const onAddLink = useCallback((url: string) => {
         if (readOnly) return;
@@ -79,6 +132,17 @@ export default function Editor(props: Props): ReactElement {
         }
         return 'not-handled';
     }, [editorState]);
+
+    const onPost = useCallback(async () => {
+        setErrorMessage('');
+        try {
+            if (props.onPost) {
+                await props.onPost();
+            }
+        } catch (e) {
+            setErrorMessage(e.message);
+        }
+    }, [props.onPost])
 
     if (!disabled && gun.priv && gun.pub && !gun.joinedTx) {
         return (
@@ -175,7 +239,7 @@ export default function Editor(props: Props): ReactElement {
                         </div>
                     )
                 }
-
+                { errorMessage && <div className="error-message text-xs text-center text-red-500 m-2">{errorMessage}</div> }
                 <div className="flex flex-row flex-nowrap border-t pt-2">
                     <div className="flex-grow pr-4 mr-4 flex flex-row flex-nowrap items-center">
                         <LinkIcon
@@ -195,14 +259,25 @@ export default function Editor(props: Props): ReactElement {
                         {/*    fa="far fa-smile"*/}
                         {/*/>*/}
                     </div>
-                    <Button
-                        btnType="primary"
-                        onClick={onPost}
-                        disabled={isEmpty}
-                        loading={loading}
-                    >
-                        Post
-                    </Button>
+                    <div className="flex-grow flex flex-row flex-nowrap items-center justify-end">
+                        <Checkbox
+                            className="mr-4"
+                            onChange={onSetMirror}
+                            checked={mirror}
+                            disabled={verifying}
+                        >
+                            Mirror Tweet
+                        </Checkbox>
+                        <Button
+                            btnType="primary"
+                            onClick={onPost}
+                            disabled={isEmpty}
+                            loading={loading}
+                        >
+                            Post
+                        </Button>
+                    </div>
+
                 </div>
             </div>
         </div>

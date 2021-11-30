@@ -56,7 +56,8 @@ export default function ConnectTwitterView(props: Props): ReactElement {
                 const json: any = await resp.json();
 
                 if (json?.error) {
-                    throw new Error(json?.payload);
+                    setViewType(ViewType.welcome);
+                    return;
                 }
 
                 if (json?.payload) {
@@ -169,42 +170,45 @@ function VerifyView(props: {
 }): ReactElement {
     const [errorMessage, setErrorMessage] = useState('');
     const [posting, setPosting] = useState(false);
+    const [fetching, setFetching] = useState(true);
     const { twitterAuth } = props;
     const [existing, setExisting] = useState<string>('');
     const selected = useSelectedLocalId();
     const account = useAccount();
     const dispatch = useDispatch();
     const history = useHistory();
-    const user = useUser(account);
+    const user = useUser(selected?.address);
     const existingUser = useUser(existing)
     const status = `I am verifying my account on #autism\nhttps://auti.sm/${account}/`;
 
     useEffect(() => {
         (async () => {
-            if (user?.twitterVerification) {
-                const verified = await verifyTweet(account, user?.twitterVerification);
+            setExisting('');
+            setFetching(true);
+
+            if (user?.joinedTx) {
+                const verified = await verifyTweet(user?.address, user?.twitterVerification, twitterAuth?.username);
 
                 if (verified) {
                     props.setViewType(ViewType.done);
                 }
             }
-        })();
 
-    }, [user, account]);
+            if (twitterAuth?.username) {
+                const resp = await fetch(`${config.indexerAPI}/twitter/check?username=${twitterAuth?.username}`);
+                const json = await resp.json();
 
-    useEffect(() => {
-        if (!twitterAuth?.username) return setExisting('');
-
-        (async () => {
-            const resp = await fetch(`${config.indexerAPI}/twitter/check?username=${twitterAuth.username}`);
-            const json = await resp.json();
-            if (json?.payload) {
-                setExisting(json.payload.account);
-            } else {
-                setExisting('');
+                if (json?.payload) {
+                    setExisting(json.payload.account);
+                } else {
+                    setExisting('');
+                }
             }
+
+            setFetching(false);
         })();
-    }, [twitterAuth?.username]);
+
+    }, [user, twitterAuth]);
 
     const onVerify = useCallback(async () => {
         if (!user) return;
@@ -248,6 +252,14 @@ function VerifyView(props: {
 
     }, [account, status, user]);
 
+    if (fetching) {
+        return (
+            <div className="flex flex-row flex-nowrap flex-grow my-4 w-full signup__content signup__welcome justify-center">
+                <Icon url={SpinnerGif} size={4} />
+            </div>
+        )
+    }
+
     if (existing !== account) {
         return (
             <div className="flex flex-col flex-nowrap flex-grow my-4 mx-8 signup__content signup__welcome">
@@ -260,7 +272,7 @@ function VerifyView(props: {
                 <div className="my-4 text-center">
                     <span>{`The twitter handle ${twitterAuth?.username} is already associated with`}</span>
                     <a className="ml-2" onClick={() => history.push(`/${existing}/`)}>
-                        @{getHandle(user)}
+                        @{getHandle(existingUser)}
                     </a>
                 </div>
                 { errorMessage && <span className="text-red-500 text-sm my-2 text-center">{errorMessage}</span>}

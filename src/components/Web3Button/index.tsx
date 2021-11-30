@@ -399,6 +399,9 @@ function UserMenu(props: {
 
     const openLogin = useCallback(async (pubkey: string) => {
         if (unlocked) {
+            await fetch(`${config.indexerAPI}/oauth/reset`, {
+                credentials: 'include',
+            });
             await postWorkerMessage(selectIdentity(pubkey));
             return;
         }
@@ -420,6 +423,10 @@ function UserMenu(props: {
         if (showingExportPrivateKey) {
             return;
         }
+
+        await fetch(`${config.indexerAPI}/oauth/reset`, {
+            credentials: 'include',
+        });
 
         const id: any = await postWorkerMessage(selectIdentity(publicKey));
         if (id && id.type === 'gun') {

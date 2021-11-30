@@ -50,7 +50,7 @@ export const fetchMessage = async (soul: string): Promise<PostMessageOption> => 
                 }
             }
         } catch (e) {
-            reject(e);
+            // console.log(e.message);
         }
     });
 }
