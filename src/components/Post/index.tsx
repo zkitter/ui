@@ -133,7 +133,7 @@ export function ExpandedPost(props: Props): ReactElement {
         history.push(`/${user?.ens || user?.username}/`);
     }, [user, post]);
 
-    if (!post || !user) return <></>;
+    if (!post) return <></>;
 
     const editorState = convertMarkdownToDraft(post.payload.content);
 
