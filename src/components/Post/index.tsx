@@ -151,7 +151,7 @@ export function ExpandedPost(props: Props): ReactElement {
             <div className="flex flex-row flex-nowrap flex-grow-0 flex-shrink-0">
                 <Avatar
                     className="mr-3 w-12 h-12"
-                    address={user.address}
+                    address={user?.address}
                     incognito={post.creator === ''}
                 />
                 <div className="flex flex-col flex-nowrap items-start text-light w-full cursor-pointer">
