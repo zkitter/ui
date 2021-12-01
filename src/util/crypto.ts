@@ -1,6 +1,7 @@
 import EC from "elliptic";
 import {genPubKey, Identity} from 'libsemaphore';
 import {IProof, IWitnessData} from "semaphore-lib/src/index";
+import {builder} from "./witness_calculator";
 const snarkjs = require('snarkjs');
 const { groth16 } = snarkjs;
 
@@ -14,6 +15,28 @@ export const hexToUintArray = (hex: string): Uint8Array => {
 
 export const hexToArrayBuf = (hex: string): ArrayBuffer => {
     return hexToUintArray(hex).buffer;
+}
+
+export const signWithP256 = (base64PrivateKey: string, data: string) => {
+    const buff = base64ToArrayBuffer(base64PrivateKey);
+    const hex = Buffer.from(buff).toString('hex');
+    const ec = new EC.ec('p256');
+    const key = ec.keyFromPrivate(hex);
+    const msgHash = Buffer.from(data, 'utf-8').toString('hex');
+    const signature = key.sign(msgHash);
+    return Buffer.from(signature.toDER()).toString('hex');
+}
+
+export function base64ToArrayBuffer(base64: string): ArrayBuffer {
+    const binary_string = window.atob(
+        base64.replace(/_/g, '/').replace(/-/g, '+')
+    );
+    const len = binary_string.length;
+    const bytes = new Uint8Array( len );
+    for (let i = 0; i < len; i++)        {
+        bytes[i] = binary_string.charCodeAt(i);
+    }
+    return bytes.buffer;
 }
 
 export const arrayBufToBase64UrlEncode = (buf: ArrayBuffer) => {
@@ -71,7 +94,6 @@ export const generateGunKeyPairFromHex = async (hashHex: string): Promise<{pub: 
     const pubHex = pubPoint.encode('hex', false);
     const pubX = arrayBufToBase64UrlEncode(hexToArrayBuf(pubHex).slice(1, 33));
     const pubY = arrayBufToBase64UrlEncode(hexToArrayBuf(pubHex).slice(33, 66));
-
     return {
         priv: arrayBufToBase64UrlEncode(Buffer.from(hashHex, 'hex')),
         pub: `${pubX}.${pubY}`,
@@ -103,31 +125,26 @@ export const generateSemaphoreIDFromHex = async (hashHex: string) => {
     }
 }
 
-export const genProof_fastSemaphore = async (
-    identity: Identity,
-    signalHash: BigInt,
-    indices: any[],
-    pathElements: any[],
-    externalNullifier: string,
-    depth: number,
-    zeroValue: BigInt,
-    leavesPerNode: number,
-    wasmFilePath: string,
-    finalZkeyPath: string,
-): Promise<IWitnessData> => {
-    const grothInput: any = {
-        identity_pk: identity.keypair.pubKey,
-        identity_nullifier: identity.identityNullifier,
-        identity_trapdoor: identity.identityTrapdoor,
-        identity_path_index: indices,
-        path_elements: pathElements,
-        external_nullifier: externalNullifier,
-        signal_hash: signalHash,
-    }
 
-    const fullProof: IProof = await groth16.fullProve(grothInput, wasmFilePath, finalZkeyPath);
-    return {
-        fullProof,
-        root: BigInt('0x25dbb126efebb0fab9fb02d19fc8ca09a61b7e85535bf26e9f6891676cf9aaa8'),
-    }
+export const genWnts = async(input: any, wasmFilePath: string): Promise<Uint8Array> => {
+    const resp = await fetch(wasmFilePath);
+    const buffer = await resp.arrayBuffer();
+
+    return new Promise((resolve, reject) => {
+        builder(buffer)
+            .then(async witnessCalculator => {
+                const buff= await witnessCalculator.calculateWTNSBin(input, 0);
+                resolve(buff);
+            }).catch((error) => {
+            reject(error);
+        });
+    })
+}
+
+export const genSemaphoreProof = async(grothInput: any, wasmFilePath: string, finalZkeyPath: string) => {
+    const wntsBuff = await genWnts(grothInput, wasmFilePath);
+    const resp = await fetch(finalZkeyPath);
+    const arrayBuffer = await resp.arrayBuffer();
+    const { proof, publicSignals } = await groth16.prove(new Uint8Array(arrayBuffer), wntsBuff, null);
+    return { proof, publicSignals };
 }

@@ -19,7 +19,11 @@ export default function LocalBackupNotification(): ReactElement {
     const onAddIdentity = useCallback(async () => {
         if (!selected) return;
         await postWorkerMessage(addIdentity(selected));
-        await postWorkerMessage(selectIdentity(selected.publicKey));
+        await postWorkerMessage(selectIdentity(
+            selected.type === 'gun'
+                ? selected.publicKey
+                : selected.identityCommitment
+        ));
     }, [selected]);
 
     const onCreateLocalBackup = useCallback(async () => {

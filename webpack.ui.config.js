@@ -12,6 +12,7 @@ const devServerEntries = [
 
 const envPlugin = new webpack.EnvironmentPlugin({
     'NODE_ENV': '',
+    'BASE_URL': '',
     'WEB3_HTTP_PROVIDER': '',
     'ENS_RESOLVER': '',
     'INDEXER_API': '',

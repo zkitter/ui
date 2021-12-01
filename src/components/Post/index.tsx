@@ -7,21 +7,20 @@ import {
     incrementLike,
     incrementReply,
     incrementRepost,
-    setPost,
     useMeta,
     usePost
 } from "../../ducks/posts";
-import {getUser, useUser} from "../../ducks/users";
+import {useUser} from "../../ducks/users";
 import Avatar from "../Avatar";
 import "../../util/variable.scss";
 import Icon from "../Icon";
 import "./post.scss";
 import Editor from "../Editor";
 import Modal, {ModalContent, ModalHeader} from "../Modal";
-import {setDraft, submitModeration, submitPost, submitRepost, useDraft, useSubmitting} from "../../ducks/drafts";
+import {submitModeration, submitPost, submitRepost, useDraft, useSubmitting} from "../../ducks/drafts";
 import {useDispatch} from "react-redux";
-import {ModerationMessageSubType, Post as PostMessage, PostMessageSubType} from "../../util/message";
-import {useGunKey, useLoggedIn} from "../../ducks/web3";
+import {MessageType, ModerationMessageSubType, Post as PostMessage, PostMessageSubType} from "../../util/message";
+import {useCanNonPostMessage, useLoggedIn} from "../../ducks/web3";
 import {useHistory} from "react-router";
 import Menuable from "../Menuable";
 import {convertMarkdownToDraft, DraftEditor} from "../DraftEditor";
@@ -129,10 +128,10 @@ export function ExpandedPost(props: Props): ReactElement {
     const parentUser = useUser(parentCreator);
 
     const gotoUserProfile = useCallback(e => {
-        if (!user) return;
+        if (!user || !post?.creator) return;
         e.stopPropagation();
         history.push(`/${user?.ens || user?.username}/`);
-    }, [user]);
+    }, [user, post]);
 
     if (!post || !user) return <></>;
 
@@ -252,10 +251,10 @@ export function RegularPost(props: Props): ReactElement {
     const parentUser = useUser(parentCreator);
 
     const gotoUserProfile = useCallback(e => {
-        if (!user) return;
+        if (!user || post?.type === MessageType._TWEET) return;
         e.stopPropagation();
         history.push(`/${user?.ens || user?.username}/`);
-    }, [user]);
+    }, [user, post?.type]);
 
     if (!post || !user) return <></>;
 
@@ -293,31 +292,49 @@ export function RegularPost(props: Props): ReactElement {
             <div className="flex flex-row flex-nowrap">
                 <div>
                     <Avatar
-                        className="mr-3 w-12 h-12"
+                        className="mr-3 w-12 h-12 border"
                         address={user.username}
                         incognito={post.creator === ''}
+                        twitterUsername={post.type === MessageType._TWEET ? post.creator : undefined}
                     />
-                    {
-                        !!isParent && (
-                            <div
-                                className="post__parent-line"
-                            />
-                        )
-                    }
+                    { !!isParent && <div className="post__parent-line" /> }
                 </div>
                 <div className="flex flex-col flex-nowrap items-start flex-grow flex-shrink w-0">
                     <div
                         className="flex flex-row flex-nowrap items-center text-light w-full"
                     >
-                        <div
-                            className="post__creator-name font-bold text-base mr-1 hover:underline"
-                            onClick={gotoUserProfile}
-                        >
-                            {post.creator === '' ? 'Anonymous' : getName(user)}
-                        </div>
-                        <div className="post__creator-username text-gray-400 mr-1" onClick={gotoUserProfile}>
-                            {getHandle(user)}
-                        </div>
+                        {
+                            post.type === MessageType._TWEET
+                                ? (
+                                    <div
+                                        className="post__creator-name text-base mr-1 flex flex-row items-center"
+                                        onClick={() => window.open(`https://twitter.com/${post?.creator}`, '_blank')}
+                                    >
+                                        <span className="hover:underline font-bold">
+                                            {post.creator}
+                                        </span>
+                                        <span className="ml-1 font-light text-light text-gray-500">
+                                            from twitter.com
+                                        </span>
+                                    </div>
+                                )
+                                : (
+                                    <div
+                                        className="post__creator-name font-bold text-base mr-1 hover:underline"
+                                        onClick={gotoUserProfile}
+                                    >
+                                        {post.creator === '' ? 'Anonymous' : getName(user)}
+                                    </div>
+                                )
+                        }
+
+                        {
+                            post.type !== MessageType._TWEET && (
+                                <div className="post__creator-username text-gray-400 mr-1" onClick={gotoUserProfile}>
+                                    {getHandle(user)}
+                                </div>
+                            )
+                        }
                         <div className="text-gray-400 mr-1">•</div>
                         <div className="post__timestamp text-gray-400 hover:underline" onClick={gotoUserProfile}>
                             {moment(post.createdAt).fromNow(true)}
@@ -335,7 +352,7 @@ export function RegularPost(props: Props): ReactElement {
                         )}
                     >
                         {
-                            !!parentCreator && (
+                            !!parentCreator && post.type !== MessageType._TWEET && (
                                 <div className="flex flex-row flex-nowrap mb-2 items-center text-gray-500">
                                     {
                                         parentHash
@@ -407,7 +424,9 @@ function PostFooter(props: {
 }): ReactElement {
     const {large, className, messageId} = props;
     const meta = useMeta(messageId);
+    const post = usePost(messageId);
     const loggedIn = useLoggedIn();
+    const canNonPostMessage = useCanNonPostMessage();
     const dispatch = useDispatch();
     const [showReply, setShowReply] = useState(false);
 
@@ -421,10 +440,14 @@ function PostFooter(props: {
         dispatch(incrementRepost(messageId));
     }, [messageId]);
 
+    // @ts-ignore
+    const isMirrorTweet = [PostMessageSubType.MirrorPost, PostMessageSubType.MirrorReply].includes(post?.subtype);
+    const isTweet = post?.type === MessageType._TWEET;
+
     return (
         <div
             className={classNames(
-                "flex flex-row flex-nowrap items-center",
+                "flex flex-row flex-nowrap items-center w-full",
                 "post__footer",
                 className,
             )}
@@ -442,6 +465,7 @@ function PostFooter(props: {
                 count={meta.replyCount}
                 onClick={() => setShowReply(true)}
                 large={large}
+                disabled={isTweet}
             />
             <PostButton
                 textClassName={classNames({
@@ -456,7 +480,7 @@ function PostFooter(props: {
                 fa="fas fa-retweet"
                 count={meta.repostCount}
                 onClick={meta.reposted ? undefined : onRepost}
-                disabled={!loggedIn}
+                disabled={!canNonPostMessage || isTweet}
                 large={large}
             />
             <PostButton
@@ -475,9 +499,30 @@ function PostFooter(props: {
                 })}
                 count={meta.likeCount}
                 onClick={meta.liked ? undefined : onLike}
-                disabled={!loggedIn}
+                disabled={!canNonPostMessage || isTweet}
                 large={large}
             />
+            {
+                isMirrorTweet && (
+                    <PostButton
+                        iconClassName="hover:bg-blue-50 text-blue-400"
+                        fa="fab fa-twitter"
+                        onClick={() => {
+                            if (!post) return;
+
+                            if ([PostMessageSubType.MirrorPost, PostMessageSubType.MirrorReply].includes(post.subtype)) {
+                                window.open(post.payload.topic, '_blank');
+                            } else if (post.type === MessageType._TWEET) {
+                                window.open(`https://twitter.com/${post.creator}/status/${post.tweetId}`, '_blank');
+                            }
+                        }}
+                        large={large}
+                    />
+                )
+            }
+            <div className="flex flex-grow flex-row flex-nowrap justify-end items-center">
+
+            </div>
         </div>
     );
 }
@@ -485,6 +530,24 @@ function PostFooter(props: {
 function PostMenu(props: Props): ReactElement {
     const post = usePost(props.messageId);
     const user = useUser(post?.creator);
+
+    if (post?.type === MessageType._TWEET) {
+        return (
+            <PostButton
+                iconClassName="hover:bg-blue-50 text-blue-400"
+                fa="fab fa-twitter"
+                onClick={() => {
+                    if (!post) return;
+
+                    if ([PostMessageSubType.MirrorPost, PostMessageSubType.MirrorReply].includes(post.subtype)) {
+                        window.open(post.payload.topic, '_blank');
+                    } else if (post.type === MessageType._TWEET) {
+                        window.open(`https://twitter.com/${post.creator}/status/${post.tweetId}`, '_blank');
+                    }
+                }}
+            />
+        )
+    }
 
     return (
         <Menuable

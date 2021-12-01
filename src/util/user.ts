@@ -23,5 +23,6 @@ export const getHandle = (user?: User | null, start = 6, end = 4): string => {
     if (!user) return '';
     if (!user.address) return '';
     if (user.ens) return user.ens;
+    if (user.address === '0x0000000000000000000000000000000000000000') return '';
     return ellipsify(user.address, start, end);
 }

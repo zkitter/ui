@@ -3,7 +3,7 @@ import {decrypt, encrypt} from "../util/encrypt";
 import {pushReduxAction} from "./util";
 import {setIdentities, setSelectedId, setUnlocked} from "../ducks/worker";
 
-export type Identity = {
+export type GunIdentity = {
     type: 'gun',
     address: string;
     nonce: number;
@@ -11,7 +11,26 @@ export type Identity = {
     privateKey: string;
 }
 
-const STORAGE_KEY = 'identity_ls';
+export type InterrepIdentity = {
+    type: 'interrep',
+    address: string;
+    nonce: number;
+    provider: string;
+    name: string;
+    identityPath: {
+        path_elements: string[];
+        path_index: number[];
+        root: string;
+    } | null;
+    identityCommitment: string;
+    serializedIdentity: string;
+}
+
+export type Identity =
+    | GunIdentity
+    | InterrepIdentity;
+
+const STORAGE_KEY = 'identity_ls_2';
 
 export class IdentityService extends GenericService {
     passphrase: string;
@@ -19,6 +38,7 @@ export class IdentityService extends GenericService {
     currentIdentity: Identity | null;
 
     db?: IDBDatabase;
+    interrepDB?: IDBDatabase;
 
     constructor() {
         super();
@@ -35,11 +55,16 @@ export class IdentityService extends GenericService {
 
     async getDB(): Promise<IDBDatabase> {
         return new Promise(async (resolve) => {
-            const req = indexedDB.open(STORAGE_KEY, 1);
+            const req = indexedDB.open(STORAGE_KEY, 2);
 
             req.onupgradeneeded = () => {
                 const db = req.result;
-                const store = db.createObjectStore('identity', { keyPath: 'public_key' });
+                const store = db.createObjectStore(
+                    'identity',
+                    {
+                        keyPath: ['public_key', 'identity_commitment'],
+                    }
+                );
                 store.createIndex('by_address', 'address');
                 resolve(db);
             }
@@ -68,17 +93,25 @@ export class IdentityService extends GenericService {
     }
 
     wrapIdentity(id: Identity): Identity {
-        if (this.passphrase) {
+        if (id.type === 'gun') {
             return {
                 ...id,
-                privateKey: decrypt(id.privateKey, this.passphrase),
+                privateKey: this.passphrase
+                    ? decrypt(id.privateKey, this.passphrase)
+                    : '',
             }
         }
 
-        return {
-            ...id,
-            privateKey: '',
-        };
+        if (id.type === 'interrep') {
+            return {
+                ...id,
+                serializedIdentity: this.passphrase
+                    ? decrypt(id.serializedIdentity, this.passphrase)
+                    : '',
+            }
+        }
+
+        return id;
     }
 
     async setPassphrase(passphrase: string) {
@@ -86,8 +119,10 @@ export class IdentityService extends GenericService {
         const identities = await this.getIdentities();
 
         for (let id of identities) {
-            if (!decrypt(id.privateKey, passphrase)) {
-                throw new Error('invalid passphrase');
+            if (id.type === 'gun') {
+                if (!decrypt(id.privateKey, passphrase)) {
+                    throw new Error('invalid passphrase');
+                }
             }
         }
 
@@ -104,39 +139,78 @@ export class IdentityService extends GenericService {
         }
     }
 
-    async selectIdentity(pubkey: string) {
+    async selectIdentity(pubkeyOrCommitment: string) {
         await this.ensure();
         const identities = await this.getIdentities();
 
         for (let id of identities) {
-            if (id.publicKey === pubkey) {
-                this.currentIdentity = this.wrapIdentity(id);
-                await pushReduxAction(setSelectedId(this.currentIdentity));
-                return this.currentIdentity;
+            if (id.type === 'gun') {
+                if (id.publicKey === pubkeyOrCommitment) {
+                    this.currentIdentity = this.wrapIdentity(id);
+                    await pushReduxAction(setSelectedId(this.currentIdentity));
+                    return this.currentIdentity;
+                }
+            }
+
+            if (id.type === 'interrep') {
+                if (id.identityCommitment === pubkeyOrCommitment) {
+                    this.currentIdentity = this.wrapIdentity(id);
+                    await pushReduxAction(setSelectedId(this.currentIdentity));
+                    return this.currentIdentity;
+                }
             }
         }
 
-        throw new Error(`cannot find identity with pubkey ${pubkey}`);
+        throw new Error(`cannot find identity with pubkey ${pubkeyOrCommitment}`);
     }
 
     async addIdentity(identity: Identity) {
         await this.ensure();
 
         if (!this.passphrase) throw new Error('identity store is locked');
-        if (!identity.publicKey) throw new Error('missing publicKey');
-        if (!identity.privateKey) throw new Error('missing privateKey');
         if (typeof identity.nonce !== 'number') throw new Error('invalid nonce');
 
         const tx = this.db?.transaction("identity", "readwrite");
         const store = tx?.objectStore("identity");
 
-        store?.put({
-            type: identity.type,
-            address: identity.address,
-            nonce: identity.nonce,
-            public_key: identity.publicKey,
-            private_key: encrypt(identity.privateKey, this.passphrase),
-        });
+        if (identity.type === 'gun') {
+            if (!identity.publicKey) throw new Error('missing publicKey');
+            if (!identity.privateKey) throw new Error('missing privateKey');
+
+            store?.put({
+                type: identity.type,
+                address: identity.address,
+                nonce: identity.nonce,
+                public_key: identity.publicKey,
+                private_key: encrypt(identity.privateKey, this.passphrase),
+                provider: '',
+                name: '',
+                identity_path: '',
+                identity_commitment: '',
+                serialized_identity: '',
+            });
+        }
+
+        if (identity.type === 'interrep') {
+            if (!identity.provider) throw new Error('missing provider');
+            if (!identity.name) throw new Error('missing name');
+            if (!identity.identityPath) throw new Error('missing identityPath');
+            if (!identity.identityCommitment) throw new Error('missing identityCommitment');
+            if (!identity.serializedIdentity) throw new Error('missing serializedIdentity');
+
+            store?.put({
+                type: identity.type,
+                address: identity.address,
+                nonce: identity.nonce,
+                provider: identity.provider,
+                name: identity.name,
+                identity_path: identity.identityPath,
+                identity_commitment: identity.identityCommitment,
+                serialized_identity: encrypt(identity.serializedIdentity, this.passphrase),
+                public_key: '',
+                private_key: '',
+            });
+        }
 
         await pushReduxAction(setIdentities(await this.getIdentities()));
     }
@@ -166,6 +240,11 @@ export class IdentityService extends GenericService {
                     nonce: id.nonce,
                     publicKey: id.public_key,
                     privateKey: id.private_key,
+                    provider: id.provider,
+                    name: id.name,
+                    identityPath: id.identity_path,
+                    identityCommitment: id.identity_commitment,
+                    serializedIdentity: id.serialized_identity,
                 });
             }
         });
@@ -189,6 +268,11 @@ export class IdentityService extends GenericService {
                             nonce: id.nonce,
                             publicKey: id.public_key,
                             privateKey: id.private_key,
+                            provider: id.provider,
+                            name: id.name,
+                            identityPath: id.identity_path,
+                            identityCommitment: id.identity_commitment,
+                            serializedIdentity: id.serialized_identity,
                         }
                     });
                 resolve(ids);

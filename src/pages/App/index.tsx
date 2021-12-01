@@ -17,6 +17,12 @@ import {syncWorker, useSelectedLocalId} from "../../ducks/worker";
 import gun, {authenticateGun} from "../../util/gun";
 import {Identity} from "../../serviceWorkers/identity";
 import BottomNav from "../../components/BottomNav";
+import InterrepOnboarding from "../InterrepOnboarding";
+import ConnectTwitterButton from "../../components/ConnectTwitterButton";
+import ConnectTwitterView from "../ConnectTwitterView";
+import {checkPath} from "../../util/interrep";
+import {postWorkerMessage} from "../../util/sw";
+import {setIdentity} from "../../serviceWorkers/util";
 
 export default function App(): ReactElement {
     const dispatch = useDispatch();
@@ -35,21 +41,34 @@ export default function App(): ReactElement {
     }, []);
 
     useEffect(() => {
-        if (!selected) {
-            //@ts-ignore
-            if (gun.user().is) {
-                gun.user().leave();
+        (async () => {
+            if (!selected) {
+                //@ts-ignore
+                if (gun.user().is) {
+                    gun.user().leave();
+                }
+                return;
             }
-            return;
-        }
 
-        if (lastSelected?.privateKey !== selected?.privateKey) {
-            authenticateGun({
-                pub: selected.publicKey,
-                priv: selected.privateKey,
-            });
-            setLastSelected(selected);
-        }
+            // @ts-ignore
+            if (selected?.type === 'gun' && lastSelected?.privateKey !== selected?.privateKey) {
+                authenticateGun({
+                    pub: selected.publicKey,
+                    priv: selected.privateKey,
+                });
+                setLastSelected(selected);
+            }
+
+            // @ts-ignore
+            if (selected?.type === 'interrep' && lastSelected?.identityCommitment !== selected.identityCommitment) {
+                const data: any = await checkPath(selected.identityCommitment);
+                await postWorkerMessage(setIdentity({
+                    ...selected,
+                    name: data.name,
+                    identityPath: data.path,
+                }))
+            }
+        })();
     }, [selected, lastSelected])
 
     useEffect(() => {
@@ -89,6 +108,12 @@ export default function App(): ReactElement {
                     <Route path="/create-local-backup">
                         <SignupView viewType={ViewType.localBackup} />
                     </Route>
+                    <Route path="/onboarding/interrep">
+                        <InterrepOnboarding />
+                    </Route>
+                    <Route path="/connect/twitter">
+                        <ConnectTwitterView />
+                    </Route>
                     <Route path="/signup">
                         <SignupView />
                     </Route>
@@ -107,6 +132,8 @@ export default function App(): ReactElement {
                     <Route path="/home" component={DefaultMetaPanels} />
                     <Route path="/notifications" />
                     <Route path="/create-local-backup" />
+                    <Route path="/onboarding/interrep" />
+                    <Route path="/connect/twitter" />
                     <Route path="/signup" />
                     <Route path="/:name" component={DefaultMetaPanels} />
                 </Switch>

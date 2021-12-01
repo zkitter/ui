@@ -34,10 +34,10 @@ import {useUser} from "../../ducks/users";
 import {selectIdentity, setIdentity} from "../../serviceWorkers/util";
 import {postWorkerMessage} from "../../util/sw";
 import {Identity} from "../../serviceWorkers/identity";
-import QrReader from "react-qr-reader";
 import QRScanner from "../QRScanner";
 import Modal from "../Modal";
 import ExportPrivateKeyModal from "../ExportPrivateKeyModal";
+import config from "../../util/config";
 
 type Props = {
     onConnect?: () => Promise<void>;
@@ -49,7 +49,6 @@ type Props = {
 export default function Web3Button(props: Props): ReactElement {
     const account = useAccount();
     const web3Loading = useWeb3Loading();
-    const semaphoreId = useSemaphoreID();
     const dispatch = useDispatch();
     const selectedLocalId = useSelectedLocalId();
     const [ensName, setEnsName] = useState('');
@@ -70,7 +69,7 @@ export default function Web3Button(props: Props): ReactElement {
 
     let btnContent;
 
-    if (semaphoreId.keypair.privKey) {
+    if (selectedLocalId?.type ===  'interrep') {
         btnContent = (
             <>
                 <div>Incognito</div>
@@ -122,7 +121,7 @@ export default function Web3Button(props: Props): ReactElement {
                     'font-inter',
                     'web3-button__content',
                     {
-                        'text-gray-100 bg-gray-800': semaphoreId.keypair.privKey,
+                        'text-gray-100 bg-gray-800': selectedLocalId?.type ===  'interrep',
                     }
                 )}
                 onClick={props.onClick}
@@ -139,15 +138,12 @@ function Web3ButtonLeft(props: Props): ReactElement {
     const gunPair = useGunKey();
     const loggedIn = useLoggedIn();
     const dispatch = useDispatch();
+    const selectedLocalId = useSelectedLocalId();
     const [opened, setOpened] = useState(false);
 
     const lock = useCallback(async () => {
         gun.user().leave();
         await dispatch(setSemaphoreID({
-            keypair: {
-                pubKey: '',
-                privKey: null,
-            },
             commitment: null,
             identityNullifier: null,
             identityTrapdoor: null,
@@ -158,7 +154,7 @@ function Web3ButtonLeft(props: Props): ReactElement {
     }, []);
 
 
-    if (!loggedIn) {
+    if (!selectedLocalId) {
         return (
             <UnauthButton
                 {...props}
@@ -168,7 +164,7 @@ function Web3ButtonLeft(props: Props): ReactElement {
         );
     }
 
-    if (loggedIn || !gunPair.joinedTx) {
+    if (selectedLocalId) {
         return (
             <UserMenuable
                 opened={opened}
@@ -216,6 +212,7 @@ function UserMenuable(props: {
         try {
             await dispatch(loginGun(gunNonce));
             reset();
+            setOpened(false);
         } catch (e) {
             if (e === UserNotExistError) {
                 await gotoSignup();
@@ -231,7 +228,13 @@ function UserMenuable(props: {
     const unlockSemaphore = useCallback(async (
         web2Provider: 'Twitter' | 'Github' | 'Reddit',
     ) => {
-        await dispatch(genSemaphore(web2Provider));
+        const hasPath = await dispatch(genSemaphore(web2Provider));
+
+        if (!hasPath) {
+            history.push('/onboarding/interrep');
+        }
+
+        setOpened(false);
     }, []);
 
     const logout = useCallback(async () => {
@@ -241,10 +244,6 @@ function UserMenuable(props: {
         }
 
         await dispatch(setSemaphoreID({
-            keypair: {
-                pubKey: '',
-                privKey: null,
-            },
             commitment: null,
             identityNullifier: null,
             identityTrapdoor: null,
@@ -252,11 +251,14 @@ function UserMenuable(props: {
         await dispatch(setGunPrivateKey(''));
         await dispatch(setSemaphoreIDPath(null));
         await postWorkerMessage(setIdentity(null));
+        await fetch(`${config.indexerAPI}/oauth/reset`, {
+            credentials: 'include',
+        });
     }, []);
 
     let items: ItemProps[] = [];
 
-    if (identities.length) {
+    if (identities.length || selectedLocalId) {
         items.push({
             label: '',
             className: 'local-users-menu',
@@ -286,16 +288,16 @@ function UserMenuable(props: {
                         iconUrl: TwitterLogoSVG,
                         onClick: () => unlockSemaphore('Twitter'),
                     },
-                    {
-                        label: 'Github',
-                        iconUrl: GithubLogoPNG,
-                        onClick: () => unlockSemaphore('Github'),
-                    },
-                    {
-                        label: 'Reddit',
-                        iconUrl: RedditLogoSVG,
-                        onClick: () => unlockSemaphore('Reddit'),
-                    },
+                    // {
+                    //     label: 'Github',
+                    //     iconUrl: GithubLogoPNG,
+                    //     onClick: () => unlockSemaphore('Github'),
+                    // },
+                    // {
+                    //     label: 'Reddit',
+                    //     iconUrl: RedditLogoSVG,
+                    //     onClick: () => unlockSemaphore('Reddit'),
+                    // },
                 ],
             },
             {
@@ -360,7 +362,7 @@ function UserMenuable(props: {
             {
                 showingScanner && (
                     <Modal onClose={() => showScanner(false)}>
-                        <QRScanner />
+                        <QRScanner onSuccess={() => showScanner(false)} />
                     </Modal>
                 )
             }
@@ -397,6 +399,9 @@ function UserMenu(props: {
 
     const openLogin = useCallback(async (pubkey: string) => {
         if (unlocked) {
+            await fetch(`${config.indexerAPI}/oauth/reset`, {
+                credentials: 'include',
+            });
             await postWorkerMessage(selectIdentity(pubkey));
             return;
         }
@@ -409,22 +414,40 @@ function UserMenu(props: {
         setPublicKey('');
     }, [publicKey]);
 
+    const onShowExportPrivateKey = useCallback(() => {
+        showExportPrivateKey(true);
+        setShowingLogin(true);
+    }, []);
+
     const onSuccess = useCallback(async () => {
         if (showingExportPrivateKey) {
             return;
         }
 
+        await fetch(`${config.indexerAPI}/oauth/reset`, {
+            credentials: 'include',
+        });
+
         const id: any = await postWorkerMessage(selectIdentity(publicKey));
-        if (id) {
+        if (id && id.type === 'gun') {
             authenticateGun({
                 pub: id.publicKey,
                 priv: id.privateKey,
             });
         }
+        props.setOpened(false);
     }, [publicKey, showingExportPrivateKey]);
 
     const availableIds = identities.filter(id => {
-        return id.publicKey !== selectedLocalId?.publicKey;
+        if (id.type === 'gun' && selectedLocalId?.type === 'gun') {
+            return id.publicKey !== selectedLocalId?.publicKey;
+        }
+
+        if (id.type === 'interrep' && selectedLocalId?.type === 'interrep') {
+            return id.identityCommitment !== selectedLocalId?.identityCommitment;
+        }
+
+        return id.type !== selectedLocalId?.type;
     })
 
     return (
@@ -434,34 +457,7 @@ function UserMenu(props: {
                 <ExportPrivateKeyModal onClose={() => showExportPrivateKey(false)} />
             )}
             <div className="flex flex-col flex-nowrap w-full">
-                {
-                    selectedLocalId && (
-                        <div
-                            className={classNames(
-                                "local-users-menu__selected-item border-b mb-2"
-                            )}
-                        >
-                            <Avatar className="w-20 h-20 mb-2" address={selectedUser?.address} />
-                            <Button
-                                className="my-2"
-                                btnType="secondary"
-                                onClick={() => {
-                                    showExportPrivateKey(true);
-                                    setShowingLogin(true);
-                                }}
-                                small
-                            >
-                                Export Private Key
-                            </Button>
-                            <div className="flex flex-col flex-nowrap items-center w-full">
-                                <div className="text-base font-bold w-full truncate text-center">
-                                    {getName(selectedUser)}
-                                </div>
-                                <div className="text-sm">@{getHandle(selectedUser)}</div>
-                            </div>
-                        </div>
-                    )
-                }
+                <CurrentUserItem onShowExportPrivateKey={onShowExportPrivateKey} />
                 {
                     !!availableIds.length && (
                         <div className="border-b w-full pb-2 mb-2 local-users-menu__container">
@@ -469,9 +465,9 @@ function UserMenu(props: {
                                 availableIds.map(id => {
                                     return (
                                         <UserMenuItem
-                                            key={id.publicKey}
+                                            key={id.type === 'gun' ? id.publicKey : id.identityCommitment}
                                             identity={id}
-                                            openLogin={() => openLogin(id.publicKey)}
+                                            openLogin={() => openLogin(id.type === 'gun' ? id.publicKey : id.identityCommitment)}
                                         />
                                     );
                                 })
@@ -482,7 +478,55 @@ function UserMenu(props: {
             </div>
         </>
     )
-};
+}
+
+function CurrentUserItem(props: {
+    onShowExportPrivateKey: () => void;
+}): ReactElement {
+    const selectedLocalId = useSelectedLocalId();
+    const selectedUser = useUser(selectedLocalId?.address);
+
+    if (!selectedLocalId) return <></>;
+
+    return (
+        <div
+            className={classNames(
+                "local-users-menu__selected-item border-b mb-2",
+            )}
+        >
+            <Avatar
+                className="w-20 h-20 mb-2"
+                address={selectedUser?.address}
+                incognito={selectedLocalId.type === 'interrep'}
+            />
+            <Button
+                className="my-2"
+                btnType="secondary"
+                onClick={props.onShowExportPrivateKey}
+                small
+            >
+                Link Device
+            </Button>
+            <div className="flex flex-col flex-nowrap items-center w-full">
+                <div className="text-base font-bold w-full truncate text-center">
+                    {
+                        selectedLocalId.type === 'interrep'
+                            ? 'Incognito'
+                            : getName(selectedUser)
+                    }
+                </div>
+                <div className="text-sm">
+                    {
+                        selectedLocalId.type === 'interrep'
+                            ? `${selectedLocalId.provider}${selectedLocalId.name ? ` (${selectedLocalId.name})` : ''}`
+                            : `@${getHandle(selectedUser)}`
+                    }
+
+                </div>
+            </div>
+        </div>
+    )
+}
 
 function UserMenuItem(props: {
     identity: Identity;
@@ -496,14 +540,31 @@ function UserMenuItem(props: {
             className={classNames(
                 "flex flex-row flex-nowrap items-center",
                 "hover:bg-gray-50 cursor-pointer",
-                "local-users-menu__item"
+                "local-users-menu__item",
             )}
             onClick={openLogin}
         >
-            <Avatar className="w-9 h-9 mr-2" address={user?.username} />
+            <Avatar
+                className="w-9 h-9 mr-2"
+                address={user?.username}
+                incognito={identity.type === 'interrep'}
+            />
             <div className="flex flex-col flex-nowrap w-0 flex-grow">
-                <div className="text-sm font-bold truncate">{getName(user)}</div>
-                <div className="text-xs">@{getHandle(user)}</div>
+                <div className="text-sm font-bold truncate">
+                    {
+                        identity.type === 'interrep'
+                            ? identity.provider
+                            : getName(user)
+                    }
+                </div>
+                <div className="text-xs">
+                    {
+                        identity.type === 'interrep'
+                            ? `${identity.name}`
+                            : `@${getHandle(user)}`
+                    }
+
+                </div>
             </div>
         </div>
     );
@@ -534,7 +595,7 @@ function UnauthButton(props: {
                 {
                     showingScanner && (
                         <Modal onClose={() => showScanner(false)}>
-                            <QRScanner />
+                            <QRScanner onSuccess={() => showScanner(false)}  />
                         </Modal>
                     )
                 }

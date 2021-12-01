@@ -18,6 +18,7 @@ import Thread from "../../components/Thread";
 import ParentThread from "../../components/ParentThread";
 import {Post as PostMessage, PostMessageSubType} from "../../util/message";
 import {useENSName, useLoggedIn} from "../../ducks/web3";
+import {useSelectedLocalId} from "../../ducks/worker";
 
 type Props = {
 
@@ -40,6 +41,7 @@ export default function PostView(props: Props): ReactElement {
     const containerEl = useRef<HTMLDivElement>(null);
     const scrollEl = useRef<HTMLDivElement>(null);
     const [height, setHeight] = useState(window.innerHeight);
+    const selected = useSelectedLocalId();
 
     const originalPost = usePost(reference);
     const messageId = originalPost?.subtype === PostMessageSubType.Repost
@@ -54,7 +56,7 @@ export default function PostView(props: Props): ReactElement {
             await fetchMore(true);
         })();
 
-    }, [loggedIn, ensName, messageId]);
+    }, [selected, ensName, messageId]);
 
     const gotoPost = useGoToPost();
 

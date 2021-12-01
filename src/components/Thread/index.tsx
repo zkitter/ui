@@ -58,7 +58,7 @@ export default function Thread(props: Props): ReactElement {
           className={classNames('thread', props.className)}
       >
           <Post
-              className={classNames("hover:bg-gray-50", props.postClassName)}
+              className={classNames("hover:bg-gray-50 mb-0.5", props.postClassName)}
               messageId={messageId}
               onClick={props.onClick}
               onSuccessPost={props.onSuccessPost}

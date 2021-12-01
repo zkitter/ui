@@ -7,8 +7,12 @@ import "./profile-view.scss";
 import Post from "../../components/Post";
 import Button from "../../components/Button";
 import Icon from "../../components/Icon";
-import {fetchAddressByName, getUser, setUser, useUser} from "../../ducks/users";
-import {useAccount, useENSFetching, useENSName, useGunKey, useLoggedIn, useWeb3Loading} from "../../ducks/web3";
+import {fetchAddressByName, getUser, setUser, useConnectedTwitter, useUser} from "../../ducks/users";
+import {
+    useAccount,
+    useCanNonPostMessage,
+    useLoggedIn,
+} from "../../ducks/web3";
 import moment from "moment";
 import Modal, {ModalContent, ModalFooter, ModalHeader} from "../../components/Modal";
 import Input from "../../components/Input";
@@ -19,10 +23,13 @@ import {ConnectionMessageSubType, ProfileMessageSubType} from "../../util/messag
 import Avatar from "../../components/Avatar";
 import EtherScanSVG from "../../../static/icons/etherscan-logo-gray-500.svg";
 import InfiniteScrollable from "../../components/InfiniteScrollable";
-import Menuable from "../../components/Menuable";
+import Menuable, {ItemProps} from "../../components/Menuable";
 import Web3 from "web3";
 import {getHandle, getName} from "../../util/user";
 import config from "../../util/config";
+import {verifyTweet} from "../../util/twitter";
+import {ViewType} from "../ConnectTwitterView";
+import {useSelectedLocalId} from "../../ducks/worker";
 
 let t: any = null;
 
@@ -35,6 +42,7 @@ export default function ProfileView(): ReactElement {
     const history = useHistory();
     const loc = useLocation();
     const loggedIn = useLoggedIn();
+    const selected = useSelectedLocalId();
     const subpath = loc.pathname.split('/')[2];
     const user = useUser(name);
     const [username, setUsername] = useState('');
@@ -97,7 +105,7 @@ export default function ProfileView(): ReactElement {
                 dispatch(getUser(username));
             }
         })();
-    }, [loggedIn, subpath, username]);
+    }, [selected, subpath, username]);
 
     return (
         <InfiniteScrollable
@@ -206,11 +214,14 @@ function ProfileCard(): ReactElement {
 
     const [username, setUsername] = useState('');
     const user = useUser(username);
-    const loggedIn = useLoggedIn();
+    const canNonPostMessage = useCanNonPostMessage();
     const account = useAccount();
     const isCurrentUser = username === account;
     const [showingEditor, showProfileEditor] = useState(false);
     const dispatch = useDispatch();
+    const history = useHistory();
+    const twitterHandle = useConnectedTwitter(username);
+    const [verifiedTwitter, setVerifiedTwitter] = useState(false);
 
     useEffect(() => {
         (async () => {
@@ -222,6 +233,14 @@ function ProfileCard(): ReactElement {
             }
         })();
     }, [name]);
+
+    useEffect(() => {
+        (async () => {
+            const verified = await verifyTweet(user?.address, user?.twitterVerification);
+            setVerifiedTwitter(verified);
+        })();
+
+    }, [user]);
 
     const onFollow = useCallback(() => {
         dispatch(submitConnection(username, ConnectionMessageSubType.Follow));
@@ -262,6 +281,25 @@ function ProfileCard(): ReactElement {
         )
     }
 
+    const currentUserMenuItems: ItemProps[] = [
+        {
+            label: `Edit Profile`,
+            iconFA: 'fas fa-edit',
+            iconClassName: 'text-gray-400',
+            disabled: !canNonPostMessage,
+            onClick: () => showProfileEditor(true),
+        },
+    ]
+
+    if (!twitterHandle) {
+        currentUserMenuItems.push({
+            label: `Connect Twitter`,
+            iconFA: 'fab fa-twitter',
+            iconClassName: 'text-gray-400',
+            onClick: () => history.push('/connect/twitter'),
+        });
+    }
+
     return (
         <div
             className={classNames(
@@ -290,14 +328,16 @@ function ProfileCard(): ReactElement {
                 <div className="flex flex-row flex-nowrap flex-grow justify-end mb-4 mx-4">
                     {
                         isCurrentUser && (
-                            <Button
-                                btnType="secondary"
-                                className="mr-2"
-                                disabled={!loggedIn}
-                                onClick={() => showProfileEditor(true)}
+                            <Menuable
+                                menuClassName="profile-view__menu"
+                                items={currentUserMenuItems}
                             >
-                                Edit Profile
-                            </Button>
+                                <Button
+                                    btnType="secondary"
+                                >
+                                    <Icon fa="fas fa-ellipsis-h" />
+                                </Button>
+                            </Menuable>
                         )
                     }
                     {
@@ -305,7 +345,7 @@ function ProfileCard(): ReactElement {
                             <Button
                                 btnType={user.meta?.followed ? "secondary" : "primary"}
                                 className="mr-2"
-                                disabled={!loggedIn}
+                                disabled={!canNonPostMessage}
                                 onClick={user.meta?.followed ? undefined : onFollow}
                             >
                                 {user.meta?.followed ? 'Followed' : 'Follow'}
@@ -361,11 +401,24 @@ function ProfileCard(): ReactElement {
                     !!user.joinedTx && (
                         <div
                             className="profile-view__data-group flex flex-row flex-nowrap items-center text-light text-gray-500 cursor-pointer hover:underline"
-                            onClick={() => window.open(`https://etherscan.io/address/${user.joinedTx}`, '_blank')}
+                            onClick={() => window.open(`https://etherscan.io/address/${user.address}`, '_blank')}
                         >
                             <Icon url={EtherScanSVG} />
                             <div className="ml-2 profile-view__data-group__value">
                                 {`${user.address.slice(0, 6)}...${user.address.slice(-4)}`}
+                            </div>
+                        </div>
+                    )
+                }
+                {
+                    !!verifiedTwitter && (
+                        <div
+                            className="profile-view__data-group flex flex-row flex-nowrap items-center text-light text-gray-500 cursor-pointer"
+                            onClick={() => window.open(user.twitterVerification, '_blank')}
+                        >
+                            <Icon fa="fab fa-twitter" />
+                            <div className="ml-2 profile-view__data-group__value hover:underline">
+                                @{twitterHandle}
                             </div>
                         </div>
                     )

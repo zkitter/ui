@@ -5,12 +5,14 @@ import Icon from "../Icon";
 import {fetchAddressByName, getUser, User, useUser} from "../../ducks/users";
 import {useDispatch} from "react-redux";
 import Web3 from "web3";
+import {getTwitterUser} from "../../util/twitter";
 
 type Props = {
     name?: string;
     address?: string;
     className?: string;
     incognito?: boolean;
+    twitterUsername?: string;
 }
 
 const CACHE: {
@@ -22,10 +24,12 @@ export default function Avatar(props: Props): ReactElement {
         address,
         name,
         incognito,
+        twitterUsername,
         className,
     } = props;
 
     const [username, setUsername] = useState('');
+    const [twitterProfileUrl, setTwitterProfileUrl] = useState('');
 
     const dispatch = useDispatch();
     const user = useUser(username);
@@ -46,6 +50,32 @@ export default function Avatar(props: Props): ReactElement {
             dispatch(getUser(username));
         }
     }, [username]);
+
+    useEffect(() => {
+        (async () => {
+            if (twitterUsername) {
+                const data = await getTwitterUser(twitterUsername);
+                setTwitterProfileUrl(data?.profile_image_url);
+            }
+        })();
+    }, [twitterUsername])
+
+    if (twitterUsername) {
+        return (
+            <div
+                className={classNames(
+                    'inline-block',
+                    'rounded-full',
+                    'flex-shrink-0 flex-grow-0',
+                    'bg-cover bg-center bg-no-repeat',
+                    className,
+                )}
+                style={{
+                    backgroundImage: `url(${twitterProfileUrl})`
+                }}
+            />
+        )
+    }
 
     if (incognito) {
         return (
@@ -92,9 +122,7 @@ export default function Avatar(props: Props): ReactElement {
             style={{
                 backgroundImage: `url(${imageUrl})`
             }}
-        >
-
-        </div>
+        />
     )
 }
 

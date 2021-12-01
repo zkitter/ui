@@ -1,4 +1,5 @@
 import {useSelector} from "react-redux";
+import {ZkIdentity} from "@libsem/identity";
 import {AppRootState} from "../store/configureAppStore";
 import deepEqual from "fast-deep-equal";
 import {convertToRaw, EditorState} from "draft-js";
@@ -19,8 +20,11 @@ import {OrdinarySemaphore} from "semaphore-lib";
 import {ThunkDispatch} from "redux-thunk";
 import {markdownConvertOptions} from "../components/DraftEditor";
 import config from "../util/config";
-import {Identity} from "libsemaphore";
 import {setFollowed} from "./users";
+import {genSemaphoreProof} from "../util/crypto";
+import {updateStatus} from "../util/twitter";
+
+const {  Semaphore, genExternalNullifier, genSignalHash } = require("@libsem/protocols");
 
 OrdinarySemaphore.setHasher('poseidon');
 
@@ -30,6 +34,7 @@ enum ActionTypes {
     SET_DRAFT = 'drafts/setDraft',
     SET_ATTACHMENT = 'drafts/setAttachment',
     SET_SUBMITTING = 'drafts/setSubmitting',
+    SET_MIRROR = 'drafts/setMirror',
 }
 
 type Action<payload> = {
@@ -41,6 +46,7 @@ type Action<payload> = {
 
 type State = {
     submitting: boolean;
+    mirror: boolean;
     map: {
         [replyId: string]: Draft;
     }
@@ -52,8 +58,9 @@ type Draft = {
     editorState: EditorState;
 }
 
-const initialState: State = {
+export const initialState: State = {
     submitting: false,
+    mirror: false,
     map: {},
 };
 
@@ -76,17 +83,19 @@ export const emptyDraft = (reference?: string): Action<Draft> => ({
 export const submitSemaphorePost = (post: Post) => async (dispatch: Dispatch, getState: () => AppRootState) => {
     const state = getState();
     const {
-        semaphore,
-    } = state.web3;
-    const identityCommitment = semaphore.commitment;
-    const identityNullifier = semaphore.identityNullifier;
-    const identityTrapdoor = semaphore.identityTrapdoor;
-    const identityPathElements = semaphore.identityPath?.path_elements;
-    const identityPathIndex = semaphore.identityPath?.path_index;
-    const privKey = semaphore.keypair?.privKey;
-    const pubKey = semaphore.keypair?.pubKey;
+        selected,
+    } = state.worker;
 
-    if (!identityCommitment || !identityPathElements || !identityPathIndex || !privKey || !pubKey || !identityTrapdoor || !identityNullifier) {
+    if (selected?.type !== 'interrep') throw new Error('Not in incognito mode');
+
+    const zkIdentity = ZkIdentity.genFromSerialized(selected.serializedIdentity);
+    const {identityTrapdoor, identityNullifier} = zkIdentity.getIdentity();
+    const identityCommitment = selected.identityCommitment;
+    const identityPathElements = selected.identityPath?.path_elements;
+    const identityPathIndex = selected.identityPath?.path_index;
+    const root = selected.identityPath?.root;
+
+    if (!identityCommitment || !identityPathElements || !identityPathIndex || !identityTrapdoor || !identityNullifier) {
         return null;
     }
 
@@ -95,30 +104,27 @@ export const submitSemaphorePost = (post: Post) => async (dispatch: Dispatch, ge
         hash,
         ...json
     } = post.toJSON();
-    const externalNullifier = OrdinarySemaphore.genExternalNullifier('POST');
 
+    const externalNullifier = genExternalNullifier('POST');
     const wasmFilePath = `${config.indexerAPI}/dev/semaphore_wasm`;
     const finalZkeyPath = `${config.indexerAPI}/dev/semaphore_final_zkey`;
 
-    const identity: Identity = {
-        keypair: semaphore.keypair as any,
-        identityTrapdoor: semaphore.identityTrapdoor,
-        identityNullifier: semaphore.identityNullifier,
-    };
-    const {
-        proof,
-        publicSignals,
-    } = await OrdinarySemaphore.genProofFromBuiltTree(
-        identity,
-        hash,
+    const witness = Semaphore.genWitness(
+        zkIdentity,
         {
-            indices:   identityPathIndex,
+            root: root,
+            indices: identityPathIndex,
             pathElements: identityPathElements,
         },
         externalNullifier,
-        wasmFilePath,
-        finalZkeyPath,
+        hash,
+        true
     );
+
+    const {
+        proof,
+        publicSignals,
+    } = await genSemaphoreProof(witness, wasmFilePath, finalZkeyPath);
 
     try {
         // @ts-ignore
@@ -156,8 +162,9 @@ export const submitPost = (reference = '') => async (dispatch: ThunkDispatch<any
         payload: true,
     });
 
-    const { drafts, web3, worker } = getState();
+    const { drafts, web3, worker, posts } = getState();
     const draft = drafts.map[reference];
+    const shouldMirror = drafts.mirror;
     const {
         semaphore,
     } = web3;
@@ -170,35 +177,66 @@ export const submitPost = (reference = '') => async (dispatch: ThunkDispatch<any
 
     if (!draft) return;
 
-    const currentContent = draft.editorState.getCurrentContent();
-    const markdown = draftToMarkdown(convertToRaw(currentContent), markdownConvertOptions);
-
-    const post = new Post({
-        type: MessageType.Post,
-        subtype: reference ? PostMessageSubType.Reply : PostMessageSubType.Default,
-        creator: semaphore.keypair.privKey ? '' : account,
-        payload: {
-            content: markdown,
-            reference: reference,
-            attachment: draft.attachment,
-        },
-    });
-
-    if (semaphore.keypair.privKey) {
-        await dispatch(submitSemaphorePost(post));
-        return post;
-    }
-
-    // @ts-ignore
-    if (!gun.user().is) return;
-
-    const {
-        messageId,
-        hash,
-        ...json
-    } = await post.toJSON();
-
     try {
+        const currentContent = draft.editorState.getCurrentContent();
+        const markdown = draftToMarkdown(convertToRaw(currentContent), markdownConvertOptions);
+
+        const maxlen = shouldMirror ? 280 : 500;
+
+        if (markdown.length > maxlen) throw new Error(`post cannot be over ${maxlen} characters`);
+
+        const referencePost = posts.map[reference];
+        let subtype: PostMessageSubType = PostMessageSubType.Default;
+        let tweetUrl = '';
+        let replyToTweetId;
+        let replyToUsername;
+
+        if (shouldMirror) {
+            subtype = reference ? PostMessageSubType.MirrorReply : PostMessageSubType.MirrorPost;
+
+            if (referencePost?.subtype === PostMessageSubType.MirrorPost) {
+                const [tweetUsername, _, tweetId] = referencePost?.payload.topic
+                    .replace('https://twitter.com/', '')
+                    .split('/');
+                replyToTweetId = tweetId;
+                replyToUsername = tweetUsername;
+            }
+
+            const tweetStatus = replyToTweetId
+                ? `@${replyToUsername} ${markdown}`
+                : markdown;
+
+            tweetUrl = await updateStatus(tweetStatus, replyToTweetId);
+        } else if (reference) {
+            subtype = PostMessageSubType.Reply;
+        }
+
+        const post = new Post({
+            type: MessageType.Post,
+            subtype: subtype,
+            creator: selected?.type === 'interrep' ? '' : account,
+            payload: {
+                topic: tweetUrl,
+                content: markdown,
+                reference: reference,
+                attachment: draft.attachment,
+            },
+        });
+
+        if (selected?.type === 'interrep') {
+            await dispatch(submitSemaphorePost(post));
+            return post;
+        }
+
+        // @ts-ignore
+        if (!gun.user().is) if (!gun.user().is) throw new Error('not logged in');;
+
+        const {
+            messageId,
+            hash,
+            ...json
+        } = await post.toJSON();
+
         // @ts-ignore
         await gun.user()
             .get('message')
@@ -237,25 +275,25 @@ export const submitRepost = (reference = '') => async (dispatch: Dispatch, getSt
 
     const account = selected?.address;
 
-    // @ts-ignore
-    if (!gun.user().is) return;
-
-    const post = new Post({
-        type: MessageType.Post,
-        subtype: PostMessageSubType.Repost,
-        creator: account,
-        payload: {
-            reference: reference,
-        },
-    });
-
-    const {
-        messageId,
-        hash,
-        ...json
-    } = await post.toJSON();
-
     try {
+        // @ts-ignore
+        if (!gun.user().is) throw new Error('not logged in');
+
+        const post = new Post({
+            type: MessageType.Post,
+            subtype: PostMessageSubType.Repost,
+            creator: account,
+            payload: {
+                reference: reference,
+            },
+        });
+
+        const {
+            messageId,
+            hash,
+            ...json
+        } = await post.toJSON();
+
         // @ts-ignore
         await gun.user()
             .get('message')
@@ -292,25 +330,25 @@ export const submitModeration = (reference = '', subtype: ModerationMessageSubTy
 
     const account = selected?.address;
 
-    // @ts-ignore
-    if (!gun.user().is) return;
-
-    const moderation = new Moderation({
-        type: MessageType.Moderation,
-        subtype: subtype,
-        creator: account,
-        payload: {
-            reference: reference,
-        },
-    });
-
-    const {
-        messageId,
-        hash,
-        ...json
-    } = await moderation.toJSON();
-
     try {
+        // @ts-ignore
+        if (!gun.user().is) throw new Error('not logged in');
+
+        const moderation = new Moderation({
+            type: MessageType.Moderation,
+            subtype: subtype,
+            creator: account,
+            payload: {
+                reference: reference,
+            },
+        });
+
+        const {
+            messageId,
+            hash,
+            ...json
+        } = await moderation.toJSON();
+
         // @ts-ignore
         await gun.user()
             .get('message')
@@ -342,30 +380,30 @@ export const submitConnection = (name: string, subtype: ConnectionMessageSubType
     const account = selected?.address;
     const gunUser = gun.user();
 
-    // @ts-ignore
-    if (!gunUser.is) return;
-
-    dispatch({
-        type: ActionTypes.SET_SUBMITTING,
-        payload: true,
-    });
-
-    const connection = new Connection({
-        type: MessageType.Connection,
-        subtype: subtype,
-        creator: account,
-        payload: {
-            name: name,
-        },
-    });
-
-    const {
-        messageId,
-        hash,
-        ...json
-    } = await connection.toJSON();
-
     try {
+        // @ts-ignore
+        if (!gun.user().is) throw new Error('not logged in');
+
+        dispatch({
+            type: ActionTypes.SET_SUBMITTING,
+            payload: true,
+        });
+
+        const connection = new Connection({
+            type: MessageType.Connection,
+            subtype: subtype,
+            creator: account,
+            payload: {
+                name: name,
+            },
+        });
+
+        const {
+            messageId,
+            hash,
+            ...json
+        } = await connection.toJSON();
+
         // @ts-ignore
         await gunUser
             .get('message')
@@ -409,23 +447,26 @@ export const submitProfile = (
 
     const account = selected?.address;
 
-    const post = new Profile({
-        type: MessageType.Profile,
-        subtype: subtype,
-        creator: account,
-        payload: {
-            key: key || '',
-            value: value,
-        },
-    });
-
-    const {
-        messageId,
-        hash,
-        ...json
-    } = await post.toJSON();
-
     try {
+        // @ts-ignore
+        if (!gun.user().is) throw new Error('not logged in');
+
+        const post = new Profile({
+            type: MessageType.Profile,
+            subtype: subtype,
+            creator: account,
+            payload: {
+                key: key || '',
+                value: value,
+            },
+        });
+
+        const {
+            messageId,
+            hash,
+            ...json
+        } = await post.toJSON();
+
         // @ts-ignore
         await gun.user()
             .get('message')
@@ -446,6 +487,11 @@ export const submitProfile = (
     }
 }
 
+export const setMirror = (mirror: boolean): Action<boolean> => ({
+    type: ActionTypes.SET_MIRROR,
+    payload: mirror,
+});
+
 export const useDraft = (reference = ''): Draft => {
     return useSelector((state: AppRootState) => {
         const draft = state.drafts.map[reference];
@@ -465,6 +511,12 @@ export const useSubmitting = (): boolean => {
     }, deepEqual);
 }
 
+export const useMirror = (): boolean => {
+    return useSelector((state: AppRootState) => {
+        return state.drafts.mirror;
+    }, deepEqual);
+}
+
 export default function drafts(state = initialState, action: Action<any>): State {
     switch (action.type) {
         case ActionTypes.SET_DRAFT:
@@ -479,6 +531,11 @@ export default function drafts(state = initialState, action: Action<any>): State
             return {
                 ...state,
                 submitting: action.payload,
+            };
+        case ActionTypes.SET_MIRROR:
+            return {
+                ...state,
+                mirror: action.payload,
             };
         default:
             return state;

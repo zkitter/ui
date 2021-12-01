@@ -7,8 +7,6 @@ import config from "./config";
 const gun = Gun(config.gunPeers);
 
 export const authenticateGun = (keyPair: { pub: string; priv: string }) => {
-    console.log(keyPair)
-
     // @ts-ignore
     if (gun.user().is) {
         gun.user().leave();
@@ -52,7 +50,7 @@ export const fetchMessage = async (soul: string): Promise<PostMessageOption> => 
                 }
             }
         } catch (e) {
-            reject(e);
+            // console.log(e.message);
         }
     });
 }

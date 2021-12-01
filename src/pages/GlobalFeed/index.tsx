@@ -10,6 +10,7 @@ import {setDraft, submitPost, useDraft, useSubmitting} from "../../ducks/drafts"
 import InfiniteScrollable from "../../components/InfiniteScrollable";
 import {Post as PostMessage} from "../../util/message";
 import LocalBackupNotification from "../../components/LocalBackupNotification";
+import {useSelectedLocalId} from "../../ducks/worker";
 
 export default function GlobalFeed(): ReactElement {
     const [limit, setLimit] = useState(20);
@@ -17,13 +18,14 @@ export default function GlobalFeed(): ReactElement {
     const [order, setOrder] = useState<string[]>([]);
     const dispatch = useDispatch();
     const loggedIn = useLoggedIn();
+    const selected = useSelectedLocalId();
     const hasLocalBackup = useHasLocal();
 
     useEffect(() => {
         (async function onGlobalFeedMount() {
             await fetchMore(true);
         })();
-    }, [loggedIn]);
+    }, [selected]);
 
     const gotoPost = useGoToPost();
 
