@@ -41,6 +41,7 @@ export default function ConnectTwitterView(props: Props): ReactElement {
     useEffect(() => {
         (async function() {
             try {
+                setFetching(true);
                 let signature = '';
                 if (selected?.type === 'gun') {
                     signature = signWithP256(selected.privateKey, selected.address) + '.' + selected.address;
@@ -198,7 +199,7 @@ function VerifyView(props: {
                 const resp = await fetch(`${config.indexerAPI}/twitter/check?username=${twitterAuth?.username}`);
                 const json = await resp.json();
 
-                if (json?.payload) {
+                if (json?.payload.account) {
                     setExisting(json.payload.account);
                 } else {
                     setExisting('');
@@ -260,7 +261,7 @@ function VerifyView(props: {
         )
     }
 
-    if (existing !== account) {
+    if (existing && existing !== account) {
         return (
             <div className="flex flex-col flex-nowrap flex-grow my-4 mx-8 signup__content signup__welcome">
                 <div className="flex flex-row items-center justify-center my-4">

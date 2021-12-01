@@ -241,6 +241,8 @@ export const useConnectedTwitter = (address = '') => {
 
 export const useUser = (address = ''): User | null => {
     return useSelector((state: AppRootState) => {
+        if (!address) return null;
+
         const user = state.users.map[address];
 
         const val: User = user;
