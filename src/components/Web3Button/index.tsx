@@ -362,7 +362,7 @@ function UserMenuable(props: {
             {
                 showingScanner && (
                     <Modal onClose={() => showScanner(false)}>
-                        <QRScanner />
+                        <QRScanner onSuccess={() => showScanner(false)} />
                     </Modal>
                 )
             }
@@ -595,7 +595,7 @@ function UnauthButton(props: {
                 {
                     showingScanner && (
                         <Modal onClose={() => showScanner(false)}>
-                            <QRScanner />
+                            <QRScanner onSuccess={() => showScanner(false)}  />
                         </Modal>
                     )
                 }
