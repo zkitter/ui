@@ -122,7 +122,7 @@ export default function ConnectTwitterView(props: Props): ReactElement {
 function WelcomeView(props: { setViewType: (v: ViewType) => void}): ReactElement {
     const connectTwitter = useCallback(async () => {
         const resp = await fetch(
-            `${config.indexerAPI}/twitter?redirectUrl=${encodeURI('http://127.0.0.1:8080/connect/twitter')}`,
+            `${config.indexerAPI}/twitter?redirectUrl=${encodeURI(`${config.baseUrl}/connect/twitter`)}`,
             {
                 credentials: 'include',
             },

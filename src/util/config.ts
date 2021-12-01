@@ -6,6 +6,7 @@ let json: {
     arbitrumExplorer?: string;
     indexerAPI?: string;
     interrepAPI?: string;
+    baseUrl?: string;
     gunPeers?: string[];
 } = {};
 
@@ -21,6 +22,7 @@ const arbitrumHttpProvider = json.arbitrumHttpProvider || process.env.ARB_HTTP_P
 const arbitrumRegistrar = json.arbitrumRegistrar || process.env.ARB_REGISTRAR;
 const arbitrumExplorer = json.arbitrumExplorer || process.env.ARB_EXPLORER;
 const indexerAPI = json.indexerAPI || process.env.INDEXER_API || 'http://localhost:3000';
+const baseUrl = json.baseUrl || process.env.BASE_URL || 'http://localhost:8080';
 const interrepAPI = json.interrepAPI || process.env.INTERREP_API || 'https://kovan.interrep.link/api';
 const gunPeers = json.gunPeers || process.env.GUN_PEERS?.split(' ') || [];
 
@@ -57,6 +59,7 @@ const config = {
     arbitrumHttpProvider,
     arbitrumRegistrar,
     arbitrumExplorer,
+    baseUrl,
 };
 
 export default config;

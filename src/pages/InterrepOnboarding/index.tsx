@@ -148,7 +148,7 @@ function WelcomeView(props: { setViewType: (v: ViewType) => void}): ReactElement
 function ConnectView(props: { setViewType: (v: ViewType) => void}): ReactElement {
     const connectTwitter = useCallback(async () => {
         const resp = await fetch(
-            `${config.indexerAPI}/twitter?redirectUrl=${encodeURI('http://127.0.0.1:8080/onboarding/interrep')}`,
+            `${config.indexerAPI}/twitter?redirectUrl=${encodeURI(`${config.baseUrl}/onboarding/interrep`)}`,
             {
                 credentials: 'include',
             },
