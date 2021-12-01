@@ -256,7 +256,7 @@ export function RegularPost(props: Props): ReactElement {
         history.push(`/${user?.ens || user?.username}/`);
     }, [user, post?.type]);
 
-    if (!post || !user) return <></>;
+    if (!post) return <></>;
 
     let body = post.payload.content.slice(0, 512);
     body = post.payload.content.length > 512 ? body + '...' : body;
@@ -293,7 +293,7 @@ export function RegularPost(props: Props): ReactElement {
                 <div>
                     <Avatar
                         className="mr-3 w-12 h-12 border"
-                        address={user.username}
+                        address={user?.username}
                         incognito={post.creator === ''}
                         twitterUsername={post.type === MessageType._TWEET ? post.creator : undefined}
                     />
