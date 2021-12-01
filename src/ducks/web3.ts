@@ -752,6 +752,16 @@ export const useHasLocal = () => {
 
         if (!selected) return false;
 
-        return !!identities.find(({ address }) => address === selected.address);
+        return !!identities.find((id) => {
+            if (id.type === 'interrep' && selected.type === 'interrep') {
+                return id.identityCommitment === selected.identityCommitment;
+            }
+
+            if (id.type === 'gun' && selected.type === 'gun') {
+                return id.address === selected.address;
+            }
+
+            return false;
+        });
     }, deepEqual);
 }

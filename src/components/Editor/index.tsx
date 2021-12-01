@@ -134,6 +134,10 @@ export default function Editor(props: Props): ReactElement {
     }, [editorState]);
 
     const onPost = useCallback(async () => {
+        if (mirror && (!verifiedSession || !verified)) {
+            history.push('/connect/twitter');
+            return;
+        }
         setErrorMessage('');
         try {
             if (props.onPost) {
@@ -142,7 +146,7 @@ export default function Editor(props: Props): ReactElement {
         } catch (e) {
             setErrorMessage(e.message);
         }
-    }, [props.onPost])
+    }, [props.onPost, verified, verifiedSession, mirror])
 
     if (!disabled && gun.priv && gun.pub && !gun.joinedTx) {
         return (
@@ -260,14 +264,18 @@ export default function Editor(props: Props): ReactElement {
                         {/*/>*/}
                     </div>
                     <div className="flex-grow flex flex-row flex-nowrap items-center justify-end">
-                        <Checkbox
-                            className="mr-4"
-                            onChange={onSetMirror}
-                            checked={mirror}
-                            disabled={verifying}
-                        >
-                            Mirror Tweet
-                        </Checkbox>
+                        {
+                            selected?.type !== 'interrep' && (
+                                <Checkbox
+                                    className="mr-4"
+                                    onChange={onSetMirror}
+                                    checked={mirror}
+                                    disabled={verifying}
+                                >
+                                    Mirror Tweet
+                                </Checkbox>
+                            )
+                        }
                         <Button
                             btnType="primary"
                             onClick={onPost}

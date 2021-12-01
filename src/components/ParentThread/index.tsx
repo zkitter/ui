@@ -1,7 +1,6 @@
 import React, {MouseEventHandler, ReactElement, useEffect} from "react";
 import {fetchMeta, useGoToPost, usePost} from "../../ducks/posts";
 import Post from "../Post";
-import {useHistory} from "react-router";
 import {Post as PostMessage, PostMessageSubType} from "../../util/message";
 import classNames from "classnames";
 import {useDispatch} from "react-redux";
@@ -19,7 +18,8 @@ type Props = {
 
 export default function ParentThread(props: Props): ReactElement {
     const post = usePost(props.messageId);
-    const parent = post?.subtype === PostMessageSubType.Reply
+    // @ts-ignore
+    const parent = [PostMessageSubType.Reply, PostMessageSubType.MirrorReply].includes(post?.subtype)
         ? post?.payload.reference
         : '';
     const gotoPost = useGoToPost();
@@ -28,6 +28,7 @@ export default function ParentThread(props: Props): ReactElement {
 
     useEffect(() => {
         (async function onPostViewMount() {
+            if (!parent) return;
             await dispatch(fetchMeta(parent));
         })();
 

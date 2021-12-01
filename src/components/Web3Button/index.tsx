@@ -491,7 +491,7 @@ function CurrentUserItem(props: {
     return (
         <div
             className={classNames(
-                "local-users-menu__selected-item border-b mb-2"
+                "local-users-menu__selected-item border-b mb-2",
             )}
         >
             <Avatar
@@ -540,14 +540,31 @@ function UserMenuItem(props: {
             className={classNames(
                 "flex flex-row flex-nowrap items-center",
                 "hover:bg-gray-50 cursor-pointer",
-                "local-users-menu__item"
+                "local-users-menu__item",
             )}
             onClick={openLogin}
         >
-            <Avatar className="w-9 h-9 mr-2" address={user?.username} />
+            <Avatar
+                className="w-9 h-9 mr-2"
+                address={user?.username}
+                incognito={identity.type === 'interrep'}
+            />
             <div className="flex flex-col flex-nowrap w-0 flex-grow">
-                <div className="text-sm font-bold truncate">{getName(user)}</div>
-                <div className="text-xs">@{getHandle(user)}</div>
+                <div className="text-sm font-bold truncate">
+                    {
+                        identity.type === 'interrep'
+                            ? identity.provider
+                            : getName(user)
+                    }
+                </div>
+                <div className="text-xs">
+                    {
+                        identity.type === 'interrep'
+                            ? `${identity.name}`
+                            : `@${getHandle(user)}`
+                    }
+
+                </div>
             </div>
         </div>
     );

@@ -7,6 +7,9 @@ import Icon from "../../components/Icon";
 import SpinnerGif from "../../../static/icons/spinner.gif";
 import config from "../../util/config";
 import Input from "../../components/Input";
+import {checkPath, watchPath} from "../../util/interrep";
+import {postWorkerMessage} from "../../util/sw";
+import {setIdentity} from "../../serviceWorkers/util";
 
 export enum ViewType {
     welcome,
@@ -27,17 +30,24 @@ export default function InterrepOnboarding(props: Props): ReactElement {
         username: string;
         reputation: string;
     }|null>(null);
+    const selected = useSelectedLocalId();
 
     useEffect(() => {
         (async function() {
             try {
+                if (selected?.type === 'interrep' && selected.identityPath) {
+                    setViewType(ViewType.done);
+                    return;
+                }
+
                 const resp = await fetch(`${config.indexerAPI}/twitter/session`, {
                     credentials: 'include',
                 });
                 const json: any = await resp.json();
 
                 if (json?.error) {
-                    throw new Error(json?.payload);
+                    setViewType(ViewType.welcome);
+                    return;
                 }
 
                 if (json?.payload) {
@@ -54,7 +64,7 @@ export default function InterrepOnboarding(props: Props): ReactElement {
                 setFetching(false);
             }
         })();
-    }, []);
+    }, [selected]);
 
     const onResetAuth = useCallback(async () => {
         const resp = await fetch(`${config.indexerAPI}/oauth/reset`, {
@@ -89,6 +99,7 @@ export default function InterrepOnboarding(props: Props): ReactElement {
             content = <JoinGroupView setViewType={setViewType} twitterAuth={twitterAuth} onResetAuth={onResetAuth} />;
             break;
         case ViewType.done:
+            content = <DoneView setViewType={setViewType} />
             break;
     }
 
@@ -204,6 +215,7 @@ function JoinGroupView(props: {
     } | null;
 }): ReactElement {
     const [errorMessage, setErrorMessage] = useState('');
+    const [joining, setJoining] = useState(false);
     const { twitterAuth } = props;
     const selected = useSelectedLocalId();
 
@@ -212,6 +224,22 @@ function JoinGroupView(props: {
     let group = '';
     let reputation = '';
     let token = '';
+
+    useEffect(() => {
+        if (selected?.type !== 'interrep') {
+            return;
+        }
+
+        (async () => {
+            const data: any = await checkPath(selected.identityCommitment);
+            await postWorkerMessage(setIdentity({
+                ...selected,
+                name: data.name,
+                identityPath: data.path,
+            }))
+            props.setViewType(ViewType.done);
+        })();
+    }, [selected]);
 
     if (twitterAuth) {
         name = 'Twitter';
@@ -228,6 +256,7 @@ function JoinGroupView(props: {
         }
 
         try {
+            setJoining(true);
             const resp = await fetch(`${config.indexerAPI}/interrep/groups/${group}/${reputation}/${selected.identityCommitment}`, {
                 method: 'POST',
                 credentials: 'include',
@@ -237,10 +266,18 @@ function JoinGroupView(props: {
             if (json.error) {
                 setErrorMessage(json.payload);
             } else {
-                console.log(json);
+                const data: any = await watchPath(selected.identityCommitment);
+                props.setViewType(ViewType.done);
+                await postWorkerMessage(setIdentity({
+                    ...selected,
+                    name: data.name,
+                    identityPath: data.path,
+                }))
             }
         } catch (e) {
             setErrorMessage(e.message);
+        } finally {
+            setJoining(false);
         }
     }, [twitterAuth, selected, reputation, group, token]);
 
@@ -273,16 +310,48 @@ function JoinGroupView(props: {
                                     btnType="secondary"
                                     className="mr-4"
                                     onClick={props.onResetAuth}
+                                    loading={joining}
                                 >
                                     Reset
                                 </Button>
-                                <Button btnType="primary" onClick={onJoinGroup}>
+                                <Button
+                                    btnType="primary"
+                                    onClick={onJoinGroup}
+                                    loading={joining}
+                                >
                                     Join Group
                                 </Button>
                             </>
                         )
                 }
 
+            </div>
+        </div>
+    )
+}
+
+
+function DoneView(props: {
+    setViewType: (v: ViewType) => void;
+}): ReactElement {
+    const history = useHistory();
+
+    return (
+        <div className="flex flex-col flex-nowrap flex-grow my-4 mx-8 signup__content signup__welcome">
+            <div className="flex flex-row items-center justify-center my-4">
+                <div className="text-xl mr-2">🥷</div>
+                <div className="text-xl font-semibold">We can't see you! </div>
+            </div>
+            <div className="my-4">
+                {`Your incognito account is ready for posting!`}
+            </div>
+            <div className="flex-grow flex flex-row mt-8 flex-nowrap items-end justify-end">
+                <Button
+                    btnType="primary"
+                    onClick={() => history.push(`/`)}
+                >
+                    Done
+                </Button>
             </div>
         </div>
     )

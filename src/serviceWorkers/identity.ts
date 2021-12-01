@@ -30,7 +30,7 @@ export type Identity =
     | GunIdentity
     | InterrepIdentity;
 
-const STORAGE_KEY = 'identity_ls';
+const STORAGE_KEY = 'identity_ls_2';
 
 export class IdentityService extends GenericService {
     passphrase: string;
@@ -38,6 +38,7 @@ export class IdentityService extends GenericService {
     currentIdentity: Identity | null;
 
     db?: IDBDatabase;
+    interrepDB?: IDBDatabase;
 
     constructor() {
         super();
@@ -54,14 +55,14 @@ export class IdentityService extends GenericService {
 
     async getDB(): Promise<IDBDatabase> {
         return new Promise(async (resolve) => {
-            const req = indexedDB.open(STORAGE_KEY, 1);
+            const req = indexedDB.open(STORAGE_KEY, 2);
 
             req.onupgradeneeded = () => {
                 const db = req.result;
                 const store = db.createObjectStore(
                     'identity',
                     {
-                        keyPath: 'public_key',
+                        keyPath: ['public_key', 'identity_commitment'],
                     }
                 );
                 store.createIndex('by_address', 'address');
@@ -101,6 +102,15 @@ export class IdentityService extends GenericService {
             }
         }
 
+        if (id.type === 'interrep') {
+            return {
+                ...id,
+                serializedIdentity: this.passphrase
+                    ? decrypt(id.serializedIdentity, this.passphrase)
+                    : '',
+            }
+        }
+
         return id;
     }
 
@@ -129,22 +139,29 @@ export class IdentityService extends GenericService {
         }
     }
 
-    async selectIdentity(pubkey: string) {
+    async selectIdentity(pubkeyOrCommitment: string) {
         await this.ensure();
         const identities = await this.getIdentities();
 
         for (let id of identities) {
             if (id.type === 'gun') {
-                if (id.publicKey === pubkey) {
+                if (id.publicKey === pubkeyOrCommitment) {
                     this.currentIdentity = this.wrapIdentity(id);
                     await pushReduxAction(setSelectedId(this.currentIdentity));
                     return this.currentIdentity;
                 }
             }
 
+            if (id.type === 'interrep') {
+                if (id.identityCommitment === pubkeyOrCommitment) {
+                    this.currentIdentity = this.wrapIdentity(id);
+                    await pushReduxAction(setSelectedId(this.currentIdentity));
+                    return this.currentIdentity;
+                }
+            }
         }
 
-        throw new Error(`cannot find identity with pubkey ${pubkey}`);
+        throw new Error(`cannot find identity with pubkey ${pubkeyOrCommitment}`);
     }
 
     async addIdentity(identity: Identity) {
@@ -166,6 +183,32 @@ export class IdentityService extends GenericService {
                 nonce: identity.nonce,
                 public_key: identity.publicKey,
                 private_key: encrypt(identity.privateKey, this.passphrase),
+                provider: '',
+                name: '',
+                identity_path: '',
+                identity_commitment: '',
+                serialized_identity: '',
+            });
+        }
+
+        if (identity.type === 'interrep') {
+            if (!identity.provider) throw new Error('missing provider');
+            if (!identity.name) throw new Error('missing name');
+            if (!identity.identityPath) throw new Error('missing identityPath');
+            if (!identity.identityCommitment) throw new Error('missing identityCommitment');
+            if (!identity.serializedIdentity) throw new Error('missing serializedIdentity');
+
+            store?.put({
+                type: identity.type,
+                address: identity.address,
+                nonce: identity.nonce,
+                provider: identity.provider,
+                name: identity.name,
+                identity_path: identity.identityPath,
+                identity_commitment: identity.identityCommitment,
+                serialized_identity: encrypt(identity.serializedIdentity, this.passphrase),
+                public_key: '',
+                private_key: '',
             });
         }
 
@@ -197,6 +240,11 @@ export class IdentityService extends GenericService {
                     nonce: id.nonce,
                     publicKey: id.public_key,
                     privateKey: id.private_key,
+                    provider: id.provider,
+                    name: id.name,
+                    identityPath: id.identity_path,
+                    identityCommitment: id.identity_commitment,
+                    serializedIdentity: id.serialized_identity,
                 });
             }
         });
@@ -220,6 +268,11 @@ export class IdentityService extends GenericService {
                             nonce: id.nonce,
                             publicKey: id.public_key,
                             privateKey: id.private_key,
+                            provider: id.provider,
+                            name: id.name,
+                            identityPath: id.identity_path,
+                            identityCommitment: id.identity_commitment,
+                            serializedIdentity: id.serialized_identity,
                         }
                     });
                 resolve(ids);

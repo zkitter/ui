@@ -128,10 +128,10 @@ export function ExpandedPost(props: Props): ReactElement {
     const parentUser = useUser(parentCreator);
 
     const gotoUserProfile = useCallback(e => {
-        if (!user) return;
+        if (!user || !post?.creator) return;
         e.stopPropagation();
         history.push(`/${user?.ens || user?.username}/`);
-    }, [user]);
+    }, [user, post]);
 
     if (!post || !user) return <></>;
 
@@ -441,8 +441,8 @@ function PostFooter(props: {
     }, [messageId]);
 
     // @ts-ignore
-    const hasTweet = [PostMessageSubType.MirrorPost, PostMessageSubType.MirrorReply].includes(post?.subtype)
-        || post?.type === MessageType._TWEET;
+    const isMirrorTweet = [PostMessageSubType.MirrorPost, PostMessageSubType.MirrorReply].includes(post?.subtype);
+    const isTweet = post?.type === MessageType._TWEET;
 
     return (
         <div
@@ -459,73 +459,69 @@ function PostFooter(props: {
                     messageId={messageId}
                 />
             )}
+            <PostButton
+                iconClassName="hover:bg-blue-50 hover:text-blue-400"
+                fa="far fa-comments"
+                count={meta.replyCount}
+                onClick={() => setShowReply(true)}
+                large={large}
+                disabled={isTweet}
+            />
+            <PostButton
+                textClassName={classNames({
+                    "text-green-400": meta.reposted,
+                })}
+                iconClassName={classNames(
+                    {
+                        "hover:bg-green-50 hover:text-green-400": loggedIn,
+                        "text-green-400": meta.reposted,
+                    },
+                )}
+                fa="fas fa-retweet"
+                count={meta.repostCount}
+                onClick={meta.reposted ? undefined : onRepost}
+                disabled={!canNonPostMessage || isTweet}
+                large={large}
+            />
+            <PostButton
+                textClassName={classNames({
+                    "text-red-400": meta.liked,
+                })}
+                iconClassName={classNames(
+                    {
+                        "hover:bg-red-50 hover:text-red-400": loggedIn,
+                        "text-red-400": meta.liked,
+                    },
+                )}
+                fa={classNames({
+                    "far fa-heart": !meta.liked,
+                    "fas fa-heart": meta.liked,
+                })}
+                count={meta.likeCount}
+                onClick={meta.liked ? undefined : onLike}
+                disabled={!canNonPostMessage || isTweet}
+                large={large}
+            />
             {
-                post?.type !== MessageType._TWEET && (
-                    <>
-                        <PostButton
-                            iconClassName="hover:bg-blue-50 hover:text-blue-400"
-                            fa="far fa-comments"
-                            count={meta.replyCount}
-                            onClick={() => setShowReply(true)}
-                            large={large}
-                        />
-                        <PostButton
-                            textClassName={classNames({
-                                "text-green-400": meta.reposted,
-                            })}
-                            iconClassName={classNames(
-                                {
-                                    "hover:bg-green-50 hover:text-green-400": loggedIn,
-                                    "text-green-400": meta.reposted,
-                                },
-                            )}
-                            fa="fas fa-retweet"
-                            count={meta.repostCount}
-                            onClick={meta.reposted ? undefined : onRepost}
-                            disabled={!canNonPostMessage}
-                            large={large}
-                        />
-                        <PostButton
-                            textClassName={classNames({
-                                "text-red-400": meta.liked,
-                            })}
-                            iconClassName={classNames(
-                                {
-                                    "hover:bg-red-50 hover:text-red-400": loggedIn,
-                                    "text-red-400": meta.liked,
-                                },
-                            )}
-                            fa={classNames({
-                                "far fa-heart": !meta.liked,
-                                "fas fa-heart": meta.liked,
-                            })}
-                            count={meta.likeCount}
-                            onClick={meta.liked ? undefined : onLike}
-                            disabled={!canNonPostMessage}
-                            large={large}
-                        />
-                    </>
+                isMirrorTweet && (
+                    <PostButton
+                        iconClassName="hover:bg-blue-50 text-blue-400"
+                        fa="fab fa-twitter"
+                        onClick={() => {
+                            if (!post) return;
+
+                            if ([PostMessageSubType.MirrorPost, PostMessageSubType.MirrorReply].includes(post.subtype)) {
+                                window.open(post.payload.topic, '_blank');
+                            } else if (post.type === MessageType._TWEET) {
+                                window.open(`https://twitter.com/${post.creator}/status/${post.tweetId}`, '_blank');
+                            }
+                        }}
+                        large={large}
+                    />
                 )
             }
             <div className="flex flex-grow flex-row flex-nowrap justify-end items-center">
-                {
-                    hasTweet && (
-                        <PostButton
-                            iconClassName="hover:bg-blue-50 text-blue-400"
-                            fa="fab fa-twitter"
-                            onClick={() => {
-                                if (!post) return;
 
-                                if ([PostMessageSubType.MirrorPost, PostMessageSubType.MirrorReply].includes(post.subtype)) {
-                                    window.open(post.payload.topic, '_blank');
-                                } else if (post.type === MessageType._TWEET) {
-                                    window.open(`https://twitter.com/${post.creator}/status/${post.tweetId}`, '_blank');
-                                }
-                            }}
-                            large={large}
-                        />
-                    )
-                }
             </div>
         </div>
     );
@@ -534,6 +530,24 @@ function PostFooter(props: {
 function PostMenu(props: Props): ReactElement {
     const post = usePost(props.messageId);
     const user = useUser(post?.creator);
+
+    if (post?.type === MessageType._TWEET) {
+        return (
+            <PostButton
+                iconClassName="hover:bg-blue-50 text-blue-400"
+                fa="fab fa-twitter"
+                onClick={() => {
+                    if (!post) return;
+
+                    if ([PostMessageSubType.MirrorPost, PostMessageSubType.MirrorReply].includes(post.subtype)) {
+                        window.open(post.payload.topic, '_blank');
+                    } else if (post.type === MessageType._TWEET) {
+                        window.open(`https://twitter.com/${post.creator}/status/${post.tweetId}`, '_blank');
+                    }
+                }}
+            />
+        )
+    }
 
     return (
         <Menuable
