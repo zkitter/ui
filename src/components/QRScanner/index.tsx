@@ -14,7 +14,8 @@ export default function QRScanner(): ReactElement {
 
         try {
             const identity: Identity = JSON.parse(data);
-            if (!identity.privateKey) return;
+            if (identity.type === 'gun' && !identity.privateKey) return;
+            if (identity.type === 'interrep' && !identity.serializedIdentity) return;
             await postWorkerMessage(setIdentity(identity));
             // await postWorkerMessage(selectIdentity(identity.publicKey));
         } catch (e) {
