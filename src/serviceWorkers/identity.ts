@@ -1,5 +1,5 @@
 import {GenericService} from "../util/svc";
-import {decrypt, encrypt} from "../util/encrypt";
+import {decrypt, encrypt, randomSalt} from "../util/encrypt";
 import {pushReduxAction} from "./util";
 import {setIdentities, setSelectedId, setUnlocked} from "../ducks/worker";
 
@@ -31,6 +31,9 @@ export type Identity =
     | InterrepIdentity;
 
 const STORAGE_KEY = 'identity_ls_2';
+const PASSPHRASE = 'pid';
+const SELECTED = 'selected_id';
+const SALT = 'sid';
 
 export class IdentityService extends GenericService {
     passphrase: string;
@@ -38,7 +41,6 @@ export class IdentityService extends GenericService {
     currentIdentity: Identity | null;
 
     db?: IDBDatabase;
-    interrepDB?: IDBDatabase;
 
     constructor() {
         super();
@@ -47,36 +49,62 @@ export class IdentityService extends GenericService {
     }
 
     async ensure() {
-        // this.db = await this.getDB();
         if (!this.db) {
             throw new Error('identity db is not initialized');
+        }
+
+        const salt = await this.readKey(SALT);
+        if (!salt) {
+            await this.writeKey(SALT, randomSalt());
         }
     }
 
     async getDB(): Promise<IDBDatabase> {
         return new Promise(async (resolve) => {
-            const req = indexedDB.open(STORAGE_KEY, 2);
+            const req = indexedDB.open(STORAGE_KEY, 3);
 
-            req.onupgradeneeded = () => {
+            req.onupgradeneeded = (event) => {
+                console.log(event);
                 const db = req.result;
-                const store = db.createObjectStore(
-                    'identity',
-                    {
-                        keyPath: ['public_key', 'identity_commitment'],
-                    }
-                );
-                store.createIndex('by_address', 'address');
+
+                if (event.oldVersion < 2) {
+                    const store = db.createObjectStore(
+                        'identity',
+                        {
+                            keyPath: ['public_key', 'identity_commitment'],
+                        }
+                    );
+                    store.createIndex('by_address', 'address');
+                }
+
+                if (event.oldVersion < 3) {
+                    const kvStore = db.createObjectStore(
+                        'keyvalue',
+                        {
+                            keyPath: ['id'],
+                        }
+                    );
+                    kvStore.createIndex('by_id', 'id');
+                }
+
                 resolve(db);
             }
 
             req.onsuccess = async () => {
                 resolve(req.result);
             }
-        })
+        });
     }
 
     async start() {
         this.db = await this.getDB();
+        this.passphrase = await this.readPassphrase();
+        await this.setPassphrase(this.passphrase);
+
+        const selected = await this.readKey<string>(SELECTED);
+        if (selected) {
+            await this.selectIdentity(selected);
+        }
     }
 
     async getStatus() {
@@ -114,7 +142,7 @@ export class IdentityService extends GenericService {
         return id;
     }
 
-    async setPassphrase(passphrase: string) {
+    async testPassphrase(passphrase: string) {
         await this.ensure();
         const identities = await this.getIdentities();
 
@@ -125,17 +153,18 @@ export class IdentityService extends GenericService {
                 }
             }
         }
+    }
 
-        this.passphrase = passphrase
-        await pushReduxAction(setUnlocked(true));
+    async setPassphrase(passphrase: string) {
+        await this.testPassphrase(passphrase);
+        await this.writePassphrase(passphrase);
     }
 
     async setIdentity(identity: Identity | null) {
         this.currentIdentity = identity;
         await pushReduxAction(setSelectedId(identity));
         if (!identity) {
-            this.passphrase = '';
-            await pushReduxAction(setUnlocked(false));
+            await this.writePassphrase('');
         }
     }
 
@@ -148,6 +177,7 @@ export class IdentityService extends GenericService {
                 if (id.publicKey === pubkeyOrCommitment) {
                     this.currentIdentity = this.wrapIdentity(id);
                     await pushReduxAction(setSelectedId(this.currentIdentity));
+                    await this.writeKey(SELECTED, pubkeyOrCommitment);
                     return this.currentIdentity;
                 }
             }
@@ -156,6 +186,7 @@ export class IdentityService extends GenericService {
                 if (id.identityCommitment === pubkeyOrCommitment) {
                     this.currentIdentity = this.wrapIdentity(id);
                     await pushReduxAction(setSelectedId(this.currentIdentity));
+                    await this.writeKey(SELECTED, pubkeyOrCommitment);
                     return this.currentIdentity;
                 }
             }
@@ -213,6 +244,64 @@ export class IdentityService extends GenericService {
         }
 
         await pushReduxAction(setIdentities(await this.getIdentities()));
+    }
+
+    async writePassphrase(value: string) {
+        if (!value) {
+            await this.writeKey(PASSPHRASE, '');
+            return;
+        }
+
+        const salt = await this.readKey<string>(SALT);
+
+        if (!salt) {
+            await this.writeKey(SALT, randomSalt());
+        }
+
+        await this.writeKey(PASSPHRASE, encrypt(value, salt));
+
+        this.passphrase = value;
+        await pushReduxAction(setUnlocked(!!value));
+    }
+
+    async readPassphrase(): Promise<string> {
+        const salt = await this.readKey<string>(SALT);
+        const encrypted = await this.readKey<string>(PASSPHRASE);
+
+        if (salt && encrypted) {
+            return decrypt(encrypted, salt);
+        }
+
+        return '';
+    }
+
+    async writeKey(key: string, value: string) {
+        const tx = this.db?.transaction("keyvalue", "readwrite");
+        const store = tx?.objectStore("keyvalue");
+        store?.put({ id: key, value: value });
+    }
+
+    async readKey<returnType>(key: string): Promise<returnType> {
+        return new Promise(async (resolve, reject) => {
+            const tx = this.db?.transaction("keyvalue", "readwrite");
+            const store = tx?.objectStore("keyvalue");
+            const index = store?.index("by_id");
+
+            if (!index) return reject();
+
+            const request = index.get(key);
+
+            request.onsuccess = () => {
+                const res = request.result;
+
+                if (!res) {
+                    resolve();
+                    return;
+                }
+
+                resolve(res.value);
+            }
+        });
     }
 
     async getIdentityByAddress(address: string) {
