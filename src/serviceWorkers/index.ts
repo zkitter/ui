@@ -7,22 +7,30 @@ import {ServiceWorkerActionType, WorkerAction, WorkerResponse} from "./util";
 const global: ServiceWorkerGlobalScope = self as any;
 
 let root: null | AppService = null;
+let appStartPromise: null | Promise<AppService> = null;
 
-async function getApp() {
+
+async function getApp(): Promise<AppService> {
     if (root) {
         return root;
     }
 
-    const app = new AppService();
+    if (appStartPromise) {
+        root = await appStartPromise;
+        return root;
+    }
 
-    app.add('identity', new IdentityService());
+    appStartPromise = new Promise(async (resolve) => {
+        const app = new AppService();
 
-    await app.start();
+        app.add('identity', new IdentityService());
 
-    root = app;
+        await app.start();
 
-    return root;
+        resolve(app);
+    });
 
+    return appStartPromise;
 }
 
 global.addEventListener('activate', async () => {
