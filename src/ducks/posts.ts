@@ -72,10 +72,10 @@ export const fetchMeta = (messageId: string) => async (
     dispatch({
         type: ActionTypes.SET_META,
         payload: {
-            messageId: post.subtype === PostMessageSubType.Repost
-                ? post.payload.reference
-                : post.messageId,
-            meta: post.meta,
+            messageId: post?.subtype === PostMessageSubType.Repost
+                ? post?.payload.reference
+                : post?.messageId,
+            meta: post?.meta,
         },
     });
 }
@@ -248,12 +248,10 @@ export const fetchHomeFeed = (limit = 10, offset = 0) =>
     const json = await resp.json();
 
     for (const post of json.payload) {
-        const [creator, hash] = post.messageId.split('/');
-
         dispatch({
             type: ActionTypes.SET_META,
             payload: {
-                messageId: post.subtype === PostMessageSubType.Repost
+                messageId: post?.subtype === PostMessageSubType.Repost
                     ? post.payload.reference
                     : post.messageId,
                 meta: post.meta,

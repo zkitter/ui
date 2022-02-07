@@ -64,7 +64,6 @@ export class IdentityService extends GenericService {
             const req = indexedDB.open(STORAGE_KEY, 3);
 
             req.onupgradeneeded = (event) => {
-                console.log(event);
                 const db = req.result;
 
                 if (event.oldVersion < 2) {
@@ -86,8 +85,6 @@ export class IdentityService extends GenericService {
                     );
                     kvStore.createIndex('by_id', 'id');
                 }
-
-                resolve(db);
             }
 
             req.onsuccess = async () => {
