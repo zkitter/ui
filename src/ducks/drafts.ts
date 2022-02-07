@@ -194,7 +194,7 @@ export const submitPost = (reference = '') => async (dispatch: ThunkDispatch<any
         if (shouldMirror) {
             subtype = reference ? PostMessageSubType.MirrorReply : PostMessageSubType.MirrorPost;
 
-            if (referencePost?.subtype === PostMessageSubType.MirrorPost) {
+            if ([PostMessageSubType.MirrorPost, PostMessageSubType.MirrorReply].includes(referencePost?.subtype)) {
                 const [tweetUsername, _, tweetId] = referencePost?.payload.topic
                     .replace('https://twitter.com/', '')
                     .split('/');
@@ -229,7 +229,7 @@ export const submitPost = (reference = '') => async (dispatch: ThunkDispatch<any
         }
 
         // @ts-ignore
-        if (!gun.user().is) if (!gun.user().is) throw new Error('not logged in');;
+        if (!gun.user().is) if (!gun.user().is) throw new Error('not logged in');
 
         const {
             messageId,
