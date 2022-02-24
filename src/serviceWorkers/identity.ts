@@ -159,10 +159,10 @@ export class IdentityService extends GenericService {
 
     async setIdentity(identity: Identity | null) {
         this.currentIdentity = identity;
-        await pushReduxAction(setSelectedId(identity));
         if (!identity) {
             await this.writePassphrase('');
         }
+        await pushReduxAction(setSelectedId(identity));
     }
 
     async selectIdentity(pubkeyOrCommitment: string) {
@@ -246,16 +246,15 @@ export class IdentityService extends GenericService {
     async writePassphrase(value: string) {
         if (!value) {
             await this.writeKey(PASSPHRASE, '');
-            return;
+        } else {
+            const salt = await this.readKey<string>(SALT);
+
+            if (!salt) {
+                await this.writeKey(SALT, randomSalt());
+            }
+
+            await this.writeKey(PASSPHRASE, encrypt(value, salt));
         }
-
-        const salt = await this.readKey<string>(SALT);
-
-        if (!salt) {
-            await this.writeKey(SALT, randomSalt());
-        }
-
-        await this.writeKey(PASSPHRASE, encrypt(value, salt));
 
         this.passphrase = value;
         await pushReduxAction(setUnlocked(!!value));

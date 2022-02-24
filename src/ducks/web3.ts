@@ -360,8 +360,8 @@ export const genSemaphore = (web2Provider: 'Twitter' | 'Github' | 'Reddit' = 'Tw
 
         if (!error && data) {
             path = {
-                path_elements: data.pathElements,
-                path_index: data.indices,
+                path_elements: data.siblingNodes,
+                path_index: data.path,
                 root: data.root,
             };
             groupName = name;
