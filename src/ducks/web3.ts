@@ -3,22 +3,19 @@ import {useSelector} from "react-redux";
 import deepEqual from "fast-deep-equal";
 import {AppRootState} from "../store/configureAppStore";
 import {Subscription} from "web3-core-subscriptions";
-import {Identity} from 'libsemaphore';
-import {OrdinarySemaphore,} from "semaphore-lib";
 import {ThunkDispatch} from "redux-thunk";
 import {Dispatch} from "redux";
 import Web3Modal from "web3modal";
-import {generateGunKeyPairFromHex, validateGunPublicKey,} from "../util/crypto";
-import {defaultENS, defaultWeb3, fetchNameByAddress} from "../util/web3";
+import {generateGunKeyPairFromHex} from "../util/crypto";
+import {defaultWeb3, fetchNameByAddress} from "../util/web3";
 import gun, {authenticateGun} from "../util/gun";
-import semethid from "@interrep/semethid";
+import createIdentity from "@interep/identity"
 import config from "../util/config";
 import {getUser} from "./users";
 import {getIdentityHash} from "../util/arb3";
 import {postWorkerMessage} from "../util/sw";
 import {setIdentity} from "../serviceWorkers/util";
-
-OrdinarySemaphore.setHasher('poseidon');
+import {checkPath} from "../util/interrep";
 
 export const web3Modal = new Web3Modal({
     network: "main", // optional
@@ -352,35 +349,22 @@ export const genSemaphore = (web2Provider: 'Twitter' | 'Github' | 'Reddit' = 'Tw
         const { web3: { account }} = getState();
         const result: any = await dispatch(generateSemaphoreID(web2Provider, nonce));
         const commitment = await result.genIdentityCommitment();
-        const resp = await fetch(`${config.indexerAPI}/interrep/${commitment.toString()}`);
-        const { payload: {data, name}, error } = await resp.json();
 
-        let path = null;
-        let groupName = '';
-
-        if (!error && data) {
-            path = {
-                path_elements: data.siblingNodes,
-                path_index: data.path,
-                root: data.root,
-            };
-            groupName = name;
-        }
-
+        const data: any = await checkPath(commitment.toString());
         postWorkerMessage(setIdentity({
             type: 'interrep',
             address: account,
             nonce: nonce,
             provider: web2Provider,
-            name: groupName,
-            identityPath: path,
+            name: data?.name,
+            identityPath: data?.path,
             identityCommitment: commitment.toString(),
             serializedIdentity: result.serializeIdentity(),
         }))
 
         dispatch(setUnlocking(false));
 
-        return !!path;
+        return !!data?.path;
     } catch (e) {
         dispatch(setUnlocking(false));
         throw e;
@@ -467,7 +451,7 @@ const generateSemaphoreID = (
         return Promise.reject(new Error('not connected to web3'));
     }
 
-    const identity = await semethid(
+    const identity = await createIdentity(
         // @ts-ignore
         (message: string) => web3.eth.personal.sign(message, account),
         web2Provider,

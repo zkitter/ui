@@ -1,5 +1,15 @@
 import {useSelector} from "react-redux";
-import {ZkIdentity} from "@libsem/identity";
+import {
+    Semaphore,
+    genExternalNullifier,
+    MerkleProof,
+    SemaphoreFullProof,
+    SemaphoreSolidityProof,
+    SemaphorePublicSignals,
+    genSignalHash,
+    generateMerkleProof,
+} from '@zk-kit/protocols';
+import {Strategy, ZkIdentity} from '@zk-kit/identity'
 import {AppRootState} from "../store/configureAppStore";
 import deepEqual from "fast-deep-equal";
 import {convertToRaw, EditorState} from "draft-js";
@@ -16,17 +26,11 @@ import {
     ProfileMessageSubType
 } from "../util/message";
 import gun from "../util/gun";
-import {OrdinarySemaphore} from "semaphore-lib";
 import {ThunkDispatch} from "redux-thunk";
 import {markdownConvertOptions} from "../components/DraftEditor";
 import config from "../util/config";
 import {setFollowed} from "./users";
-import {genSemaphoreProof} from "../util/crypto";
 import {updateStatus} from "../util/twitter";
-
-const {  Semaphore, genExternalNullifier, genSignalHash } = require("@libsem/protocols");
-
-OrdinarySemaphore.setHasher('poseidon');
 
 const { draftToMarkdown } = require('markdown-draft-js');
 
@@ -88,8 +92,9 @@ export const submitSemaphorePost = (post: Post) => async (dispatch: Dispatch, ge
 
     if (selected?.type !== 'interrep') throw new Error('Not in incognito mode');
 
-    const zkIdentity = ZkIdentity.genFromSerialized(selected.serializedIdentity);
-    const {identityTrapdoor, identityNullifier} = zkIdentity.getIdentity();
+    const zkIdentity = new ZkIdentity(Strategy.SERIALIZED, selected.serializedIdentity);
+    const identityTrapdoor = zkIdentity.getTrapdoor();
+    const identityNullifier = zkIdentity.getNullifier();
     const identityCommitment = selected.identityCommitment;
     const identityPathElements = selected.identityPath?.path_elements;
     const identityPathIndex = selected.identityPath?.path_index;
@@ -110,21 +115,22 @@ export const submitSemaphorePost = (post: Post) => async (dispatch: Dispatch, ge
     const finalZkeyPath = `${config.indexerAPI}/dev/semaphore_final_zkey`;
 
     const witness = Semaphore.genWitness(
-        zkIdentity,
+        identityTrapdoor,
+        identityNullifier,
         {
             root: root,
-            indices: identityPathIndex,
-            pathElements: identityPathElements,
+            leaf: BigInt(identityCommitment),
+            pathIndices: identityPathIndex,
+            siblings: identityPathElements,
         },
         externalNullifier,
         hash,
-        true
     );
 
     const {
         proof,
         publicSignals,
-    } = await genSemaphoreProof(witness, wasmFilePath, finalZkeyPath);
+    } = await Semaphore.genProof(witness, wasmFilePath, finalZkeyPath);
 
     try {
         // @ts-ignore

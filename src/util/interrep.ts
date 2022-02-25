@@ -14,9 +14,9 @@ export const checkPath = async (commitment: string) => {
 
     if (!error && data) {
         path = {
-            path_elements: data.pathElements,
-            path_index: data.indices,
-            root: data.root,
+            path_elements: data.siblingNodes.map((el: string) => BigInt(el)),
+            path_index: data.path,
+            root: BigInt(data.root),
         };
         groupName = name;
 
