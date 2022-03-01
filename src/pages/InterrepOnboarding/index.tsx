@@ -10,6 +10,8 @@ import Input from "../../components/Input";
 import {checkPath, watchPath} from "../../util/interrep";
 import {postWorkerMessage} from "../../util/sw";
 import {setIdentity} from "../../serviceWorkers/util";
+import {genSemaphore, useWeb3Unlocking} from "../../ducks/web3";
+import {useDispatch} from "react-redux";
 
 export enum ViewType {
     welcome,
@@ -125,7 +127,7 @@ function WelcomeView(props: { setViewType: (v: ViewType) => void}): ReactElement
         <div className="flex flex-col flex-nowrap flex-grow my-4 mx-8 signup__content signup__welcome">
             <div className="flex flex-row items-center justify-center my-4">
                 <div className="text-xl mr-2">🥸</div>
-                <div className="text-xl font-semibold">Incognito mode powered by Interrep</div>
+                <div className="text-xl font-semibold">Create Secret Member</div>
             </div>
             <div className="my-4">
                 InterRep is a system which allows people to export cryptographic proofs of their reputation accrued on social networks or other services and to put these proofs on a decentralized platform (i.e. Ethereum), in order to allow decentralized applications or services to verify users' reputation efficiently and without sensitive data.
@@ -218,9 +220,11 @@ function JoinGroupView(props: {
     const [joining, setJoining] = useState(false);
     const { twitterAuth } = props;
     const selected = useSelectedLocalId();
+    const dispatch = useDispatch();
+    const unlocking = useWeb3Unlocking();
 
     let username = '';
-    let name = '';
+    let name: 'Twitter' | '' = '';
     let group = '';
     let reputation = '';
     let token = '';
@@ -297,31 +301,33 @@ function JoinGroupView(props: {
             </div>
             { errorMessage && <span className="text-red-500 text-sm my-2 text-center">{errorMessage}</span>}
             <div className="flex-grow flex flex-row mt-8 mb-4 flex-nowrap items-center justify-center">
+                <Button
+                    btnType="secondary"
+                    className="mr-4"
+                    onClick={props.onResetAuth}
+                    loading={joining || unlocking}
+                >
+                    Reset
+                </Button>
                 {
-                    !selected
+                    selected?.type !== 'interrep'
                         ? (
-                            <div>
-                                {`Please first login to Incognito (${name}) before continuing.`}
-                            </div>
+                            <Button
+                                btnType="primary"
+                                onClick={() => name && dispatch(genSemaphore(name))}
+                                loading={unlocking}
+                            >
+                                Create Identity
+                            </Button>
                         )
                         : (
-                            <>
-                                <Button
-                                    btnType="secondary"
-                                    className="mr-4"
-                                    onClick={props.onResetAuth}
-                                    loading={joining}
-                                >
-                                    Reset
-                                </Button>
-                                <Button
-                                    btnType="primary"
-                                    onClick={onJoinGroup}
-                                    loading={joining}
-                                >
-                                    Join Group
-                                </Button>
-                            </>
+                            <Button
+                                btnType="primary"
+                                onClick={onJoinGroup}
+                                loading={joining}
+                            >
+                                Join Group
+                            </Button>
                         )
                 }
 

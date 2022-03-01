@@ -2,12 +2,6 @@ import {useSelector} from "react-redux";
 import {
     Semaphore,
     genExternalNullifier,
-    MerkleProof,
-    SemaphoreFullProof,
-    SemaphoreSolidityProof,
-    SemaphorePublicSignals,
-    genSignalHash,
-    generateMerkleProof,
 } from '@zk-kit/protocols';
 import {Strategy, ZkIdentity} from '@zk-kit/identity'
 import {AppRootState} from "../store/configureAppStore";

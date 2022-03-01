@@ -6,6 +6,8 @@ import {fetchAddressByName, getUser, User, useUser} from "../../ducks/users";
 import {useDispatch} from "react-redux";
 import Web3 from "web3";
 import {getTwitterUser} from "../../util/twitter";
+import {fetchNameByAddress} from "../../util/web3";
+import {ellipsify} from "../../util/user";
 
 type Props = {
     name?: string;
@@ -18,6 +20,25 @@ type Props = {
 const CACHE: {
     [address: string]: string;
 } = {};
+
+export function Username(props: { address: string }): ReactElement {
+    const [ensName, setEnsName] = useState('');
+
+    useEffect(() => {
+        (async () => {
+            if (!props.address) return;
+            setEnsName('');
+            const ens = await fetchNameByAddress(props.address);
+            setEnsName(ens);
+        })();
+    }, [props.address]);
+
+    return (
+        <>
+            {ensName ? ensName : ellipsify(props.address)}
+        </>
+    );
+}
 
 export default function Avatar(props: Props): ReactElement {
     const {

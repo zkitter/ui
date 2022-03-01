@@ -10,4 +10,83 @@
     height: 28rem;
     overflow-y: auto;
   }
+
+  &__account-options {
+    margin: 1rem 0;
+    align-items: center;
+    justify-content: center;
+  }
+
+  &__account-option {
+    @extend %col-nowrap;
+    align-items: center;
+    flex: 1 1 auto;
+    border: 2px solid $gray-100;
+    border-radius: .5rem;
+    padding: 1rem;
+    cursor: pointer;
+    transition: 100ms ease-in-out;
+    margin: 0 .5rem;
+    height: 12rem;
+    width: 0;
+
+    .icon {
+      margin-bottom: 1rem;
+      color: $gray-200;
+      i {
+        font-size: 3rem !important;
+      }
+    }
+
+    &__title {
+      font-size: 1rem;
+      font-weight: 700;
+      line-height: 1.3125;
+      color: $gray-200;
+      margin-bottom: .5rem;
+    }
+
+    &__desc {
+      font-size: .875rem;
+      text-align: center;
+      color: $gray-200;
+    }
+
+    &:hover {
+      .icon {
+        color: $gray-600;
+      }
+
+      .signup__account-option {
+        &__title {
+          color: $gray-600;
+        }
+
+        &__desc {
+          color: $gray-600;
+        }
+      }
+
+      border-color: $gray-400;
+    }
+
+    &--selected {
+      transform: scale(1.05);
+      .icon {
+        color: $primary-color !important;
+      }
+
+      .signup__account-option {
+        &__title {
+          color: $primary-color !important;
+        }
+
+        &__desc {
+          color: $primary-color !important;
+        }
+      }
+
+      border-color: $primary-color !important;
+    }
+  }
 }

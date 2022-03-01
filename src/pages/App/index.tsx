@@ -111,6 +111,9 @@ export default function App(): ReactElement {
                     <Route path="/onboarding/interrep">
                         <InterrepOnboarding />
                     </Route>
+                    <Route path="/signup/interep">
+                        <InterrepOnboarding />
+                    </Route>
                     <Route path="/connect/twitter">
                         <ConnectTwitterView />
                     </Route>
