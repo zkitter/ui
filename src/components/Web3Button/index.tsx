@@ -72,10 +72,9 @@ export default function Web3Button(props: Props): ReactElement {
     }, [account, identities, selectedLocalId]);
 
     let btnContent;
+    let id = selectedLocalId || identities[0];
 
-    if (identities.length) {
-        let id = selectedLocalId || identities[0];
-
+    if (id) {
         if (id?.type ===  'interrep') {
             btnContent = (
                 <>
@@ -115,7 +114,7 @@ export default function Web3Button(props: Props): ReactElement {
                     'font-inter',
                     'web3-button__content',
                     {
-                        'text-gray-100 bg-gray-800': selectedLocalId?.type ===  'interrep',
+                        'text-gray-100 bg-gray-800': id?.type ===  'interrep',
                         'bg-gray-100 pl-0 pr-4': !selectedLocalId && !identities.length,
                     }
                 )}
@@ -167,26 +166,15 @@ function UserMenuable(props: {
     children: ReactNode;
 }): ReactElement {
     const { opened, setOpened } = props;
-    const account = useAccount();
-    const gunNonce = useGunNonce();
-    const web3Loading = useWeb3Loading();
-    const gunPair = useGunKey();
     const dispatch = useDispatch();
-    const history = useHistory();
-    const selectedLocalId = useSelectedLocalId();
-    const hasIdConnected = useHasIdConnected();
     const identities = useIdentities();
+    const selectedLocalId = useSelectedLocalId();
     const [showingScanner, showScanner] = useState(false);
 
     const connectWallet = useCallback(async (e, reset) => {
         await dispatch(connectWeb3());
         reset();
         return props.onConnect && props.onConnect();
-    }, []);
-
-    const gotoSignup = useCallback(async () => {
-        history.push('/signup');
-        setOpened(false);
     }, []);
 
     const logout = useCallback(async () => {
@@ -223,7 +211,7 @@ function UserMenuable(props: {
         component: <WalletHeader setOpened={setOpened} />,
     });
 
-    if (identities.length || selectedLocalId) {
+    if (identities.length) {
         items.push({
             label: '',
             className: 'local-users-menu',
@@ -234,22 +222,6 @@ function UserMenuable(props: {
             )
         });
     }
-
-    // if (account) {
-    //     items.push({
-    //         label: 'Add new identity',
-    //         iconFA: 'fas fa-plus',
-    //         disabled: web3Loading,
-    //         onClick: gotoSignup,
-    //     });
-    // } else if (!account) {
-    //     items.push({
-    //         label: 'Connect to wallet',
-    //         iconFA: 'fas fa-plug',
-    //         onClick: connectWallet,
-    //         disabled: web3Loading,
-    //     })
-    // }
 
     if (selectedLocalId) {
         items.push({
@@ -466,7 +438,7 @@ function CurrentUserItem(props: {
     return (
         <div
             className={classNames(
-                "local-users-menu__selected-item border-b mb-2",
+                "local-users-menu__selected-item border-b",
             )}
         >
             <Avatar
@@ -605,7 +577,7 @@ function UnauthButton(props: {
         )
     }
 
-    if (!selectedLocalId && identities.length) {
+    if (identities.length) {
         return (
             <UserMenuable
                 opened={opened}

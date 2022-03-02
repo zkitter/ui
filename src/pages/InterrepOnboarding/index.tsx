@@ -10,7 +10,7 @@ import Input from "../../components/Input";
 import {checkPath, watchPath} from "../../util/interrep";
 import {postWorkerMessage} from "../../util/sw";
 import {setIdentity} from "../../serviceWorkers/util";
-import {genSemaphore, useWeb3Unlocking} from "../../ducks/web3";
+import {genSemaphore, useWeb3Account, useWeb3Unlocking} from "../../ducks/web3";
 import {useDispatch} from "react-redux";
 
 export enum ViewType {
@@ -33,12 +33,15 @@ export default function InterrepOnboarding(props: Props): ReactElement {
         reputation: string;
     }|null>(null);
     const selected = useSelectedLocalId();
+    const account = useWeb3Account();
 
     useEffect(() => {
         (async function() {
             try {
                 if (selected?.type === 'interrep' && selected.identityPath) {
-                    setViewType(ViewType.done);
+                    if (account === selected.address) {
+                        setViewType(ViewType.done);
+                    }
                     return;
                 }
 
@@ -66,7 +69,7 @@ export default function InterrepOnboarding(props: Props): ReactElement {
                 setFetching(false);
             }
         })();
-    }, [selected]);
+    }, [selected, account]);
 
     const onResetAuth = useCallback(async () => {
         const resp = await fetch(`${config.indexerAPI}/oauth/reset`, {
@@ -114,14 +117,17 @@ export default function InterrepOnboarding(props: Props): ReactElement {
 
 function WelcomeView(props: { setViewType: (v: ViewType) => void}): ReactElement {
     const selectedLocalId = useSelectedLocalId();
+    const account = useWeb3Account();
     const history = useHistory();
 
     useEffect(() => {
         if (selectedLocalId?.type === 'interrep' && selectedLocalId.identityPath) {
-            history.push('/');
-            return;
+            if (account === selectedLocalId.address) {
+                history.push('/');
+                return;
+            }
         }
-    }, [selectedLocalId]);
+    }, [selectedLocalId, account]);
 
     return (
         <div className="flex flex-col flex-nowrap flex-grow my-4 mx-8 signup__content signup__welcome">
@@ -150,7 +156,7 @@ function WelcomeView(props: { setViewType: (v: ViewType) => void}): ReactElement
 function ConnectView(props: { setViewType: (v: ViewType) => void}): ReactElement {
     const connectTwitter = useCallback(async () => {
         const resp = await fetch(
-            `${config.indexerAPI}/twitter?redirectUrl=${encodeURI(`${config.baseUrl}/onboarding/interrep`)}`,
+            `${config.indexerAPI}/twitter?redirectUrl=${encodeURI(`${config.baseUrl}/signup/interep`)}`,
             {
                 credentials: 'include',
             },
@@ -180,28 +186,6 @@ function ConnectView(props: { setViewType: (v: ViewType) => void}): ReactElement
                     <Icon fa="fab fa-twitter" className="mr-2" />
                     Twitter
                 </Button>
-                {/*<Button*/}
-                {/*    btnType="primary"*/}
-                {/*    className="mb-2 w-36 justify-center"*/}
-                {/*    style={{*/}
-                {/*        backgroundColor: '#ff4500',*/}
-                {/*    }}*/}
-                {/*    disabled*/}
-                {/*>*/}
-                {/*    <Icon fa="fab fa-reddit-alien" className="mr-2" />*/}
-                {/*    Reddit*/}
-                {/*</Button>*/}
-                {/*<Button*/}
-                {/*    btnType="primary"*/}
-                {/*    className="w-36 justify-center"*/}
-                {/*    style={{*/}
-                {/*        backgroundColor: '#161c22',*/}
-                {/*    }}*/}
-                {/*    disabled*/}
-                {/*>*/}
-                {/*    <Icon fa="fab fa-github" className="mr-2" />*/}
-                {/*    Github*/}
-                {/*</Button>*/}
             </div>
         </div>
     )
@@ -222,6 +206,7 @@ function JoinGroupView(props: {
     const selected = useSelectedLocalId();
     const dispatch = useDispatch();
     const unlocking = useWeb3Unlocking();
+    const account = useWeb3Account();
 
     let username = '';
     let name: 'Twitter' | '' = '';
@@ -234,8 +219,15 @@ function JoinGroupView(props: {
             return;
         }
 
+        if (selected.address !== account) {
+            return;
+        }
+
         (async () => {
             const data: any = await checkPath(selected.identityCommitment);
+
+            if (!data) return;
+
             await postWorkerMessage(setIdentity({
                 ...selected,
                 name: data.name,
@@ -243,7 +235,7 @@ function JoinGroupView(props: {
             }))
             props.setViewType(ViewType.done);
         })();
-    }, [selected]);
+    }, [selected, account]);
 
     if (twitterAuth) {
         name = 'Twitter';
@@ -310,7 +302,7 @@ function JoinGroupView(props: {
                     Reset
                 </Button>
                 {
-                    selected?.type !== 'interrep'
+                    selected?.type !== 'interrep' || selected.address !== account
                         ? (
                             <Button
                                 btnType="primary"

@@ -61,12 +61,14 @@ export default function App(): ReactElement {
 
             // @ts-ignore
             if (selected?.type === 'interrep' && lastSelected?.identityCommitment !== selected.identityCommitment) {
-                const data: any = await checkPath(selected.identityCommitment);
-                await postWorkerMessage(setIdentity({
-                    ...selected,
-                    name: data.name,
-                    identityPath: data.path,
-                }))
+                if (selected.serializedIdentity) {
+                    const data: any = await checkPath(selected.identityCommitment);
+                    await postWorkerMessage(setIdentity({
+                        ...selected,
+                        name: data.name,
+                        identityPath: data.path,
+                    }))
+                }
             }
         })();
     }, [selected, lastSelected])
