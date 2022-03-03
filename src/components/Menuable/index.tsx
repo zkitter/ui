@@ -48,7 +48,7 @@ export default function Menuable(props: MenuableProps): ReactElement {
                 setPath([]);
             }
         }
-    }, [!!opened]);
+    }, [opened]);
 
     const onClose = useCallback(() => {
         props.onClose && props.onClose();

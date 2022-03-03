@@ -23,10 +23,13 @@ import deepEqual from "fast-deep-equal";
 import {addIdentity, setPassphrase} from "../../serviceWorkers/util";
 import {postWorkerMessage} from "../../util/sw";
 import {useIdentities, useSelectedLocalId, useWorkerUnlocked} from "../../ducks/worker";
+import Icon from "../../components/Icon";
+import classNames from "classnames";
 
 export enum ViewType {
     welcome,
     createIdentity,
+    accountOptions,
     updateTx,
     setupProfile,
     localBackup,
@@ -47,6 +50,9 @@ export default function SignupView(props: Props): ReactElement {
             break;
         case ViewType.createIdentity:
             content = <CreateIdentityView setViewType={setViewType} />;
+            break;
+        case ViewType.accountOptions:
+            content = <AccountOptionsView setViewType={setViewType} />;
             break;
         case ViewType.updateTx:
             content = <UpdateTxView setViewType={setViewType} />;
@@ -74,12 +80,12 @@ function WelcomeView(props: { setViewType: (v: ViewType) => void}): ReactElement
     const user = useUser(account);
     const history = useHistory();
 
-    useEffect(() => {
-        if (user?.joinedTx) {
-            history.push('/');
-            return;
-        }
-    }, [user]);
+    // useEffect(() => {
+    //     if (user?.joinedTx) {
+    //         history.push('/');
+    //         return;
+    //     }
+    // }, [user]);
 
     return (
         <div className="flex flex-col flex-nowrap flex-grow my-4 mx-8 signup__content signup__welcome">
@@ -96,10 +102,81 @@ function WelcomeView(props: { setViewType: (v: ViewType) => void}): ReactElement
             <div className="flex-grow flex flex-row mt-8 flex-nowrap items-end justify-end">
                 <Button
                     btnType="primary"
-                    onClick={() => props.setViewType(ViewType.createIdentity)}
+                    onClick={() => props.setViewType(ViewType.accountOptions)}
                 >
                     Next
                 </Button>
+            </div>
+        </div>
+    )
+}
+
+function AccountOptionsView(props: { setViewType: (v: ViewType) => void}): ReactElement {
+    const [selectedOption, selectOption] = useState<'wallet'|'incognito'>('wallet');
+    const history = useHistory();
+
+    const onNext = useCallback(() => {
+        if (selectedOption === 'wallet') {
+            props.setViewType(ViewType.createIdentity);
+        } else if (selectedOption === 'incognito') {
+            history.push('/signup/interep');
+        }
+    }, [selectedOption]);
+
+    return (
+        <div className="flex flex-col flex-nowrap flex-grow my-4 mx-8 signup__content signup__welcome">
+            <div className="flex flex-row items-center justify-center my-4">
+                <div className="text-xl mr-2">✨</div>
+                <div className="text-xl font-semibold">Select your account type</div>
+            </div>
+            <div className="flex flex-row flex-nowrap signup__account-options">
+                <AccountOption
+                    title="Wallet Address"
+                    description="Use your wallet address or ENS names as your username"
+                    selected={selectedOption === 'wallet'}
+                    onClick={() => selectOption('wallet')}
+                    fa="fas fa-wallet"
+                />
+                <AccountOption
+                    title="Anonymous"
+                    description="Join a reputation mixer and post anonymously"
+                    selected={selectedOption === 'incognito'}
+                    onClick={() => selectOption('incognito')}
+                    fa="fas fa-user-secret"
+                />
+            </div>
+            <div className="flex-grow flex flex-row mt-8 flex-nowrap items-end justify-end">
+                <Button
+                    btnType="primary"
+                    onClick={onNext}
+                >
+                    Next
+                </Button>
+            </div>
+        </div>
+    );
+}
+
+function AccountOption(props: {
+    selected: boolean;
+    title: string;
+    description: string;
+    onClick: () => void;
+    fa: string;
+}) {
+    return (
+        <div
+            className={classNames("signup__account-option", {
+                'signup__account-option--selected': props.selected,
+            })}
+            onClick={props.onClick}
+        >
+            <Icon fa={props.fa} />
+            <div className="signup__account-option__title">
+                {props.title}
+            </div>
+            <div className="signup__account-option__desc">
+                {props.description}
             </div>
         </div>
     )
@@ -113,14 +190,15 @@ function CreateIdentityView(props: { setViewType: (v: ViewType) => void}): React
     const account = useWeb3Account();
     const user = useUser(account);
     const history = useHistory();
+    const identities = useIdentities();
 
     const createIdentity = useCallback(async () => {
         try {
             setCreating(true);
             await dispatch(loginGun());
-
             if (user?.joinedTx) {
-                history.push(`/${user?.ens || user?.username}`);
+                // history.push(`/${user?.ens || user?.username}`);
+                props.setViewType(ViewType.localBackup)
             } else {
                 props.setViewType(ViewType.updateTx);
             }

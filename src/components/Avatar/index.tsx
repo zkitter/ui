@@ -6,12 +6,24 @@ import {fetchAddressByName, getUser, User, useUser} from "../../ducks/users";
 import {useDispatch} from "react-redux";
 import Web3 from "web3";
 import {getTwitterUser} from "../../util/twitter";
+import {fetchNameByAddress} from "../../util/web3";
+import {ellipsify} from "../../util/user";
+import {Identity} from "../../serviceWorkers/identity";
+import TwitterPaper from "../../../static/icons/twitter-paper.png";
+import TwitterBronze from "../../../static/icons/twitter-bronze.png";
+import TwitterSilver from "../../../static/icons/twitter-silver.png";
+import TwitterGold from "../../../static/icons/twitter-gold.png";
 
 type Props = {
     name?: string;
     address?: string;
     className?: string;
     incognito?: boolean;
+    identity?: {
+        provider?: string;
+        name?: string;
+    };
+    semaphoreSignals?: any;
     twitterUsername?: string;
 }
 
@@ -19,11 +31,31 @@ const CACHE: {
     [address: string]: string;
 } = {};
 
+export function Username(props: { address: string }): ReactElement {
+    const [ensName, setEnsName] = useState('');
+
+    useEffect(() => {
+        (async () => {
+            if (!props.address) return;
+            setEnsName('');
+            const ens = await fetchNameByAddress(props.address);
+            setEnsName(ens);
+        })();
+    }, [props.address]);
+
+    return (
+        <>
+            {ensName ? ensName : ellipsify(props.address)}
+        </>
+    );
+}
+
 export default function Avatar(props: Props): ReactElement {
     const {
         address,
         name,
         incognito,
+        identity,
         twitterUsername,
         className,
     } = props;
@@ -78,6 +110,8 @@ export default function Avatar(props: Props): ReactElement {
     }
 
     if (incognito) {
+        let url;
+
         return (
             <Icon
                 className={classNames(

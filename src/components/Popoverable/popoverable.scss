@@ -1,0 +1,34 @@
+@import "../../util/variable";
+
+.popoverable {
+  position: relative;
+
+  &__label {
+    z-index: 200;
+    opacity: 0;
+    position: absolute;
+    top: 100%;
+    left: 0;
+    right: 0;
+    width: fit-content;
+    background-color: rgba($black, .8);
+    color: rgba($white, .9);
+    white-space: nowrap;
+    font-size: .75rem;
+    padding: 0 .5rem;
+    border-radius: .125rem;
+    font-weight: 400;
+    transition: opacity 200ms ease-in-out;
+    transition-delay: 500ms;
+    max-width: 0;
+    max-height: 0;
+  }
+
+  &:hover {
+    .popoverable__label {
+      opacity: 1;
+      max-width: 100rem;
+      max-height: 100rem;
+    }
+  }
+}

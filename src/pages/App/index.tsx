@@ -23,6 +23,7 @@ import ConnectTwitterView from "../ConnectTwitterView";
 import {checkPath} from "../../util/interrep";
 import {postWorkerMessage} from "../../util/sw";
 import {setIdentity} from "../../serviceWorkers/util";
+import {loginUser} from "../../util/user";
 
 export default function App(): ReactElement {
     const dispatch = useDispatch();
@@ -32,7 +33,11 @@ export default function App(): ReactElement {
     useEffect(() => {
         (async function onAppMount() {
 
-            dispatch(syncWorker());
+            const id: any = await dispatch(syncWorker());
+
+            if (id) {
+                await loginUser(id);
+            }
 
             if (web3Modal.cachedProvider) {
                 await dispatch(connectWeb3());
@@ -40,36 +45,38 @@ export default function App(): ReactElement {
         })();
     }, []);
 
-    useEffect(() => {
-        (async () => {
-            if (!selected) {
-                //@ts-ignore
-                if (gun.user().is) {
-                    gun.user().leave();
-                }
-                return;
-            }
-
-            // @ts-ignore
-            if (selected?.type === 'gun' && lastSelected?.privateKey !== selected?.privateKey) {
-                authenticateGun({
-                    pub: selected.publicKey,
-                    priv: selected.privateKey,
-                });
-                setLastSelected(selected);
-            }
-
-            // @ts-ignore
-            if (selected?.type === 'interrep' && lastSelected?.identityCommitment !== selected.identityCommitment) {
-                const data: any = await checkPath(selected.identityCommitment);
-                await postWorkerMessage(setIdentity({
-                    ...selected,
-                    name: data.name,
-                    identityPath: data.path,
-                }))
-            }
-        })();
-    }, [selected, lastSelected])
+    // useEffect(() => {
+    //     (async () => {
+    //         if (!selected) {
+    //             //@ts-ignore
+    //             if (gun.user().is) {
+    //                 gun.user().leave();
+    //             }
+    //             return;
+    //         }
+    //
+    //         // @ts-ignore
+    //         if (selected?.type === 'gun' && lastSelected?.privateKey !== selected?.privateKey) {
+    //             authenticateGun({
+    //                 pub: selected.publicKey,
+    //                 priv: selected.privateKey,
+    //             });
+    //             setLastSelected(selected);
+    //         }
+    //
+    //         // @ts-ignore
+    //         if (selected?.type === 'interrep' && lastSelected?.identityCommitment !== selected.identityCommitment) {
+    //             if (selected.serializedIdentity) {
+    //                 const data: any = await checkPath(selected.identityCommitment);
+    //                 await postWorkerMessage(setIdentity({
+    //                     ...selected,
+    //                     name: data.name,
+    //                     identityPath: data.path,
+    //                 }))
+    //             }
+    //         }
+    //     })();
+    // }, [selected, lastSelected])
 
     useEffect(() => {
         navigator.serviceWorker.addEventListener('message', event => {
@@ -109,6 +116,9 @@ export default function App(): ReactElement {
                         <SignupView viewType={ViewType.localBackup} />
                     </Route>
                     <Route path="/onboarding/interrep">
+                        <InterrepOnboarding />
+                    </Route>
+                    <Route path="/signup/interep">
                         <InterrepOnboarding />
                     </Route>
                     <Route path="/connect/twitter">

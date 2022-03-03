@@ -10,6 +10,8 @@ import Input from "../../components/Input";
 import {checkPath, watchPath} from "../../util/interrep";
 import {postWorkerMessage} from "../../util/sw";
 import {setIdentity} from "../../serviceWorkers/util";
+import {genSemaphore, useWeb3Account, useWeb3Unlocking} from "../../ducks/web3";
+import {useDispatch} from "react-redux";
 
 export enum ViewType {
     welcome,
@@ -31,12 +33,15 @@ export default function InterrepOnboarding(props: Props): ReactElement {
         reputation: string;
     }|null>(null);
     const selected = useSelectedLocalId();
+    const account = useWeb3Account();
 
     useEffect(() => {
         (async function() {
             try {
                 if (selected?.type === 'interrep' && selected.identityPath) {
-                    setViewType(ViewType.done);
+                    if (account === selected.address) {
+                        setViewType(ViewType.done);
+                    }
                     return;
                 }
 
@@ -64,7 +69,7 @@ export default function InterrepOnboarding(props: Props): ReactElement {
                 setFetching(false);
             }
         })();
-    }, [selected]);
+    }, [selected, account]);
 
     const onResetAuth = useCallback(async () => {
         const resp = await fetch(`${config.indexerAPI}/oauth/reset`, {
@@ -112,20 +117,23 @@ export default function InterrepOnboarding(props: Props): ReactElement {
 
 function WelcomeView(props: { setViewType: (v: ViewType) => void}): ReactElement {
     const selectedLocalId = useSelectedLocalId();
+    const account = useWeb3Account();
     const history = useHistory();
 
     useEffect(() => {
         if (selectedLocalId?.type === 'interrep' && selectedLocalId.identityPath) {
-            history.push('/');
-            return;
+            if (account === selectedLocalId.address) {
+                history.push('/');
+                return;
+            }
         }
-    }, [selectedLocalId]);
+    }, [selectedLocalId, account]);
 
     return (
         <div className="flex flex-col flex-nowrap flex-grow my-4 mx-8 signup__content signup__welcome">
             <div className="flex flex-row items-center justify-center my-4">
                 <div className="text-xl mr-2">🥸</div>
-                <div className="text-xl font-semibold">Incognito mode powered by Interrep</div>
+                <div className="text-xl font-semibold">Create Secret Member</div>
             </div>
             <div className="my-4">
                 InterRep is a system which allows people to export cryptographic proofs of their reputation accrued on social networks or other services and to put these proofs on a decentralized platform (i.e. Ethereum), in order to allow decentralized applications or services to verify users' reputation efficiently and without sensitive data.
@@ -148,7 +156,7 @@ function WelcomeView(props: { setViewType: (v: ViewType) => void}): ReactElement
 function ConnectView(props: { setViewType: (v: ViewType) => void}): ReactElement {
     const connectTwitter = useCallback(async () => {
         const resp = await fetch(
-            `${config.indexerAPI}/twitter?redirectUrl=${encodeURI(`${config.baseUrl}/onboarding/interrep`)}`,
+            `${config.indexerAPI}/twitter?redirectUrl=${encodeURI(`${config.baseUrl}/signup/interep`)}`,
             {
                 credentials: 'include',
             },
@@ -178,28 +186,6 @@ function ConnectView(props: { setViewType: (v: ViewType) => void}): ReactElement
                     <Icon fa="fab fa-twitter" className="mr-2" />
                     Twitter
                 </Button>
-                {/*<Button*/}
-                {/*    btnType="primary"*/}
-                {/*    className="mb-2 w-36 justify-center"*/}
-                {/*    style={{*/}
-                {/*        backgroundColor: '#ff4500',*/}
-                {/*    }}*/}
-                {/*    disabled*/}
-                {/*>*/}
-                {/*    <Icon fa="fab fa-reddit-alien" className="mr-2" />*/}
-                {/*    Reddit*/}
-                {/*</Button>*/}
-                {/*<Button*/}
-                {/*    btnType="primary"*/}
-                {/*    className="w-36 justify-center"*/}
-                {/*    style={{*/}
-                {/*        backgroundColor: '#161c22',*/}
-                {/*    }}*/}
-                {/*    disabled*/}
-                {/*>*/}
-                {/*    <Icon fa="fab fa-github" className="mr-2" />*/}
-                {/*    Github*/}
-                {/*</Button>*/}
             </div>
         </div>
     )
@@ -218,9 +204,13 @@ function JoinGroupView(props: {
     const [joining, setJoining] = useState(false);
     const { twitterAuth } = props;
     const selected = useSelectedLocalId();
+    const dispatch = useDispatch();
+    const unlocking = useWeb3Unlocking();
+    const account = useWeb3Account();
+    const history = useHistory();
 
     let username = '';
-    let name = '';
+    let name: 'Twitter' | '' = '';
     let group = '';
     let reputation = '';
     let token = '';
@@ -230,16 +220,25 @@ function JoinGroupView(props: {
             return;
         }
 
+        if (selected.address !== account) {
+            return;
+        }
+
         (async () => {
             const data: any = await checkPath(selected.identityCommitment);
+
+            if (!data) return;
+
             await postWorkerMessage(setIdentity({
                 ...selected,
                 name: data.name,
                 identityPath: data.path,
             }))
-            props.setViewType(ViewType.done);
+
+            history.push('/create-local-backup')
+            // props.setViewType(ViewType.done);
         })();
-    }, [selected]);
+    }, [selected, account]);
 
     if (twitterAuth) {
         name = 'Twitter';
@@ -297,31 +296,33 @@ function JoinGroupView(props: {
             </div>
             { errorMessage && <span className="text-red-500 text-sm my-2 text-center">{errorMessage}</span>}
             <div className="flex-grow flex flex-row mt-8 mb-4 flex-nowrap items-center justify-center">
+                <Button
+                    btnType="secondary"
+                    className="mr-4"
+                    onClick={props.onResetAuth}
+                    loading={joining || unlocking}
+                >
+                    Reset
+                </Button>
                 {
-                    !selected
+                    selected?.type !== 'interrep' || selected.address !== account
                         ? (
-                            <div>
-                                {`Please first login to Incognito (${name}) before continuing.`}
-                            </div>
+                            <Button
+                                btnType="primary"
+                                onClick={() => name && dispatch(genSemaphore(name))}
+                                loading={unlocking}
+                            >
+                                Create Identity
+                            </Button>
                         )
                         : (
-                            <>
-                                <Button
-                                    btnType="secondary"
-                                    className="mr-4"
-                                    onClick={props.onResetAuth}
-                                    loading={joining}
-                                >
-                                    Reset
-                                </Button>
-                                <Button
-                                    btnType="primary"
-                                    onClick={onJoinGroup}
-                                    loading={joining}
-                                >
-                                    Join Group
-                                </Button>
-                            </>
+                            <Button
+                                btnType="primary"
+                                onClick={onJoinGroup}
+                                loading={joining}
+                            >
+                                Join Group
+                            </Button>
                         )
                 }
 

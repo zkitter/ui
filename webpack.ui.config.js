@@ -137,6 +137,9 @@ module.exports = [
                     secure: true
                 }
             }
-        }
+        },
+        // optimization: {
+        //     runtimeChunk: 'single'
+        // },
     },
 ];

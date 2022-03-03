@@ -48,12 +48,13 @@
 
   &__web3-btn {
     .web3-button__unlock-menu {
-      width: 15rem;
+      width: 16rem;
       position: fixed !important;
       margin-top: .5rem !important;
       top: 58px !important;
       right: 16px !important;
       left: auto !important;
+      padding-top: 0 !important;
     }
 
   }

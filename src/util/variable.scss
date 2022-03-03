@@ -9,6 +9,8 @@ $gray-400: mix($black, $white, 40);
 $gray-300: mix($black, $white, 30);
 $gray-200: mix($black, $white, 20);
 $gray-100: mix($black, $white, 10);
+$gray-50: mix($black, $white, 5);
+$gray-25: mix($black, $white, 2.5);
 
 %row-nowrap {
   display: flex;

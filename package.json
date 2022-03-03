@@ -6,8 +6,6 @@
   "scripts": {
     "dev-ui": "webpack-dev-server --config webpack.ui.config.js --hot --inline",
     "build-ui": "webpack --config webpack.ui.config.js",
-    "predev": "cp ./static/bn128.js ./node_modules/websnark/src/bn128.js & cp ./static/main.cjs ./node_modules/ffjavascript/build/main.cjs",
-    "prebuild": "cp ./static/bn128.js ./node_modules/websnark/src/bn128.js & cp ./static/main.cjs ./node_modules/ffjavascript/build/main.cjs",
     "dev": "NODE_ENV=development concurrently --kill-others-on-fail npm:dev-ui",
     "build": "NODE_ENV=production npm run build-ui"
   },
@@ -17,13 +15,12 @@
     "@draft-js-plugins/linkify": "^4.1.1",
     "@draft-js-plugins/mention": "^4.6.1",
     "@ensdomains/ensjs": "^2.0.1",
-    "@interrep/semethid": "^0.10.0",
-    "@libsem/identity": "^1.0.17",
-    "@libsem/types": "^1.0.5",
-    "@libsem/protocols": "^1.0.22",
+    "@interep/identity": "^0.1.1",
     "@snapshot-labs/snapshot.js": "^0.2.0",
     "@types/crypto-js": "^4.0.2",
     "@types/react-qr-reader": "^2.1.4",
+    "@zk-kit/identity": "^1.4.1",
+    "@zk-kit/protocols": "^1.8.2",
     "bn.js": "^5.2.0",
     "classnames": "^2.3.1",
     "crypto-js": "^4.1.1",
@@ -39,8 +36,6 @@
     "lodash.debounce": "^4.0.8",
     "markdown-draft-js": "^2.3.0",
     "moment": "^2.29.1",
-    "passport": "^0.5.0",
-    "passport-twitter": "^1.0.4",
     "react": "^17.0.2",
     "react-dom": "^17.0.2",
     "react-qr-code": "^2.0.2",
@@ -54,10 +49,8 @@
     "redux-thunk": "^2.3.0",
     "remarkable": "^2.0.1",
     "semaphore-lib": "git+https://github.com/akinovak/semaphore-lib.git#dev",
-    "snarkjs": "^0.4.10",
     "web3": "^1.5.1",
-    "web3modal": "^1.9.4",
-    "websnark": "0.0.5"
+    "web3modal": "^1.9.4"
   },
   "devDependencies": {
     "@types/classnames": "^2.2.11",

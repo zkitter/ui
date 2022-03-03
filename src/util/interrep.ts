@@ -1,5 +1,5 @@
 import config from "./config";
-import {getTransactionReceipt, TXRejectError, TXTooLongError} from "./arb3";
+import {Identity} from "../serviceWorkers/identity";
 
 export const checkPath = async (commitment: string) => {
     const resp = await fetch(`${config.indexerAPI}/interrep/${commitment}`);
@@ -14,9 +14,9 @@ export const checkPath = async (commitment: string) => {
 
     if (!error && data) {
         path = {
-            path_elements: data.pathElements,
-            path_index: data.indices,
-            root: data.root,
+            path_elements: data.siblings.map((el: string) => BigInt(el)),
+            path_index: data.pathIndices,
+            root: BigInt(data.root),
         };
         groupName = name;
 
@@ -48,4 +48,24 @@ export const watchPath = async (commitment: string) => {
             setTimeout(_watchTx, 5000);
         }
     });
+}
+
+export const getGroupName = (identity: Identity | {
+    type: 'interrep';
+    provider?: string;
+    name?: string;
+}): string => {
+    if (identity.type !== 'interrep') return '';
+
+    const provider = identity?.provider?.toLowerCase();
+    const name = identity?.name?.toLowerCase();
+
+    if (provider === 'twitter') {
+        if (name === 'not_sufficient') return 'Twitter (< 500 followers)';
+        if (name === 'bronze') return 'Twitter (500+ followers)';
+        if (name === 'silver') return 'Twitter (2000+ followers)';
+        if (name === 'gold') return 'Twitter (7000+ followers)';
+    }
+
+    return 'Anonymous';
 }
