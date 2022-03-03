@@ -27,7 +27,7 @@ import SpinnerGIF from "../../../static/icons/spinner.gif";
 import MetamaskSVG from "../../../static/icons/metamask-fox.svg";
 import gun, {authenticateGun} from "../../util/gun";
 import {useHistory} from "react-router";
-import {ellipsify, getHandle, getName} from "../../util/user";
+import {ellipsify, getHandle, getName, loginUser} from "../../util/user";
 import {useHasIdConnected, useIdentities, useSelectedLocalId, useWorkerUnlocked} from "../../ducks/worker";
 import LoginModal from "../LoginModal";
 import {fetchNameByAddress} from "../../util/web3";
@@ -39,7 +39,7 @@ import QRScanner from "../QRScanner";
 import Modal from "../Modal";
 import ExportPrivateKeyModal from "../ExportPrivateKeyModal";
 import config from "../../util/config";
-import {getGroupName} from "../../util/interrep";
+import {checkPath, getGroupName} from "../../util/interrep";
 import Nickname from "../Nickname";
 
 type Props = {
@@ -343,25 +343,25 @@ function UserMenu(props: {
     const unlocked = useWorkerUnlocked();
     const [showingLogin, setShowingLogin] = useState(false);
     const [showingExportPrivateKey, showExportPrivateKey] = useState(false);
-    const [publicKey, setPublicKey] = useState('');
+    const [identity, setIdentity] = useState<Identity|null>(null);
     const selectedUser = useUser(selectedLocalId?.address);
 
-    const openLogin = useCallback(async (pubkey: string) => {
+    const openLogin = useCallback(async (id: Identity) => {
         if (unlocked) {
             await fetch(`${config.indexerAPI}/oauth/reset`, {
                 credentials: 'include',
             });
-            await postWorkerMessage(selectIdentity(pubkey));
+            await loginUser(id);
             return;
         }
         setShowingLogin(true);
-        setPublicKey(pubkey);
+        setIdentity(id);
     }, [unlocked]);
 
     const onClose = useCallback(async () => {
         setShowingLogin(false);
-        setPublicKey('');
-    }, [publicKey]);
+        setIdentity(null);
+    }, []);
 
     const onShowExportPrivateKey = useCallback(() => {
         showExportPrivateKey(true);
@@ -377,15 +377,9 @@ function UserMenu(props: {
             credentials: 'include',
         });
 
-        const id: any = await postWorkerMessage(selectIdentity(publicKey));
-        if (id && id.type === 'gun') {
-            authenticateGun({
-                pub: id.publicKey,
-                priv: id.privateKey,
-            });
-        }
+        await loginUser(identity);
         props.setOpened(false);
-    }, [publicKey, showingExportPrivateKey]);
+    }, [identity, showingExportPrivateKey]);
 
     const availableIds = identities.filter(id => {
         if (id.type === 'gun' && selectedLocalId?.type === 'gun') {
@@ -416,7 +410,7 @@ function UserMenu(props: {
                                         <UserMenuItem
                                             key={id.type === 'gun' ? id.publicKey : id.identityCommitment}
                                             identity={id}
-                                            openLogin={() => openLogin(id.type === 'gun' ? id.publicKey : id.identityCommitment)}
+                                            openLogin={() => openLogin(id)}
                                         />
                                     );
                                 })

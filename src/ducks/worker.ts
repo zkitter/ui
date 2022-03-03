@@ -45,6 +45,7 @@ export const syncWorker = () => async (dispatch: Dispatch) => {
         if (currentIdentity.type === 'gun' && !currentIdentity.privateKey) return;
         if (currentIdentity.type === 'interrep' && !currentIdentity.serializedIdentity) return;
         dispatch(setSelectedId(currentIdentity));
+        return currentIdentity;
     }
 }
 

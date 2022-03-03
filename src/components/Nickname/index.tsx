@@ -38,12 +38,46 @@ export default function Nickname(props: Props): ReactElement {
     }
 
     if (interepProvider && interepGroup) {
-
         if (/twitter/i.test(interepProvider)) {
-            if (/not_sufficient/i.test(interepGroup)) badges.push(<Badge label="<500 Twitter followers" url={TwitterPaper} />);
-            if (/bronze/i.test(interepGroup)) badges.push(<Badge label="500+ Twitter followers" url={TwitterBronze} />);
-            if (/silver/i.test(interepGroup)) badges.push(<Badge label="2000+ Twitter followers" url={TwitterSilver} />);
-            if (/gold/i.test(interepGroup)) badges.push(<Badge label="7000+ Twitter followers" url={TwitterGold} />);
+            if (/not_sufficient/i.test(interepGroup)) {
+                badges.push(
+                    <Badge
+                        key={interepProvider + '_' + interepGroup}
+                        label="<500 Twitter followers"
+                        url={TwitterPaper}
+                    />
+                );
+            }
+
+            if (/bronze/i.test(interepGroup)) {
+                badges.push(
+                    <Badge
+                        key={interepProvider + '_' + interepGroup}
+                        label="500+ Twitter followers"
+                        url={TwitterBronze}
+                    />
+                );
+            }
+
+            if (/silver/i.test(interepGroup)) {
+                badges.push(
+                    <Badge
+                        key={interepProvider + '_' + interepGroup}
+                        label="2000+ Twitter followers"
+                        url={TwitterSilver}
+                    />
+                );
+            }
+
+            if (/gold/i.test(interepGroup)) {
+                badges.push(
+                    <Badge
+                        key={interepProvider + '_' + interepGroup}
+                        label="7000+ Twitter followers"
+                        url={TwitterGold}
+                    />
+                );
+            }
         }
 
         return (

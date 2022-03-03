@@ -25,6 +25,7 @@ import {markdownConvertOptions} from "../components/DraftEditor";
 import config from "../util/config";
 import {setFollowed} from "./users";
 import {updateStatus} from "../util/twitter";
+import {checkPath} from "../util/interrep";
 
 const { draftToMarkdown } = require('markdown-draft-js');
 
@@ -90,9 +91,11 @@ export const submitSemaphorePost = (post: Post) => async (dispatch: Dispatch, ge
     const identityTrapdoor = zkIdentity.getTrapdoor();
     const identityNullifier = zkIdentity.getNullifier();
     const identityCommitment = selected.identityCommitment;
-    const identityPathElements = selected.identityPath?.path_elements;
-    const identityPathIndex = selected.identityPath?.path_index;
-    const root = selected.identityPath?.root;
+    const data: any = await checkPath(identityCommitment);
+
+    const identityPathElements = data?.path?.path_elements;
+    const identityPathIndex = data?.path?.path_index;
+    const root = data?.path?.root;
 
     if (!identityCommitment || !identityPathElements || !identityPathIndex || !identityTrapdoor || !identityNullifier) {
         return null;
