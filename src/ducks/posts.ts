@@ -33,6 +33,8 @@ type PostMeta = {
     repostCount: number;
     liked: boolean;
     reposted: boolean;
+    interepProvider?: string;
+    interepGroup?: string;
 }
 
 type State = {

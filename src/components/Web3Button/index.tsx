@@ -39,6 +39,8 @@ import QRScanner from "../QRScanner";
 import Modal from "../Modal";
 import ExportPrivateKeyModal from "../ExportPrivateKeyModal";
 import config from "../../util/config";
+import {getGroupName} from "../../util/interrep";
+import Nickname from "../Nickname";
 
 type Props = {
     onConnect?: () => Promise<void>;
@@ -456,16 +458,17 @@ function CurrentUserItem(props: {
             </Button>
             <div className="flex flex-col flex-nowrap items-center w-full">
                 <div className="text-base font-bold w-full truncate text-center">
-                    {
-                        selectedLocalId.type === 'interrep'
-                            ? 'Incognito'
-                            : getName(selectedUser)
-                    }
+                    <Nickname
+                        className="justify-center"
+                        address={selectedLocalId.type === 'interrep' ? '' : selectedUser?.address}
+                        interepProvider={selectedLocalId.type === 'interrep' ? selectedLocalId.provider : ''}
+                        interepGroup={selectedLocalId.type === 'interrep' ? selectedLocalId.name : ''}
+                    />
                 </div>
                 <div className="text-sm">
                     {
                         selectedLocalId.type === 'interrep'
-                            ? `${selectedLocalId.provider}${selectedLocalId.name ? ` (${selectedLocalId.name})` : ''}`
+                            ? `@${getHandle(selectedUser)}`
                             : `@${getHandle(selectedUser)}`
                     }
 
@@ -498,19 +501,18 @@ function UserMenuItem(props: {
             />
             <div className="flex flex-col flex-nowrap w-0 flex-grow">
                 <div className="text-sm font-bold truncate">
-                    {
-                        identity.type === 'interrep'
-                            ? identity.provider
-                            : getName(user)
-                    }
+                    <Nickname
+                        address={identity.type === 'interrep' ? '' : user?.address}
+                        interepProvider={identity.type === 'interrep' ? identity.provider : ''}
+                        interepGroup={identity.type === 'interrep' ? identity.name : ''}
+                    />
                 </div>
-                <div className="text-xs">
+                <div className="text-xs text-gray-400">
                     {
                         identity.type === 'interrep'
-                            ? `${identity.name}`
+                            ? `@${getHandle(user)}`
                             : `@${getHandle(user)}`
                     }
-
                 </div>
             </div>
         </div>

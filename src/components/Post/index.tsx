@@ -26,6 +26,8 @@ import Menuable from "../Menuable";
 import {convertMarkdownToDraft, DraftEditor} from "../DraftEditor";
 import URLPreview from "../URLPreview";
 import {getHandle, getName, getUsername} from "../../util/user";
+import {getGroupName} from "../../util/interrep";
+import Nickname from "../Nickname";
 
 
 type Props = {
@@ -126,6 +128,7 @@ export function ExpandedPost(props: Props): ReactElement {
     const history = useHistory();
     const [parentCreator, parentHash] = post?.payload.reference.split('/') || [];
     const parentUser = useUser(parentCreator);
+    const meta = useMeta(props.messageId);
 
     const gotoUserProfile = useCallback(e => {
         if (!user || !post?.creator) return;
@@ -159,7 +162,11 @@ export function ExpandedPost(props: Props): ReactElement {
                         className="font-bold text-base mr-1 hover:underline"
                         onClick={gotoUserProfile}
                     >
-                        {post.creator === '' ? 'Anonymous' : getName(user)}
+                        <Nickname
+                            address={user?.address}
+                            interepProvider={meta?.interepProvider}
+                            interepGroup={meta?.interepGroup}
+                        />
                     </div>
                     <div className="text-gray-400 mr-1" onClick={gotoUserProfile}>
                         {getHandle(user)}
@@ -246,6 +253,7 @@ export function RegularPost(props: Props): ReactElement {
     let user = useUser(post?.creator);
     let op = useUser(originalPost?.creator);
     const history = useHistory();
+    const meta = useMeta(post?.toJSON().messageId as string);
 
     const [parentCreator, parentHash] = post?.payload.reference.split('/') || [];
     const parentUser = useUser(parentCreator);
@@ -323,7 +331,11 @@ export function RegularPost(props: Props): ReactElement {
                                         className="post__creator-name font-bold text-base mr-1 hover:underline"
                                         onClick={gotoUserProfile}
                                     >
-                                        {post.creator === '' ? 'Anonymous' : getName(user)}
+                                        <Nickname
+                                            address={user?.address}
+                                            interepProvider={meta?.interepProvider}
+                                            interepGroup={meta?.interepGroup}
+                                        />
                                     </div>
                                 )
                         }

@@ -37,7 +37,7 @@ export default function Icon(props: Props): ReactElement {
             }}
             onClick={onClick}
         >
-            {fa && <i className={fa} style={{ fontSize: `${size}rem`}}/>}
+            {(!url && !!fa) && <i className={fa} style={{ fontSize: `${size}rem`}}/>}
             {children}
         </div>
     );
