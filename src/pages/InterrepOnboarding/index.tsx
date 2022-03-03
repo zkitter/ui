@@ -207,6 +207,7 @@ function JoinGroupView(props: {
     const dispatch = useDispatch();
     const unlocking = useWeb3Unlocking();
     const account = useWeb3Account();
+    const history = useHistory();
 
     let username = '';
     let name: 'Twitter' | '' = '';
@@ -233,7 +234,9 @@ function JoinGroupView(props: {
                 name: data.name,
                 identityPath: data.path,
             }))
-            props.setViewType(ViewType.done);
+
+            history.push('/create-local-backup')
+            // props.setViewType(ViewType.done);
         })();
     }, [selected, account]);
 
