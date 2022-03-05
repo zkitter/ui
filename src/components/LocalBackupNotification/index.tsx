@@ -44,7 +44,7 @@ export default function LocalBackupNotification(): ReactElement {
         await onAddIdentity();
     }, [onAddIdentity])
 
-    if (!loggedIn || hasLocalBackup) return <></>;
+    if (!loggedIn || hasLocalBackup || selected?.type === 'zkpr_interrep') return <></>;
 
     return (
         <>

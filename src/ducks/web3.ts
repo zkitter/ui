@@ -232,6 +232,11 @@ export const fetchJoinedTx = (account: string) => async (
     }
 }
 
+export const disconnectWeb3 = () => async (dispatch: ThunkDispatch<any, any, any>) => {
+    dispatch(reset());
+    await web3Modal.clearCachedProvider();
+}
+
 const reset = () => async (dispatch: Dispatch) => {
     dispatch(setAccount(''));
     dispatch(setNetwork(''));
@@ -655,7 +660,7 @@ export const useAccount = (opt?: { uppercase?: boolean }) => {
         let address = account;
 
         if (selected) {
-            address = selected.address;
+            address = selected.address || '';
         }
 
         if (!address) return '';

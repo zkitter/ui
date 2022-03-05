@@ -103,7 +103,7 @@ function Badge(props: { url: string; label: string }): ReactElement {
             <Icon
                 className="shadow rounded-full"
                 url={props.url}
-                size={1.5}
+                size={1}
             />
         </Popoverable>
 

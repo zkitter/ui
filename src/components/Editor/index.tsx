@@ -221,7 +221,7 @@ export default function Editor(props: Props): ReactElement {
             <Avatar
                 className="w-12 h-12 mr-3"
                 address={address}
-                incognito={selectedId?.type === 'interrep'}
+                incognito={['interrep', 'zkpr_interrep'].includes(selectedId?.type as string)}
             />
             <div className="flex flex-col flex-nowrap w-full h-full editor__wrapper">
                 <DraftEditor
@@ -265,7 +265,7 @@ export default function Editor(props: Props): ReactElement {
                     </div>
                     <div className="flex-grow flex flex-row flex-nowrap items-center justify-end">
                         {
-                            selected?.type !== 'interrep' && (
+                            !['interrep', 'zkpr_interrep'].includes(selectedId?.type as string) && (
                                 <Checkbox
                                     className="mr-4"
                                     onChange={onSetMirror}
