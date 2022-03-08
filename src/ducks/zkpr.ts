@@ -5,7 +5,7 @@ import {AppRootState} from "../store/configureAppStore";
 import {checkPath} from "../util/interrep";
 import {Identity} from "../serviceWorkers/identity";
 import {postWorkerMessage} from "../util/sw";
-import {setIdentity} from "../serviceWorkers/util";
+import {selectIdentity, setIdentity} from "../serviceWorkers/util";
 import {Dispatch} from "redux";
 import {SemaphoreFullProof, SemaphoreSolidityProof, MerkleProof} from "@zk-kit/protocols";
 
@@ -37,7 +37,10 @@ const initialState: State = {
     unlocking: false,
 };
 
-export const connectZKPR = () => async (dispatch: ThunkDispatch<any, any, any>) => {
+export const connectZKPR = () => async (
+    dispatch: ThunkDispatch<any, any, any>,
+    getState: () => AppRootState,
+) => {
     dispatch(setLoading(true));
 
     try {
@@ -49,6 +52,26 @@ export const connectZKPR = () => async (dispatch: ThunkDispatch<any, any, any>) 
             const zkpr: any = window.zkpr;
             const client = await zkpr.connect();
             const zkprClient = new ZKPR(client);
+
+            zkprClient.on('identityChanged', async data => {
+                const idCommitment = data && BigInt('0x' + data).toString();
+                const { worker: { identities } } = getState();
+
+                dispatch(setIdCommitment(''));
+
+                if (idCommitment) {
+                    dispatch(setIdCommitment(idCommitment));
+                    const id: any = await maybeSetZKPRIdentity(idCommitment);
+                    if (!id) {
+                        const [defaultId] = identities;
+                        if (defaultId) {
+                            postWorkerMessage(selectIdentity(defaultId.type === 'gun' ? defaultId.publicKey : defaultId.identityCommitment));
+                        } else {
+                            postWorkerMessage(setIdentity(null));
+                        }
+                    }
+                }
+            });
 
             localStorage.setItem('ZKPR_CACHED', '1');
 
@@ -69,6 +92,16 @@ export const connectZKPR = () => async (dispatch: ThunkDispatch<any, any, any>) 
     } catch (e) {
         dispatch(setLoading(false));
         throw e;
+    }
+}
+
+export const createZKPRIdentity = () => async (
+    dispatch: ThunkDispatch<any, any, any>,
+    getState: () => AppRootState,
+) => {
+    const { zkpr: { zkpr } } = getState();
+    if (zkpr) {
+        return zkpr.createIdentity();
     }
 }
 
@@ -173,8 +206,16 @@ export class ZKPR {
         this.client = client;
     }
 
+    on(eventName: string, cb: (data: unknown) => void) {
+        return this.client.on(eventName, cb);
+    }
+
     async getActiveIdentity(): Promise<string | null> {
         return this.client.getActiveIdentity();
+    }
+
+    async createIdentity(): Promise<void> {
+        return this.client.createIdentity();
     }
 
     async semaphoreProof(

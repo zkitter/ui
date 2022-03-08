@@ -12,7 +12,7 @@ import {postWorkerMessage} from "../../util/sw";
 import {setIdentity} from "../../serviceWorkers/util";
 import {genSemaphore, useWeb3Account, useWeb3Unlocking} from "../../ducks/web3";
 import {useDispatch} from "react-redux";
-import {useIdCommitment, useZKPR} from "../../ducks/zkpr";
+import {createZKPRIdentity, useIdCommitment, useZKPR} from "../../ducks/zkpr";
 
 export enum ViewType {
     welcome,
@@ -275,6 +275,16 @@ function JoinGroupView(props: {
         token = twitterAuth.token;
     }
 
+    const onCreateIdentity = useCallback(() => {
+        if (name) {
+            if (zkpr) {
+                dispatch(createZKPRIdentity());
+            } else {
+                dispatch(genSemaphore(name))
+            }
+        }
+    }, [name, zkpr]);
+
     const onJoinGroup = useCallback(async () => {
         if (noIdCommitment) {
             setErrorMessage('not login to incognito');
@@ -364,7 +374,7 @@ function JoinGroupView(props: {
                         ? (
                             <Button
                                 btnType="primary"
-                                onClick={() => name && dispatch(genSemaphore(name))}
+                                onClick={onCreateIdentity}
                                 loading={unlocking}
                             >
                                 Create Identity

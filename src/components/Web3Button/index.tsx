@@ -161,8 +161,9 @@ export default function Web3Button(props: Props): ReactElement {
 function Web3ButtonLeft(props: Props): ReactElement {
     const selectedLocalId = useSelectedLocalId();
     const [opened, setOpened] = useState(false);
+    const zkpr = useZKPR();
 
-    if (selectedLocalId) {
+    if (selectedLocalId || zkpr) {
         return (
             <UserMenuable
                 opened={opened}
@@ -255,7 +256,7 @@ function UserMenuable(props: {
         component: <WalletHeader setOpened={setOpened} />,
     });
 
-    if (identities.length) {
+    if (selectedLocalId || identities.length) {
         items.push({
             label: '',
             className: 'local-users-menu',
@@ -267,7 +268,7 @@ function UserMenuable(props: {
         });
     }
 
-    if (selectedLocalId) {
+    if (selectedLocalId && identities.length) {
         items.push({
             label: 'Logout',
             iconFA: 'fas fa-sign-out-alt',
@@ -342,6 +343,8 @@ function WalletHeader(props: {
         const [id] = identities;
         if (id) {
             postWorkerMessage(selectIdentity(id.type === 'gun' ? id.publicKey : id.identityCommitment));
+        } else {
+            postWorkerMessage(setIdentity(null));
         }
     }, [identities]);
 
@@ -614,6 +617,7 @@ function UnauthButton(props: {
     const identities = useIdentities();
     const history = useHistory();
     const zkprLoading = useZKPRLoading();
+    const zkpr = useZKPR();
 
     const connectWallet = useCallback(async (e, reset) => {
         setOpened(false);
