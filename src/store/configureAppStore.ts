@@ -7,9 +7,10 @@ import drafts from "../ducks/drafts";
 import thunk from "redux-thunk";
 import {createLogger} from "redux-logger";
 import worker from "../ducks/worker";
-
+import zkpr from "../ducks/zkpr";
 const rootReducer = combineReducers({
     web3,
+    zkpr,
     posts,
     users,
     drafts,

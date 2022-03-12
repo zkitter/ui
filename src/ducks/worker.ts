@@ -101,7 +101,9 @@ export const useWorkerUnlocked = () => {
 
 export const useSelectedLocalId = () => {
     return useSelector((state: AppRootState) => {
-        const { worker: { selected } } = state;
+        const {
+            worker: { selected },
+        } = state;
 
         if (selected) {
             return selected;

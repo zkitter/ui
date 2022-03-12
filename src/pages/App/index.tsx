@@ -24,6 +24,7 @@ import {checkPath} from "../../util/interrep";
 import {postWorkerMessage} from "../../util/sw";
 import {setIdentity} from "../../serviceWorkers/util";
 import {loginUser} from "../../util/user";
+import zkpr, {connectZKPR} from "../../ducks/zkpr";
 
 export default function App(): ReactElement {
     const dispatch = useDispatch();
@@ -39,7 +40,11 @@ export default function App(): ReactElement {
                 await loginUser(id);
             }
 
-            if (web3Modal.cachedProvider) {
+            const cachedZKPR = localStorage.getItem('ZKPR_CACHED');
+
+            if (cachedZKPR) {
+                await dispatch(connectZKPR());
+            } else if (web3Modal.cachedProvider) {
                 await dispatch(connectWeb3());
             }
         })();

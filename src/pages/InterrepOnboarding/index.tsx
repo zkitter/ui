@@ -12,6 +12,7 @@ import {postWorkerMessage} from "../../util/sw";
 import {setIdentity} from "../../serviceWorkers/util";
 import {genSemaphore, useWeb3Account, useWeb3Unlocking} from "../../ducks/web3";
 import {useDispatch} from "react-redux";
+import {createZKPRIdentity, useIdCommitment, useZKPR} from "../../ducks/zkpr";
 
 export enum ViewType {
     welcome,
@@ -208,6 +209,8 @@ function JoinGroupView(props: {
     const unlocking = useWeb3Unlocking();
     const account = useWeb3Account();
     const history = useHistory();
+    const idCommitment = useIdCommitment();
+    const zkpr = useZKPR();
 
     let username = '';
     let name: 'Twitter' | '' = '';
@@ -215,30 +218,54 @@ function JoinGroupView(props: {
     let reputation = '';
     let token = '';
 
-    useEffect(() => {
-        if (selected?.type !== 'interrep') {
-            return;
-        }
+    const noIdCommitment = zkpr
+        ? !idCommitment
+        : (selected?.type !== 'interrep' || selected.address !== account);
 
-        if (selected.address !== account) {
-            return;
+    useEffect(() => {
+        if (noIdCommitment) return;
+
+        let identityCommitment = '';
+
+        if (zkpr) {
+            identityCommitment = idCommitment;
+        } else if (selected?.type === 'interrep') {
+            identityCommitment = selected.identityCommitment;
         }
 
         (async () => {
-            const data: any = await checkPath(selected.identityCommitment);
+            const data = await checkPath(identityCommitment);
 
             if (!data) return;
 
-            await postWorkerMessage(setIdentity({
-                ...selected,
-                name: data.name,
-                identityPath: data.path,
-            }))
+            if (zkpr) {
+                await postWorkerMessage(setIdentity({
+                    type: 'zkpr_interrep',
+                    identityCommitment: identityCommitment,
+                    provider: data.provider,
+                    name: data.name,
+                    identityPath: {
+                        path_elements: data.path.path_elements.map(d => d.toString()),
+                        path_index: data.path.path_index,
+                        root: data.path.root.toString(),
+                    },
+                }))
+            } else if (selected?.type === 'interrep') {
+                await postWorkerMessage(setIdentity({
+                    ...selected,
+                    name: data.name,
+                    identityPath: {
+                        path_elements: data.path.path_elements.map(d => d.toString()),
+                        path_index: data.path.path_index,
+                        root: data.path.root.toString(),
+                    },
+                }))
+            }
 
             history.push('/create-local-backup')
             // props.setViewType(ViewType.done);
         })();
-    }, [selected, account]);
+    }, [selected, account, idCommitment, zkpr, noIdCommitment]);
 
     if (twitterAuth) {
         name = 'Twitter';
@@ -248,15 +275,33 @@ function JoinGroupView(props: {
         token = twitterAuth.token;
     }
 
+    const onCreateIdentity = useCallback(() => {
+        if (name) {
+            if (zkpr) {
+                dispatch(createZKPRIdentity());
+            } else {
+                dispatch(genSemaphore(name))
+            }
+        }
+    }, [name, zkpr]);
+
     const onJoinGroup = useCallback(async () => {
-        if (selected?.type !== 'interrep') {
+        if (noIdCommitment) {
             setErrorMessage('not login to incognito');
             return;
         }
 
+        let identityCommitment = '';
+
+        if (zkpr) {
+            identityCommitment = idCommitment;
+        } else if (selected?.type === 'interrep') {
+            identityCommitment = selected.identityCommitment;
+        }
+
         try {
             setJoining(true);
-            const resp = await fetch(`${config.indexerAPI}/interrep/groups/${group}/${reputation}/${selected.identityCommitment}`, {
+            const resp = await fetch(`${config.indexerAPI}/interrep/groups/${group}/${reputation}/${identityCommitment}`, {
                 method: 'POST',
                 credentials: 'include',
             });
@@ -265,20 +310,40 @@ function JoinGroupView(props: {
             if (json.error) {
                 setErrorMessage(json.payload);
             } else {
-                const data: any = await watchPath(selected.identityCommitment);
-                props.setViewType(ViewType.done);
-                await postWorkerMessage(setIdentity({
-                    ...selected,
-                    name: data.name,
-                    identityPath: data.path,
-                }))
+                const data = await watchPath(identityCommitment);
+                // props.setViewType(ViewType.done);
+                history.push('/create-local-backup');
+
+                if (zkpr) {
+                    await postWorkerMessage(setIdentity({
+                        type: 'zkpr_interrep',
+                        provider: data.provider,
+                        name: data.name,
+                        identityPath: {
+                            path_elements: data.path.path_elements.map(d => d.toString()),
+                            path_index: data.path.path_index,
+                            root: data.path.root.toString(),
+                        },
+                        identityCommitment: identityCommitment,
+                    }))
+                } else if (selected?.type === 'interrep') {
+                    await postWorkerMessage(setIdentity({
+                        ...selected,
+                        name: data.name,
+                        identityPath: {
+                            path_elements: data.path.path_elements.map(d => d.toString()),
+                            path_index: data.path.path_index,
+                            root: data.path.root.toString(),
+                        },
+                    }))
+                }
             }
         } catch (e) {
             setErrorMessage(e.message);
         } finally {
             setJoining(false);
         }
-    }, [twitterAuth, selected, reputation, group, token]);
+    }, [twitterAuth, selected, reputation, group, token, zkpr, idCommitment, noIdCommitment]);
 
     return (
         <div className="flex flex-col flex-nowrap flex-grow my-4 mx-8 signup__content signup__welcome">
@@ -305,11 +370,11 @@ function JoinGroupView(props: {
                     Reset
                 </Button>
                 {
-                    selected?.type !== 'interrep' || selected.address !== account
+                    noIdCommitment
                         ? (
                             <Button
                                 btnType="primary"
-                                onClick={() => name && dispatch(genSemaphore(name))}
+                                onClick={onCreateIdentity}
                                 loading={unlocking}
                             >
                                 Create Identity

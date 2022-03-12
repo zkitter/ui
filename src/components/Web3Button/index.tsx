@@ -15,17 +15,17 @@ import {
     setSemaphoreID,
     setSemaphoreIDPath,
     useGunNonce,
-    UserNotExistError, useWeb3Account,
+    UserNotExistError, useWeb3Account, disconnectWeb3,
 } from "../../ducks/web3";
 import {useDispatch} from "react-redux";
 import classNames from "classnames";
 import Avatar, {Username} from "../Avatar";
 import Icon from "../Icon";
 import Menuable, {ItemProps} from "../Menuable";
-import TwitterLogoSVG from "../../../static/icons/twitter.svg";
 import SpinnerGIF from "../../../static/icons/spinner.gif";
 import MetamaskSVG from "../../../static/icons/metamask-fox.svg";
-import gun, {authenticateGun} from "../../util/gun";
+import ZKPRSVG from "../../../static/icons/zkpr-logo.svg";
+import gun from "../../util/gun";
 import {useHistory} from "react-router";
 import {ellipsify, getHandle, getName, loginUser} from "../../util/user";
 import {useHasIdConnected, useIdentities, useSelectedLocalId, useWorkerUnlocked} from "../../ducks/worker";
@@ -34,13 +34,21 @@ import {fetchNameByAddress} from "../../util/web3";
 import {useUser} from "../../ducks/users";
 import {selectIdentity, setIdentity} from "../../serviceWorkers/util";
 import {postWorkerMessage} from "../../util/sw";
-import {Identity} from "../../serviceWorkers/identity";
+import {Identity, InterrepIdentity, ZKPRIdentity} from "../../serviceWorkers/identity";
 import QRScanner from "../QRScanner";
 import Modal from "../Modal";
 import ExportPrivateKeyModal from "../ExportPrivateKeyModal";
 import config from "../../util/config";
-import {checkPath, getGroupName} from "../../util/interrep";
 import Nickname from "../Nickname";
+import {
+    connectZKPR,
+    disconnectZKPR,
+    maybeSetZKPRIdentity,
+    useIdCommitment,
+    useZKPR,
+    useZKPRLoading
+} from "../../ducks/zkpr";
+import {checkPath} from "../../util/interrep";
 
 type Props = {
     onConnect?: () => Promise<void>;
@@ -56,6 +64,8 @@ export default function Web3Button(props: Props): ReactElement {
     const dispatch = useDispatch();
     const selectedLocalId = useSelectedLocalId();
     const [ensName, setEnsName] = useState('');
+    const zkpr = useZKPR();
+    const idCommitment = useIdCommitment();
 
     useEffect(() => {
         (async () => {
@@ -66,9 +76,12 @@ export default function Web3Button(props: Props): ReactElement {
                 setEnsName(ens);
             } else {
                 let id = selectedLocalId || identities[0];
-                setEnsName('');
-                const ens = await fetchNameByAddress(id.address);
-                setEnsName(ens);
+
+                if (id?.type !== 'zkpr_interrep') {
+                    setEnsName('');
+                    const ens = await fetchNameByAddress(id.address);
+                    setEnsName(ens);
+                }
             }
         })();
     }, [account, identities, selectedLocalId]);
@@ -77,14 +90,25 @@ export default function Web3Button(props: Props): ReactElement {
     let id = selectedLocalId || identities[0];
 
     if (id) {
-        if (id?.type ===  'interrep') {
+        if (id.type === 'zkpr_interrep') {
+            btnContent = (
+                <>
+                    <div>Connected to ZKPR</div>
+                    <Avatar className="ml-2" incognito />
+                </>
+            )
+        }
+
+        if (id.type ===  'interrep') {
             btnContent = (
                 <>
                     <div>Incognito</div>
                     <Avatar className="ml-2" incognito />
                 </>
             )
-        } else if (id) {
+        }
+
+        if (id.type === 'gun') {
             btnContent = (
                 <>
                     <div><Username address={id?.address} /></div>
@@ -95,6 +119,10 @@ export default function Web3Button(props: Props): ReactElement {
     } else {
         if (account) {
             btnContent = <div><Username address={account} /></div>;
+        } else if (zkpr) {
+            btnContent = idCommitment
+                ? <div><Username address={idCommitment} /></div>
+                : <div>ZK Keeper</div>
         } else {
             btnContent = <div>Connect to a wallet</div>;
         }
@@ -116,7 +144,7 @@ export default function Web3Button(props: Props): ReactElement {
                     'font-inter',
                     'web3-button__content',
                     {
-                        'text-gray-100 bg-gray-800': id?.type ===  'interrep',
+                        'text-gray-100 bg-gray-800': ['interrep', 'zkpr_interrep'].includes(id?.type),
                         'bg-gray-100 pl-0 pr-4': !selectedLocalId && !identities.length,
                     }
                 )}
@@ -133,8 +161,9 @@ export default function Web3Button(props: Props): ReactElement {
 function Web3ButtonLeft(props: Props): ReactElement {
     const selectedLocalId = useSelectedLocalId();
     const [opened, setOpened] = useState(false);
+    const zkpr = useZKPR();
 
-    if (selectedLocalId) {
+    if (selectedLocalId || zkpr) {
         return (
             <UserMenuable
                 opened={opened}
@@ -172,11 +201,18 @@ function UserMenuable(props: {
     const identities = useIdentities();
     const selectedLocalId = useSelectedLocalId();
     const [showingScanner, showScanner] = useState(false);
+    const zkprLoading = useZKPRLoading();
+    const web3Loading = useWeb3Loading();
 
     const connectWallet = useCallback(async (e, reset) => {
         await dispatch(connectWeb3());
         reset();
         return props.onConnect && props.onConnect();
+    }, []);
+
+    const connectKeeper = useCallback(async (e, reset) => {
+        await dispatch(connectZKPR());
+        reset();
     }, []);
 
     const logout = useCallback(async () => {
@@ -208,12 +244,19 @@ function UserMenuable(props: {
                 label: 'Metamask',
                 iconUrl: MetamaskSVG,
                 onClick: connectWallet,
+                disabled: web3Loading,
+            },
+            {
+                label: 'ZKPR',
+                iconUrl: ZKPRSVG,
+                onClick: connectKeeper,
+                disabled: zkprLoading,
             },
         ],
         component: <WalletHeader setOpened={setOpened} />,
     });
 
-    if (identities.length) {
+    if (selectedLocalId || identities.length) {
         items.push({
             label: '',
             className: 'local-users-menu',
@@ -225,36 +268,13 @@ function UserMenuable(props: {
         });
     }
 
-    if (selectedLocalId) {
+    if (selectedLocalId && identities.length) {
         items.push({
             label: 'Logout',
             iconFA: 'fas fa-sign-out-alt',
             onClick: logout,
         })
     }
-
-    // if (!account && !selectedLocalId && !identities.length) {
-    //     return (
-    //         <div
-    //             className={classNames(
-    //                 "flex flex-row flex-nowrap items-center",
-    //                 "web3-button__alt-action",
-    //             )}
-    //             onClick={connectWallet}
-    //         >
-    //             {
-    //                 !web3Loading && (
-    //                     <Icon
-    //                         className={classNames(
-    //                             "hover:text-green-500 transition-colors",
-    //                         )}
-    //                         fa="fas fa-plug"
-    //                     />
-    //                 )
-    //             }
-    //         </div>
-    //     )
-    // }
 
     return (
         <>
@@ -289,6 +309,9 @@ function WalletHeader(props: {
     setOpened: (opened: boolean) => void;
 }): ReactElement {
     const account = useWeb3Account();
+    const idCommitment = useIdCommitment();
+    const selected = useSelectedLocalId();
+    const identities = useIdentities();
     const user = useUser(account);
     const dispatch = useDispatch();
     const history = useHistory();
@@ -298,6 +321,60 @@ function WalletHeader(props: {
         history.push('/signup');
         props.setOpened(false);
     }, []);
+
+    const gotoZKSignup = useCallback(async (e) => {
+        e.stopPropagation();
+
+        if (idCommitment) {
+            const id = await maybeSetZKPRIdentity(idCommitment);
+
+            if (id) {
+                return;
+            }
+        }
+
+        history.push('/signup');
+        props.setOpened(false);
+    }, [idCommitment]);
+
+    const disconnect = useCallback(() => {
+        dispatch(disconnectZKPR());
+        dispatch(disconnectWeb3());
+        const [id] = identities;
+        if (id) {
+            postWorkerMessage(selectIdentity(id.type === 'gun' ? id.publicKey : id.identityCommitment));
+        } else {
+            postWorkerMessage(setIdentity(null));
+        }
+    }, [identities]);
+
+    if (idCommitment) {
+        return (
+            <div
+                className="wallet-menu-header__container"
+                onClick={e => e.stopPropagation()}
+            >
+                <Icon fa="fas fa-user-secret" />
+                <div className="wallet-menu-header__title">
+                    <div>{ellipsify(idCommitment)}</div>
+                </div>
+                {
+                    selected?.type !== 'zkpr_interrep' && (
+                        <div className="wallet-menu-header__btn">
+                            <Button onClick={gotoZKSignup}>
+                                <Icon fa="fas fa-user-plus" />
+                            </Button>
+                        </div>
+                    )
+                }
+                <div className="wallet-menu-header__btn">
+                    <Button onClick={disconnect}>
+                        <Icon fa="fas fa-sign-out-alt" />
+                    </Button>
+                </div>
+            </div>
+        )
+    }
 
     if (!user) {
         return (
@@ -309,9 +386,11 @@ function WalletHeader(props: {
                     Not connected
                 </div>
                 <div className="wallet-menu-header__btn">
-                    <Button>
-                        Connect wallet
-                    </Button>
+                    <div className="wallet-menu-header__btn">
+                        <Button>
+                            <Icon fa="fas fa-plug" />
+                        </Button>
+                    </div>
                 </div>
             </div>
         )
@@ -328,7 +407,12 @@ function WalletHeader(props: {
             </div>
             <div className="wallet-menu-header__btn">
                 <Button onClick={gotoSignup}>
-                    Add new user
+                    <Icon fa="fas fa-user-plus" />
+                </Button>
+            </div>
+            <div className="wallet-menu-header__btn">
+                <Button onClick={disconnect}>
+                    <Icon fa="fas fa-sign-out-alt" />
                 </Button>
             </div>
         </div>
@@ -344,7 +428,6 @@ function UserMenu(props: {
     const [showingLogin, setShowingLogin] = useState(false);
     const [showingExportPrivateKey, showExportPrivateKey] = useState(false);
     const [identity, setIdentity] = useState<Identity|null>(null);
-    const selectedUser = useUser(selectedLocalId?.address);
 
     const openLogin = useCallback(async (id: Identity) => {
         if (unlocked) {
@@ -431,6 +514,8 @@ function CurrentUserItem(props: {
 
     if (!selectedLocalId) return <></>;
 
+    const isInterep = ['interrep', 'zkpr_interrep'].includes(selectedLocalId.type);
+
     return (
         <div
             className={classNames(
@@ -440,29 +525,31 @@ function CurrentUserItem(props: {
             <Avatar
                 className="w-20 h-20 mb-2"
                 address={selectedUser?.address}
-                incognito={selectedLocalId.type === 'interrep'}
+                incognito={isInterep}
             />
-            <Button
-                className="my-2"
-                btnType="secondary"
-                onClick={props.onShowExportPrivateKey}
-                small
-            >
-                Link Device
-            </Button>
+            {/*<Button*/}
+            {/*    className="my-2"*/}
+            {/*    btnType="secondary"*/}
+            {/*    onClick={props.onShowExportPrivateKey}*/}
+            {/*    small*/}
+            {/*>*/}
+            {/*    Link Device*/}
+            {/*</Button>*/}
             <div className="flex flex-col flex-nowrap items-center w-full">
                 <div className="text-base font-bold w-full truncate text-center">
                     <Nickname
                         className="justify-center"
-                        address={selectedLocalId.type === 'interrep' ? '' : selectedUser?.address}
-                        interepProvider={selectedLocalId.type === 'interrep' ? selectedLocalId.provider : ''}
-                        interepGroup={selectedLocalId.type === 'interrep' ? selectedLocalId.name : ''}
+                        address={isInterep ? '' : selectedUser?.address}
+                        // @ts-ignore
+                        interepProvider={isInterep ? selectedLocalId.provider : ''}
+                        // @ts-ignore
+                        interepGroup={isInterep ? selectedLocalId.name : ''}
                     />
                 </div>
                 <div className="text-sm">
                     {
-                        selectedLocalId.type === 'interrep'
-                            ? `@${getHandle(selectedUser)}`
+                        selectedLocalId.type === 'zkpr_interrep'
+                            ? <div className="text-xs py-1 px-2 rounded bg-gray-200 text-gray-600">EXTERNAL</div>
                             : `@${getHandle(selectedUser)}`
                     }
 
@@ -479,6 +566,8 @@ function UserMenuItem(props: {
     const {identity, openLogin} = props;
     const user = useUser(identity.address);
 
+    const isInterep = identity.type === 'interrep' || identity.type === 'zkpr_interrep';
+
     return (
         <div
             className={classNames(
@@ -491,14 +580,14 @@ function UserMenuItem(props: {
             <Avatar
                 className="w-9 h-9 mr-2"
                 address={user?.username}
-                incognito={identity.type === 'interrep'}
+                incognito={isInterep}
             />
             <div className="flex flex-col flex-nowrap w-0 flex-grow">
                 <div className="text-sm font-bold truncate">
                     <Nickname
-                        address={identity.type === 'interrep' ? '' : user?.address}
-                        interepProvider={identity.type === 'interrep' ? identity.provider : ''}
-                        interepGroup={identity.type === 'interrep' ? identity.name : ''}
+                        address={isInterep ? '' : user?.address}
+                        interepProvider={isInterep ? (identity as InterrepIdentity).provider : ''}
+                        interepGroup={isInterep ? (identity as InterrepIdentity).name : ''}
                     />
                 </div>
                 <div className="text-xs text-gray-400">
@@ -527,6 +616,8 @@ function UnauthButton(props: {
     const [showingScanner, showScanner] = useState(false);
     const identities = useIdentities();
     const history = useHistory();
+    const zkprLoading = useZKPRLoading();
+    const zkpr = useZKPR();
 
     const connectWallet = useCallback(async (e, reset) => {
         setOpened(false);
@@ -534,6 +625,15 @@ function UnauthButton(props: {
         history.push('/signup');
         return onConnect && onConnect();
     }, [setOpened, onConnect, opened]);
+
+    const connectKeeper = useCallback(async (e, reset) => {
+        setOpened(false);
+        const id: any = await dispatch(connectZKPR());
+        if (!id) {
+            history.push('/signup');
+        }
+        return onConnect && onConnect();
+    }, []);
 
     if (web3Unlocking) {
         return <Icon url={SpinnerGIF} size={2} />;
@@ -555,6 +655,12 @@ function UnauthButton(props: {
                             label: 'Metamask',
                             iconUrl: MetamaskSVG,
                             onClick: connectWallet,
+                        },
+                        {
+                            label: 'ZKPR',
+                            iconUrl: ZKPRSVG,
+                            onClick: connectKeeper,
+                            disabled: zkprLoading,
                         },
                     ]}
                 >

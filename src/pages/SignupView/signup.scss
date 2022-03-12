@@ -88,5 +88,25 @@
 
       border-color: $primary-color !important;
     }
+
+    &--disabled {
+      opacity: 0.5;
+      cursor: default;
+      .icon {
+        color: $gray-200 !important;
+      }
+
+      .signup__account-option {
+        &__title {
+          color: $gray-200 !important;
+        }
+
+        &__desc {
+          color: $gray-200 !important;
+        }
+      }
+
+      border-color: $gray-100 !important;
+    }
   }
 }

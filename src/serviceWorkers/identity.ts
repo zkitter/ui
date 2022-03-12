@@ -26,8 +26,22 @@ export type InterrepIdentity = {
     serializedIdentity: string;
 }
 
+export type ZKPRIdentity = {
+    type: 'zkpr_interrep',
+    provider: string;
+    name: string;
+    identityPath: {
+        path_elements: string[];
+        path_index: number[];
+        root: string;
+    } | null;
+    identityCommitment: string;
+    address?: undefined;
+}
+
 export type Identity =
     | GunIdentity
+    | ZKPRIdentity
     | InterrepIdentity;
 
 const STORAGE_KEY = 'identity_ls_2';
@@ -169,6 +183,11 @@ export class IdentityService extends GenericService {
         await this.ensure();
         const identities = await this.getIdentities();
 
+        if (!this.passphrase) {
+            await this.setIdentity(null);
+            return;
+        }
+
         for (let id of identities) {
             if (id.type === 'gun') {
                 if (id.publicKey === pubkeyOrCommitment) {
@@ -179,7 +198,8 @@ export class IdentityService extends GenericService {
                 }
             }
 
-            if (id.type === 'interrep') {
+            if (['interrep'].includes(id.type)) {
+                // @ts-ignore
                 if (id.identityCommitment === pubkeyOrCommitment) {
                     this.currentIdentity = this.wrapIdentity(id);
                     await pushReduxAction(setSelectedId(this.currentIdentity));
@@ -196,7 +216,6 @@ export class IdentityService extends GenericService {
         await this.ensure();
 
         if (!this.passphrase) throw new Error('identity store is locked');
-        if (typeof identity.nonce !== 'number') throw new Error('invalid nonce');
 
         const tx = this.db?.transaction("identity", "readwrite");
         const store = tx?.objectStore("identity");
@@ -204,6 +223,7 @@ export class IdentityService extends GenericService {
         if (identity.type === 'gun') {
             if (!identity.publicKey) throw new Error('missing publicKey');
             if (!identity.privateKey) throw new Error('missing privateKey');
+            if (typeof identity.nonce !== 'number') throw new Error('invalid nonce');
 
             store?.put({
                 type: identity.type,
@@ -225,6 +245,7 @@ export class IdentityService extends GenericService {
             if (!identity.identityPath) throw new Error('missing identityPath');
             if (!identity.identityCommitment) throw new Error('missing identityCommitment');
             if (!identity.serializedIdentity) throw new Error('missing serializedIdentity');
+            if (typeof identity.nonce !== 'number') throw new Error('invalid nonce');
 
             store?.put({
                 type: identity.type,

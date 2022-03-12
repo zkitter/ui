@@ -25,6 +25,7 @@ import {postWorkerMessage} from "../../util/sw";
 import {useIdentities, useSelectedLocalId, useWorkerUnlocked} from "../../ducks/worker";
 import Icon from "../../components/Icon";
 import classNames from "classnames";
+import {useIdCommitment, useZKPR} from "../../ducks/zkpr";
 
 export enum ViewType {
     welcome,
@@ -114,12 +115,17 @@ function WelcomeView(props: { setViewType: (v: ViewType) => void}): ReactElement
 function AccountOptionsView(props: { setViewType: (v: ViewType) => void}): ReactElement {
     const [selectedOption, selectOption] = useState<'wallet'|'incognito'>('wallet');
     const history = useHistory();
+    const zkpr = useZKPR();
+
+    useEffect(() => {
+        if (zkpr) selectOption('incognito');
+    }, [zkpr]);
 
     const onNext = useCallback(() => {
-        if (selectedOption === 'wallet') {
-            props.setViewType(ViewType.createIdentity);
-        } else if (selectedOption === 'incognito') {
+        if (zkpr || selectedOption === 'incognito') {
             history.push('/signup/interep');
+        } else if (selectedOption === 'wallet') {
+            props.setViewType(ViewType.createIdentity);
         }
     }, [selectedOption]);
 
@@ -136,6 +142,7 @@ function AccountOptionsView(props: { setViewType: (v: ViewType) => void}): React
                     selected={selectedOption === 'wallet'}
                     onClick={() => selectOption('wallet')}
                     fa="fas fa-wallet"
+                    disabled={!!zkpr}
                 />
                 <AccountOption
                     title="Anonymous"
@@ -163,13 +170,15 @@ function AccountOption(props: {
     description: string;
     onClick: () => void;
     fa: string;
+    disabled?: boolean;
 }) {
     return (
         <div
             className={classNames("signup__account-option", {
                 'signup__account-option--selected': props.selected,
+                'signup__account-option--disabled': props.disabled,
             })}
-            onClick={props.onClick}
+            onClick={!props.disabled ? props.onClick : undefined}
         >
             <Icon fa={props.fa} />
             <div className="signup__account-option__title">

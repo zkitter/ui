@@ -1,9 +1,19 @@
 import config from "./config";
 import {Identity} from "../serviceWorkers/identity";
 
-export const checkPath = async (commitment: string) => {
+type PathData = {
+    path: {
+        path_elements: BigInt[];
+        path_index: number[];
+        root: BigInt;
+    };
+    provider: string;
+    name: string;
+};
+
+export const checkPath = async (commitment: string): Promise<PathData|null> => {
     const resp = await fetch(`${config.indexerAPI}/interrep/${commitment}`);
-    const { payload: {data, name}, error } = await resp.json();
+    const { payload: {data, name, provider}, error } = await resp.json();
 
     let path = null;
     let groupName = '';
@@ -15,19 +25,22 @@ export const checkPath = async (commitment: string) => {
     if (!error && data) {
         path = {
             path_elements: data.siblings.map((el: string) => BigInt(el)),
-            path_index: data.pathIndices,
+            path_index: data.pathIndices as number[],
             root: BigInt(data.root),
         };
-        groupName = name;
+        groupName = name as string;
 
         return {
             path,
+            provider: provider as string,
             name: groupName,
         }
     }
+
+    return null;
 }
 
-export const watchPath = async (commitment: string) => {
+export const watchPath = async (commitment: string): Promise<PathData> => {
     let count = 0;
     return new Promise(async (resolve, reject) => {
         _watchTx();

@@ -159,6 +159,84 @@ export const submitSemaphorePost = (post: Post) => async (dispatch: Dispatch, ge
 
 }
 
+export const submitZKPRPost = (post: Post) => async (dispatch: Dispatch, getState: () => AppRootState) => {
+    const state = getState();
+    const {
+        selected,
+    } = state.worker;
+    const { zkpr } = state.zkpr;
+
+    if (selected?.type !== 'zkpr_interrep') throw new Error('Not in incognito mode');
+
+    const identityCommitment = selected.identityCommitment;
+    const data: any = await checkPath(identityCommitment);
+    const identityPathElements = data.path.path_elements;
+    const identityPathIndex = data.path.path_index;
+    const root = data.path.root;
+
+    if (!identityCommitment || !identityPathElements || !identityPathIndex || !zkpr) {
+        return null;
+    }
+
+    const {
+        messageId,
+        hash,
+        ...json
+    } = post.toJSON();
+
+    const externalNullifier = genExternalNullifier('POST');
+    const wasmFilePath = `${config.indexerAPI}/dev/semaphore_wasm`;
+    const finalZkeyPath = `${config.indexerAPI}/dev/semaphore_final_zkey`;
+
+    const { fullProof } = await zkpr.semaphoreProof(
+        externalNullifier,
+        hash,
+        wasmFilePath,
+        finalZkeyPath,
+        '',
+        {
+            root: root.toString(),
+            leaf: identityCommitment,
+            siblings: identityPathElements.map((d: BigInt) => d.toString()),
+            pathIndices: identityPathIndex,
+        }
+    )
+
+    const {
+        proof,
+        publicSignals,
+    } = fullProof;
+
+    try {
+        // @ts-ignore
+        const semaphorePost: any = {
+            ...json,
+            proof: JSON.stringify(proof),
+            publicSignals: JSON.stringify(publicSignals),
+        };
+
+        // @ts-ignore
+        await gun.get('message')
+            .get(messageId)
+            // @ts-ignore
+            .put(semaphorePost);
+
+        dispatch({
+            type: ActionTypes.SET_SUBMITTING,
+            payload: false,
+        });
+
+        dispatch(emptyDraft(post.payload.reference));
+    } catch (e) {
+        dispatch({
+            type: ActionTypes.SET_SUBMITTING,
+            payload: false,
+        });
+        throw e;
+    }
+
+}
+
 export const submitPost = (reference = '') => async (dispatch: ThunkDispatch<any, any, any>, getState: () => AppRootState) => {
     dispatch({
         type: ActionTypes.SET_SUBMITTING,
@@ -228,6 +306,9 @@ export const submitPost = (reference = '') => async (dispatch: ThunkDispatch<any
 
         if (selected?.type === 'interrep') {
             await dispatch(submitSemaphorePost(post));
+            return post;
+        } else if (selected?.type === 'zkpr_interrep') {
+            await dispatch(submitZKPRPost(post));
             return post;
         }
 
