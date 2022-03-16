@@ -444,6 +444,8 @@ export const submitModeration = (reference = '', subtype: ModerationMessageSubTy
             type: ActionTypes.SET_SUBMITTING,
             payload: false,
         });
+
+        return moderation;
     } catch (e) {
         dispatch({
             type: ActionTypes.SET_SUBMITTING,

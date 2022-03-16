@@ -16,6 +16,8 @@ enum ActionTypes {
     SET_META = 'posts/setMeta',
     INCREMENT_REPLY = 'posts/incrementReply',
     INCREMENT_LIKE = 'posts/incrementLike',
+    SET_LIKED = 'posts/setLiked',
+    DECREMENT_LIKE = 'posts/decrementLike',
     INCREMENT_REPOST = 'posts/incrementRepost',
     APPEND_POSTS = 'posts/appendPosts',
 }
@@ -31,8 +33,8 @@ type PostMeta = {
     replyCount: number;
     likeCount: number;
     repostCount: number;
-    liked: boolean;
-    reposted: boolean;
+    liked: string;
+    reposted: string;
     interepProvider?: string;
     interepGroup?: string;
 }
@@ -124,6 +126,16 @@ export const incrementReply = (parentId: string) => ({
 
 export const incrementLike = (parentId: string) => ({
     type: ActionTypes.INCREMENT_LIKE,
+    payload: parentId,
+});
+
+export const setLiked = (parentId: string, messageId: string) => ({
+    type: ActionTypes.SET_LIKED,
+    payload: {parentId, messageId},
+});
+
+export const decrementLike = (parentId: string) => ({
+    type: ActionTypes.DECREMENT_LIKE,
     payload: parentId,
 });
 
@@ -431,6 +443,10 @@ export default function posts(state = initialState, action: Action): State {
             return reduceIncrementRepost(state, action);
         case ActionTypes.INCREMENT_LIKE:
             return reduceIncrementLike(state, action);
+        case ActionTypes.SET_LIKED:
+            return reduceSetLIked(state, action);
+        case ActionTypes.DECREMENT_LIKE:
+            return reduceDecrementLike(state, action);
         default:
             return state;
     }
@@ -530,7 +546,40 @@ function reduceIncrementLike(state: State, action: Action): State {
             [parentId]: {
                 ...meta,
                 likeCount: Number(likeCount) + 1,
-                liked: true,
+            },
+        },
+    };
+}
+
+function reduceSetLIked(state: State, action: Action): State {
+    const {parentId, messageId} = action.payload;
+    const meta = state.meta[parentId] || {};
+
+    return {
+        ...state,
+        meta: {
+            ...state.meta,
+            [parentId]: {
+                ...meta,
+                liked: messageId,
+            },
+        },
+    };
+}
+
+function reduceDecrementLike(state: State, action: Action): State {
+    const parentId = action.payload;
+    const meta = state.meta[parentId] || {};
+    const likeCount = meta.likeCount || 0;
+
+    return {
+        ...state,
+        meta: {
+            ...state.meta,
+            [parentId]: {
+                ...meta,
+                likeCount: Math.max(0, Number(likeCount) - 1),
+                liked: null,
             },
         },
     };

@@ -2,11 +2,12 @@ import React, {MouseEventHandler, ReactElement, useCallback, useEffect, useState
 import classNames from "classnames";
 import moment from "moment";
 import {
+    decrementLike,
     fetchMeta,
     fetchPost,
     incrementLike,
     incrementReply,
-    incrementRepost,
+    incrementRepost, setLiked,
     useMeta,
     usePost
 } from "../../ducks/posts";
@@ -18,6 +19,7 @@ import "./post.scss";
 import Editor from "../Editor";
 import Modal, {ModalContent, ModalHeader} from "../Modal";
 import {
+    removeMessage,
     submitConnection,
     submitModeration,
     submitPost,
@@ -28,12 +30,12 @@ import {
 import {useDispatch} from "react-redux";
 import {
     ConnectionMessageSubType,
-    MessageType,
+    MessageType, Moderation,
     ModerationMessageSubType,
     Post as PostMessage,
     PostMessageSubType
 } from "../../util/message";
-import {useCanNonPostMessage, useLoggedIn} from "../../ducks/web3";
+import {useAccount, useCanNonPostMessage, useLoggedIn} from "../../ducks/web3";
 import {useHistory} from "react-router";
 import Menuable from "../Menuable";
 import {convertMarkdownToDraft, DraftEditor} from "../DraftEditor";
@@ -455,10 +457,18 @@ function PostFooter(props: {
     const dispatch = useDispatch();
     const [showReply, setShowReply] = useState(false);
 
-    const onLike = useCallback(() => {
-        dispatch(submitModeration(messageId, ModerationMessageSubType.Like));
+    const onLike = useCallback(async () => {
+        const mod: any = await dispatch(submitModeration(messageId, ModerationMessageSubType.Like));
+        const { messageId: mid } = await mod.toJSON();
         dispatch(incrementLike(messageId));
+        dispatch(setLiked(messageId, mid));
     }, [messageId]);
+
+    const onUnike = useCallback(() => {
+        if (!meta?.liked) return;
+        dispatch(removeMessage(meta?.liked));
+        dispatch(decrementLike(messageId));
+    }, [meta?.liked]);
 
     const onRepost = useCallback(() => {
         dispatch(submitRepost(messageId));
@@ -523,7 +533,7 @@ function PostFooter(props: {
                     "fas fa-heart": meta.liked,
                 })}
                 count={meta.likeCount}
-                onClick={meta.liked ? undefined : onLike}
+                onClick={meta.liked ? onUnike : onLike}
                 disabled={!canNonPostMessage || isTweet}
                 large={large}
             />
@@ -556,6 +566,8 @@ function PostMenu(props: Props): ReactElement {
     const post = usePost(props.messageId);
     const user = useUser(post?.creator);
     const dispatch = useDispatch();
+    const account = useAccount();
+    const isCurrentUser = user?.username === account;
 
     const onBlock = useCallback(() => {
         if (!user) return;
@@ -580,10 +592,11 @@ function PostMenu(props: Props): ReactElement {
         )
     }
 
-    return (
-        <Menuable
-            className="post__menu"
-            items={[
+    const postMenuItems = [];
+
+    if (!isCurrentUser) {
+        if (user) {
+            postMenuItems.push(
                 user?.meta?.blocked
                     ? {
                         label: `Unblock @${getName(user)}`,
@@ -599,13 +612,30 @@ function PostMenu(props: Props): ReactElement {
                         className: 'block-user-item',
                         iconClassName: 'text-red-400 hover:text-red-800',
                     },
-                {
-                    label: `Block Post`,
-                    iconFA: 'fas fa-ban',
-                    className: 'block-user-item',
-                    iconClassName: 'text-red-400 hover:text-red-800',
-                },
-            ]}
+            );
+        }
+
+        postMenuItems.push({
+            label: `Block Post`,
+            iconFA: 'fas fa-ban',
+            className: 'block-user-item',
+            disabled: true,
+            iconClassName: 'text-red-400 hover:text-red-800',
+        });
+    } else {
+        postMenuItems.push(                {
+            label: `Delete Post`,
+            iconFA: 'fas fa-trash',
+            className: 'block-user-item',
+            disabled: true,
+            iconClassName: 'text-red-400 hover:text-red-800',
+        });
+    }
+
+    return (
+        <Menuable
+            className="post__menu"
+            items={postMenuItems}
         >
             <Icon
                 className="text-gray-400 hover:text-gray-800"
