@@ -191,9 +191,9 @@ export const setFollowed = (address: string, followed: boolean): Action<{ addres
     payload: {address, followed},
 });
 
-export const setBlocked = (address: string, followed: boolean): Action<{ address: string; followed: boolean }> => ({
+export const setBlocked = (address: string, blocked: boolean): Action<{ address: string; blocked: boolean }> => ({
     type: ActionTypes.SET_BLOCKED,
-    payload: {address, followed},
+    payload: {address, blocked},
 });
 
 export const resetUser = () => {

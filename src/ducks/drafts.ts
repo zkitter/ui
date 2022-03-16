@@ -573,6 +573,18 @@ export const submitProfile = (
     }
 }
 
+export const removeMessage = (messageId: string) => async (dispatch: Dispatch) => {
+    // @ts-ignore
+    if (!gun.user().is) throw new Error('not logged in');
+
+    // @ts-ignore
+    await gun.user()
+        .get('message')
+        .get(messageId)
+        // @ts-ignore
+        .put(null);
+}
+
 export const setMirror = (mirror: boolean): Action<boolean> => ({
     type: ActionTypes.SET_MIRROR,
     payload: mirror,

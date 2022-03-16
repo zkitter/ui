@@ -7,7 +7,15 @@ import "./profile-view.scss";
 import Post from "../../components/Post";
 import Button from "../../components/Button";
 import Icon from "../../components/Icon";
-import {fetchAddressByName, getUser, setUser, useConnectedTwitter, useUser} from "../../ducks/users";
+import {
+    fetchAddressByName,
+    getUser,
+    setBlocked,
+    setFollowed,
+    setUser,
+    useConnectedTwitter,
+    useUser
+} from "../../ducks/users";
 import {
     useAccount,
     useCanNonPostMessage,
@@ -18,7 +26,7 @@ import Modal, {ModalContent, ModalFooter, ModalHeader} from "../../components/Mo
 import Input from "../../components/Input";
 import Textarea from "../../components/Textarea";
 import deepEqual from "fast-deep-equal";
-import {submitConnection, submitProfile} from "../../ducks/drafts";
+import {removeMessage, submitConnection, submitProfile} from "../../ducks/drafts";
 import {ConnectionMessageSubType, ProfileMessageSubType} from "../../util/message";
 import Avatar from "../../components/Avatar";
 import EtherScanSVG from "../../../static/icons/etherscan-logo-gray-500.svg";
@@ -274,10 +282,23 @@ function ProfileCard(): ReactElement {
         dispatch(submitConnection(username, ConnectionMessageSubType.Follow));
     }, [username]);
 
-
     const onBlock = useCallback(() => {
         dispatch(submitConnection(username, ConnectionMessageSubType.Block));
     }, [username]);
+
+    const onUnblock = useCallback(() => {
+        if (user?.meta?.blocked) {
+            dispatch(removeMessage(user?.meta?.blocked));
+            dispatch(setBlocked(user?.username, false))
+        }
+    }, [user?.meta?.blocked]);
+
+    const onUnfollow = useCallback(() => {
+        if (user?.meta?.followed) {
+            dispatch(removeMessage(user?.meta?.followed));
+            dispatch(setFollowed(user?.username, false))
+        }
+    }, [user?.meta?.followed]);
 
     if (!user) {
         return (
@@ -337,7 +358,7 @@ function ProfileCard(): ReactElement {
         currentUserMenuItems.push({
             label: `Unblock @${getName(user)}`,
             iconFA: 'fas fa-user-slash',
-            disabled: true,
+            onClick: onUnblock,
             iconClassName: 'text-gray-400',
         });
     }
@@ -394,9 +415,9 @@ function ProfileCard(): ReactElement {
                                 btnType={user.meta?.followed ? "secondary" : "primary"}
                                 className="mr-2"
                                 disabled={!canNonPostMessage}
-                                onClick={user.meta?.followed ? undefined : onFollow}
+                                onClick={user.meta?.followed ? onUnfollow : onFollow}
                             >
-                                {user.meta?.followed ? 'Followed' : 'Follow'}
+                                {user.meta?.followed ? 'Unfollow' : 'Follow'}
                             </Button>
                         )
                     }
@@ -409,7 +430,7 @@ function ProfileCard(): ReactElement {
                                         ? {
                                             label: `Unblock @${getName(user)}`,
                                             iconFA: 'fas fa-user-slash',
-                                            disabled: true,
+                                            onClick: onUnblock,
                                             iconClassName: 'text-gray-400',
                                         }
                                         : {
