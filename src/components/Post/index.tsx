@@ -17,9 +17,22 @@ import Icon from "../Icon";
 import "./post.scss";
 import Editor from "../Editor";
 import Modal, {ModalContent, ModalHeader} from "../Modal";
-import {submitModeration, submitPost, submitRepost, useDraft, useSubmitting} from "../../ducks/drafts";
+import {
+    submitConnection,
+    submitModeration,
+    submitPost,
+    submitRepost,
+    useDraft,
+    useSubmitting
+} from "../../ducks/drafts";
 import {useDispatch} from "react-redux";
-import {MessageType, ModerationMessageSubType, Post as PostMessage, PostMessageSubType} from "../../util/message";
+import {
+    ConnectionMessageSubType,
+    MessageType,
+    ModerationMessageSubType,
+    Post as PostMessage,
+    PostMessageSubType
+} from "../../util/message";
 import {useCanNonPostMessage, useLoggedIn} from "../../ducks/web3";
 import {useHistory} from "react-router";
 import Menuable from "../Menuable";
@@ -542,6 +555,12 @@ function PostFooter(props: {
 function PostMenu(props: Props): ReactElement {
     const post = usePost(props.messageId);
     const user = useUser(post?.creator);
+    const dispatch = useDispatch();
+
+    const onBlock = useCallback(() => {
+        if (!user) return;
+        dispatch(submitConnection(user?.username, ConnectionMessageSubType.Block));
+    }, [user]);
 
     if (post?.type === MessageType._TWEET) {
         return (
@@ -565,17 +584,26 @@ function PostMenu(props: Props): ReactElement {
         <Menuable
             className="post__menu"
             items={[
-                {
-                    label: `Block @${getHandle(user)}`,
-                    iconFA: 'fas fa-user-slash',
-                    disabled: true,
-                    iconClassName: 'text-gray-400',
-                },
+                user?.meta?.blocked
+                    ? {
+                        label: `Unblock @${getName(user)}`,
+                        iconFA: 'fas fa-user-slash',
+                        disabled: true,
+                        iconClassName: 'text-gray-400',
+                    }
+                    : {
+                        label: `Block @${getName(user)}`,
+                        iconFA: 'fas fa-user-slash',
+                        onClick: onBlock,
+                        disabled: !!user?.meta?.followed,
+                        className: 'block-user-item',
+                        iconClassName: 'text-red-400 hover:text-red-800',
+                    },
                 {
                     label: `Block Post`,
                     iconFA: 'fas fa-ban',
-                    disabled: true,
-                    iconClassName: 'text-gray-400',
+                    className: 'block-user-item',
+                    iconClassName: 'text-red-400 hover:text-red-800',
                 },
             ]}
         >

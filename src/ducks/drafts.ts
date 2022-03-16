@@ -23,7 +23,7 @@ import gun from "../util/gun";
 import {ThunkDispatch} from "redux-thunk";
 import {markdownConvertOptions} from "../components/DraftEditor";
 import config from "../util/config";
-import {setFollowed} from "./users";
+import {setBlocked, setFollowed} from "./users";
 import {updateStatus} from "../util/twitter";
 import {checkPath} from "../util/interrep";
 
@@ -502,6 +502,8 @@ export const submitConnection = (name: string, subtype: ConnectionMessageSubType
 
         if (connection.subtype === ConnectionMessageSubType.Follow) {
             dispatch(setFollowed(connection.payload.name, true));
+        } else if (connection.subtype === ConnectionMessageSubType.Block) {
+            dispatch(setBlocked(connection.payload.name, true));
         }
 
     } catch (e) {

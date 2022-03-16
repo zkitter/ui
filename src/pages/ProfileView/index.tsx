@@ -333,6 +333,15 @@ function ProfileCard(): ReactElement {
         });
     }
 
+    if (user?.meta?.blocked) {
+        currentUserMenuItems.push({
+            label: `Unblock @${getName(user)}`,
+            iconFA: 'fas fa-user-slash',
+            disabled: true,
+            iconClassName: 'text-gray-400',
+        });
+    }
+
     return (
         <div
             className={classNames(
@@ -408,7 +417,7 @@ function ProfileCard(): ReactElement {
                                             iconFA: 'fas fa-user-slash',
                                             onClick: onBlock,
                                             disabled: !!user.meta?.followed,
-                                            className: 'profile-view__menu__block-user-item',
+                                            className: 'block-user-item',
                                             iconClassName: 'text-red-400 hover:text-red-800',
                                         },
                                 ]}

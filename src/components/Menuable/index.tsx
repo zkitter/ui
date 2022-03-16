@@ -132,6 +132,7 @@ export default function Menuable(props: MenuableProps): ReactElement {
                                     "menuable__menu__item hover:bg-gray-50 ",
                                     {
                                         'cursor-pointer': !item.disabled,
+                                        'cursor-default': item.disabled,
                                     },
                                     item.className,
                                 )}

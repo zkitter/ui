@@ -16,16 +16,6 @@
   &__menu {
     left: auto;
     right: 0;
-
-    .profile-view__menu__block-user-item {
-      .menuable__menu__item__label {
-        color: $red-400;
-
-        &:hover {
-          color: $red-800;
-        }
-      }
-    }
   }
 
   &__menu-btn {

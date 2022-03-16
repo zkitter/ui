@@ -10,7 +10,9 @@ import {getContextNameFromState} from "./posts";
 
 enum ActionTypes {
     SET_USER = 'users/setUser',
+    RESET_USERS = 'users/resetUsers',
     SET_FOLLOWED = 'users/setFollowed',
+    SET_BLOCKED = 'users/setBlocked',
     SET_USER_ADDRESS = 'users/setUserAddress',
 }
 
@@ -56,8 +58,8 @@ const initialState: State = {
     map: {},
 };
 
-const fetchPromises: any = {};
-const cachedUser: any = {};
+let fetchPromises: any = {};
+let cachedUser: any = {};
 
 export const fetchAddressByName = (ens: string) => async (dispatch: Dispatch) => {
     const address = await _fetchAddressByName(ens);
@@ -189,6 +191,19 @@ export const setFollowed = (address: string, followed: boolean): Action<{ addres
     payload: {address, followed},
 });
 
+export const setBlocked = (address: string, followed: boolean): Action<{ address: string; followed: boolean }> => ({
+    type: ActionTypes.SET_BLOCKED,
+    payload: {address, followed},
+});
+
+export const resetUser = () => {
+    fetchPromises = {};
+    cachedUser = {};
+    return {
+        type: ActionTypes.RESET_USERS,
+    }
+};
+
 const processUserPayload = (user: any) => (dispatch: Dispatch) => {
     const payload: User = {
         address: user.username,
@@ -281,6 +296,10 @@ export default function users(state = initialState, action: Action<any>): State 
     switch (action.type) {
         case ActionTypes.SET_USER:
             return reduceSetUser(state, action);
+        case ActionTypes.RESET_USERS:
+            return {
+                map: {},
+            };
         case ActionTypes.SET_FOLLOWED:
             return {
                 ...state,
@@ -291,6 +310,20 @@ export default function users(state = initialState, action: Action<any>): State 
                         meta: {
                             ...state.map[action.payload.address]?.meta,
                             followed: action.payload.followed,
+                        },
+                    },
+                },
+            };
+        case ActionTypes.SET_BLOCKED:
+            return {
+                ...state,
+                map: {
+                    ...state.map,
+                    [action.payload.address]: {
+                        ...state.map[action.payload.address],
+                        meta: {
+                            ...state.map[action.payload.address]?.meta,
+                            blocked: action.payload.blocked,
                         },
                     },
                 },
