@@ -177,6 +177,34 @@ function ProfileMenuButton(props: {
 
 function PostList(props: { list: string[]; fetching: boolean }): ReactElement {
     const gotoPost = useGoToPost();
+    const {name} = useParams<{name: string}>();
+    const [username, setUsername] = useState('');
+    const user = useUser(username);
+    const dispatch = useDispatch();
+
+    useEffect(() => {
+        (async () => {
+            if (!Web3.utils.isAddress(name)) {
+                const address: any = await dispatch(fetchAddressByName(name));
+                setUsername(address);
+            } else {
+                setUsername(name);
+            }
+        })();
+    }, [name]);
+
+    if (user?.meta?.blocked) {
+        return (
+            <div
+                className={classNames(
+                    'flex flex-row flex-nowrap items-center justify-center',
+                    'py-6 px-4 border border-gray-200 rounded-xl text-sm text-gray-300',
+                )}
+            >
+                User is blocked
+            </div>
+        )
+    }
 
     if (!props.list.length && !props.fetching) {
         return (
@@ -246,6 +274,11 @@ function ProfileCard(): ReactElement {
         dispatch(submitConnection(username, ConnectionMessageSubType.Follow));
     }, [username]);
 
+
+    const onBlock = useCallback(() => {
+        dispatch(submitConnection(username, ConnectionMessageSubType.Block));
+    }, [username]);
+
     if (!user) {
         return (
             <div
@@ -311,8 +344,8 @@ function ProfileCard(): ReactElement {
         >
             { showingEditor && <ProfileEditor onClose={() => showProfileEditor(false)} /> }
             {
-                !user.coverImage
-                    ? <div className="h-48 w-full object-cover flex-shrink-0 bg-gray-100" />
+                !user.coverImage || user.meta?.blocked
+                    ? <div className="h-48 w-full object-cover flex-shrink-0 bg-gray-200" />
                     : (
                         <img
                             className="h-48 w-full object-cover flex-shrink-0"
@@ -321,10 +354,16 @@ function ProfileCard(): ReactElement {
                     )
             }
             <div className="flex flex-row flew-nowrap flex-shrink-0 items-end pl-4 relative -mt-15">
-                <Avatar
-                    className="h-32 w-32 rounded-full border-4 border-white bg-gray-100"
-                    address={user.address}
-                />
+                {
+                    user.meta?.blocked
+                        ? <div className="h-32 w-32 object-cover rounded-full border-4 border-white bg-gray-200" />
+                        : (
+                            <Avatar
+                                className="h-32 w-32 rounded-full border-4 border-white bg-gray-100"
+                                address={user.address}
+                            />
+                        )
+                }
                 <div className="flex flex-row flex-nowrap flex-grow justify-end mb-4 mx-4">
                     {
                         isCurrentUser && (
@@ -341,7 +380,7 @@ function ProfileCard(): ReactElement {
                         )
                     }
                     {
-                        !isCurrentUser && (
+                        !isCurrentUser && !user.meta?.blocked && (
                             <Button
                                 btnType={user.meta?.followed ? "secondary" : "primary"}
                                 className="mr-2"
@@ -357,12 +396,21 @@ function ProfileCard(): ReactElement {
                             <Menuable
                                 menuClassName="profile-view__menu"
                                 items={[
-                                    {
-                                        label: `Block @${getName(user)}`,
-                                        iconFA: 'fas fa-user-slash',
-                                        disabled: true,
-                                        iconClassName: 'text-gray-400',
-                                    },
+                                    user.meta?.blocked
+                                        ? {
+                                            label: `Unblock @${getName(user)}`,
+                                            iconFA: 'fas fa-user-slash',
+                                            disabled: true,
+                                            iconClassName: 'text-gray-400',
+                                        }
+                                        : {
+                                            label: `Block @${getName(user)}`,
+                                            iconFA: 'fas fa-user-slash',
+                                            onClick: onBlock,
+                                            disabled: !!user.meta?.followed,
+                                            className: 'profile-view__menu__block-user-item',
+                                            iconClassName: 'text-red-400 hover:text-red-800',
+                                        },
                                 ]}
                             >
                                 <Button
@@ -381,7 +429,7 @@ function ProfileCard(): ReactElement {
                 <div className="text-sm text-gray-500">@{getHandle(user)}</div>
             </div>
             <div className="px-4 py-3 text-light">
-                { user.bio }
+                { user.meta?.blocked ? "" : user.bio }
             </div>
             <div className="px-4 flex flex-row flex-nowrap profile-view__datas">
                 {
