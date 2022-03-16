@@ -2,12 +2,12 @@ import React, {MouseEventHandler, ReactElement, useCallback, useEffect, useState
 import classNames from "classnames";
 import moment from "moment";
 import {
-    decrementLike,
+    decrementLike, decrementRepost,
     fetchMeta,
     fetchPost,
     incrementLike,
     incrementReply,
-    incrementRepost, setLiked,
+    incrementRepost, setLiked, setReposted,
     useMeta,
     usePost
 } from "../../ducks/posts";
@@ -468,12 +468,22 @@ function PostFooter(props: {
         if (!meta?.liked) return;
         dispatch(removeMessage(meta?.liked));
         dispatch(decrementLike(messageId));
+        dispatch(setLiked(messageId, null));
     }, [meta?.liked]);
 
-    const onRepost = useCallback(() => {
-        dispatch(submitRepost(messageId));
+    const onRepost = useCallback(async () => {
+        const post: any = await dispatch(submitRepost(messageId));
+        const { messageId: mid } = await post.toJSON();
         dispatch(incrementRepost(messageId));
+        dispatch(setReposted(messageId, mid));
     }, [messageId]);
+
+    const onUnrepost = useCallback(() => {
+        if (!meta?.reposted) return;
+        dispatch(removeMessage(meta?.reposted));
+        dispatch(decrementRepost(messageId));
+        dispatch(setReposted(messageId, null));
+    }, [meta?.reposted]);
 
     // @ts-ignore
     const isMirrorTweet = [PostMessageSubType.MirrorPost, PostMessageSubType.MirrorReply].includes(post?.subtype);
@@ -514,7 +524,7 @@ function PostFooter(props: {
                 )}
                 fa="fas fa-retweet"
                 count={meta.repostCount}
-                onClick={meta.reposted ? undefined : onRepost}
+                onClick={meta.reposted ? onUnrepost : onRepost}
                 disabled={!canNonPostMessage || isTweet}
                 large={large}
             />

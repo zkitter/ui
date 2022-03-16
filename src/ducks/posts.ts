@@ -17,8 +17,10 @@ enum ActionTypes {
     INCREMENT_REPLY = 'posts/incrementReply',
     INCREMENT_LIKE = 'posts/incrementLike',
     SET_LIKED = 'posts/setLiked',
+    SET_REPOSTED = 'posts/setReposted',
     DECREMENT_LIKE = 'posts/decrementLike',
     INCREMENT_REPOST = 'posts/incrementRepost',
+    DECREMENT_REPOST = 'posts/decrementRepost',
     APPEND_POSTS = 'posts/appendPosts',
 }
 
@@ -33,8 +35,8 @@ type PostMeta = {
     replyCount: number;
     likeCount: number;
     repostCount: number;
-    liked: string;
-    reposted: string;
+    liked: string | null;
+    reposted: string | null;
     interepProvider?: string;
     interepGroup?: string;
 }
@@ -129,8 +131,13 @@ export const incrementLike = (parentId: string) => ({
     payload: parentId,
 });
 
-export const setLiked = (parentId: string, messageId: string) => ({
+export const setLiked = (parentId: string, messageId: string | null) => ({
     type: ActionTypes.SET_LIKED,
+    payload: {parentId, messageId},
+});
+
+export const setReposted = (parentId: string, messageId: string | null) => ({
+    type: ActionTypes.SET_REPOSTED,
     payload: {parentId, messageId},
 });
 
@@ -141,6 +148,11 @@ export const decrementLike = (parentId: string) => ({
 
 export const incrementRepost = (parentId: string) => ({
     type: ActionTypes.INCREMENT_REPOST,
+    payload: parentId,
+});
+
+export const decrementRepost = (parentId: string) => ({
+    type: ActionTypes.DECREMENT_REPOST,
     payload: parentId,
 });
 
@@ -444,9 +456,13 @@ export default function posts(state = initialState, action: Action): State {
         case ActionTypes.INCREMENT_LIKE:
             return reduceIncrementLike(state, action);
         case ActionTypes.SET_LIKED:
-            return reduceSetLIked(state, action);
+            return reduceSetLiked(state, action);
+        case ActionTypes.SET_REPOSTED:
+            return reduceSetReposted(state, action);
         case ActionTypes.DECREMENT_LIKE:
             return reduceDecrementLike(state, action);
+        case ActionTypes.DECREMENT_REPOST:
+            return reduceDecrementRepost(state, action);
         default:
             return state;
     }
@@ -528,7 +544,6 @@ function reduceIncrementRepost(state: State, action: Action): State {
             [parentId]: {
                 ...meta,
                 repostCount: Number(repostCount) + 1,
-                reposted: true,
             },
         },
     };
@@ -551,7 +566,7 @@ function reduceIncrementLike(state: State, action: Action): State {
     };
 }
 
-function reduceSetLIked(state: State, action: Action): State {
+function reduceSetLiked(state: State, action: Action): State {
     const {parentId, messageId} = action.payload;
     const meta = state.meta[parentId] || {};
 
@@ -562,6 +577,22 @@ function reduceSetLIked(state: State, action: Action): State {
             [parentId]: {
                 ...meta,
                 liked: messageId,
+            },
+        },
+    };
+}
+
+function reduceSetReposted(state: State, action: Action): State {
+    const {parentId, messageId} = action.payload;
+    const meta = state.meta[parentId] || {};
+
+    return {
+        ...state,
+        meta: {
+            ...state.meta,
+            [parentId]: {
+                ...meta,
+                reposted: messageId,
             },
         },
     };
@@ -579,7 +610,23 @@ function reduceDecrementLike(state: State, action: Action): State {
             [parentId]: {
                 ...meta,
                 likeCount: Math.max(0, Number(likeCount) - 1),
-                liked: null,
+            },
+        },
+    };
+}
+
+function reduceDecrementRepost(state: State, action: Action): State {
+    const parentId = action.payload;
+    const meta = state.meta[parentId] || {};
+    const repostCount = meta.repostCount || 0;
+
+    return {
+        ...state,
+        meta: {
+            ...state.meta,
+            [parentId]: {
+                ...meta,
+                repostCount: Math.max(0, Number(repostCount) - 1),
             },
         },
     };

@@ -391,6 +391,8 @@ export const submitRepost = (reference = '') => async (dispatch: Dispatch, getSt
         });
 
         dispatch(emptyDraft(reference));
+
+        return post;
     } catch (e) {
         dispatch({
             type: ActionTypes.SET_SUBMITTING,
