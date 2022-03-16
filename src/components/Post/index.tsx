@@ -7,11 +7,11 @@ import {
     fetchPost,
     incrementLike,
     incrementReply,
-    incrementRepost, setLiked, setReposted,
+    incrementRepost, setLiked, setReposted, unsetPost,
     useMeta,
     usePost
 } from "../../ducks/posts";
-import {useUser} from "../../ducks/users";
+import {setBlocked, useUser} from "../../ducks/users";
 import Avatar from "../Avatar";
 import "../../util/variable.scss";
 import Icon from "../Icon";
@@ -41,7 +41,6 @@ import Menuable from "../Menuable";
 import {convertMarkdownToDraft, DraftEditor} from "../DraftEditor";
 import URLPreview from "../URLPreview";
 import {getHandle, getName, getUsername} from "../../util/user";
-import {getGroupName} from "../../util/interrep";
 import Nickname from "../Nickname";
 
 
@@ -67,6 +66,14 @@ export default function Post(props: Props): ReactElement {
         ? referencedPost
         : originalPost;
     const dispatch = useDispatch();
+    const [deleted, setDeleted] = useState(false);
+
+    const onDeletePost = useCallback(() => {
+        if (!props.messageId) return;
+        dispatch(removeMessage(props.messageId));
+        dispatch(unsetPost(props.messageId));
+        setDeleted(true);
+    }, [props.messageId]);
 
     useEffect(() => {
         if (!post) {
@@ -77,10 +84,12 @@ export default function Post(props: Props): ReactElement {
 
     if (!post) return <LoadingPost {...props} />;
 
+    if (deleted) return <></>;
+
     return (
         <>
-            { !expand && <RegularPost key={props.messageId} {...props} /> }
-            { !!expand && <ExpandedPost key={props.messageId} {...props} /> }
+            {!expand && <RegularPost key={props.messageId} onDeletePost={onDeletePost} {...props} />}
+            {!!expand && <ExpandedPost key={props.messageId} onDeletePost={onDeletePost} {...props} />}
         </>
     );
 }
@@ -92,7 +101,7 @@ type ReplyEditorModalProps = {
 }
 
 function ReplyEditorModal(props: ReplyEditorModalProps): ReactElement {
-    const { messageId, onClose } = props;
+    const {messageId, onClose} = props;
     const dispatch = useDispatch();
     const post = usePost(props.messageId);
     const draft = useDraft(props.messageId);
@@ -130,7 +139,9 @@ function ReplyEditorModal(props: ReplyEditorModalProps): ReactElement {
     );
 }
 
-export function ExpandedPost(props: Props): ReactElement {
+export function ExpandedPost(props: Props & {
+    onDeletePost: () => void;
+}): ReactElement {
     const originalPost = usePost(props.messageId);
     const referencedPost = usePost(originalPost?.payload.reference);
     const messageId = originalPost?.subtype === PostMessageSubType.Repost
@@ -188,7 +199,7 @@ export function ExpandedPost(props: Props): ReactElement {
                     </div>
                 </div>
                 <div className="flex flex-row flex-nowrap flex-grow flex-shrink justify-end">
-                    <PostMenu messageId={messageId} />
+                    <PostMenu messageId={messageId} onDeletePost={props.onDeletePost}/>
                 </div>
             </div>
             <div className="flex flex-col flex-nowrap items-start flex-grow flex-shrink">
@@ -253,7 +264,9 @@ export function ExpandedPost(props: Props): ReactElement {
     );
 }
 
-export function RegularPost(props: Props): ReactElement {
+export function RegularPost(props: Props & {
+    onDeletePost: () => void;
+}): ReactElement {
     const {
         isParent,
     } = props;
@@ -320,7 +333,7 @@ export function RegularPost(props: Props): ReactElement {
                         incognito={post.creator === ''}
                         twitterUsername={post.type === MessageType._TWEET ? post.creator : undefined}
                     />
-                    { !!isParent && <div className="post__parent-line" /> }
+                    {!!isParent && <div className="post__parent-line"/>}
                 </div>
                 <div className="flex flex-col flex-nowrap items-start flex-grow flex-shrink w-0">
                     <div
@@ -367,7 +380,7 @@ export function RegularPost(props: Props): ReactElement {
                             {moment(post.createdAt).fromNow(true)}
                         </div>
                         <div className="flex flex-row flex-nowrap flex-grow flex-shrink justify-end">
-                            <PostMenu messageId={messageId} />
+                            <PostMenu messageId={messageId} onDeletePost={props.onDeletePost}/>
                         </div>
                     </div>
                     <div
@@ -459,7 +472,7 @@ function PostFooter(props: {
 
     const onLike = useCallback(async () => {
         const mod: any = await dispatch(submitModeration(messageId, ModerationMessageSubType.Like));
-        const { messageId: mid } = await mod.toJSON();
+        const {messageId: mid} = await mod.toJSON();
         dispatch(incrementLike(messageId));
         dispatch(setLiked(messageId, mid));
     }, [messageId]);
@@ -473,7 +486,7 @@ function PostFooter(props: {
 
     const onRepost = useCallback(async () => {
         const post: any = await dispatch(submitRepost(messageId));
-        const { messageId: mid } = await post.toJSON();
+        const {messageId: mid} = await post.toJSON();
         dispatch(incrementRepost(messageId));
         dispatch(setReposted(messageId, mid));
     }, [messageId]);
@@ -497,7 +510,7 @@ function PostFooter(props: {
                 className,
             )}
         >
-            { showReply && (
+            {showReply && (
                 <ReplyEditorModal
                     onClose={() => setShowReply(false)}
                     onSuccessPost={props.onSuccessPost}
@@ -572,7 +585,9 @@ function PostFooter(props: {
     );
 }
 
-function PostMenu(props: Props): ReactElement {
+function PostMenu(props: Props & {
+    onDeletePost: () => void;
+}): ReactElement {
     const post = usePost(props.messageId);
     const user = useUser(post?.creator);
     const dispatch = useDispatch();
@@ -583,6 +598,19 @@ function PostMenu(props: Props): ReactElement {
         if (!user) return;
         dispatch(submitConnection(user?.username, ConnectionMessageSubType.Block));
     }, [user]);
+
+    const onUnblock = useCallback(() => {
+        if (user?.meta?.blocked) {
+            dispatch(removeMessage(user?.meta?.blocked));
+            dispatch(setBlocked(user?.username, false))
+        }
+    }, [user?.meta?.blocked]);
+
+    const onDeletePost = useCallback(() => {
+        if (!props.messageId) return;
+        dispatch(removeMessage(props.messageId));
+        dispatch(unsetPost(props.messageId));
+    }, [props.messageId]);
 
     if (post?.type === MessageType._TWEET) {
         return (
@@ -611,7 +639,7 @@ function PostMenu(props: Props): ReactElement {
                     ? {
                         label: `Unblock @${getName(user)}`,
                         iconFA: 'fas fa-user-slash',
-                        disabled: true,
+                        onClick: onUnblock,
                         iconClassName: 'text-gray-400',
                     }
                     : {
@@ -633,11 +661,11 @@ function PostMenu(props: Props): ReactElement {
             iconClassName: 'text-red-400 hover:text-red-800',
         });
     } else {
-        postMenuItems.push(                {
+        postMenuItems.push({
             label: `Delete Post`,
             iconFA: 'fas fa-trash',
             className: 'block-user-item',
-            disabled: true,
+            onClick: props.onDeletePost,
             iconClassName: 'text-red-400 hover:text-red-800',
         });
     }
@@ -670,23 +698,24 @@ export function LoadingPost(props: Props): ReactElement {
                 )}
             >
                 <div className="flex flex-row flex-nowrap flex-grow-0 flex-shrink-0">
-                    <div className="mr-3 w-12 h-12 flex-shrink-0 rounded-full bg-gray-50" />
+                    <div className="mr-3 w-12 h-12 flex-shrink-0 rounded-full bg-gray-50"/>
                     <div className="flex flex-col flex-nowrap items-start text-light w-full">
-                        <div className="font-bold text-base mr-1 w-24 h-6 bg-gray-50" />
-                        <div className="text-gray-400 mr-1 mt-0.5 w-24 h-6 bg-gray-50" />
+                        <div className="font-bold text-base mr-1 w-24 h-6 bg-gray-50"/>
+                        <div className="text-gray-400 mr-1 mt-0.5 w-24 h-6 bg-gray-50"/>
                     </div>
                     <div className="flex flex-row flex-nowrap flex-grow flex-shrink justify-end">
                     </div>
                 </div>
                 <div className="flex flex-col flex-nowrap items-start flex-grow flex-shrink">
-                    <div className="mt-4 mb-2 text-xl w-24 h-6 bg-gray-50" />
+                    <div className="mt-4 mb-2 text-xl w-24 h-6 bg-gray-50"/>
                     <div className="flex flex-row flex-nowrap items-center text-light w-full">
-                        <div className="text-gray-500 my-2w-24 h-6 bg-gray-50" />
+                        <div className="text-gray-500 my-2w-24 h-6 bg-gray-50"/>
                     </div>
-                    <div className="flex flex-row flex-nowrap items-center mt-2 pt-3 border-t border-gray-100 w-full post__footer">
-                        <div className="bg-gray-50 w-12 h-6 mr-8" />
-                        <div className="bg-gray-50 w-12 h-6 mr-8" />
-                        <div className="bg-gray-50 w-12 h-6 mr-8" />
+                    <div
+                        className="flex flex-row flex-nowrap items-center mt-2 pt-3 border-t border-gray-100 w-full post__footer">
+                        <div className="bg-gray-50 w-12 h-6 mr-8"/>
+                        <div className="bg-gray-50 w-12 h-6 mr-8"/>
+                        <div className="bg-gray-50 w-12 h-6 mr-8"/>
                     </div>
                 </div>
             </div>
@@ -703,20 +732,20 @@ export function LoadingPost(props: Props): ReactElement {
                 props.className,
             )}
         >
-            <div className="mr-3 w-12 h-12 rounded-full bg-gray-50" />
+            <div className="mr-3 w-12 h-12 rounded-full bg-gray-50"/>
             <div className="flex flex-col flex-nowrap items-start flex-grow flex-shrink">
                 <div className="flex flex-row flex-nowrap items-center text-light w-full">
-                    <div className="font-bold text-base mr-1 w-24 h-6 bg-gray-50" />
-                    <div className="text-gray-400 mr-1 w-24 h-6 bg-gray-50" />
-                    <div className="text-gray-400 w-24 h-6 bg-gray-50" />
+                    <div className="font-bold text-base mr-1 w-24 h-6 bg-gray-50"/>
+                    <div className="text-gray-400 mr-1 w-24 h-6 bg-gray-50"/>
+                    <div className="text-gray-400 w-24 h-6 bg-gray-50"/>
                     <div className="flex flex-row flex-nowrap flex-grow flex-shrink justify-end">
                     </div>
                 </div>
-                <div className="text-light mt-1 mb-2 w-80 h-6 bg-gray-50" />
+                <div className="text-light mt-1 mb-2 w-80 h-6 bg-gray-50"/>
                 <div className="flex flex-row flex-nowrap items-center post__footer">
-                    <div className="bg-gray-50 w-8 h-4 mr-8 ml-1" />
-                    <div className="bg-gray-50 w-8 h-4 mr-8" />
-                    <div className="bg-gray-50 w-8 h-4 mr-8" />
+                    <div className="bg-gray-50 w-8 h-4 mr-8 ml-1"/>
+                    <div className="bg-gray-50 w-8 h-4 mr-8"/>
+                    <div className="bg-gray-50 w-8 h-4 mr-8"/>
                 </div>
             </div>
         </div>

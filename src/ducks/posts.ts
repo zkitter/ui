@@ -13,6 +13,7 @@ import {useCallback} from "react";
 enum ActionTypes {
     SET_POSTS = 'posts/setPosts',
     SET_POST = 'posts/setPost',
+    UNSET_POST = 'posts/unsetPost',
     SET_META = 'posts/setMeta',
     INCREMENT_REPLY = 'posts/incrementReply',
     INCREMENT_LIKE = 'posts/incrementLike',
@@ -119,6 +120,11 @@ export const fetchPost = (messageId: string) =>
 export const setPost = (post: Post) => ({
     type: ActionTypes.SET_POST,
     payload: post,
+});
+
+export const unsetPost = (messageId: string) => ({
+    type: ActionTypes.UNSET_POST,
+    payload: messageId,
 });
 
 export const incrementReply = (parentId: string) => ({
@@ -445,6 +451,8 @@ export default function posts(state = initialState, action: Action): State {
             return reduceSetPosts(state, action);
         case ActionTypes.SET_POST:
             return reduceSetPost(state, action);
+        case ActionTypes.UNSET_POST:
+            return reduceUnsetPost(state, action);
         case ActionTypes.SET_META:
             return reduceSetMeta(state, action);
         case ActionTypes.APPEND_POSTS:
@@ -479,6 +487,23 @@ function reduceSetPost(state: State, action: Action): State {
             ...state.map,
             [messageId]: post
         },
+    };
+}
+
+function reduceUnsetPost(state: State, action: Action): State {
+    const messageId = action.payload as string;
+
+    const newMap = {
+        ...state.map,
+    };
+
+    if (newMap[messageId]) {
+        delete newMap[messageId];
+    }
+
+    return {
+        ...state,
+        map: newMap,
     };
 }
 
