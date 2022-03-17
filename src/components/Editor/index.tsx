@@ -14,7 +14,7 @@ import Button from "../Button";
 import {DraftEditor} from "../DraftEditor";
 import Icon from "../Icon";
 import Input from "../Input";
-import drafts, {setDraft, setMirror, useDraft, useMirror} from "../../ducks/drafts";
+import drafts, {setDraft, setMirror, setModeration, useDraft, useMirror} from "../../ducks/drafts";
 import {useDispatch} from "react-redux";
 import URLPreview from "../URLPreview";
 import SpinnerGif from "../../../static/icons/spinner.gif";
@@ -23,6 +23,8 @@ import {useSelectedLocalId} from "../../ducks/worker";
 import {useHistory} from "react-router";
 import Checkbox from "../Checkbox";
 import {getSession, verifyTweet} from "../../util/twitter";
+import ModerationButton from "../ModerationButton";
+import {ModerationMessageSubType} from "../../util/message";
 
 type Props = {
     messageId: string;
@@ -97,8 +99,14 @@ export default function Editor(props: Props): ReactElement {
             editorState: newEditorState,
             reference: messageId,
             attachment: draft.attachment,
+            moderation: draft.moderation,
         }));
     }, [messageId, readOnly, draft]);
+
+    const onModerationChange = useCallback((type: ModerationMessageSubType | null) => {
+        if (readOnly) return;
+        dispatch(setModeration(messageId || '', type));
+    }, [messageId]);
 
     const onSetMirror = useCallback(async (e) => {
         const checked = e.target.checked;
@@ -231,7 +239,10 @@ export default function Editor(props: Props): ReactElement {
                     placeholder={readOnly ? '' : "Write here..."}
                     readOnly={readOnly || disabled}
                 />
-
+                <ModerationButton
+                    onChange={onModerationChange}
+                    currentType={draft.moderation || null}
+                />
                 {
                     draft.attachment && (
                         <div className="editor__attachment py-2">
@@ -300,7 +311,7 @@ function LinkIcon(props: {
 
     return (
         <Icon
-            className={classNames("editor__button text-gray-400 w-8 h-8 relative",
+            className={classNames("editor__button text-blue-300 w-8 h-8 relative",
                 {
                     'bg-red-50 text-red-400': showingInput,
                     'hover:bg-blue-50 hover:text-blue-400': !showingInput,

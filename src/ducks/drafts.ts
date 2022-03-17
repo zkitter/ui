@@ -29,6 +29,7 @@ const { draftToMarkdown } = require('markdown-draft-js');
 
 enum ActionTypes {
     SET_DRAFT = 'drafts/setDraft',
+    SET_MODERATION = 'drafts/setModeration',
     SET_ATTACHMENT = 'drafts/setAttachment',
     SET_SUBMITTING = 'drafts/setSubmitting',
     SET_MIRROR = 'drafts/setMirror',
@@ -51,6 +52,7 @@ type State = {
 
 type Draft = {
     attachment?: string;
+    moderation?: ModerationMessageSubType | null;
     reference: string;
     editorState: EditorState;
 }
@@ -65,6 +67,19 @@ export const setDraft = (draft: Draft): Action<Draft> => {
     return {
         type: ActionTypes.SET_DRAFT,
         payload: draft,
+    };
+}
+
+export const setModeration = (messageId: string, moderation: ModerationMessageSubType | null): Action<{
+    messageId: string;
+    moderation: ModerationMessageSubType | null;
+}> => {
+    return {
+        type: ActionTypes.SET_MODERATION,
+        payload: {
+            messageId,
+            moderation,
+        },
     };
 }
 
@@ -332,6 +347,10 @@ export const submitPost = (reference = '') => async (dispatch: ThunkDispatch<any
         });
 
         dispatch(emptyDraft(reference));
+
+        if (draft.moderation) {
+            await dispatch(submitModeration(messageId, draft.moderation));
+        }
 
         return post;
     } catch (e) {
@@ -629,6 +648,17 @@ export default function drafts(state = initialState, action: Action<any>): State
                 map: {
                     ...state.map,
                     [action.payload.reference || '']: action.payload,
+                },
+            };
+        case ActionTypes.SET_MODERATION:
+            return {
+                ...state,
+                map: {
+                    ...state.map,
+                    [action.payload.messageId || '']: {
+                        ...state.map[action.payload.messageId || ''],
+                        moderation: action.payload.moderation,
+                    },
                 },
             };
         case ActionTypes.SET_SUBMITTING:

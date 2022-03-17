@@ -69,7 +69,7 @@ export default function HomeFeed(): ReactElement {
                         <Post
                             key={messageId}
                             // key={i}
-                            className="rounded-xl transition-colors mb-1 hover:border-gray-400 cursor-pointer border border-gray-200"
+                            className="rounded-xl transition-colors mb-1 hover:border-gray-300 cursor-pointer border border-gray-200"
                             messageId={messageId}
                             onClick={() => gotoPost(messageId)}
                         />

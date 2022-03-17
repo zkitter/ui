@@ -234,7 +234,7 @@ function PostList(props: { list: string[]; fetching: boolean }): ReactElement {
                     return (
                         <Post
                             key={messageId}
-                            className="rounded-xl transition-colors mb-1 hover:border-gray-400 cursor-pointer border border-gray-200"
+                            className="rounded-xl transition-colors mb-1 hover:border-gray-300 cursor-pointer border border-gray-200"
                             messageId={messageId}
                             onClick={() => gotoPost(messageId)}
                         />
@@ -289,14 +289,14 @@ function ProfileCard(): ReactElement {
     const onUnblock = useCallback(() => {
         if (user?.meta?.blocked) {
             dispatch(removeMessage(user?.meta?.blocked));
-            dispatch(setBlocked(user?.username, false))
+            dispatch(setBlocked(user?.username, null))
         }
     }, [user?.meta?.blocked]);
 
     const onUnfollow = useCallback(() => {
         if (user?.meta?.followed) {
             dispatch(removeMessage(user?.meta?.followed));
-            dispatch(setFollowed(user?.username, false))
+            dispatch(setFollowed(user?.username, null))
         }
     }, [user?.meta?.followed]);
 

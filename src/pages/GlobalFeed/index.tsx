@@ -66,7 +66,7 @@ export default function GlobalFeed(): ReactElement {
                         <Post
                             key={messageId}
                             // key={i}
-                            className="rounded-xl transition-colors mb-1 hover:border-gray-400 cursor-pointer border border-gray-200"
+                            className="rounded-xl transition-colors mb-1 hover:border-gray-300 cursor-pointer border border-gray-200"
                             messageId={messageId}
                             onClick={() => gotoPost(messageId)}
                         />
@@ -97,7 +97,7 @@ function PostEditor(props: {
         <Editor
             messageId=""
             className={classNames("mb-1 transition-shadow border border-gray-200", {
-                'focus-within:border-gray-400': loggedIn,
+                'focus-within:border-gray-300': loggedIn,
             })}
             editorState={draft.editorState}
             onPost={onPost}

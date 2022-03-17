@@ -45,6 +45,17 @@ div.public-DraftEditor-content {
   &__wrapper {
     flex: 1 1 auto;
     width: 0;
+
+    .moderation-btn {
+      //display: none;
+      margin-bottom: .5rem;
+    }
+
+    //&:focus-within {
+    //  .moderation-btn {
+    //    display: flex;
+    //  }
+    //}
   }
 
   &__button {
