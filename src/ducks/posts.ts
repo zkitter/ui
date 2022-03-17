@@ -18,6 +18,7 @@ enum ActionTypes {
     INCREMENT_REPLY = 'posts/incrementReply',
     INCREMENT_LIKE = 'posts/incrementLike',
     SET_LIKED = 'posts/setLiked',
+    SET_BLOCKED = 'posts/setBlocked',
     SET_REPOSTED = 'posts/setReposted',
     DECREMENT_LIKE = 'posts/decrementLike',
     INCREMENT_REPOST = 'posts/incrementRepost',
@@ -36,6 +37,7 @@ type PostMeta = {
     replyCount: number;
     likeCount: number;
     repostCount: number;
+    blocked: string | null;
     liked: string | null;
     reposted: string | null;
     interepProvider?: string;
@@ -144,6 +146,11 @@ export const setLiked = (parentId: string, messageId: string | null) => ({
 
 export const setReposted = (parentId: string, messageId: string | null) => ({
     type: ActionTypes.SET_REPOSTED,
+    payload: {parentId, messageId},
+});
+
+export const setBlockedPost = (parentId: string, messageId: string | null) => ({
+    type: ActionTypes.SET_BLOCKED,
     payload: {parentId, messageId},
 });
 
@@ -418,7 +425,6 @@ export const useMeta = (messageId: string)  => {
             replyCount: 0,
             repostCount: 0,
             likeCount: 0,
-            liked: 0,
             reposted: 0,
         };
     }, deepEqual);
@@ -465,6 +471,8 @@ export default function posts(state = initialState, action: Action): State {
             return reduceIncrementLike(state, action);
         case ActionTypes.SET_LIKED:
             return reduceSetLiked(state, action);
+        case ActionTypes.SET_BLOCKED:
+            return reduceSetBlocked(state, action);
         case ActionTypes.SET_REPOSTED:
             return reduceSetReposted(state, action);
         case ActionTypes.DECREMENT_LIKE:
@@ -602,6 +610,22 @@ function reduceSetLiked(state: State, action: Action): State {
             [parentId]: {
                 ...meta,
                 liked: messageId,
+            },
+        },
+    };
+}
+
+function reduceSetBlocked(state: State, action: Action): State {
+    const {parentId, messageId} = action.payload;
+    const meta = state.meta[parentId] || {};
+
+    return {
+        ...state,
+        meta: {
+            ...state.meta,
+            [parentId]: {
+                ...meta,
+                blocked: messageId,
             },
         },
     };

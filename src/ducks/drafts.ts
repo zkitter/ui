@@ -1,8 +1,5 @@
 import {useSelector} from "react-redux";
-import {
-    Semaphore,
-    genExternalNullifier,
-} from '@zk-kit/protocols';
+import {genExternalNullifier, Semaphore,} from '@zk-kit/protocols';
 import {Strategy, ZkIdentity} from '@zk-kit/identity'
 import {AppRootState} from "../store/configureAppStore";
 import deepEqual from "fast-deep-equal";
@@ -26,6 +23,7 @@ import config from "../util/config";
 import {setBlocked, setFollowed} from "./users";
 import {updateStatus} from "../util/twitter";
 import {checkPath} from "../util/interrep";
+import {setBlockedPost} from "./posts";
 
 const { draftToMarkdown } = require('markdown-draft-js');
 
@@ -447,6 +445,10 @@ export const submitModeration = (reference = '', subtype: ModerationMessageSubTy
             payload: false,
         });
 
+        if (moderation.subtype === ModerationMessageSubType.Block) {
+            dispatch(setBlockedPost(reference, messageId));
+        }
+
         return moderation;
     } catch (e) {
         dispatch({
@@ -505,9 +507,9 @@ export const submitConnection = (name: string, subtype: ConnectionMessageSubType
         });
 
         if (connection.subtype === ConnectionMessageSubType.Follow) {
-            dispatch(setFollowed(connection.payload.name, true));
+            dispatch(setFollowed(connection.payload.name, messageId));
         } else if (connection.subtype === ConnectionMessageSubType.Block) {
-            dispatch(setBlocked(connection.payload.name, true));
+            dispatch(setBlocked(connection.payload.name, messageId));
         }
 
     } catch (e) {

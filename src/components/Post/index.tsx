@@ -2,12 +2,16 @@ import React, {MouseEventHandler, ReactElement, useCallback, useEffect, useState
 import classNames from "classnames";
 import moment from "moment";
 import {
-    decrementLike, decrementRepost,
+    decrementLike,
+    decrementRepost,
     fetchMeta,
     fetchPost,
     incrementLike,
     incrementReply,
-    incrementRepost, setLiked, setReposted, unsetPost,
+    incrementRepost, setBlockedPost,
+    setLiked,
+    setReposted,
+    unsetPost,
     useMeta,
     usePost
 } from "../../ducks/posts";
@@ -30,7 +34,7 @@ import {
 import {useDispatch} from "react-redux";
 import {
     ConnectionMessageSubType,
-    MessageType, Moderation,
+    MessageType,
     ModerationMessageSubType,
     Post as PostMessage,
     PostMessageSubType
@@ -42,6 +46,7 @@ import {convertMarkdownToDraft, DraftEditor} from "../DraftEditor";
 import URLPreview from "../URLPreview";
 import {getHandle, getName, getUsername} from "../../util/user";
 import Nickname from "../Nickname";
+import {useSelectedLocalId, useWorkerUnlocked} from "../../ducks/worker";
 
 
 type Props = {
@@ -230,11 +235,19 @@ export function ExpandedPost(props: Props & {
                 <div className="mt-4 mb-2 text-xl w-full">
                     {
                         post.payload.content && (
-                            <DraftEditor
-                                editorState={editorState}
-                                onChange={() => null}
-                                readOnly
-                            />
+                            meta.blocked
+                                ? (
+                                    <div className="text-sm text-gray-600 bg-gray-100 border rounded px-2 py-1">
+                                        This post has been blocked.
+                                    </div>
+                                )
+                                : (
+                                    <DraftEditor
+                                        editorState={editorState}
+                                        onChange={() => null}
+                                        readOnly
+                                    />
+                                )
                         )
                     }
                     {
@@ -418,21 +431,29 @@ export function RegularPost(props: Props & {
 
                         {
                             post.payload.content && (
-                                <DraftEditor
-                                    editorState={editorState}
-                                    onChange={() => null}
-                                    customStyleMap={{
-                                        CODE: {
-                                            backgroundColor: '#f6f6f6',
-                                            color: '#1c1e21',
-                                            padding: '2px 4px',
-                                            margin: '0 2px',
-                                            borderRadius: '2px',
-                                            fontFamily: 'Roboto Mono, monospace',
-                                        },
-                                    }}
-                                    readOnly
-                                />
+                                meta.blocked
+                                    ? (
+                                        <div className="text-sm text-gray-600 bg-gray-100 border rounded px-2 py-1">
+                                            This post has been blocked.
+                                        </div>
+                                    )
+                                    : (
+                                        <DraftEditor
+                                            editorState={editorState}
+                                            onChange={() => null}
+                                            customStyleMap={{
+                                                CODE: {
+                                                    backgroundColor: '#f6f6f6',
+                                                    color: '#1c1e21',
+                                                    padding: '2px 4px',
+                                                    margin: '0 2px',
+                                                    borderRadius: '2px',
+                                                    fontFamily: 'Roboto Mono, monospace',
+                                                },
+                                            }}
+                                            readOnly
+                                        />
+                                    )
                             )
                         }
 
@@ -589,28 +610,41 @@ function PostMenu(props: Props & {
     onDeletePost: () => void;
 }): ReactElement {
     const post = usePost(props.messageId);
+    const meta = useMeta(props.messageId);
     const user = useUser(post?.creator);
     const dispatch = useDispatch();
     const account = useAccount();
-    const isCurrentUser = user?.username === account;
+    const unlocked = useWorkerUnlocked();
+    const selected = useSelectedLocalId();
+    const isCurrentUser = selected?.type === 'gun' ? user?.username === selected.address : false;
+    const [opened, setOpened] = useState(false);
 
     const onBlock = useCallback(() => {
         if (!user) return;
         dispatch(submitConnection(user?.username, ConnectionMessageSubType.Block));
+        setOpened(false);
     }, [user]);
 
     const onUnblock = useCallback(() => {
         if (user?.meta?.blocked) {
             dispatch(removeMessage(user?.meta?.blocked));
-            dispatch(setBlocked(user?.username, false))
+            dispatch(setBlocked(user?.username, null));
+            setOpened(false);
         }
     }, [user?.meta?.blocked]);
 
-    const onDeletePost = useCallback(() => {
+    const onBlockPost = useCallback(() => {
         if (!props.messageId) return;
-        dispatch(removeMessage(props.messageId));
-        dispatch(unsetPost(props.messageId));
+        dispatch(submitModeration(props.messageId, ModerationMessageSubType.Block));
+        setOpened(false);
     }, [props.messageId]);
+
+    const onUnblockPost = useCallback(() => {
+        if (!meta?.blocked) return;
+        dispatch(removeMessage(meta.blocked));
+        dispatch(setBlockedPost(props.messageId, null));
+        setOpened(false);
+    }, [meta?.blocked, props.messageId]);
 
     if (post?.type === MessageType._TWEET) {
         return (
@@ -640,31 +674,46 @@ function PostMenu(props: Props & {
                         label: `Unblock @${getName(user)}`,
                         iconFA: 'fas fa-user-slash',
                         onClick: onUnblock,
+                        disabled: !unlocked,
                         iconClassName: 'text-gray-400',
                     }
                     : {
                         label: `Block @${getName(user)}`,
                         iconFA: 'fas fa-user-slash',
                         onClick: onBlock,
-                        disabled: !!user?.meta?.followed,
+                        disabled: !!user?.meta?.followed || !unlocked,
                         className: 'block-user-item',
                         iconClassName: 'text-red-400 hover:text-red-800',
                     },
             );
         }
 
-        postMenuItems.push({
-            label: `Block Post`,
-            iconFA: 'fas fa-ban',
-            className: 'block-user-item',
-            disabled: true,
-            iconClassName: 'text-red-400 hover:text-red-800',
-        });
-    } else {
+        if (meta?.blocked) {
+            postMenuItems.push({
+                label: `Unblock Post`,
+                iconFA: 'fas fa-ban',
+                disabled: !unlocked,
+                onClick: onUnblockPost,
+                iconClassName: 'text-gray-400',
+            });
+        } else {
+            postMenuItems.push({
+                label: `Block Post`,
+                iconFA: 'fas fa-ban',
+                className: 'block-user-item',
+                disabled: !unlocked,
+                onClick: onBlockPost,
+                iconClassName: 'text-red-400 hover:text-red-800',
+            });
+        }
+
+
+    } else if (isCurrentUser) {
         postMenuItems.push({
             label: `Delete Post`,
             iconFA: 'fas fa-trash',
             className: 'block-user-item',
+            disabled: !unlocked,
             onClick: props.onDeletePost,
             iconClassName: 'text-red-400 hover:text-red-800',
         });
@@ -674,11 +723,13 @@ function PostMenu(props: Props & {
         <Menuable
             className="post__menu"
             items={postMenuItems}
+            opened={opened}
+            onClose={() => setOpened(false)}
+            onOpen={() => setOpened(true)}
         >
             <Icon
                 className="text-gray-400 hover:text-gray-800"
                 fa="fas fa-ellipsis-h"
-                onClick={() => null}
             />
         </Menuable>
 

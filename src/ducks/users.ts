@@ -186,12 +186,12 @@ export const searchUsers = (query: string) => async (dispatch: Dispatch, getStat
     return json.payload;
 }
 
-export const setFollowed = (address: string, followed: boolean): Action<{ address: string; followed: boolean }> => ({
+export const setFollowed = (address: string, followed: string | null): Action<{ address: string; followed: string | null }> => ({
     type: ActionTypes.SET_FOLLOWED,
     payload: {address, followed},
 });
 
-export const setBlocked = (address: string, blocked: boolean): Action<{ address: string; blocked: boolean }> => ({
+export const setBlocked = (address: string, blocked: string | null): Action<{ address: string; blocked: string | null }> => ({
     type: ActionTypes.SET_BLOCKED,
     payload: {address, blocked},
 });
