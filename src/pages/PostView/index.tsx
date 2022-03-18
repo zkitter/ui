@@ -19,6 +19,7 @@ import ParentThread from "../../components/ParentThread";
 import {Post as PostMessage, PostMessageSubType} from "../../util/message";
 import {useENSName, useLoggedIn} from "../../ducks/web3";
 import {useSelectedLocalId} from "../../ducks/worker";
+import {usePostModeration} from "../../ducks/mods";
 
 type Props = {
 
@@ -42,12 +43,12 @@ export default function PostView(props: Props): ReactElement {
     const scrollEl = useRef<HTMLDivElement>(null);
     const [height, setHeight] = useState(window.innerHeight);
     const selected = useSelectedLocalId();
-
     const originalPost = usePost(reference);
     const messageId = originalPost?.subtype === PostMessageSubType.Repost
         ? originalPost.payload.reference
         : reference;
     const meta = useMeta(messageId);
+    const postmod = usePostModeration(messageId);
 
     useEffect(() => {
         (async function onPostViewMount() {
@@ -56,7 +57,7 @@ export default function PostView(props: Props): ReactElement {
             await fetchMore(true);
         })();
 
-    }, [selected, ensName, messageId]);
+    }, [selected, ensName, messageId, postmod?.unmoderated]);
 
     const gotoPost = useGoToPost();
 
@@ -70,7 +71,7 @@ export default function PostView(props: Props): ReactElement {
             setOffset(offset + messageIds.length);
             setOrder(order.concat(messageIds));
         }
-    }, [limit, offset, order, messageId]);
+    }, [limit, offset, order, messageId, postmod?.unmoderated]);
 
     const showMore = useCallback(async () => {
         if (cachedObserver) {
@@ -79,7 +80,7 @@ export default function PostView(props: Props): ReactElement {
             cachedObserver = null;
         }
         await fetchMore();
-    }, [containerEl, fetchMore, messageId]);
+    }, [containerEl, fetchMore, messageId, postmod?.unmoderated]);
 
     const clearObserver = useCallback(async () => {
         if (cachedObserver) {

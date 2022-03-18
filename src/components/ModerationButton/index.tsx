@@ -33,10 +33,9 @@ export default function ModerationButton(props: Props): ReactElement {
                     <ModalHeader
                         onClose={() => showModal(false)}
                     >
-                        <b>Moderation</b>
+                        <b>Thread Moderation</b>
                     </ModalHeader>
                     <ModalContent className="p-4">
-                        <div className="font-semibold mb-2">Who can see your reply</div>
                         <div className="flex flex-col justify-center">
                             {renderReplyOption(null, replyType, setReplyType)}
                             {renderReplyOption(ModerationMessageSubType.ThreadBlock, replyType, setReplyType)}
@@ -124,12 +123,12 @@ function getFA(replyType: ModerationMessageSubType | null): string {
 function getLabel(replyType: ModerationMessageSubType | null): string {
     switch (replyType) {
         case ModerationMessageSubType.ThreadBlock:
-            return 'Hide people and posts you blocked';
+            return 'Hide replies that you blocked';
         case ModerationMessageSubType.ThreadFollow:
-            return 'Show people you follow and posts you like';
+            return 'Show replies that you followed or liked';
         case ModerationMessageSubType.ThreadMention:
-            return 'Show people you mentioned';
+            return 'Show replies from people you mentioned';
         default:
-            return 'Everyone can reply';
+            return 'Show reply from everyone';
     }
 }

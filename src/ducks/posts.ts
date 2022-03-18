@@ -377,14 +377,23 @@ export const fetchTagFeed = (tagName: string, limit = 10, offset = 0) =>
 export const fetchReplies = (reference: string, limit = 10, offset = 0) =>
     async (dispatch: ThunkDispatch<any, any, any>, getState: () => AppRootState) =>
 {
-    const contextualName = getContextNameFromState(getState());
-    const resp = await fetch(`${config.indexerAPI}/v1/replies?limit=${limit}&offset=${offset}&parent=${encodeURIComponent(reference)}`, {
-        method: 'GET',
-        // @ts-ignore
-        headers: {
-            'x-contextual-name': contextualName,
+    const state = getState();
+    const contextualName = getContextNameFromState(state);
+    const { mods: { posts } } = state;
+    const mod = posts[reference];
+    const unmoderated = mod?.unmoderated;
+
+    const resp = await fetch(
+        `${config.indexerAPI}/v1/replies?limit=${limit}&offset=${offset}&parent=${encodeURIComponent(reference)}`,
+        {
+            method: 'GET',
+            // @ts-ignore
+            headers: {
+                'x-contextual-name': contextualName,
+                'x-unmoderated': !!unmoderated ? 'true' : '',
+            },
         },
-    });
+    );
     const json = await resp.json();
 
     for (const post of json.payload) {
