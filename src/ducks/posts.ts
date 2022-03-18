@@ -379,8 +379,16 @@ export const fetchReplies = (reference: string, limit = 10, offset = 0) =>
 {
     const state = getState();
     const contextualName = getContextNameFromState(state);
-    const { mods: { posts } } = state;
-    const mod = posts[reference];
+    const {
+        mods: { posts },
+        posts: {
+            meta: metas,
+        },
+    } = state;
+    const meta = metas[reference];
+    // @ts-ignore
+    const mod = posts[meta?.rootId];
+
     const unmoderated = mod?.unmoderated;
 
     const resp = await fetch(

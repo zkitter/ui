@@ -48,7 +48,8 @@ export default function PostView(props: Props): ReactElement {
         ? originalPost.payload.reference
         : reference;
     const meta = useMeta(messageId);
-    const postmod = usePostModeration(messageId);
+    const modOverride = usePostModeration(meta?.rootId);
+    const [end, setEnd] = useState(false);
 
     useEffect(() => {
         (async function onPostViewMount() {
@@ -57,21 +58,29 @@ export default function PostView(props: Props): ReactElement {
             await fetchMore(true);
         })();
 
-    }, [selected, ensName, messageId, postmod?.unmoderated]);
+    }, [selected, ensName, messageId, modOverride?.unmoderated]);
 
     const gotoPost = useGoToPost();
 
     const fetchMore = useCallback(async (reset = false) => {
+        let messageIds: any;
+
         if (reset) {
-            const messageIds: any = await dispatch(fetchReplies(messageId, 20, 0));
+            messageIds = await dispatch(fetchReplies(messageId, 20, 0));
             setOffset(messageIds.length);
             setOrder(messageIds);
         } else {
-            const messageIds: any = await dispatch(fetchReplies(messageId, limit, offset));
+            messageIds = await dispatch(fetchReplies(messageId, limit, offset));
             setOffset(offset + messageIds.length);
             setOrder(order.concat(messageIds));
         }
-    }, [limit, offset, order, messageId, postmod?.unmoderated]);
+
+        if (!messageIds.length) {
+            setEnd(true);
+        } else {
+            setEnd(false);
+        }
+    }, [limit, offset, order, messageId]);
 
     const showMore = useCallback(async () => {
         if (cachedObserver) {
@@ -80,7 +89,7 @@ export default function PostView(props: Props): ReactElement {
             cachedObserver = null;
         }
         await fetchMore();
-    }, [containerEl, fetchMore, messageId, postmod?.unmoderated]);
+    }, [containerEl, fetchMore, messageId]);
 
     const clearObserver = useCallback(async () => {
         if (cachedObserver) {
@@ -170,7 +179,7 @@ export default function PostView(props: Props): ReactElement {
                         })
                     }
                     {
-                        order.length < meta.replyCount && (
+                        !end && order.length < meta.replyCount && (
                             <div
                                 className={classNames(
                                     "flex flex-row flex-nowrap items-center justify-center",

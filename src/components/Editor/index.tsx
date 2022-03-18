@@ -25,6 +25,8 @@ import Checkbox from "../Checkbox";
 import {getSession, verifyTweet} from "../../util/twitter";
 import ModerationButton from "../ModerationButton";
 import {ModerationMessageSubType} from "../../util/message";
+import {usePostModeration} from "../../ducks/mods";
+import {useMeta} from "../../ducks/posts";
 
 type Props = {
     messageId: string;
@@ -61,6 +63,10 @@ export default function Editor(props: Props): ReactElement {
     const [verified, setVerified] = useState(false);
     const [verifiedSession, setVerifiedSession] = useState('');
     const selected = useSelectedLocalId();
+    const modOverride = usePostModeration(messageId);
+    const meta = useMeta(messageId);
+
+    const shouldDisplayWarning = !!modOverride?.unmoderated && !!meta.moderation;
 
     useEffect(() => {
         (async function() {
@@ -232,6 +238,13 @@ export default function Editor(props: Props): ReactElement {
                 incognito={['interrep', 'zkpr_interrep'].includes(selectedId?.type as string)}
             />
             <div className="flex flex-col flex-nowrap w-full h-full editor__wrapper">
+                {
+                    shouldDisplayWarning && (
+                        <div className="rounded p-2 text-sm bg-yellow-100 text-yellow-500">
+                            You can still submit a reply, but it will be hidden by default due to the OP's reply polilcy.
+                        </div>
+                    )
+                }
                 <DraftEditor
                     editorState={editorState}
                     onChange={onChange}

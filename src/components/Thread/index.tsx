@@ -5,6 +5,7 @@ import {fetchPost, fetchReplies, useGoToPost, useMeta} from "../../ducks/posts";
 import classNames from "classnames";
 import Post from "../Post";
 import {parseMessageId, Post as PostMessage} from "../../util/message";
+import {usePostModeration} from "../../ducks/mods";
 
 type Props = {
     level?: number;
@@ -25,16 +26,26 @@ export default function Thread(props: Props): ReactElement {
     const history = useHistory();
     const dispatch = useDispatch();
     const meta = useMeta(messageId);
+    const modOverride = usePostModeration(meta?.rootId);
+    const [end, setEnd] = useState(false);
 
+    console.log(end);
     const fetchMore = useCallback(async (reset = false) => {
+        let messageIds: any;
         if (reset) {
-            const messageIds: any = await dispatch(fetchReplies(messageId, 20, 0));
+            messageIds = await dispatch(fetchReplies(messageId, 20, 0));
             setOffset(messageIds.length);
             setOrder(messageIds);
         } else {
-            const messageIds: any = await dispatch(fetchReplies(messageId, limit, offset));
+            messageIds = await dispatch(fetchReplies(messageId, limit, offset));
             setOffset(offset + messageIds.length);
             setOrder(order.concat(messageIds));
+        }
+
+        if (!messageIds.length) {
+            setEnd(true);
+        } else {
+            setEnd(false);
         }
     }, [limit, offset, order, messageId]);
 
@@ -51,7 +62,7 @@ export default function Thread(props: Props): ReactElement {
             if (!messageId || level >= 3) return;
             await fetchMore(true);
         })();
-    }, [messageId, level]);
+    }, [messageId, level, modOverride?.unmoderated]);
 
     return (
       <div
@@ -94,7 +105,7 @@ export default function Thread(props: Props): ReactElement {
                   })
               }
               {
-                  order.length < meta.replyCount && (
+                  !end && order.length < meta.replyCount && (
                       <div
                           className={classNames(
                               "flex flex-row flex-nowrap items-center justify-center",

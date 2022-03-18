@@ -30,9 +30,10 @@ export default function PostModerationPanel(): ReactElement {
     }, [threadmod]);
 
     const toggleModeration = useCallback(() => {
-        dispatch(unmoderate(messageId, !unmoderated));
+        if (!meta?.rootId) return;
+        dispatch(unmoderate(meta?.rootId, !unmoderated));
         setUnmoderated(!unmoderated);
-    }, [unmoderated, messageId]);
+    }, [unmoderated, meta?.rootId]);
 
     return (
         <div
@@ -121,14 +122,14 @@ function PanelTextContent (): ReactElement {
         case ModerationMessageSubType.ThreadFollow:
             return (
                 <div>
-                    Show only replies liked or followed by
+                    Show only replies liked or followed
                     {mention}
                 </div>
             );
         case ModerationMessageSubType.ThreadMention:
             return (
                 <div>
-                    Show only replies from mentions by
+                    Show only replies from users mentioned by
                     {mention}
                 </div>
             );

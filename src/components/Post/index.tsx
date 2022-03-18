@@ -49,6 +49,7 @@ import {getHandle, getName, getUsername} from "../../util/user";
 import Nickname from "../Nickname";
 import {useSelectedLocalId, useWorkerUnlocked} from "../../ducks/worker";
 import {Identity} from "../../serviceWorkers/identity";
+import {usePostModeration} from "../../ducks/mods";
 
 
 type Props = {
@@ -493,6 +494,7 @@ function PostFooter(props: {
     const canNonPostMessage = useCanNonPostMessage();
     const dispatch = useDispatch();
     const [showReply, setShowReply] = useState(false);
+    const modOverride = usePostModeration(messageId);
 
     const onLike = useCallback(async () => {
         const mod: any = await dispatch(submitModeration(messageId, ModerationMessageSubType.Like));
@@ -544,7 +546,7 @@ function PostFooter(props: {
             <PostButton
                 iconClassName="hover:bg-blue-50 hover:text-blue-400"
                 fa={getCommentIconFA(meta?.moderation)}
-                disabled={getCommentDisabled(meta, selected) || isTweet}
+                disabled={getCommentDisabled(meta, selected, modOverride?.unmoderated) || isTweet}
                 count={meta.replyCount}
                 onClick={() => setShowReply(true)}
                 large={large}
@@ -622,7 +624,9 @@ function getCommentIconFA(moderation?: ModerationMessageSubType | null): string 
     }
 }
 
-function getCommentDisabled(meta: PostMeta | null, identity: Identity | null): boolean {
+function getCommentDisabled(meta: PostMeta | null, identity: Identity | null, unmoderated = false): boolean {
+    if (unmoderated) return false;
+
     if (meta?.rootId && identity?.type === 'gun') {
         const {creator} = parseMessageId(meta.rootId);
         if (creator === identity?.address) return false;
