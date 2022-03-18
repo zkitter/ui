@@ -239,10 +239,14 @@ export default function Editor(props: Props): ReactElement {
                     placeholder={readOnly ? '' : "Write here..."}
                     readOnly={readOnly || disabled}
                 />
-                <ModerationButton
-                    onChange={onModerationChange}
-                    currentType={draft.moderation || null}
-                />
+                {
+                    selected?.type !== 'gun' && !messageId && (
+                        <ModerationButton
+                            onChange={onModerationChange}
+                            currentType={draft.moderation || null}
+                        />
+                    )
+                }
                 {
                     draft.attachment && (
                         <div className="editor__attachment py-2">
