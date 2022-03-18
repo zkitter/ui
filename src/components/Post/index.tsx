@@ -8,7 +8,8 @@ import {
     fetchPost,
     incrementLike,
     incrementReply,
-    incrementRepost, setBlockedPost,
+    incrementRepost, PostMeta,
+    setBlockedPost,
     setLiked,
     setReposted,
     unsetPost,
@@ -35,7 +36,7 @@ import {useDispatch} from "react-redux";
 import {
     ConnectionMessageSubType,
     MessageType,
-    ModerationMessageSubType,
+    ModerationMessageSubType, parseMessageId,
     Post as PostMessage,
     PostMessageSubType
 } from "../../util/message";
@@ -47,6 +48,7 @@ import URLPreview from "../URLPreview";
 import {getHandle, getName, getUsername} from "../../util/user";
 import Nickname from "../Nickname";
 import {useSelectedLocalId, useWorkerUnlocked} from "../../ducks/worker";
+import {Identity} from "../../serviceWorkers/identity";
 
 
 type Props = {
@@ -487,6 +489,7 @@ function PostFooter(props: {
     const meta = useMeta(messageId);
     const post = usePost(messageId);
     const loggedIn = useLoggedIn();
+    const selected = useSelectedLocalId();
     const canNonPostMessage = useCanNonPostMessage();
     const dispatch = useDispatch();
     const [showReply, setShowReply] = useState(false);
@@ -540,11 +543,11 @@ function PostFooter(props: {
             )}
             <PostButton
                 iconClassName="hover:bg-blue-50 hover:text-blue-400"
-                fa="far fa-comments"
+                fa={getCommentIconFA(meta?.moderation)}
+                disabled={getCommentDisabled(meta, selected) || isTweet}
                 count={meta.replyCount}
                 onClick={() => setShowReply(true)}
                 large={large}
-                disabled={isTweet}
             />
             <PostButton
                 textClassName={classNames({
@@ -604,6 +607,37 @@ function PostFooter(props: {
             </div>
         </div>
     );
+}
+
+function getCommentIconFA(moderation?: ModerationMessageSubType | null): string {
+    switch(moderation) {
+        case ModerationMessageSubType.ThreadBlock:
+            return 'fas fa-shield-alt';
+        case ModerationMessageSubType.ThreadFollow:
+            return 'fas fa-user-check';
+        case ModerationMessageSubType.ThreadMention:
+            return 'fas fa-at';
+        default:
+            return 'far fa-comments';
+    }
+}
+
+function getCommentDisabled(meta: PostMeta | null, identity: Identity | null): boolean {
+    if (meta?.rootId && identity?.type === 'gun') {
+        const {creator} = parseMessageId(meta.rootId);
+        if (creator === identity?.address) return false;
+    }
+
+    switch(meta?.moderation) {
+        case ModerationMessageSubType.ThreadBlock:
+            return !!meta.modblockedctx;
+        case ModerationMessageSubType.ThreadFollow:
+            return !meta.modfollowedctx;
+        case ModerationMessageSubType.ThreadMention:
+            return !meta.modmentionedctx;
+        default:
+            return false;
+    }
 }
 
 function PostMenu(props: Props & {
@@ -823,6 +857,7 @@ export function PostButton(props: PostButtonProps): ReactElement {
                 props.className,
                 {
                     'cursor-default opacity-50': props.disabled,
+                    'cursor-pointer': !props.disabled,
                 }
             )}
             onClick={e => {

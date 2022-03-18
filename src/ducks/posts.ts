@@ -1,4 +1,11 @@
-import {MessageType, parseMessageId, Post, PostMessageOption, PostMessageSubType} from "../util/message";
+import {
+    MessageType,
+    ModerationMessageSubType,
+    parseMessageId,
+    Post,
+    PostMessageOption,
+    PostMessageSubType
+} from "../util/message";
 import {fetchMessage} from "../util/gun";
 import {getUser} from "./users";
 import {ThunkDispatch} from "redux-thunk";
@@ -33,7 +40,7 @@ type Action = {
     error?: boolean;
 }
 
-type PostMeta = {
+export type PostMeta = {
     replyCount: number;
     likeCount: number;
     repostCount: number;
@@ -42,6 +49,15 @@ type PostMeta = {
     reposted: string | null;
     interepProvider?: string;
     interepGroup?: string;
+    moderation: ModerationMessageSubType | null;
+    modBlockedPost?: string | null;
+    modLikedPost?: string | null;
+    modBlockedUser?: string | null;
+    modFollowerUser?: string | null;
+    modblockedctx?: string | null;
+    modfollowedctx?: string | null;
+    modmentionedctx?: string | null;
+    rootId?: string | null;
 }
 
 type State = {

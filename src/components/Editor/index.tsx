@@ -240,7 +240,7 @@ export default function Editor(props: Props): ReactElement {
                     readOnly={readOnly || disabled}
                 />
                 {
-                    selected?.type !== 'gun' && !messageId && (
+                    selected?.type === 'gun' && !messageId && (
                         <ModerationButton
                             onChange={onModerationChange}
                             currentType={draft.moderation || null}
