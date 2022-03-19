@@ -49,6 +49,7 @@ export default function TopNav(): ReactElement {
                     <Route path="/connect/twitter" component={DefaultHeaderGroup} />
                     <Route path="/signup" component={DefaultHeaderGroup} />
                     <Route path="/notification" component={DefaultHeaderGroup} />
+                    <Route path="/settings" component={SettingHeaderGroup} />
                     <Route path="/:name" component={UserProfileHeaderGroup} />
                     <Route>
                         <DefaultHeaderGroup />
@@ -135,6 +136,40 @@ function DefaultHeaderGroup() {
                 url={Logo}
                 size={2}
             />
+        </div>
+    )
+}
+
+function SettingHeaderGroup() {
+    const history = useHistory();
+
+    const goBack = useCallback(() => {
+        if (history.action !== 'POP') return history.goBack();
+        history.push('/');
+    }, [history]);
+
+    return (
+        <div
+            className={classNames(
+                "flex flex-row flex-nowrap items-center flex-shrink-0",
+                "rounded-xl p-1 mx-4 overflow-hidden",
+                "bg-white profile-header-group",
+            )}
+        >
+            <Icon
+                className="w-8 h-8 flex flex-row items-center justify-center top-nav__back-icon"
+                fa="fas fa-chevron-left"
+                onClick={goBack}
+            />
+            <div
+                className="flex flex-row flex-nowrap items-center px-2 py-2 profile-header-group__title-group"
+            >
+                <div
+                    className="flex flex-col flex-nowrap justify-center ml-2 font-bold text-lg "
+                >
+                    Settings
+                </div>
+            </div>
         </div>
     )
 }

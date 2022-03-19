@@ -1,8 +1,9 @@
-import {User} from "../ducks/users";
+import {resetUser, User} from "../ducks/users";
 import {Identity} from "../serviceWorkers/identity";
 import {authenticateGun} from "./gun";
 import {postWorkerMessage} from "./sw";
 import {addIdentity, selectIdentity, setIdentity} from "../serviceWorkers/util";
+import store from "../store/configureAppStore";
 
 export const ellipsify = (str: string, start = 6, end = 4) => {
     return str.slice(0, start) + '...' + str.slice(-end);
@@ -45,4 +46,6 @@ export async function loginUser(id: Identity | null) {
     if (id?.type === 'interrep') {
         await postWorkerMessage(selectIdentity(id.identityCommitment));
     }
+
+    store.dispatch(resetUser());
 }

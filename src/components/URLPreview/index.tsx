@@ -3,6 +3,7 @@ import "./url-preview.scss";
 import Icon from "../Icon";
 import classNames from "classnames";
 import config from "../../util/config";
+import {shouldBlurImage} from "../../pages/SettingView";
 
 type Props = {
     url?: string;
@@ -25,6 +26,7 @@ export default function URLPreview(props: Props): ReactElement {
     const {url, editable} = props;
     const [imageSrc, setImageSrc] = useState('');
     const [preview, setPreview] = useState<Preview|null>(null);
+    const [isBlur, setBlur] = useState(shouldBlurImage());
 
     useEffect(() => {
         (async function onURLPreviewLoad() {
@@ -96,6 +98,8 @@ export default function URLPreview(props: Props): ReactElement {
                 <div
                     className={classNames("url-preview__img-container", {
                         'url-preview__img-container--showAll': props.showAll,
+                        'blurred-image': !props.editable && isBlur,
+                        'unblurred-image': props.editable || !isBlur,
                     })}
                 >
                     <img
@@ -117,8 +121,12 @@ export default function URLPreview(props: Props): ReactElement {
                 >
                     <div
                         className={classNames("url-preview__link-image", {
+                            'blurred-image': !props.editable && isBlur,
+                            'unblurred-image': props.editable || !isBlur,
                         })}
-                        style={{backgroundImage: `url(${preview.image})`}}
+                        style={{
+                            backgroundImage: `url(${preview.image})`,
+                        }}
                     />
                     <div className="url-preview__link-content">
                         <div className="url-preview__link-title">{preview.title}</div>
@@ -134,6 +142,17 @@ export default function URLPreview(props: Props): ReactElement {
                     onClick={e => {
                         e.stopPropagation();
                         props.onRemove && props.onRemove();
+                    }}
+                />
+            ) }
+
+            { !editable && (
+                <Icon
+                    className="url-preview__close bg-black bg-opacity-80 text-white absolute top-4 left-4 w-8 h-8"
+                    fa={isBlur ? "fas fa-eye-slash" : "fas fa-eye"}
+                    onClick={e => {
+                        e.stopPropagation();
+                        setBlur(!isBlur);
                     }}
                 />
             ) }

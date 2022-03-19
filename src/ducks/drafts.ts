@@ -1,8 +1,5 @@
 import {useSelector} from "react-redux";
-import {
-    Semaphore,
-    genExternalNullifier,
-} from '@zk-kit/protocols';
+import {genExternalNullifier, Semaphore,} from '@zk-kit/protocols';
 import {Strategy, ZkIdentity} from '@zk-kit/identity'
 import {AppRootState} from "../store/configureAppStore";
 import deepEqual from "fast-deep-equal";
@@ -23,14 +20,16 @@ import gun from "../util/gun";
 import {ThunkDispatch} from "redux-thunk";
 import {markdownConvertOptions} from "../components/DraftEditor";
 import config from "../util/config";
-import {setFollowed} from "./users";
+import {setBlocked, setFollowed} from "./users";
 import {updateStatus} from "../util/twitter";
 import {checkPath} from "../util/interrep";
+import {setBlockedPost} from "./posts";
 
 const { draftToMarkdown } = require('markdown-draft-js');
 
 enum ActionTypes {
     SET_DRAFT = 'drafts/setDraft',
+    SET_MODERATION = 'drafts/setModeration',
     SET_ATTACHMENT = 'drafts/setAttachment',
     SET_SUBMITTING = 'drafts/setSubmitting',
     SET_MIRROR = 'drafts/setMirror',
@@ -53,6 +52,7 @@ type State = {
 
 type Draft = {
     attachment?: string;
+    moderation?: ModerationMessageSubType | null;
     reference: string;
     editorState: EditorState;
 }
@@ -67,6 +67,19 @@ export const setDraft = (draft: Draft): Action<Draft> => {
     return {
         type: ActionTypes.SET_DRAFT,
         payload: draft,
+    };
+}
+
+export const setModeration = (messageId: string, moderation: ModerationMessageSubType | null): Action<{
+    messageId: string;
+    moderation: ModerationMessageSubType | null;
+}> => {
+    return {
+        type: ActionTypes.SET_MODERATION,
+        payload: {
+            messageId,
+            moderation,
+        },
     };
 }
 
@@ -335,6 +348,10 @@ export const submitPost = (reference = '') => async (dispatch: ThunkDispatch<any
 
         dispatch(emptyDraft(reference));
 
+        if (draft.moderation) {
+            await dispatch(submitModeration(messageId, draft.moderation));
+        }
+
         return post;
     } catch (e) {
         dispatch({
@@ -391,6 +408,8 @@ export const submitRepost = (reference = '') => async (dispatch: Dispatch, getSt
         });
 
         dispatch(emptyDraft(reference));
+
+        return post;
     } catch (e) {
         dispatch({
             type: ActionTypes.SET_SUBMITTING,
@@ -444,6 +463,12 @@ export const submitModeration = (reference = '', subtype: ModerationMessageSubTy
             type: ActionTypes.SET_SUBMITTING,
             payload: false,
         });
+
+        if (moderation.subtype === ModerationMessageSubType.Block) {
+            dispatch(setBlockedPost(reference, messageId));
+        }
+
+        return moderation;
     } catch (e) {
         dispatch({
             type: ActionTypes.SET_SUBMITTING,
@@ -501,7 +526,9 @@ export const submitConnection = (name: string, subtype: ConnectionMessageSubType
         });
 
         if (connection.subtype === ConnectionMessageSubType.Follow) {
-            dispatch(setFollowed(connection.payload.name, true));
+            dispatch(setFollowed(connection.payload.name, messageId));
+        } else if (connection.subtype === ConnectionMessageSubType.Block) {
+            dispatch(setBlocked(connection.payload.name, messageId));
         }
 
     } catch (e) {
@@ -571,6 +598,18 @@ export const submitProfile = (
     }
 }
 
+export const removeMessage = (messageId: string) => async (dispatch: Dispatch) => {
+    // @ts-ignore
+    if (!gun.user().is) throw new Error('not logged in');
+
+    // @ts-ignore
+    await gun.user()
+        .get('message')
+        .get(messageId)
+        // @ts-ignore
+        .put(null);
+}
+
 export const setMirror = (mirror: boolean): Action<boolean> => ({
     type: ActionTypes.SET_MIRROR,
     payload: mirror,
@@ -609,6 +648,17 @@ export default function drafts(state = initialState, action: Action<any>): State
                 map: {
                     ...state.map,
                     [action.payload.reference || '']: action.payload,
+                },
+            };
+        case ActionTypes.SET_MODERATION:
+            return {
+                ...state,
+                map: {
+                    ...state.map,
+                    [action.payload.messageId || '']: {
+                        ...state.map[action.payload.messageId || ''],
+                        moderation: action.payload.moderation,
+                    },
                 },
             };
         case ActionTypes.SET_SUBMITTING:

@@ -1,0 +1,29 @@
+@import "../../util/variable";
+
+.moderation-btn {
+  border-radius: 1rem;
+  transition: background-color 200ms ease-in-out;
+  width: fit-content;
+  padding: 0.25rem 0.7rem;
+
+  &:hover {
+
+  }
+
+  &__reply-option {
+    cursor: pointer;
+
+    .icon {
+      @extend %row-nowrap;
+      align-items: center;
+      justify-content: center;
+      flex: 0 0 auto;
+      width: 1.875rem;
+      height: 1.875rem;
+    }
+  }
+}
+
+.moderation-modal {
+  width: 30rem;
+}

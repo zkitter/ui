@@ -1,0 +1,82 @@
+@import "../../util/variable";
+
+.setting {
+  @extend %row-nowrap;
+  max-width: 59.25rem;
+  width: 100vw;
+  overflow: hidden;
+
+  &__panel {
+    flex: 0 0 auto;
+    width: 16rem;
+    border-right: 1px solid $gray-100;
+
+    &__item {
+      @extend %row-nowrap;
+      width: 100%;
+      padding: .75rem 1rem;
+      transition:
+              border 200ms ease-in-out,
+              background-color 200ms ease-in-out;
+
+      &--active {
+        border-right: 3px solid $primary-color;
+      }
+
+      &:hover {
+        background-color: $gray-50;
+      }
+
+      &:active {
+        background-color: $gray-100;
+      }
+    }
+  }
+
+  &__content {
+    @extend %col-nowrap;
+    flex: 1 1 auto;
+    padding-top: .25rem;
+
+    &__title {
+      padding: .5rem 1rem;
+    }
+
+    &__desc {
+      padding: .125rem 1rem;
+    }
+
+    &__row {
+      @extend %row-nowrap;
+      align-items: flex-start;
+      width: 100%;
+      padding: .5rem 1rem;
+
+      .icon {
+        flex: 0 0 auto;
+        padding: .5rem 1rem 1rem;
+      }
+
+      &__body {
+        @extend %col-nowrap;
+        flex: 1 1 auto;
+        width: 0;
+        padding: 0 2rem 0 .5rem;
+      }
+
+      &__title {
+
+      }
+
+      &__desc {
+
+      }
+
+      &__footer {
+        @extend %row-nowrap;
+        align-items: center;
+        flex: 0 0 auto;
+      }
+    }
+  }
+}

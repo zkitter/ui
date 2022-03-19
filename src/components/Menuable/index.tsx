@@ -130,7 +130,10 @@ export default function Menuable(props: MenuableProps): ReactElement {
                                     "text-sm whitespace-nowrap",
                                     'flex flex-row flex-nowrap items-center',
                                     "menuable__menu__item hover:bg-gray-50 ",
-                                    {'cursor-pointer': !item.disabled},
+                                    {
+                                        'cursor-pointer': !item.disabled,
+                                        'cursor-default': item.disabled,
+                                    },
                                     item.className,
                                 )}
                                 onClick={e => onItemClick(e, item, i)}
@@ -142,10 +145,10 @@ export default function Menuable(props: MenuableProps): ReactElement {
                                             <>
                                                 <div
                                                     className={classNames(
-                                                        "flex-grow",
+                                                        "menuable__menu__item__label flex-grow",
                                                         {
                                                             'text-gray-500 hover:text-gray-800 hover:font-semibold': !item.disabled,
-                                                            'text-gray-200': item.disabled,
+                                                            'opacity-50': item.disabled,
                                                         },
                                                     )}
                                                 >

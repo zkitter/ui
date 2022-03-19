@@ -1,4 +1,4 @@
-$primary-color: #00d0ff;
+$primary-color: #60a5fa;
 $black: #000;
 $white: #fff;
 $gray-800: mix($black, $white, 80);
@@ -11,6 +11,18 @@ $gray-200: mix($black, $white, 20);
 $gray-100: mix($black, $white, 10);
 $gray-50: mix($black, $white, 5);
 $gray-25: mix($black, $white, 2.5);
+
+$red: #ff0000;
+$red-800: mix($red, $white, 80);
+$red-700: mix($red, $white, 70);
+$red-600: mix($red, $white, 60);
+$red-500: mix($red, $white, 50);
+$red-400: mix($red, $white, 40);
+$red-300: mix($red, $white, 30);
+$red-200: mix($red, $white, 20);
+$red-100: mix($red, $white, 10);
+$red-50: mix($red, $white, 5);
+$red-25: mix($red, $white, 2.5);
 
 %row-nowrap {
   display: flex;
@@ -61,6 +73,36 @@ $gray-25: mix($black, $white, 2.5);
 
 .min-h-64 {
   min-height: 16rem;
+}
+
+.blurred-image {
+  position: relative;
+
+  &:after {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    height: 100%;
+    width: 100%;
+    background-color: rgba($black, .2);
+    backdrop-filter: blur(40px);
+  }
+}
+
+.unblurred-image {
+  position: relative;
+
+  &:after {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    height: 100%;
+    width: 100%;
+    background-color: rgba($black, .2);
+    backdrop-filter: blur(0);
+  }
 }
 
 @media only screen and (max-width: 768px) {

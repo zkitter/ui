@@ -1,4 +1,11 @@
-import {MessageType, parseMessageId, Post, PostMessageOption, PostMessageSubType} from "../util/message";
+import {
+    MessageType,
+    ModerationMessageSubType,
+    parseMessageId,
+    Post,
+    PostMessageOption,
+    PostMessageSubType
+} from "../util/message";
 import {fetchMessage} from "../util/gun";
 import {getUser} from "./users";
 import {ThunkDispatch} from "redux-thunk";
@@ -13,10 +20,16 @@ import {useCallback} from "react";
 enum ActionTypes {
     SET_POSTS = 'posts/setPosts',
     SET_POST = 'posts/setPost',
+    UNSET_POST = 'posts/unsetPost',
     SET_META = 'posts/setMeta',
     INCREMENT_REPLY = 'posts/incrementReply',
     INCREMENT_LIKE = 'posts/incrementLike',
+    SET_LIKED = 'posts/setLiked',
+    SET_BLOCKED = 'posts/setBlocked',
+    SET_REPOSTED = 'posts/setReposted',
+    DECREMENT_LIKE = 'posts/decrementLike',
     INCREMENT_REPOST = 'posts/incrementRepost',
+    DECREMENT_REPOST = 'posts/decrementRepost',
     APPEND_POSTS = 'posts/appendPosts',
 }
 
@@ -27,14 +40,24 @@ type Action = {
     error?: boolean;
 }
 
-type PostMeta = {
+export type PostMeta = {
     replyCount: number;
     likeCount: number;
     repostCount: number;
-    liked: boolean;
-    reposted: boolean;
+    blocked: string | null;
+    liked: string | null;
+    reposted: string | null;
     interepProvider?: string;
     interepGroup?: string;
+    moderation: ModerationMessageSubType | null;
+    modBlockedPost?: string | null;
+    modLikedPost?: string | null;
+    modBlockedUser?: string | null;
+    modFollowerUser?: string | null;
+    modblockedctx?: string | null;
+    modfollowedctx?: string | null;
+    modmentionedctx?: string | null;
+    rootId?: string | null;
 }
 
 type State = {
@@ -117,6 +140,11 @@ export const setPost = (post: Post) => ({
     payload: post,
 });
 
+export const unsetPost = (messageId: string) => ({
+    type: ActionTypes.UNSET_POST,
+    payload: messageId,
+});
+
 export const incrementReply = (parentId: string) => ({
     type: ActionTypes.INCREMENT_REPLY,
     payload: parentId,
@@ -127,8 +155,33 @@ export const incrementLike = (parentId: string) => ({
     payload: parentId,
 });
 
+export const setLiked = (parentId: string, messageId: string | null) => ({
+    type: ActionTypes.SET_LIKED,
+    payload: {parentId, messageId},
+});
+
+export const setReposted = (parentId: string, messageId: string | null) => ({
+    type: ActionTypes.SET_REPOSTED,
+    payload: {parentId, messageId},
+});
+
+export const setBlockedPost = (parentId: string, messageId: string | null) => ({
+    type: ActionTypes.SET_BLOCKED,
+    payload: {parentId, messageId},
+});
+
+export const decrementLike = (parentId: string) => ({
+    type: ActionTypes.DECREMENT_LIKE,
+    payload: parentId,
+});
+
 export const incrementRepost = (parentId: string) => ({
     type: ActionTypes.INCREMENT_REPOST,
+    payload: parentId,
+});
+
+export const decrementRepost = (parentId: string) => ({
+    type: ActionTypes.DECREMENT_REPOST,
     payload: parentId,
 });
 
@@ -324,14 +377,31 @@ export const fetchTagFeed = (tagName: string, limit = 10, offset = 0) =>
 export const fetchReplies = (reference: string, limit = 10, offset = 0) =>
     async (dispatch: ThunkDispatch<any, any, any>, getState: () => AppRootState) =>
 {
-    const contextualName = getContextNameFromState(getState());
-    const resp = await fetch(`${config.indexerAPI}/v1/replies?limit=${limit}&offset=${offset}&parent=${encodeURIComponent(reference)}`, {
-        method: 'GET',
-        // @ts-ignore
-        headers: {
-            'x-contextual-name': contextualName,
+    const state = getState();
+    const contextualName = getContextNameFromState(state);
+    const {
+        mods: { posts },
+        posts: {
+            meta: metas,
         },
-    });
+    } = state;
+    const meta = metas[reference];
+    // @ts-ignore
+    const mod = posts[meta?.rootId];
+
+    const unmoderated = mod?.unmoderated;
+
+    const resp = await fetch(
+        `${config.indexerAPI}/v1/replies?limit=${limit}&offset=${offset}&parent=${encodeURIComponent(reference)}`,
+        {
+            method: 'GET',
+            // @ts-ignore
+            headers: {
+                'x-contextual-name': contextualName,
+                'x-unmoderated': !!unmoderated ? 'true' : '',
+            },
+        },
+    );
     const json = await resp.json();
 
     for (const post of json.payload) {
@@ -388,7 +458,6 @@ export const useMeta = (messageId: string)  => {
             replyCount: 0,
             repostCount: 0,
             likeCount: 0,
-            liked: 0,
             reposted: 0,
         };
     }, deepEqual);
@@ -421,6 +490,8 @@ export default function posts(state = initialState, action: Action): State {
             return reduceSetPosts(state, action);
         case ActionTypes.SET_POST:
             return reduceSetPost(state, action);
+        case ActionTypes.UNSET_POST:
+            return reduceUnsetPost(state, action);
         case ActionTypes.SET_META:
             return reduceSetMeta(state, action);
         case ActionTypes.APPEND_POSTS:
@@ -431,6 +502,16 @@ export default function posts(state = initialState, action: Action): State {
             return reduceIncrementRepost(state, action);
         case ActionTypes.INCREMENT_LIKE:
             return reduceIncrementLike(state, action);
+        case ActionTypes.SET_LIKED:
+            return reduceSetLiked(state, action);
+        case ActionTypes.SET_BLOCKED:
+            return reduceSetBlocked(state, action);
+        case ActionTypes.SET_REPOSTED:
+            return reduceSetReposted(state, action);
+        case ActionTypes.DECREMENT_LIKE:
+            return reduceDecrementLike(state, action);
+        case ActionTypes.DECREMENT_REPOST:
+            return reduceDecrementRepost(state, action);
         default:
             return state;
     }
@@ -447,6 +528,23 @@ function reduceSetPost(state: State, action: Action): State {
             ...state.map,
             [messageId]: post
         },
+    };
+}
+
+function reduceUnsetPost(state: State, action: Action): State {
+    const messageId = action.payload as string;
+
+    const newMap = {
+        ...state.map,
+    };
+
+    if (newMap[messageId]) {
+        delete newMap[messageId];
+    }
+
+    return {
+        ...state,
+        map: newMap,
     };
 }
 
@@ -512,7 +610,6 @@ function reduceIncrementRepost(state: State, action: Action): State {
             [parentId]: {
                 ...meta,
                 repostCount: Number(repostCount) + 1,
-                reposted: true,
             },
         },
     };
@@ -530,7 +627,88 @@ function reduceIncrementLike(state: State, action: Action): State {
             [parentId]: {
                 ...meta,
                 likeCount: Number(likeCount) + 1,
-                liked: true,
+            },
+        },
+    };
+}
+
+function reduceSetLiked(state: State, action: Action): State {
+    const {parentId, messageId} = action.payload;
+    const meta = state.meta[parentId] || {};
+
+    return {
+        ...state,
+        meta: {
+            ...state.meta,
+            [parentId]: {
+                ...meta,
+                liked: messageId,
+            },
+        },
+    };
+}
+
+function reduceSetBlocked(state: State, action: Action): State {
+    const {parentId, messageId} = action.payload;
+    const meta = state.meta[parentId] || {};
+
+    return {
+        ...state,
+        meta: {
+            ...state.meta,
+            [parentId]: {
+                ...meta,
+                blocked: messageId,
+            },
+        },
+    };
+}
+
+function reduceSetReposted(state: State, action: Action): State {
+    const {parentId, messageId} = action.payload;
+    const meta = state.meta[parentId] || {};
+
+    return {
+        ...state,
+        meta: {
+            ...state.meta,
+            [parentId]: {
+                ...meta,
+                reposted: messageId,
+            },
+        },
+    };
+}
+
+function reduceDecrementLike(state: State, action: Action): State {
+    const parentId = action.payload;
+    const meta = state.meta[parentId] || {};
+    const likeCount = meta.likeCount || 0;
+
+    return {
+        ...state,
+        meta: {
+            ...state.meta,
+            [parentId]: {
+                ...meta,
+                likeCount: Math.max(0, Number(likeCount) - 1),
+            },
+        },
+    };
+}
+
+function reduceDecrementRepost(state: State, action: Action): State {
+    const parentId = action.payload;
+    const meta = state.meta[parentId] || {};
+    const repostCount = meta.repostCount || 0;
+
+    return {
+        ...state,
+        meta: {
+            ...state.meta,
+            [parentId]: {
+                ...meta,
+                repostCount: Math.max(0, Number(repostCount) - 1),
             },
         },
     };

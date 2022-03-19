@@ -19,6 +19,7 @@ import ParentThread from "../../components/ParentThread";
 import {Post as PostMessage, PostMessageSubType} from "../../util/message";
 import {useENSName, useLoggedIn} from "../../ducks/web3";
 import {useSelectedLocalId} from "../../ducks/worker";
+import {usePostModeration} from "../../ducks/mods";
 
 type Props = {
 
@@ -42,12 +43,13 @@ export default function PostView(props: Props): ReactElement {
     const scrollEl = useRef<HTMLDivElement>(null);
     const [height, setHeight] = useState(window.innerHeight);
     const selected = useSelectedLocalId();
-
     const originalPost = usePost(reference);
     const messageId = originalPost?.subtype === PostMessageSubType.Repost
         ? originalPost.payload.reference
         : reference;
     const meta = useMeta(messageId);
+    const modOverride = usePostModeration(meta?.rootId);
+    const [end, setEnd] = useState(false);
 
     useEffect(() => {
         (async function onPostViewMount() {
@@ -56,19 +58,27 @@ export default function PostView(props: Props): ReactElement {
             await fetchMore(true);
         })();
 
-    }, [selected, ensName, messageId]);
+    }, [selected, ensName, messageId, modOverride?.unmoderated]);
 
     const gotoPost = useGoToPost();
 
     const fetchMore = useCallback(async (reset = false) => {
+        let messageIds: any;
+
         if (reset) {
-            const messageIds: any = await dispatch(fetchReplies(messageId, 20, 0));
+            messageIds = await dispatch(fetchReplies(messageId, 20, 0));
             setOffset(messageIds.length);
             setOrder(messageIds);
         } else {
-            const messageIds: any = await dispatch(fetchReplies(messageId, limit, offset));
+            messageIds = await dispatch(fetchReplies(messageId, limit, offset));
             setOffset(offset + messageIds.length);
             setOrder(order.concat(messageIds));
+        }
+
+        if (!messageIds.length) {
+            setEnd(true);
+        } else {
+            setEnd(false);
         }
     }, [limit, offset, order, messageId]);
 
@@ -169,7 +179,7 @@ export default function PostView(props: Props): ReactElement {
                         })
                     }
                     {
-                        order.length < meta.replyCount && (
+                        !end && order.length < meta.replyCount && (
                             <div
                                 className={classNames(
                                     "flex flex-row flex-nowrap items-center justify-center",

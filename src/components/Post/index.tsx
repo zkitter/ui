@@ -2,32 +2,54 @@ import React, {MouseEventHandler, ReactElement, useCallback, useEffect, useState
 import classNames from "classnames";
 import moment from "moment";
 import {
+    decrementLike,
+    decrementRepost,
     fetchMeta,
     fetchPost,
     incrementLike,
     incrementReply,
-    incrementRepost,
+    incrementRepost, PostMeta,
+    setBlockedPost,
+    setLiked,
+    setReposted,
+    unsetPost,
     useMeta,
     usePost
 } from "../../ducks/posts";
-import {useUser} from "../../ducks/users";
+import {setBlocked, useUser} from "../../ducks/users";
 import Avatar from "../Avatar";
 import "../../util/variable.scss";
 import Icon from "../Icon";
 import "./post.scss";
 import Editor from "../Editor";
 import Modal, {ModalContent, ModalHeader} from "../Modal";
-import {submitModeration, submitPost, submitRepost, useDraft, useSubmitting} from "../../ducks/drafts";
+import {
+    removeMessage,
+    submitConnection,
+    submitModeration,
+    submitPost,
+    submitRepost,
+    useDraft,
+    useSubmitting
+} from "../../ducks/drafts";
 import {useDispatch} from "react-redux";
-import {MessageType, ModerationMessageSubType, Post as PostMessage, PostMessageSubType} from "../../util/message";
-import {useCanNonPostMessage, useLoggedIn} from "../../ducks/web3";
+import {
+    ConnectionMessageSubType,
+    MessageType,
+    ModerationMessageSubType, parseMessageId,
+    Post as PostMessage,
+    PostMessageSubType
+} from "../../util/message";
+import {useAccount, useCanNonPostMessage, useLoggedIn} from "../../ducks/web3";
 import {useHistory} from "react-router";
 import Menuable from "../Menuable";
 import {convertMarkdownToDraft, DraftEditor} from "../DraftEditor";
 import URLPreview from "../URLPreview";
 import {getHandle, getName, getUsername} from "../../util/user";
-import {getGroupName} from "../../util/interrep";
 import Nickname from "../Nickname";
+import {useSelectedLocalId, useWorkerUnlocked} from "../../ducks/worker";
+import {Identity} from "../../serviceWorkers/identity";
+import {usePostModeration} from "../../ducks/mods";
 
 
 type Props = {
@@ -52,6 +74,14 @@ export default function Post(props: Props): ReactElement {
         ? referencedPost
         : originalPost;
     const dispatch = useDispatch();
+    const [deleted, setDeleted] = useState(false);
+
+    const onDeletePost = useCallback(() => {
+        if (!props.messageId) return;
+        dispatch(removeMessage(props.messageId));
+        dispatch(unsetPost(props.messageId));
+        setDeleted(true);
+    }, [props.messageId]);
 
     useEffect(() => {
         if (!post) {
@@ -62,10 +92,12 @@ export default function Post(props: Props): ReactElement {
 
     if (!post) return <LoadingPost {...props} />;
 
+    if (deleted) return <></>;
+
     return (
         <>
-            { !expand && <RegularPost key={props.messageId} {...props} /> }
-            { !!expand && <ExpandedPost key={props.messageId} {...props} /> }
+            {!expand && <RegularPost key={props.messageId} onDeletePost={onDeletePost} {...props} />}
+            {!!expand && <ExpandedPost key={props.messageId} onDeletePost={onDeletePost} {...props} />}
         </>
     );
 }
@@ -77,7 +109,7 @@ type ReplyEditorModalProps = {
 }
 
 function ReplyEditorModal(props: ReplyEditorModalProps): ReactElement {
-    const { messageId, onClose } = props;
+    const {messageId, onClose} = props;
     const dispatch = useDispatch();
     const post = usePost(props.messageId);
     const draft = useDraft(props.messageId);
@@ -115,7 +147,9 @@ function ReplyEditorModal(props: ReplyEditorModalProps): ReactElement {
     );
 }
 
-export function ExpandedPost(props: Props): ReactElement {
+export function ExpandedPost(props: Props & {
+    onDeletePost: () => void;
+}): ReactElement {
     const originalPost = usePost(props.messageId);
     const referencedPost = usePost(originalPost?.payload.reference);
     const messageId = originalPost?.subtype === PostMessageSubType.Repost
@@ -173,7 +207,7 @@ export function ExpandedPost(props: Props): ReactElement {
                     </div>
                 </div>
                 <div className="flex flex-row flex-nowrap flex-grow flex-shrink justify-end">
-                    <PostMenu messageId={messageId} />
+                    <PostMenu messageId={messageId} onDeletePost={props.onDeletePost}/>
                 </div>
             </div>
             <div className="flex flex-col flex-nowrap items-start flex-grow flex-shrink">
@@ -204,11 +238,19 @@ export function ExpandedPost(props: Props): ReactElement {
                 <div className="mt-4 mb-2 text-xl w-full">
                     {
                         post.payload.content && (
-                            <DraftEditor
-                                editorState={editorState}
-                                onChange={() => null}
-                                readOnly
-                            />
+                            meta.blocked
+                                ? (
+                                    <div className="text-sm text-gray-600 bg-gray-100 border rounded px-2 py-1">
+                                        This post has been blocked.
+                                    </div>
+                                )
+                                : (
+                                    <DraftEditor
+                                        editorState={editorState}
+                                        onChange={() => null}
+                                        readOnly
+                                    />
+                                )
                         )
                     }
                     {
@@ -238,7 +280,9 @@ export function ExpandedPost(props: Props): ReactElement {
     );
 }
 
-export function RegularPost(props: Props): ReactElement {
+export function RegularPost(props: Props & {
+    onDeletePost: () => void;
+}): ReactElement {
     const {
         isParent,
     } = props;
@@ -305,7 +349,7 @@ export function RegularPost(props: Props): ReactElement {
                         incognito={post.creator === ''}
                         twitterUsername={post.type === MessageType._TWEET ? post.creator : undefined}
                     />
-                    { !!isParent && <div className="post__parent-line" /> }
+                    {!!isParent && <div className="post__parent-line"/>}
                 </div>
                 <div className="flex flex-col flex-nowrap items-start flex-grow flex-shrink w-0">
                     <div
@@ -352,7 +396,7 @@ export function RegularPost(props: Props): ReactElement {
                             {moment(post.createdAt).fromNow(true)}
                         </div>
                         <div className="flex flex-row flex-nowrap flex-grow flex-shrink justify-end">
-                            <PostMenu messageId={messageId} />
+                            <PostMenu messageId={messageId} onDeletePost={props.onDeletePost}/>
                         </div>
                     </div>
                     <div
@@ -390,21 +434,29 @@ export function RegularPost(props: Props): ReactElement {
 
                         {
                             post.payload.content && (
-                                <DraftEditor
-                                    editorState={editorState}
-                                    onChange={() => null}
-                                    customStyleMap={{
-                                        CODE: {
-                                            backgroundColor: '#f6f6f6',
-                                            color: '#1c1e21',
-                                            padding: '2px 4px',
-                                            margin: '0 2px',
-                                            borderRadius: '2px',
-                                            fontFamily: 'Roboto Mono, monospace',
-                                        },
-                                    }}
-                                    readOnly
-                                />
+                                meta.blocked
+                                    ? (
+                                        <div className="text-sm text-gray-600 bg-gray-100 border rounded px-2 py-1">
+                                            This post has been blocked.
+                                        </div>
+                                    )
+                                    : (
+                                        <DraftEditor
+                                            editorState={editorState}
+                                            onChange={() => null}
+                                            customStyleMap={{
+                                                CODE: {
+                                                    backgroundColor: '#f6f6f6',
+                                                    color: '#1c1e21',
+                                                    padding: '2px 4px',
+                                                    margin: '0 2px',
+                                                    borderRadius: '2px',
+                                                    fontFamily: 'Roboto Mono, monospace',
+                                                },
+                                            }}
+                                            readOnly
+                                        />
+                                    )
                             )
                         }
 
@@ -438,19 +490,39 @@ function PostFooter(props: {
     const meta = useMeta(messageId);
     const post = usePost(messageId);
     const loggedIn = useLoggedIn();
+    const selected = useSelectedLocalId();
     const canNonPostMessage = useCanNonPostMessage();
     const dispatch = useDispatch();
     const [showReply, setShowReply] = useState(false);
+    const modOverride = usePostModeration(messageId);
 
-    const onLike = useCallback(() => {
-        dispatch(submitModeration(messageId, ModerationMessageSubType.Like));
+    const onLike = useCallback(async () => {
+        const mod: any = await dispatch(submitModeration(messageId, ModerationMessageSubType.Like));
+        const {messageId: mid} = await mod.toJSON();
         dispatch(incrementLike(messageId));
+        dispatch(setLiked(messageId, mid));
     }, [messageId]);
 
-    const onRepost = useCallback(() => {
-        dispatch(submitRepost(messageId));
+    const onUnike = useCallback(() => {
+        if (!meta?.liked) return;
+        dispatch(removeMessage(meta?.liked));
+        dispatch(decrementLike(messageId));
+        dispatch(setLiked(messageId, null));
+    }, [meta?.liked]);
+
+    const onRepost = useCallback(async () => {
+        const post: any = await dispatch(submitRepost(messageId));
+        const {messageId: mid} = await post.toJSON();
         dispatch(incrementRepost(messageId));
+        dispatch(setReposted(messageId, mid));
     }, [messageId]);
+
+    const onUnrepost = useCallback(() => {
+        if (!meta?.reposted) return;
+        dispatch(removeMessage(meta?.reposted));
+        dispatch(decrementRepost(messageId));
+        dispatch(setReposted(messageId, null));
+    }, [meta?.reposted]);
 
     // @ts-ignore
     const isMirrorTweet = [PostMessageSubType.MirrorPost, PostMessageSubType.MirrorReply].includes(post?.subtype);
@@ -464,7 +536,7 @@ function PostFooter(props: {
                 className,
             )}
         >
-            { showReply && (
+            {showReply && (
                 <ReplyEditorModal
                     onClose={() => setShowReply(false)}
                     onSuccessPost={props.onSuccessPost}
@@ -473,11 +545,11 @@ function PostFooter(props: {
             )}
             <PostButton
                 iconClassName="hover:bg-blue-50 hover:text-blue-400"
-                fa="far fa-comments"
+                fa={getCommentIconFA(meta?.moderation)}
+                disabled={getCommentDisabled(meta, selected, modOverride?.unmoderated) || isTweet}
                 count={meta.replyCount}
                 onClick={() => setShowReply(true)}
                 large={large}
-                disabled={isTweet}
             />
             <PostButton
                 textClassName={classNames({
@@ -491,7 +563,7 @@ function PostFooter(props: {
                 )}
                 fa="fas fa-retweet"
                 count={meta.repostCount}
-                onClick={meta.reposted ? undefined : onRepost}
+                onClick={meta.reposted ? onUnrepost : onRepost}
                 disabled={!canNonPostMessage || isTweet}
                 large={large}
             />
@@ -510,7 +582,7 @@ function PostFooter(props: {
                     "fas fa-heart": meta.liked,
                 })}
                 count={meta.likeCount}
-                onClick={meta.liked ? undefined : onLike}
+                onClick={meta.liked ? onUnike : onLike}
                 disabled={!canNonPostMessage || isTweet}
                 large={large}
             />
@@ -539,9 +611,78 @@ function PostFooter(props: {
     );
 }
 
-function PostMenu(props: Props): ReactElement {
+function getCommentIconFA(moderation?: ModerationMessageSubType | null): string {
+    switch(moderation) {
+        case ModerationMessageSubType.ThreadBlock:
+            return 'fas fa-shield-alt';
+        case ModerationMessageSubType.ThreadFollow:
+            return 'fas fa-user-check';
+        case ModerationMessageSubType.ThreadMention:
+            return 'fas fa-at';
+        default:
+            return 'far fa-comments';
+    }
+}
+
+function getCommentDisabled(meta: PostMeta | null, identity: Identity | null, unmoderated = false): boolean {
+    if (unmoderated) return false;
+
+    if (meta?.rootId && identity?.type === 'gun') {
+        const {creator} = parseMessageId(meta.rootId);
+        if (creator === identity?.address) return false;
+    }
+
+    switch(meta?.moderation) {
+        case ModerationMessageSubType.ThreadBlock:
+            return !!meta.modblockedctx;
+        case ModerationMessageSubType.ThreadFollow:
+            return !meta.modfollowedctx;
+        case ModerationMessageSubType.ThreadMention:
+            return !meta.modmentionedctx;
+        default:
+            return false;
+    }
+}
+
+function PostMenu(props: Props & {
+    onDeletePost: () => void;
+}): ReactElement {
     const post = usePost(props.messageId);
+    const meta = useMeta(props.messageId);
     const user = useUser(post?.creator);
+    const dispatch = useDispatch();
+    const account = useAccount();
+    const unlocked = useWorkerUnlocked();
+    const selected = useSelectedLocalId();
+    const isCurrentUser = selected?.type === 'gun' ? user?.username === selected.address : false;
+    const [opened, setOpened] = useState(false);
+
+    const onBlock = useCallback(() => {
+        if (!user) return;
+        dispatch(submitConnection(user?.username, ConnectionMessageSubType.Block));
+        setOpened(false);
+    }, [user]);
+
+    const onUnblock = useCallback(() => {
+        if (user?.meta?.blocked) {
+            dispatch(removeMessage(user?.meta?.blocked));
+            dispatch(setBlocked(user?.username, null));
+            setOpened(false);
+        }
+    }, [user?.meta?.blocked]);
+
+    const onBlockPost = useCallback(() => {
+        if (!props.messageId) return;
+        dispatch(submitModeration(props.messageId, ModerationMessageSubType.Block));
+        setOpened(false);
+    }, [props.messageId]);
+
+    const onUnblockPost = useCallback(() => {
+        if (!meta?.blocked) return;
+        dispatch(removeMessage(meta.blocked));
+        dispatch(setBlockedPost(props.messageId, null));
+        setOpened(false);
+    }, [meta?.blocked, props.messageId]);
 
     if (post?.type === MessageType._TWEET) {
         return (
@@ -561,28 +702,72 @@ function PostMenu(props: Props): ReactElement {
         )
     }
 
+    const postMenuItems = [];
+
+    if (!isCurrentUser) {
+        if (user) {
+            postMenuItems.push(
+                user?.meta?.blocked
+                    ? {
+                        label: `Unblock @${getName(user)}`,
+                        iconFA: 'fas fa-user-slash',
+                        onClick: onUnblock,
+                        disabled: !unlocked,
+                        iconClassName: 'text-gray-400',
+                    }
+                    : {
+                        label: `Block @${getName(user)}`,
+                        iconFA: 'fas fa-user-slash',
+                        onClick: onBlock,
+                        disabled: !!user?.meta?.followed || !unlocked,
+                        className: 'block-user-item',
+                        iconClassName: 'text-red-400 hover:text-red-800',
+                    },
+            );
+        }
+
+        if (meta?.blocked) {
+            postMenuItems.push({
+                label: `Unblock Post`,
+                iconFA: 'fas fa-ban',
+                disabled: !unlocked,
+                onClick: onUnblockPost,
+                iconClassName: 'text-gray-400',
+            });
+        } else {
+            postMenuItems.push({
+                label: `Block Post`,
+                iconFA: 'fas fa-ban',
+                className: 'block-user-item',
+                disabled: !unlocked,
+                onClick: onBlockPost,
+                iconClassName: 'text-red-400 hover:text-red-800',
+            });
+        }
+
+
+    } else if (isCurrentUser) {
+        postMenuItems.push({
+            label: `Delete Post`,
+            iconFA: 'fas fa-trash',
+            className: 'block-user-item',
+            disabled: !unlocked,
+            onClick: props.onDeletePost,
+            iconClassName: 'text-red-400 hover:text-red-800',
+        });
+    }
+
     return (
         <Menuable
             className="post__menu"
-            items={[
-                {
-                    label: `Block @${getHandle(user)}`,
-                    iconFA: 'fas fa-user-slash',
-                    disabled: true,
-                    iconClassName: 'text-gray-400',
-                },
-                {
-                    label: `Block Post`,
-                    iconFA: 'fas fa-ban',
-                    disabled: true,
-                    iconClassName: 'text-gray-400',
-                },
-            ]}
+            items={postMenuItems}
+            opened={opened}
+            onClose={() => setOpened(false)}
+            onOpen={() => setOpened(true)}
         >
             <Icon
                 className="text-gray-400 hover:text-gray-800"
                 fa="fas fa-ellipsis-h"
-                onClick={() => null}
             />
         </Menuable>
 
@@ -602,23 +787,24 @@ export function LoadingPost(props: Props): ReactElement {
                 )}
             >
                 <div className="flex flex-row flex-nowrap flex-grow-0 flex-shrink-0">
-                    <div className="mr-3 w-12 h-12 flex-shrink-0 rounded-full bg-gray-50" />
+                    <div className="mr-3 w-12 h-12 flex-shrink-0 rounded-full bg-gray-50"/>
                     <div className="flex flex-col flex-nowrap items-start text-light w-full">
-                        <div className="font-bold text-base mr-1 w-24 h-6 bg-gray-50" />
-                        <div className="text-gray-400 mr-1 mt-0.5 w-24 h-6 bg-gray-50" />
+                        <div className="font-bold text-base mr-1 w-24 h-6 bg-gray-50"/>
+                        <div className="text-gray-400 mr-1 mt-0.5 w-24 h-6 bg-gray-50"/>
                     </div>
                     <div className="flex flex-row flex-nowrap flex-grow flex-shrink justify-end">
                     </div>
                 </div>
                 <div className="flex flex-col flex-nowrap items-start flex-grow flex-shrink">
-                    <div className="mt-4 mb-2 text-xl w-24 h-6 bg-gray-50" />
+                    <div className="mt-4 mb-2 text-xl w-24 h-6 bg-gray-50"/>
                     <div className="flex flex-row flex-nowrap items-center text-light w-full">
-                        <div className="text-gray-500 my-2w-24 h-6 bg-gray-50" />
+                        <div className="text-gray-500 my-2w-24 h-6 bg-gray-50"/>
                     </div>
-                    <div className="flex flex-row flex-nowrap items-center mt-2 pt-3 border-t border-gray-100 w-full post__footer">
-                        <div className="bg-gray-50 w-12 h-6 mr-8" />
-                        <div className="bg-gray-50 w-12 h-6 mr-8" />
-                        <div className="bg-gray-50 w-12 h-6 mr-8" />
+                    <div
+                        className="flex flex-row flex-nowrap items-center mt-2 pt-3 border-t border-gray-100 w-full post__footer">
+                        <div className="bg-gray-50 w-12 h-6 mr-8"/>
+                        <div className="bg-gray-50 w-12 h-6 mr-8"/>
+                        <div className="bg-gray-50 w-12 h-6 mr-8"/>
                     </div>
                 </div>
             </div>
@@ -635,20 +821,20 @@ export function LoadingPost(props: Props): ReactElement {
                 props.className,
             )}
         >
-            <div className="mr-3 w-12 h-12 rounded-full bg-gray-50" />
+            <div className="mr-3 w-12 h-12 rounded-full bg-gray-50"/>
             <div className="flex flex-col flex-nowrap items-start flex-grow flex-shrink">
                 <div className="flex flex-row flex-nowrap items-center text-light w-full">
-                    <div className="font-bold text-base mr-1 w-24 h-6 bg-gray-50" />
-                    <div className="text-gray-400 mr-1 w-24 h-6 bg-gray-50" />
-                    <div className="text-gray-400 w-24 h-6 bg-gray-50" />
+                    <div className="font-bold text-base mr-1 w-24 h-6 bg-gray-50"/>
+                    <div className="text-gray-400 mr-1 w-24 h-6 bg-gray-50"/>
+                    <div className="text-gray-400 w-24 h-6 bg-gray-50"/>
                     <div className="flex flex-row flex-nowrap flex-grow flex-shrink justify-end">
                     </div>
                 </div>
-                <div className="text-light mt-1 mb-2 w-80 h-6 bg-gray-50" />
+                <div className="text-light mt-1 mb-2 w-80 h-6 bg-gray-50"/>
                 <div className="flex flex-row flex-nowrap items-center post__footer">
-                    <div className="bg-gray-50 w-8 h-4 mr-8 ml-1" />
-                    <div className="bg-gray-50 w-8 h-4 mr-8" />
-                    <div className="bg-gray-50 w-8 h-4 mr-8" />
+                    <div className="bg-gray-50 w-8 h-4 mr-8 ml-1"/>
+                    <div className="bg-gray-50 w-8 h-4 mr-8"/>
+                    <div className="bg-gray-50 w-8 h-4 mr-8"/>
                 </div>
             </div>
         </div>
@@ -675,6 +861,7 @@ export function PostButton(props: PostButtonProps): ReactElement {
                 props.className,
                 {
                     'cursor-default opacity-50': props.disabled,
+                    'cursor-pointer': !props.disabled,
                 }
             )}
             onClick={e => {

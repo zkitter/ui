@@ -20,3 +20,13 @@
     }
   }
 }
+
+.block-user-item {
+  .menuable__menu__item__label {
+    color: $red-400;
+
+    &:hover {
+      color: $red-800;
+    }
+  }
+}

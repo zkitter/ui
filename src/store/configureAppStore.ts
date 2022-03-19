@@ -8,6 +8,7 @@ import thunk from "redux-thunk";
 import {createLogger} from "redux-logger";
 import worker from "../ducks/worker";
 import zkpr from "../ducks/zkpr";
+import mods from "../ducks/mods";
 const rootReducer = combineReducers({
     web3,
     zkpr,
@@ -15,6 +16,7 @@ const rootReducer = combineReducers({
     users,
     drafts,
     worker,
+    mods,
 });
 
 export type AppRootState = ReturnType<typeof rootReducer>;
