@@ -203,6 +203,7 @@ function UserMenuable(props: {
     const [showingScanner, showScanner] = useState(false);
     const zkprLoading = useZKPRLoading();
     const web3Loading = useWeb3Loading();
+    const history = useHistory();
 
     const connectWallet = useCallback(async (e, reset) => {
         await dispatch(connectWeb3());
@@ -267,6 +268,12 @@ function UserMenuable(props: {
             )
         });
     }
+
+    items.push({
+        label: 'Settings',
+        iconFA: 'fas fa-cog',
+        onClick: () => history.push('/settings'),
+    })
 
     if (selectedLocalId && identities.length) {
         items.push({

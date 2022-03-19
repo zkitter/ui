@@ -21,6 +21,7 @@ import ConnectTwitterView from "../ConnectTwitterView";
 import {loginUser} from "../../util/user";
 import zkpr, {connectZKPR} from "../../ducks/zkpr";
 import PostModerationPanel from "../../components/PostModerationPanel";
+import SettingView from "../SettingView";
 
 export default function App(): ReactElement {
     const dispatch = useDispatch();
@@ -93,6 +94,9 @@ export default function App(): ReactElement {
                     <Route path="/signup">
                         <SignupView />
                     </Route>
+                    <Route path="/settings">
+                        <SettingView />
+                    </Route>
                     <Route path="/:name">
                         <ProfileView />
                     </Route>
@@ -107,6 +111,7 @@ export default function App(): ReactElement {
                     <Route path="/tag/:tagName" component={DefaultMetaPanels} />
                     <Route path="/home" component={DefaultMetaPanels} />
                     <Route path="/notifications" />
+                    <Route path="/settings" />
                     <Route path="/create-local-backup" />
                     <Route path="/onboarding/interrep" />
                     <Route path="/connect/twitter" />

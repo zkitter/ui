@@ -75,6 +75,36 @@ $red-25: mix($red, $white, 2.5);
   min-height: 16rem;
 }
 
+.blurred-image {
+  position: relative;
+
+  &:after {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    height: 100%;
+    width: 100%;
+    background-color: rgba($black, .2);
+    backdrop-filter: blur(40px);
+  }
+}
+
+.unblurred-image {
+  position: relative;
+
+  &:after {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    height: 100%;
+    width: 100%;
+    background-color: rgba($black, .2);
+    backdrop-filter: blur(0);
+  }
+}
+
 @media only screen and (max-width: 768px) {
   .mobile-hidden {
     display: none;
