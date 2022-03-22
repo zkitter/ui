@@ -603,7 +603,7 @@ export const useCanNonPostMessage = () => {
 
         if (!selected) return false;
 
-        if (selected.type === 'interrep') {
+        if (selected.type === 'interrep' || selected.type === 'zkpr_interrep') {
             return false;
         }
 
