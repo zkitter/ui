@@ -19,6 +19,7 @@ export default function HomeFeed(): ReactElement {
     const [limit, setLimit] = useState(20);
     const [offset, setOffset] = useState(0);
     const [order, setOrder] = useState<string[]>([]);
+    const [fetching, setFetching] = useState(false);
     const dispatch = useDispatch();
     const loggedIn = useLoggedIn();
     const hasLocalBackup = useHasLocal();
@@ -26,7 +27,12 @@ export default function HomeFeed(): ReactElement {
 
     useEffect(() => {
         (async function onGlobalFeedMount() {
-            await fetchMore(true);
+            setFetching(true);
+            try {
+                await fetchMore(true);
+            } finally {
+                setFetching(false);
+            }
         })();
     }, [selected]);
 
@@ -63,6 +69,18 @@ export default function HomeFeed(): ReactElement {
         >
             <LocalBackupNotification />
             <PostEditor onSuccessPost={onSuccessPost} />
+            {
+                !order.length && !fetching && (
+                    <div
+                        className={classNames(
+                            'flex flex-row flex-nowrap items-center justify-center',
+                            'py-6 px-4 border border-gray-200 rounded-xl text-sm text-gray-300',
+                        )}
+                    >
+                        Nothing to see here yet
+                    </div>
+                )
+            }
             {
                 order.map((messageId, i) => {
                     return (
