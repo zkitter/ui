@@ -74,6 +74,7 @@ div.public-DraftEditor-content {
   }
 
   &__post-menu {
+    cursor: default !important;
     &:hover {
       background-color: $white;
     }
@@ -82,6 +83,14 @@ div.public-DraftEditor-content {
   &__submit-btn {
     @extend %row-nowrap;
     padding: 0;
+    font-size: .875rem;
+    height: 2rem;
+    min-width: 2rem;
+
+    &:hover,
+    &:active {
+      background-color: $primary-color;
+    }
 
     &__wrapper {
       @extend %row-nowrap;
@@ -90,7 +99,20 @@ div.public-DraftEditor-content {
       height: 100%;
 
       &__text {
+        @extend %row-nowrap;
+        align-items: center;
         padding: 0 1rem;
+        border-top-left-radius: 0.75rem;
+        height: 100%;
+        border-bottom-left-radius: 0.75rem;
+
+        &:hover {
+          background-color: lighten($primary-color, 5);
+        }
+
+        &:active {
+          background-color: darken($primary-color, 5);
+        }
       }
 
       .menuable {
@@ -100,6 +122,16 @@ div.public-DraftEditor-content {
         height: 100%;
         padding: 0 0.5rem;
         border-left: 1px solid rgba($white, .5);
+        border-top-right-radius: 0.75rem;
+        border-bottom-right-radius: 0.75rem;
+
+        &:hover {
+          background-color: lighten($primary-color, 5);
+        }
+
+        &:active {
+          background-color: darken($primary-color, 5);
+        }
 
         &__menu {
           right: calc(100% + -1.5rem);

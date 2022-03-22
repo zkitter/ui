@@ -11,12 +11,24 @@
     background-color: $white;
     border-radius: .75rem;
     padding: .5rem 0;
-    z-index: 300;
+    z-index: 400;
 
     &__item {
       @extend %row-nowrap;
       align-content: center;
       padding: .5rem 1rem;
+    }
+  }
+
+  &--active {
+    &:after {
+      content: '';
+      width: 100vw;
+      height: 100vh;
+      position: fixed;
+      z-index: 300;
+      top: 0;
+      left: 0;
     }
   }
 }

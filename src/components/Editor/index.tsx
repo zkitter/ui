@@ -308,7 +308,11 @@ export default function Editor(props: Props): ReactElement {
                         >
                             <div className="editor__submit-btn__wrapper">
                                 <div className="editor__submit-btn__wrapper__text">
-                                    Post
+                                    {
+                                        draft?.global
+                                            ? 'Post to global feed'
+                                            : 'Post to my own feed'
+                                    }
                                 </div>
                                 {
                                     canNonPostMessage && (
@@ -323,7 +327,7 @@ export default function Editor(props: Props): ReactElement {
                                                                 <Checkbox
                                                                     className="mr-4 text-gray-500"
                                                                     onChange={onGlobalChange}
-                                                                    checked={draft?.global}
+                                                                    checked={!!draft?.global}
                                                                 >
                                                                     Post to global timeline
                                                                 </Checkbox>
@@ -342,7 +346,6 @@ export default function Editor(props: Props): ReactElement {
                                                                     </div>
                                                                 )
                                                             }
-
                                                         </div>
                                                     )
                                                 }
