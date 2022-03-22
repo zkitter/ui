@@ -26,7 +26,7 @@ import {getSession, verifyTweet} from "../../util/twitter";
 import ModerationButton from "../ModerationButton";
 import {ModerationMessageSubType} from "../../util/message";
 import {usePostModeration} from "../../ducks/mods";
-import {useMeta} from "../../ducks/posts";
+import {useCommentDisabled, useMeta} from "../../ducks/posts";
 
 type Props = {
     messageId: string;
@@ -63,10 +63,10 @@ export default function Editor(props: Props): ReactElement {
     const [verified, setVerified] = useState(false);
     const [verifiedSession, setVerifiedSession] = useState('');
     const selected = useSelectedLocalId();
-    const modOverride = usePostModeration(messageId);
     const meta = useMeta(messageId);
-
-    const shouldDisplayWarning = !!modOverride?.unmoderated && !!meta.moderation;
+    const modOverride = usePostModeration(meta?.rootId);
+    const commentDisabled = useCommentDisabled(meta?.rootId);
+    const shouldDisplayWarning = !!modOverride?.unmoderated && commentDisabled;
 
     useEffect(() => {
         (async function() {

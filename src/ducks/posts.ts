@@ -16,6 +16,7 @@ import config from "../util/config";
 import {Dispatch} from "redux";
 import {useHistory} from "react-router";
 import {useCallback} from "react";
+import {Identity} from "../serviceWorkers/identity";
 
 enum ActionTypes {
     SET_POSTS = 'posts/setPosts',
@@ -460,6 +461,43 @@ export const useMeta = (messageId: string)  => {
             likeCount: 0,
             reposted: 0,
         };
+    }, deepEqual);
+}
+
+export const useCommentDisabled = (messageId?: string | null) => {
+    return useSelector((state: AppRootState) => {
+        const {
+            posts: {
+                meta,
+            },
+            worker: {
+                selected,
+            },
+            mods: {
+                posts,
+            }
+        } = state;
+
+        if (!messageId) return false;
+
+        const postMeta = meta[messageId];
+        const rootMeta = meta[postMeta?.rootId || ''];
+
+        if (postMeta?.rootId && selected?.type === 'gun') {
+            const {creator} = parseMessageId(postMeta?.rootId);
+            if (creator === selected?.address) return false;
+        }
+
+        switch(postMeta?.moderation) {
+            case ModerationMessageSubType.ThreadBlock:
+                return !!rootMeta?.modblockedctx;
+            case ModerationMessageSubType.ThreadFollow:
+                return !rootMeta?.modfollowedctx;
+            case ModerationMessageSubType.ThreadMention:
+                return !rootMeta?.modmentionedctx;
+            default:
+                return false;
+        }
     }, deepEqual);
 }
 
