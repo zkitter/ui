@@ -72,4 +72,52 @@ div.public-DraftEditor-content {
       align-self: center;
     }
   }
+
+  &__post-menu {
+    &:hover {
+      background-color: $white;
+    }
+  }
+
+  &__submit-btn {
+    @extend %row-nowrap;
+    padding: 0;
+
+    &__wrapper {
+      @extend %row-nowrap;
+      align-items: center;
+      justify-content: center;
+      height: 100%;
+
+      &__text {
+        padding: 0 1rem;
+      }
+
+      .menuable {
+        @extend %row-nowrap;
+        align-items: center;
+        justify-content: center;
+        height: 100%;
+        padding: 0 0.5rem;
+        border-left: 1px solid rgba($white, .5);
+
+        &__menu {
+          right: calc(100% + -1.5rem);
+          left: auto;
+          top: calc(100% - 0.25rem);
+        }
+      }
+    }
+  }
+}
+
+.reply-editor {
+  .editor__submit-btn {
+    .menuable {
+      &__menu {
+        top: auto;
+        bottom: 2.75rem;
+      }
+    }
+  }
 }
