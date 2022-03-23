@@ -7,14 +7,14 @@ import {
 } from "draft-js";
 import classNames from "classnames";
 import "./editor.scss";
-import {useAccount, useENSName, useGunKey, useLoggedIn, useSemaphoreID} from "../../ducks/web3";
+import {useAccount, useCanNonPostMessage, useENSName, useGunKey, useLoggedIn, useSemaphoreID} from "../../ducks/web3";
 import Avatar from "../Avatar";
 import Web3Button from "../Web3Button";
 import Button from "../Button";
 import {DraftEditor} from "../DraftEditor";
 import Icon from "../Icon";
 import Input from "../Input";
-import drafts, {setDraft, setMirror, setModeration, useDraft, useMirror} from "../../ducks/drafts";
+import drafts, {setDraft, setGloabl, setMirror, setModeration, useDraft, useMirror} from "../../ducks/drafts";
 import {useDispatch} from "react-redux";
 import URLPreview from "../URLPreview";
 import SpinnerGif from "../../../static/icons/spinner.gif";
@@ -26,7 +26,8 @@ import {getSession, verifyTweet} from "../../util/twitter";
 import ModerationButton from "../ModerationButton";
 import {ModerationMessageSubType} from "../../util/message";
 import {usePostModeration} from "../../ducks/mods";
-import {useMeta} from "../../ducks/posts";
+import {useCommentDisabled, useMeta} from "../../ducks/posts";
+import Menuable from "../Menuable";
 
 type Props = {
     messageId: string;
@@ -63,10 +64,11 @@ export default function Editor(props: Props): ReactElement {
     const [verified, setVerified] = useState(false);
     const [verifiedSession, setVerifiedSession] = useState('');
     const selected = useSelectedLocalId();
-    const modOverride = usePostModeration(messageId);
     const meta = useMeta(messageId);
-
-    const shouldDisplayWarning = !!modOverride?.unmoderated && !!meta.moderation;
+    const modOverride = usePostModeration(meta?.rootId);
+    const commentDisabled = useCommentDisabled(meta?.rootId);
+    const shouldDisplayWarning = !!modOverride?.unmoderated && commentDisabled;
+    const canNonPostMessage = useCanNonPostMessage();
 
     useEffect(() => {
         (async function() {
@@ -160,7 +162,12 @@ export default function Editor(props: Props): ReactElement {
         } catch (e) {
             setErrorMessage(e.message);
         }
-    }, [props.onPost, verified, verifiedSession, mirror])
+    }, [props.onPost, verified, verifiedSession, mirror]);
+
+    const onGlobalChange = useCallback((e) => {
+        dispatch(setGloabl(messageId, e.target.checked));
+    }, [messageId]);
+
 
     if (!disabled && gun.priv && gun.pub && !gun.joinedTx) {
         return (
@@ -292,25 +299,65 @@ export default function Editor(props: Props): ReactElement {
                         {/*/>*/}
                     </div>
                     <div className="flex-grow flex flex-row flex-nowrap items-center justify-end">
-                        {
-                            !['interrep', 'zkpr_interrep'].includes(selectedId?.type as string) && (
-                                <Checkbox
-                                    className="mr-4"
-                                    onChange={onSetMirror}
-                                    checked={mirror}
-                                    disabled={verifying}
-                                >
-                                    Mirror Tweet
-                                </Checkbox>
-                            )
-                        }
                         <Button
+                            className="editor__submit-btn"
                             btnType="primary"
                             onClick={onPost}
                             disabled={isEmpty}
                             loading={loading}
                         >
-                            Post
+                            <div className="editor__submit-btn__wrapper">
+                                <div className="editor__submit-btn__wrapper__text">
+                                    {
+                                        draft?.global
+                                            ? 'Post to global feed'
+                                            : 'Post to my own feed'
+                                    }
+                                </div>
+                                {
+                                    canNonPostMessage && (
+                                        <Menuable
+                                            items={[
+                                                {
+                                                    label: 'Make a public post',
+                                                    className: 'editor__post-menu',
+                                                    component: (
+                                                        <div className="flex flex-col">
+                                                            <div className="flex flex-row mb-2">
+                                                                <Checkbox
+                                                                    className="mr-4 text-gray-500"
+                                                                    onChange={onGlobalChange}
+                                                                    checked={!!draft?.global}
+                                                                >
+                                                                    Post to global timeline
+                                                                </Checkbox>
+                                                            </div>
+                                                            {
+                                                                !['interrep', 'zkpr_interrep'].includes(selectedId?.type as string) && (
+                                                                    <div className="flex flex-row">
+                                                                        <Checkbox
+                                                                            className="mr-4 text-gray-500"
+                                                                            onChange={onSetMirror}
+                                                                            checked={mirror}
+                                                                            disabled={verifying}
+                                                                        >
+                                                                            Mirror to Twitter
+                                                                        </Checkbox>
+                                                                    </div>
+                                                                )
+                                                            }
+                                                        </div>
+                                                    )
+                                                }
+                                            ]}
+                                        >
+                                            <Icon
+                                                fa="fas fa-caret-down"
+                                            />
+                                        </Menuable>
+                                    )
+                                }
+                            </div>
                         </Button>
                     </div>
 

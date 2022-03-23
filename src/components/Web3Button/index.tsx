@@ -117,15 +117,15 @@ export default function Web3Button(props: Props): ReactElement {
             )
         }
     } else {
-        if (account) {
-            btnContent = <div><Username address={account} /></div>;
-        } else if (zkpr) {
-            btnContent = idCommitment
-                ? <div><Username address={idCommitment} /></div>
-                : <div>ZK Keeper</div>
-        } else {
-            btnContent = <div>Connect to a wallet</div>;
-        }
+        // if (account) {
+        //     btnContent = <div><Username address={account} /></div>;
+        // } else if (zkpr) {
+        //     btnContent = idCommitment
+        //         ? <div><Username address={idCommitment} /></div>
+        //         : <div>ZK Keeper</div>
+        // } else {
+        btnContent = <div>Add a user</div>;
+        // }
     }
 
     return (
@@ -149,8 +149,6 @@ export default function Web3Button(props: Props): ReactElement {
                     }
                 )}
                 onClick={props.onClick}
-                disabled={web3Loading}
-                loading={web3Loading}
             >
                 {btnContent}
             </Button>
@@ -161,9 +159,8 @@ export default function Web3Button(props: Props): ReactElement {
 function Web3ButtonLeft(props: Props): ReactElement {
     const selectedLocalId = useSelectedLocalId();
     const [opened, setOpened] = useState(false);
-    const zkpr = useZKPR();
 
-    if (selectedLocalId || zkpr) {
+    if (selectedLocalId) {
         return (
             <UserMenuable
                 opened={opened}
@@ -201,20 +198,7 @@ function UserMenuable(props: {
     const identities = useIdentities();
     const selectedLocalId = useSelectedLocalId();
     const [showingScanner, showScanner] = useState(false);
-    const zkprLoading = useZKPRLoading();
-    const web3Loading = useWeb3Loading();
     const history = useHistory();
-
-    const connectWallet = useCallback(async (e, reset) => {
-        await dispatch(connectWeb3());
-        reset();
-        return props.onConnect && props.onConnect();
-    }, []);
-
-    const connectKeeper = useCallback(async (e, reset) => {
-        await dispatch(connectZKPR());
-        reset();
-    }, []);
 
     const logout = useCallback(async () => {
         // @ts-ignore
@@ -237,26 +221,6 @@ function UserMenuable(props: {
 
     let items: ItemProps[] = [];
 
-    items.push({
-        label: '',
-        className: 'wallet-menu-header',
-        children: [
-            {
-                label: 'Metamask',
-                iconUrl: MetamaskSVG,
-                onClick: connectWallet,
-                disabled: web3Loading,
-            },
-            {
-                label: 'ZKPR',
-                iconUrl: ZKPRSVG,
-                onClick: connectKeeper,
-                disabled: zkprLoading,
-            },
-        ],
-        component: <WalletHeader setOpened={setOpened} />,
-    });
-
     if (selectedLocalId || identities.length) {
         items.push({
             label: '',
@@ -270,12 +234,21 @@ function UserMenuable(props: {
     }
 
     items.push({
+        label: 'Add a user',
+        iconFA: 'fas fa-user-plus',
+        onClick: () => {
+            setOpened(false);
+            history.push('/signup');
+        },
+    })
+
+    items.push({
         label: 'Settings',
         iconFA: 'fas fa-cog',
         onClick: () => history.push('/settings'),
     })
 
-    if (selectedLocalId && identities.length) {
+    if (selectedLocalId) {
         items.push({
             label: 'Logout',
             iconFA: 'fas fa-sign-out-alt',
@@ -644,46 +617,6 @@ function UnauthButton(props: {
 
     if (web3Unlocking) {
         return <Icon url={SpinnerGIF} size={2} />;
-    }
-
-    if (!account && !identities.length) {
-        return (
-            <>
-                <Menuable
-                    opened={opened}
-                    onOpen={() => setOpened(true)}
-                    onClose={() => setOpened(false)}
-                    className={classNames(
-                        "flex flex-row flex-nowrap items-center",
-                        "web3-button__alt-action",
-                    )}
-                    items={[
-                        {
-                            label: 'Metamask',
-                            iconUrl: MetamaskSVG,
-                            onClick: connectWallet,
-                        },
-                        {
-                            label: 'ZKPR',
-                            iconUrl: ZKPRSVG,
-                            onClick: connectKeeper,
-                            disabled: zkprLoading,
-                        },
-                    ]}
-                >
-                    {
-                        !web3Loading && (
-                            <Icon
-                                className={classNames(
-                                    "hover:text-green-500 transition-colors",
-                                )}
-                                fa="fas fa-plug"
-                            />
-                        )
-                    }
-                </Menuable>
-            </>
-        )
     }
 
     if (identities.length) {

@@ -10,9 +10,10 @@ import Input from "../../components/Input";
 import {checkPath, watchPath} from "../../util/interrep";
 import {postWorkerMessage} from "../../util/sw";
 import {setIdentity} from "../../serviceWorkers/util";
-import {genSemaphore, useWeb3Account, useWeb3Unlocking} from "../../ducks/web3";
+import {disconnectWeb3, genSemaphore, useWeb3Account, useWeb3Unlocking} from "../../ducks/web3";
 import {useDispatch} from "react-redux";
-import {createZKPRIdentity, useIdCommitment, useZKPR} from "../../ducks/zkpr";
+import {createZKPRIdentity, disconnectZKPR, useIdCommitment, useZKPR} from "../../ducks/zkpr";
+import Avatar, {Username} from "../../components/Avatar";
 
 export enum ViewType {
     welcome,
@@ -116,6 +117,55 @@ export default function InterrepOnboarding(props: Props): ReactElement {
     );
 }
 
+function WalletPanel(): ReactElement {
+    const web3Account = useWeb3Account();
+    const zkpr = useZKPR();
+    const idCommitment = useIdCommitment();
+    const selected = useSelectedLocalId();
+    const dispatch = useDispatch();
+    const history = useHistory();
+
+    const disconnect = useCallback(() => {
+        dispatch(disconnectZKPR());
+        dispatch(disconnectWeb3());
+
+        if (selected?.type === 'zkpr_interrep') {
+            postWorkerMessage(setIdentity(null));
+        }
+
+        history.push('/signup');
+    }, [selected]);
+
+    let content;
+
+    if (web3Account) {
+        content = <div><Username address={web3Account} /></div>;
+    } else if (zkpr) {
+        content = idCommitment
+            ? <div><Username address={idCommitment} /></div>
+            : <div>ZK Keeper</div>
+    }
+
+    return (
+        <div
+            className="flex flex-row items-center px-4 py-2 border border-gray-200 rounded-xl w-fit self-center signup__wallet-panel"
+        >
+            <Avatar
+                address={web3Account}
+                incognito={!!zkpr}
+                className="w-8 h-8"
+            />
+            <div className="ml-2 text-light font-roboto-mono">
+                {content}
+            </div>
+            <Icon
+                fa="fas fa-sign-out-alt ml-4 text-gray-400 hover:text-gray-800"
+                onClick={disconnect}
+            />
+        </div>
+    )
+}
+
 function WelcomeView(props: { setViewType: (v: ViewType) => void}): ReactElement {
     const selectedLocalId = useSelectedLocalId();
     const account = useWeb3Account();
@@ -136,6 +186,7 @@ function WelcomeView(props: { setViewType: (v: ViewType) => void}): ReactElement
                 <div className="text-xl mr-2">🥸</div>
                 <div className="text-xl font-semibold">Create Secret Member</div>
             </div>
+            <WalletPanel />
             <div className="my-4">
                 InterRep is a system which allows people to export cryptographic proofs of their reputation accrued on social networks or other services and to put these proofs on a decentralized platform (i.e. Ethereum), in order to allow decentralized applications or services to verify users' reputation efficiently and without sensitive data.
             </div>
@@ -175,6 +226,7 @@ function ConnectView(props: { setViewType: (v: ViewType) => void}): ReactElement
                 <div className="text-xl mr-2">🌐</div>
                 <div className="text-xl font-semibold">Web2 Login</div>
             </div>
+            <WalletPanel />
             <div className="my-4">
                 The heart of InterRep lies in the possibility to export reputation. In order to calculate your reputation, you will first need to connect to a reputation providers below.
             </div>
@@ -262,8 +314,11 @@ function JoinGroupView(props: {
                 }))
             }
 
-            history.push('/create-local-backup')
-            // props.setViewType(ViewType.done);
+            if (selected?.type === 'interrep') {
+                history.push('/create-local-backup');
+            } else {
+                props.setViewType(ViewType.done);
+            }
         })();
     }, [selected, account, idCommitment, zkpr, noIdCommitment]);
 
@@ -351,6 +406,7 @@ function JoinGroupView(props: {
                 <div className="text-xl mr-2">🌐</div>
                 <div className="text-xl font-semibold">Web2 Reputation</div>
             </div>
+            <WalletPanel />
             <div className="my-4">
                 Based on your reputation, you can join the following group:
             </div>

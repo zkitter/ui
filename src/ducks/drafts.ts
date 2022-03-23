@@ -33,6 +33,7 @@ enum ActionTypes {
     SET_ATTACHMENT = 'drafts/setAttachment',
     SET_SUBMITTING = 'drafts/setSubmitting',
     SET_MIRROR = 'drafts/setMirror',
+    SET_GLOBAL = 'drafts/setGloabl',
 }
 
 type Action<payload> = {
@@ -54,6 +55,7 @@ type Draft = {
     attachment?: string;
     moderation?: ModerationMessageSubType | null;
     reference: string;
+    global?: boolean;
     editorState: EditorState;
 }
 
@@ -83,12 +85,26 @@ export const setModeration = (messageId: string, moderation: ModerationMessageSu
     };
 }
 
+export const setGloabl = (messageId: string, global: boolean): Action<{
+    messageId: string;
+    global: boolean;
+}> => {
+    return {
+        type: ActionTypes.SET_GLOBAL,
+        payload: {
+            messageId,
+            global,
+        },
+    };
+}
+
 export const emptyDraft = (reference?: string): Action<Draft> => ({
     type: ActionTypes.SET_DRAFT,
     payload: {
         editorState: EditorState.createEmpty(),
         reference: reference || '',
         attachment: '',
+        global: false,
     },
 })
 
@@ -350,6 +366,10 @@ export const submitPost = (reference = '') => async (dispatch: ThunkDispatch<any
 
         if (draft.moderation) {
             await dispatch(submitModeration(messageId, draft.moderation));
+        }
+
+        if (draft.global) {
+            await dispatch(submitModeration(messageId, ModerationMessageSubType.Global));
         }
 
         return post;
@@ -622,6 +642,7 @@ export const useDraft = (reference = ''): Draft => {
         return draft
             ? draft
             : {
+                global: false,
                 reference,
                 editorState: EditorState.createEmpty(),
             };
@@ -658,6 +679,17 @@ export default function drafts(state = initialState, action: Action<any>): State
                     [action.payload.messageId || '']: {
                         ...state.map[action.payload.messageId || ''],
                         moderation: action.payload.moderation,
+                    },
+                },
+            };
+        case ActionTypes.SET_GLOBAL:
+            return {
+                ...state,
+                map: {
+                    ...state.map,
+                    [action.payload.messageId || '']: {
+                        ...state.map[action.payload.messageId || ''],
+                        global: action.payload.global,
                     },
                 },
             };

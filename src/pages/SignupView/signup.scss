@@ -109,4 +109,21 @@
       border-color: $gray-100 !important;
     }
   }
+
+  &__wallet-option {
+    cursor: pointer;
+    transition: box-shadow 150ms ease-in-out, color 150ms ease-in-out;
+
+    &:hover {
+      box-shadow: 0 0 0 2px $gray-100;
+    }
+  }
+
+  &__wallet-option + &__wallet-option {
+    margin-top: .5rem;
+  }
+
+  &__wallet-panel {
+    width: fit-content;
+  }
 }

@@ -12,7 +12,7 @@ import {
     setBlockedPost,
     setLiked,
     setReposted,
-    unsetPost,
+    unsetPost, useCommentDisabled,
     useMeta,
     usePost
 } from "../../ducks/posts";
@@ -494,7 +494,8 @@ function PostFooter(props: {
     const canNonPostMessage = useCanNonPostMessage();
     const dispatch = useDispatch();
     const [showReply, setShowReply] = useState(false);
-    const modOverride = usePostModeration(messageId);
+    const modOverride = usePostModeration(meta?.rootId);
+    const commentDisabled = useCommentDisabled(meta?.rootId);
 
     const onLike = useCallback(async () => {
         const mod: any = await dispatch(submitModeration(messageId, ModerationMessageSubType.Like));
@@ -546,7 +547,7 @@ function PostFooter(props: {
             <PostButton
                 iconClassName="hover:bg-blue-50 hover:text-blue-400"
                 fa={getCommentIconFA(meta?.moderation)}
-                disabled={getCommentDisabled(meta, selected, modOverride?.unmoderated) || isTweet}
+                disabled={(!modOverride?.unmoderated && commentDisabled) || isTweet}
                 count={meta.replyCount}
                 onClick={() => setShowReply(true)}
                 large={large}

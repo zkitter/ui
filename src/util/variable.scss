@@ -86,7 +86,7 @@ $red-25: mix($red, $white, 2.5);
     height: 100%;
     width: 100%;
     background-color: rgba($black, .2);
-    backdrop-filter: blur(40px);
+    backdrop-filter: blur(4rem);
   }
 }
 
@@ -100,7 +100,7 @@ $red-25: mix($red, $white, 2.5);
     left: 0;
     height: 100%;
     width: 100%;
-    background-color: rgba($black, .2);
+    background-color: rgba($black, 0);
     backdrop-filter: blur(0);
   }
 }
