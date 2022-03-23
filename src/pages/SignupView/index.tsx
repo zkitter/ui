@@ -1,13 +1,14 @@
-import React, {ReactElement, useCallback, useEffect, useState} from "react";
+import React, {MouseEventHandler, ReactElement, ReactNode, useCallback, useEffect, useState} from "react";
 import "./signup.scss"
 import Button from "../../components/Button";
 import {
-    createRecordTx,
+    connectWeb3,
+    createRecordTx, disconnectWeb3,
     loginGun, setJoinedTx,
     updateIdentity,
     useAccount,
     useGunNonce,
-    usePendingCreateTx, useWeb3Account
+    usePendingCreateTx, useWeb3Account, useWeb3Loading
 } from "../../ducks/web3";
 import {useDispatch} from "react-redux";
 import config from "../../util/config";
@@ -20,15 +21,21 @@ import {submitProfile} from "../../ducks/drafts";
 import {ProfileMessageSubType} from "../../util/message";
 import {useHistory} from "react-router";
 import deepEqual from "fast-deep-equal";
-import {addIdentity, setPassphrase} from "../../serviceWorkers/util";
+import {addIdentity, setIdentity, setPassphrase} from "../../serviceWorkers/util";
 import {postWorkerMessage} from "../../util/sw";
 import {useIdentities, useSelectedLocalId, useWorkerUnlocked} from "../../ducks/worker";
 import Icon from "../../components/Icon";
 import classNames from "classnames";
-import {useIdCommitment, useZKPR} from "../../ducks/zkpr";
+import {connectZKPR, disconnectZKPR, useIdCommitment, useZKPR, useZKPRLoading} from "../../ducks/zkpr";
+
+import MetamaskSVG from "../../../static/icons/metamask-fox.svg";
+import ZKPRSVG from "../../../static/icons/zkpr-logo.svg";
+import SpinnerGIF from "../../../static/icons/spinner.gif";
+import Avatar, {Username} from "../../components/Avatar";
 
 export enum ViewType {
     welcome,
+    chooseWallet,
     createIdentity,
     accountOptions,
     updateTx,
@@ -42,12 +49,15 @@ type Props = {
 }
 
 export default function SignupView(props: Props): ReactElement {
-    const [viewType, setViewType] = useState<ViewType>(props.viewType || ViewType.welcome);
+    const [viewType, setViewType] = useState<ViewType>(props.viewType || ViewType.chooseWallet);
     let content;
 
     switch (viewType) {
         case ViewType.welcome:
             content = <WelcomeView setViewType={setViewType} />;
+            break;
+        case ViewType.chooseWallet:
+            content = <ChooseWalletView setViewType={setViewType} />;
             break;
         case ViewType.createIdentity:
             content = <CreateIdentityView setViewType={setViewType} />;
@@ -103,7 +113,7 @@ function WelcomeView(props: { setViewType: (v: ViewType) => void}): ReactElement
             <div className="flex-grow flex flex-row mt-8 flex-nowrap items-end justify-end">
                 <Button
                     btnType="primary"
-                    onClick={() => props.setViewType(ViewType.accountOptions)}
+                    onClick={() => props.setViewType(ViewType.chooseWallet)}
                 >
                     Next
                 </Button>
@@ -135,6 +145,7 @@ function AccountOptionsView(props: { setViewType: (v: ViewType) => void}): React
                 <div className="text-xl mr-2">✨</div>
                 <div className="text-xl font-semibold">Select your account type</div>
             </div>
+            <WalletPanel setViewType={props.setViewType} />
             <div className="flex flex-row flex-nowrap signup__account-options">
                 <AccountOption
                     title="Wallet Address"
@@ -164,6 +175,54 @@ function AccountOptionsView(props: { setViewType: (v: ViewType) => void}): React
     );
 }
 
+function WalletPanel(props: { setViewType: (v: ViewType) => void}): ReactElement {
+    const web3Account = useWeb3Account();
+    const zkpr = useZKPR();
+    const idCommitment = useIdCommitment();
+    const selected = useSelectedLocalId();
+    const dispatch = useDispatch();
+
+    const disconnect = useCallback(() => {
+        dispatch(disconnectZKPR());
+        dispatch(disconnectWeb3());
+
+        if (selected?.type === 'zkpr_interrep') {
+            postWorkerMessage(setIdentity(null));
+        }
+
+        props.setViewType(ViewType.chooseWallet);
+    }, [selected]);
+
+    let content;
+
+    if (web3Account) {
+        content = <div><Username address={web3Account} /></div>;
+    } else if (zkpr) {
+        content = idCommitment
+            ? <div><Username address={idCommitment} /></div>
+            : <div>ZK Keeper</div>
+    }
+
+    return (
+        <div
+            className="flex flex-row items-center px-4 py-2 border border-gray-200 rounded-xl w-fit self-center signup__wallet-panel"
+        >
+            <Avatar
+                address={web3Account}
+                incognito={!!zkpr}
+                className="w-8 h-8"
+            />
+            <div className="ml-2 text-light font-roboto-mono">
+                {content}
+            </div>
+            <Icon
+                fa="fas fa-sign-out-alt ml-4 text-gray-400 hover:text-gray-800"
+                onClick={disconnect}
+            />
+        </div>
+    )
+}
+
 function AccountOption(props: {
     selected: boolean;
     title: string;
@@ -186,6 +245,102 @@ function AccountOption(props: {
             </div>
             <div className="signup__account-option__desc">
                 {props.description}
+            </div>
+        </div>
+    )
+}
+
+function ChooseWalletView(props: { setViewType: (v: ViewType) => void}): ReactElement {
+    const [selectedOption, selectOption] = useState<'wallet'|'incognito'>('wallet');
+    const history = useHistory();
+    const zkpr = useZKPR();
+    const [walletOption, setWalletOption] = useState<string>('metamask');
+    const zkprLoading = useZKPRLoading();
+    const dispatch = useDispatch();
+    const web3Loading = useWeb3Loading();
+    const web3Account = useWeb3Account();
+    const selected = useSelectedLocalId();
+
+    const disconnect = useCallback(() => {
+        dispatch(disconnectZKPR());
+        dispatch(disconnectWeb3());
+
+        if (selected?.type === 'zkpr_interrep') {
+            postWorkerMessage(setIdentity(null));
+        }
+    }, [selected]);
+
+    const connectWallet = useCallback(async (e) => {
+        disconnect();
+        await dispatch(connectWeb3());
+        props.setViewType(ViewType.accountOptions);
+    }, []);
+
+    const connectKeeper = useCallback(async (e) => {
+        disconnect();
+        const id: any = await dispatch(connectZKPR());
+        if (id) {
+            history.push('/');
+        } else {
+            history.push('/signup/interep');
+        }
+    }, []);
+
+    useEffect(() => {
+        if (zkpr) selectOption('incognito');
+    }, [zkpr]);
+
+    return (
+        <div className="flex flex-col flex-nowrap flex-grow my-4 mx-8 signup__content signup__welcome">
+            <div className="flex flex-row items-center justify-center my-4">
+                <div className="text-xl mr-2">👛</div>
+                <div className="text-xl font-semibold">Select your wallet</div>
+            </div>
+            <div className="flex flex-col flex-nowrap signup__wallet-options p-4">
+                <WalletOption
+                    iconUrl={MetamaskSVG}
+                    onClick={connectWallet}
+                    selected={walletOption === 'metamask'}
+                    loading={web3Loading}
+                >
+                    Metamask
+                </WalletOption>
+                <WalletOption
+                    iconUrl={ZKPRSVG}
+                    onClick={connectKeeper}
+                    selected={walletOption === 'zkpr'}
+                    loading={zkprLoading}
+                >
+                    ZKPR
+                </WalletOption>
+            </div>
+        </div>
+    );
+}
+
+function WalletOption(props: {
+    iconUrl: string;
+    children: ReactNode;
+    onClick: MouseEventHandler;
+    selected: boolean;
+    loading: boolean;
+}): ReactElement {
+    return (
+        <div
+            className={classNames(
+                "flex flex-row items-center p-2 rounded-xl border border-gray-200",
+                "signup__wallet-option",
+            )}
+            onClick={props.onClick}
+        >
+            <Icon
+                url={props.iconUrl}
+                size={2}
+                className="m-2"
+            />
+            <div className="ml-2">
+                { props.loading && <Icon url={SpinnerGIF} size={3} /> }
+                { props.loading ? null : props.children }
             </div>
         </div>
     )
@@ -224,6 +379,7 @@ function CreateIdentityView(props: { setViewType: (v: ViewType) => void}): React
                 <div className="text-xl mr-2">📝</div>
                 <div className="text-xl font-semibold">Create Identity</div>
             </div>
+            <WalletPanel setViewType={props.setViewType} />
             <div className="my-4">
                 First, we will need to create your identity. Your identity is tied to your wallet address. As long as you have access to your wallet, you will be able to restore your account.
             </div>
@@ -304,6 +460,7 @@ function UpdateTxView(props: { setViewType: (v: ViewType) => void}): ReactElemen
                 <div className="text-xl mr-2">✍️</div>
                 <div className="text-xl font-semibold">Update Identity</div>
             </div>
+            <WalletPanel setViewType={props.setViewType} />
             <div className="my-4">
                 Next, we will need to create an on-chain record of your identity and wallet address. We will be updating a contract on Arbitrum. Normally creating an on-chain record will require a user to pay gas, but don't worry, we will pick up the gas tab for you :)
             </div>
