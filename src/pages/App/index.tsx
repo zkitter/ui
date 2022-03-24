@@ -168,6 +168,16 @@ function AppFooter(): ReactElement {
     return (
         <div className="app__meta-content__footer p-2 my-2 flex flex-row">
             <div className="text-gray-500 text-xs flex flex-row flex-nowrap mr-4 items-center">
+                <Icon className="mr-2" fa="fas fa-book" />
+                <a
+                    className="text-gray-500"
+                    href="https://docs.auti.sm"
+                    target="_blank"
+                >
+                    Docs
+                </a>
+            </div>
+            <div className="text-gray-500 text-xs flex flex-row flex-nowrap mr-4 items-center">
                 <Icon className="mr-2" fa="fab fa-github" />
                 <a
                     className="text-gray-500"
