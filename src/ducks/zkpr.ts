@@ -53,6 +53,21 @@ export const connectZKPR = () => async (
             const client = await zkpr.connect();
             const zkprClient = new ZKPR(client);
 
+            zkprClient.on('logout', async data => {
+                const {
+                    worker: { selected, identities },
+                } = getState();
+
+                dispatch(disconnectZKPR());
+
+                const [defaultId] = identities;
+                if (defaultId) {
+                    postWorkerMessage(selectIdentity(defaultId.type === 'gun' ? defaultId.publicKey : defaultId.identityCommitment));
+                } else {
+                    postWorkerMessage(setIdentity(null));
+                }
+            });
+
             zkprClient.on('identityChanged', async data => {
                 const idCommitment = data && BigInt('0x' + data).toString();
                 const { worker: { identities } } = getState();
