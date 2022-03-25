@@ -4,6 +4,7 @@ import Input from "../Input";
 import Button from "../Button";
 import {postWorkerMessage} from "../../util/sw";
 import {setPassphrase} from "../../serviceWorkers/util";
+import "./login-modal.scss";
 
 type Props = {
     onClose: () => void;
@@ -28,7 +29,7 @@ export default function LoginModal(props: Props): ReactElement {
 
     return (
         <Modal
-            className="w-96"
+            className="w-96 login-modal"
             onClose={props.onClose}
         >
             <ModalHeader onClose={props.onClose}>

@@ -1,0 +1,20 @@
+@import "../../util/variable";
+
+.login-modal {
+  @media only screen and (max-width: 768px) {
+    display: flex;
+    flex-flow: column nowrap;
+    height: 18rem;
+    margin: 0;
+    position: fixed;
+    bottom: 0;
+    border-bottom-left-radius: 0;
+    border-bottom-right-radius: 0;
+
+    .modal__content {
+      flex: 1 1 auto;
+      height: 100%;
+      max-height: 100% !important;
+    }
+  }
+}
