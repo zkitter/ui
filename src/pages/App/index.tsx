@@ -22,6 +22,7 @@ import {loginUser} from "../../util/user";
 import zkpr, {connectZKPR} from "../../ducks/zkpr";
 import PostModerationPanel from "../../components/PostModerationPanel";
 import SettingView from "../SettingView";
+import MetaPanel from "../../components/MetaPanel";
 
 export default function App(): ReactElement {
     const dispatch = useDispatch();
@@ -104,20 +105,7 @@ export default function App(): ReactElement {
                         <Redirect to="/explore" />
                     </Route>
                 </Switch>
-                <Switch>
-                    <Route path="/explore" component={DefaultMetaPanels} />
-                    <Route path="/:name/status/:hash" component={PostMetaPanels} />
-                    <Route path="/post/:hash" component={PostMetaPanels} />
-                    <Route path="/tag/:tagName" component={DefaultMetaPanels} />
-                    <Route path="/home" component={DefaultMetaPanels} />
-                    <Route path="/notifications" />
-                    <Route path="/settings" />
-                    <Route path="/create-local-backup" />
-                    <Route path="/onboarding/interrep" />
-                    <Route path="/connect/twitter" />
-                    <Route path="/signup" />
-                    <Route path="/:name" component={DefaultMetaPanels} />
-                </Switch>
+                <MetaPanel className="mobile-hidden" />
             </div>
             <BottomNav />
         </div>
@@ -141,72 +129,4 @@ function AuthRoute(props: {
             <Redirect to={redirect} />
         </Route>
     )
-}
-
-function DefaultMetaPanels(): ReactElement {
-    return (
-        <div className="app__meta-content mobile-hidden">
-            <DiscoverUserPanel key="discover-user" />
-            <DiscoverTagPanel key="discover-tag" />
-            <AppFooter />
-        </div>
-    );
-}
-
-function PostMetaPanels(): ReactElement {
-    return (
-        <div className="app__meta-content mobile-hidden">
-            <PostModerationPanel />
-            <DiscoverUserPanel key="discover-user" />
-            <DiscoverTagPanel key="discover-tag" />
-            <AppFooter />
-        </div>
-    );
-}
-
-function AppFooter(): ReactElement {
-    return (
-        <div className="app__meta-content__footer p-2 my-2 flex flex-row">
-            <div className="text-gray-500 text-xs flex flex-row flex-nowrap mr-4 items-center">
-                <Icon className="mr-2" fa="fas fa-book" />
-                <a
-                    className="text-gray-500"
-                    href="https://docs.auti.sm"
-                    target="_blank"
-                >
-                    Docs
-                </a>
-            </div>
-            <div className="text-gray-500 text-xs flex flex-row flex-nowrap mr-4 items-center">
-                <Icon className="mr-2" fa="fab fa-github" />
-                <a
-                    className="text-gray-500"
-                    href="https://github.com/autism-org"
-                    target="_blank"
-                >
-                    Github
-                </a>
-            </div>
-            <div className="text-gray-500 text-xs flex flex-row flex-nowrap mr-4 items-center">
-                <Icon className="mr-2" fa="fab fa-twitter" />
-                <a
-                    className="text-gray-500"
-                    href="https://twitter.com/AutismDev"
-                    target="_blank"
-                >
-                    Twitter
-                </a>
-            </div>
-            <div className="text-gray-500 text-xs flex flex-row flex-nowrap items-center">
-                <Icon className="mr-2" fa="fab fa-discord" />
-                <a
-                    className="text-gray-500"
-                    href="https://discord.com/invite/GVP9MghwXc"
-                    target="_blank"
-                >
-                    Discord
-                </a>
-            </div>
-        </div>
-    );
 }

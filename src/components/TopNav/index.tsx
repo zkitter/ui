@@ -16,6 +16,8 @@ import {getName} from "../../util/user";
 import {useSelectedLocalId} from "../../ducks/worker";
 import {fetchNameByAddress} from "../../util/web3";
 import Logo from "../../../static/icons/favicon.png";
+import Modal from "../Modal";
+import MetaPanel from "../MetaPanel";
 
 export default function TopNav(): ReactElement {
     const account = useAccount();
@@ -39,8 +41,8 @@ export default function TopNav(): ReactElement {
                 )}
             >
                 <Switch>
-                    <Route path="/explore" component={DefaultHeaderGroup} />
-                    <Route path="/home" component={DefaultHeaderGroup} />
+                    <Route path="/explore" component={GlobalHeaderGroup} />
+                    <Route path="/home" component={GlobalHeaderGroup} />
                     <Route path="/tag/:tagName" component={TagHeaderGroup} />
                     <Route path="/:name/status/:hash" component={PostHeaderGroup} />
                     <Route path="/post/:hash" component={PostHeaderGroup} />
@@ -140,6 +142,67 @@ function DefaultHeaderGroup() {
     )
 }
 
+function GlobalHeaderGroup() {
+    const loggedIn = useGunLoggedIn();
+    const account = useAccount();
+    const selectedLocalId = useSelectedLocalId();
+    const [ensName, setEnsName] = useState('');
+
+    let address = '';
+
+    if (loggedIn) {
+        address = selectedLocalId?.address || account;
+    }
+
+    useEffect(() => {
+        (async () => {
+            const ens = await fetchNameByAddress(address);
+            setEnsName(ens);
+        })();
+    }, [address]);
+
+    return (
+        <div
+            className={classNames(
+                "flex flex-row flex-nowrap flex-grow items-center flex-shrink-0",
+                "p-1 mx-4 overflow-hidden",
+                "bg-white",
+            )}
+        >
+            <Icon
+                url={Logo}
+                size={2}
+            />
+            <TopNavContextButton />
+        </div>
+    )
+}
+
+function TopNavContextButton(): ReactElement {
+    const [showing, showModal] = useState(false);
+
+    return (
+        <>
+            {showing && (
+                <Modal
+                    className="meta-modal"
+                    onClose={() => showModal(false)}
+                >
+                    <MetaPanel className="mobile-only" />
+                </Modal>
+            )}
+            <div className="felx flex-row flex-nowrap flex-grow justify-end items-center mobile-only">
+                <Icon
+                    className="justify-end text-gray-200 hover:text-blue-400"
+                    fa="fas fa-binoculars"
+                    onClick={() => showModal(true)}
+                    size={1.25}
+                />
+            </div>
+        </>
+    )
+}
+
 function SettingHeaderGroup() {
     const history = useHistory();
 
@@ -201,7 +264,7 @@ function UserProfileHeaderGroup() {
     return (
         <div
             className={classNames(
-                "flex flex-row flex-nowrap items-center flex-shrink-0",
+                "flex flex-row flex-nowrap flex-grow items-center flex-shrink-0",
                 "rounded-xl p-1 mx-4 overflow-hidden",
                 "bg-white profile-header-group",
             )}
@@ -225,6 +288,7 @@ function UserProfileHeaderGroup() {
                     </div>
                 </div>
             </div>
+            <TopNavContextButton />
         </div>
     )
 }
@@ -242,7 +306,7 @@ function TagHeaderGroup() {
     return (
         <div
             className={classNames(
-                "flex flex-row flex-nowrap items-center flex-shrink-0",
+                "flex flex-row flex-grow flex-nowrap items-center flex-shrink-0",
                 "rounded-xl p-1 mx-4 overflow-hidden",
                 "bg-white tag-header-group",
             )}
@@ -261,6 +325,7 @@ function TagHeaderGroup() {
                     </div>
                 </div>
             </div>
+            <TopNavContextButton />
         </div>
     )
 }
@@ -276,7 +341,7 @@ function PostHeaderGroup() {
     return (
         <div
             className={classNames(
-                "flex flex-row flex-nowrap items-center flex-shrink-0",
+                "flex flex-row flex-nowrap flex-grow items-center flex-shrink-0",
                 "rounded-xl p-1 mx-4 overflow-hidden",
                 "bg-white post-header-group",
             )}
@@ -295,6 +360,7 @@ function PostHeaderGroup() {
                     </div>
                 </div>
             </div>
+            <TopNavContextButton />
         </div>
     )
 }

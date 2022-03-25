@@ -60,6 +60,21 @@
   }
 }
 
+.meta-modal {
+  @media only screen and (max-width: 768px) {
+    right: 0;
+    left: auto;
+    position: fixed;
+    height: 100vh;
+    top: 0;
+    margin: 0 !important;
+    border-top-right-radius: 0 !important;
+    border-bottom-right-radius: 0 !important;
+    max-width: 24rem;
+    padding: 0 0.5rem;
+  }
+}
+
 @media only screen and (max-width: 768px) {
   .top-nav {
     height: 3.3125rem;
@@ -67,7 +82,7 @@
 
   .post-header-group {
     height: 3.25rem;
-    margin: 0;
+    margin-left: 0;
 
     .top-nav {
       &__back-icon {
@@ -84,7 +99,7 @@
 
   .profile-header-group {
     height: 3.25rem;
-    margin: 0;
+    margin-left: 0;
 
     .top-nav {
       &__back-icon {
@@ -111,7 +126,7 @@
 
   .tag-header-group {
     height: 3.25rem;
-    margin: 0;
+    margin-left: 0;
 
     .top-nav {
       &__back-icon {
