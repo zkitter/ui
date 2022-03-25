@@ -16,8 +16,28 @@ export default function SettingView(): ReactElement {
         <div
             className={classNames('setting')}
         >
-            <Panel />
-            <Content />
+            {
+                window.innerWidth > 768
+                    ? (
+                        <>
+                            <Panel />
+                            <Content />
+                        </>
+
+                    )
+                    : (
+                        <Switch>
+                            <Route path="/settings/:settingSubpage">
+                                <Content />
+                            </Route>
+                            <Route path="/settings">
+                                <Panel />
+                            </Route>
+                        </Switch>
+                    )
+            }
+
+
         </div>
     )
 }
@@ -45,7 +65,7 @@ function PanelItem(props: {
             className={classNames(
                 "setting__panel__item text-light",
                 {
-                    'setting__panel__item--active': loc.pathname === props.path,
+                    'setting__panel__item--active': loc.pathname === props.path
                 },
             )}
             onClick={() => history.push(props.path)}
@@ -60,9 +80,13 @@ function Content(): ReactElement {
         <div className="setting__content">
             <Switch>
                 <Route path="/settings/moderation" component={ModerationSetting} />
-                <Route path="/settings">
-                    <Redirect to="/settings/moderation" />
-                </Route>
+                {
+                    window.innerWidth > 768 && (
+                        <Route path="/settings">
+                            <Redirect to="/settings/moderation" />
+                        </Route>
+                    )
+                }
             </Switch>
         </div>
     )
