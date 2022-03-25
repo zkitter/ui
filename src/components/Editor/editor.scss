@@ -102,9 +102,8 @@ div.public-DraftEditor-content {
         @extend %row-nowrap;
         align-items: center;
         padding: 0 1rem;
-        border-top-left-radius: 0.75rem;
+        border-radius: 0.75rem;
         height: 100%;
-        border-bottom-left-radius: 0.75rem;
 
         &:hover {
           background-color: lighten($primary-color, 5);

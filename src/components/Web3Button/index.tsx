@@ -208,6 +208,8 @@ function UserMenuable(props: {
     const history = useHistory();
 
     const logout = useCallback(async () => {
+        setOpened(false);
+
         // @ts-ignore
         if (gun.user().is) {
             gun.user().leave();
@@ -252,7 +254,10 @@ function UserMenuable(props: {
     items.push({
         label: 'Settings',
         iconFA: 'fas fa-cog',
-        onClick: () => history.push('/settings'),
+        onClick: () => {
+            setOpened(false);
+            history.push('/settings');
+        },
     })
 
     if (selectedLocalId) {
@@ -594,33 +599,10 @@ function UnauthButton(props: {
     opened: boolean;
     setOpened: (opened: boolean) => void;
 }): ReactElement {
-    const { opened, setOpened, onConnect } = props;
-    const account = useAccount();
-    const web3Loading = useWeb3Loading();
+    const { opened, setOpened } = props;
     const web3Unlocking = useWeb3Unlocking();
-    const dispatch = useDispatch();
-    const selectedLocalId = useSelectedLocalId();
-    const [showingScanner, showScanner] = useState(false);
     const identities = useIdentities();
     const history = useHistory();
-    const zkprLoading = useZKPRLoading();
-    const zkpr = useZKPR();
-
-    const connectWallet = useCallback(async (e, reset) => {
-        setOpened(false);
-        await dispatch(connectWeb3());
-        history.push('/signup');
-        return onConnect && onConnect();
-    }, [setOpened, onConnect, opened]);
-
-    const connectKeeper = useCallback(async (e, reset) => {
-        setOpened(false);
-        const id: any = await dispatch(connectZKPR());
-        if (!id) {
-            history.push('/signup');
-        }
-        return onConnect && onConnect();
-    }, []);
 
     if (web3Unlocking) {
         return <Icon url={SpinnerGIF} size={2} />;
