@@ -68,7 +68,7 @@ function PostMetaPanels(props: {
 function AppFooter(): ReactElement {
     return (
         <div className="app__meta-content__footer p-2 my-2 flex flex-row">
-            <div className="text-gray-500 text-xs flex flex-row flex-nowrap mr-4 items-center">
+            <div className="text-gray-500 text-xs flex flex-row flex-nowrap mr-4 mb-4 items-center">
                 <Icon className="mr-2" fa="fas fa-book" />
                 <a
                     className="text-gray-500"
@@ -78,7 +78,7 @@ function AppFooter(): ReactElement {
                     Docs
                 </a>
             </div>
-            <div className="text-gray-500 text-xs flex flex-row flex-nowrap mr-4 items-center">
+            <div className="text-gray-500 text-xs flex flex-row flex-nowrap mr-4 mb-4 items-center">
                 <Icon className="mr-2" fa="fab fa-github" />
                 <a
                     className="text-gray-500"
@@ -88,7 +88,7 @@ function AppFooter(): ReactElement {
                     Github
                 </a>
             </div>
-            <div className="text-gray-500 text-xs flex flex-row flex-nowrap mr-4 items-center">
+            <div className="text-gray-500 text-xs flex flex-row flex-nowrap mr-4 mb-4 items-center">
                 <Icon className="mr-2" fa="fab fa-twitter" />
                 <a
                     className="text-gray-500"
@@ -98,7 +98,7 @@ function AppFooter(): ReactElement {
                     Twitter
                 </a>
             </div>
-            <div className="text-gray-500 text-xs flex flex-row flex-nowrap items-center">
+            <div className="text-gray-500 text-xs flex flex-row flex-nowrap mb-4 items-center">
                 <Icon className="mr-2" fa="fab fa-discord" />
                 <a
                     className="text-gray-500"
