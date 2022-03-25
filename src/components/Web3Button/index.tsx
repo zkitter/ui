@@ -168,10 +168,17 @@ function Web3ButtonLeft(props: Props): ReactElement {
             >
                 <Icon
                     className={classNames(
-                        "text-gray-500 hover:text-gray-800",
+                        "text-gray-500 hover:text-gray-800 mobile-hidden",
                         "transition-colors",
                     )}
                     fa="fas fa-ellipsis-h"
+                />
+                <Avatar
+                    className={classNames(
+                        "w-8 h-8 mx-1.5 mobile-only"
+                    )}
+                    address={selectedLocalId?.type === 'gun' ? selectedLocalId.address : ''}
+                    incognito={['zkpr_interrep', 'interrep'].includes(selectedLocalId?.type)}
                 />
             </UserMenuable>
         );

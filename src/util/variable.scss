@@ -107,6 +107,12 @@ $red-25: mix($red, $white, 2.5);
 
 @media only screen and (max-width: 768px) {
   .mobile-hidden {
-    display: none;
+    display: none !important;
+  }
+}
+
+@media only screen and (min-width: 769px) {
+  .mobile-only {
+    display: none !important;
   }
 }

@@ -62,6 +62,10 @@
   .editor__wrapper {
     min-height: 15rem;
   }
+
+  @media only screen and (max-width: 768px) {
+    height: 100%;
+  }
 }
 
 @media only screen and (max-width: 768px) {
@@ -116,5 +120,21 @@
 
   .thread:last-of-type {
     border-bottom: 1px solid $gray-100;
+  }
+}
+
+.reply-modal {
+  @media only screen and (max-width: 768px) {
+    display: flex;
+    flex-flow: column nowrap;
+    height: 100%;
+    margin: 0;
+    border-radius: 0;
+
+    .modal__content {
+      flex: 1 1 auto;
+      height: 100%;
+      max-height: 100% !important;
+    }
   }
 }

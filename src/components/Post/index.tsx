@@ -114,6 +114,7 @@ function ReplyEditorModal(props: ReplyEditorModalProps): ReactElement {
     const post = usePost(props.messageId);
     const draft = useDraft(props.messageId);
     const submitting = useSubmitting();
+    const user = useUser(post?.creator);
 
     const submitReply = useCallback(async () => {
         const post: any = await dispatch(submitPost(messageId));
@@ -128,11 +129,11 @@ function ReplyEditorModal(props: ReplyEditorModalProps): ReactElement {
 
     return (
         <Modal
-            className="w-144"
+            className="w-144 reply-modal"
             onClose={props.onClose}
         >
             <ModalHeader onClose={props.onClose}>
-                <b>{`Replying to ${post?.creator}`}</b>
+                <b>{`Replying to ${!post?.creator ? 'Anonymous' : '@' + getHandle(user)}`}</b>
             </ModalHeader>
             <ModalContent className="min-h-64">
                 <Editor

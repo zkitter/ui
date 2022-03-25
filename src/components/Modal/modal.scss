@@ -32,6 +32,10 @@
 
     &__title {
       font-weight: 500;
+      white-space: nowrap;
+      text-overflow: ellipsis;
+      overflow: hidden;
+      font-weight: 500;
     }
 
     &__content {

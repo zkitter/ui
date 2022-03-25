@@ -38,13 +38,13 @@ div.public-DraftEditor-content {
 
 .editor {
   div.DraftEditor-root {
-    padding: .75rem 0;
+    padding: .75rem .5rem;
     cursor: text;
   }
 
   &__wrapper {
     flex: 1 1 auto;
-    width: 0;
+    //width: 0;
 
     .moderation-btn {
       //display: none;

@@ -230,7 +230,7 @@ export default function Editor(props: Props): ReactElement {
     return (
         <div
             className={classNames(
-                'flex flex-row flex-nowrap',
+                'flex flex-col flex-nowrap',
                 'pt-3 pb-2 px-4',
                 'bg-white',
                 'rounded-xl',
@@ -239,128 +239,113 @@ export default function Editor(props: Props): ReactElement {
                 props.className,
             )}
         >
-            <Avatar
-                className="w-12 h-12 mr-3"
-                address={address}
-                incognito={['interrep', 'zkpr_interrep'].includes(selectedId?.type as string)}
-            />
-            <div className="flex flex-col flex-nowrap w-full h-full editor__wrapper">
-                {
-                    shouldDisplayWarning && (
-                        <div className="rounded p-2 text-sm bg-yellow-100 text-yellow-500">
-                            You can still submit a reply, but it will be hidden by default due to the OP's reply polilcy.
-                        </div>
-                    )
-                }
-                <DraftEditor
-                    editorState={editorState}
-                    onChange={onChange}
-                    handleKeyCommand={handleKeyCommand}
-                    placeholder={readOnly ? '' : "Write here..."}
-                    readOnly={readOnly || disabled}
+            <div className="flex flex-row flex-nowrap w-full h-full">
+                <Avatar
+                    className="w-12 h-12 mr-3"
+                    address={address}
+                    incognito={['interrep', 'zkpr_interrep'].includes(selectedId?.type as string)}
                 />
-                {
-                    selected?.type === 'gun' && !messageId && (
-                        <ModerationButton
-                            onChange={onModerationChange}
-                            currentType={draft.moderation || null}
-                        />
-                    )
-                }
-                {
-                    draft.attachment && (
-                        <div className="editor__attachment py-2">
-                            <URLPreview
-                                url={draft.attachment}
-                                onRemove={() => onAddLink('')}
-                                editable
-                            />
-                        </div>
-                    )
-                }
-                { errorMessage && <div className="error-message text-xs text-center text-red-500 m-2">{errorMessage}</div> }
-                <div className="flex flex-row flex-nowrap border-t pt-2">
-                    <div className="flex-grow pr-4 mr-4 flex flex-row flex-nowrap items-center">
-                        <LinkIcon
-                            onAddLink={onAddLink}
-                            link={draft.attachment}
-                        />
-                        {/*<Icon*/}
-                        {/*    className={classNames("editor__button w-8 h-8",*/}
-                        {/*        "hover:bg-blue-50 hover:text-blue-400",*/}
-                        {/*    )}*/}
-                        {/*    fa="far fa-image"*/}
-                        {/*/>*/}
-                        {/*<Icon*/}
-                        {/*    className={classNames("editor__button w-8 h-8",*/}
-                        {/*        "hover:bg-blue-50 hover:text-blue-400",*/}
-                        {/*    )}*/}
-                        {/*    fa="far fa-smile"*/}
-                        {/*/>*/}
-                    </div>
-                    <div className="flex-grow flex flex-row flex-nowrap items-center justify-end">
-                        <Button
-                            className="editor__submit-btn"
-                            btnType="primary"
-                            onClick={onPost}
-                            disabled={isEmpty}
-                            loading={loading}
-                        >
-                            <div className="editor__submit-btn__wrapper">
-                                <div className="editor__submit-btn__wrapper__text">
-                                    {
-                                        draft?.global
-                                            ? 'Post to global feed'
-                                            : 'Post to my own feed'
-                                    }
+                <div className="flex flex-row flex-nowrap w-full h-full">
+                    <div className="flex flex-col flex-nowrap w-full h-full editor__wrapper">
+                        {
+                            shouldDisplayWarning && (
+                                <div className="rounded p-2 text-sm bg-yellow-100 text-yellow-500">
+                                    You can still submit a reply, but it will be hidden by default due to the OP's reply polilcy.
                                 </div>
-                                {
-                                    canNonPostMessage && (
-                                        <Menuable
-                                            items={[
-                                                {
-                                                    label: 'Make a public post',
-                                                    className: 'editor__post-menu',
-                                                    component: (
-                                                        <div className="flex flex-col">
-                                                            <div className="flex flex-row mb-2">
-                                                                <Checkbox
-                                                                    className="mr-4 text-gray-500"
-                                                                    onChange={onGlobalChange}
-                                                                    checked={!!draft?.global}
-                                                                >
-                                                                    Post to global timeline
-                                                                </Checkbox>
-                                                            </div>
-                                                            {
-                                                                !['interrep', 'zkpr_interrep'].includes(selectedId?.type as string) && (
-                                                                    <div className="flex flex-row">
-                                                                        <Checkbox
-                                                                            className="mr-4 text-gray-500"
-                                                                            onChange={onSetMirror}
-                                                                            checked={mirror}
-                                                                            disabled={verifying}
-                                                                        >
-                                                                            Mirror to Twitter
-                                                                        </Checkbox>
-                                                                    </div>
-                                                                )
-                                                            }
-                                                        </div>
-                                                    )
-                                                }
-                                            ]}
-                                        >
-                                            <Icon
-                                                fa="fas fa-caret-down"
-                                            />
-                                        </Menuable>
-                                    )
-                                }
-                            </div>
-                        </Button>
+                            )
+                        }
+                        <DraftEditor
+                            editorState={editorState}
+                            onChange={onChange}
+                            handleKeyCommand={handleKeyCommand}
+                            placeholder={readOnly ? '' : "Write here..."}
+                            readOnly={readOnly || disabled}
+                        />
+                        {
+                            selected?.type === 'gun' && !messageId && (
+                                <ModerationButton
+                                    onChange={onModerationChange}
+                                    currentType={draft.moderation || null}
+                                />
+                            )
+                        }
+                        {
+                            draft.attachment && (
+                                <div className="editor__attachment py-2">
+                                    <URLPreview
+                                        url={draft.attachment}
+                                        onRemove={() => onAddLink('')}
+                                        editable
+                                    />
+                                </div>
+                            )
+                        }
+                        { errorMessage && <div className="error-message text-xs text-center text-red-500 m-2">{errorMessage}</div> }
                     </div>
-
+                </div>
+            </div>
+            <div className="flex flex-row flex-nowrap border-t pt-2 ml-15">
+                <div className="flex-grow pr-4 mr-4 flex flex-row flex-nowrap items-center">
+                    <LinkIcon
+                        onAddLink={onAddLink}
+                        link={draft.attachment}
+                    />
+                </div>
+                <div className="flex-grow flex flex-row flex-nowrap items-center justify-end">
+                    <Button
+                        className="editor__submit-btn"
+                        btnType="primary"
+                        onClick={onPost}
+                        disabled={isEmpty}
+                        loading={loading}
+                    >
+                        <div className="editor__submit-btn__wrapper">
+                            <div className="editor__submit-btn__wrapper__text">
+                                {draft?.global ? 'Post to global feed' : 'Post to my own feed'}
+                            </div>
+                            {
+                                canNonPostMessage && (
+                                    <Menuable
+                                        items={[
+                                            {
+                                                label: 'Make a public post',
+                                                className: 'editor__post-menu',
+                                                component: (
+                                                    <div className="flex flex-col">
+                                                        <div className="flex flex-row mb-2">
+                                                            <Checkbox
+                                                                className="mr-4 text-gray-500"
+                                                                onChange={onGlobalChange}
+                                                                checked={!!draft?.global}
+                                                            >
+                                                                Post to global timeline
+                                                            </Checkbox>
+                                                        </div>
+                                                        {
+                                                            !['interrep', 'zkpr_interrep'].includes(selectedId?.type as string) && (
+                                                                <div className="flex flex-row">
+                                                                    <Checkbox
+                                                                        className="mr-4 text-gray-500"
+                                                                        onChange={onSetMirror}
+                                                                        checked={mirror}
+                                                                        disabled={verifying}
+                                                                    >
+                                                                        Mirror to Twitter
+                                                                    </Checkbox>
+                                                                </div>
+                                                            )
+                                                        }
+                                                    </div>
+                                                )
+                                            }
+                                        ]}
+                                    >
+                                        <Icon fa="fas fa-caret-down" />
+                                    </Menuable>
+                                )
+                            }
+                        </div>
+                    </Button>
                 </div>
             </div>
         </div>

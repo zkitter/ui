@@ -5,6 +5,10 @@
   max-height: 40rem;
   height: fit-content;
 
+  @media only screen and (max-width: 768px) {
+    border: 0;
+  }
+
   &__profile-content {
     flex: 1 1 auto;
     height: 28rem;
@@ -15,6 +19,10 @@
     margin: 1rem 0;
     align-items: center;
     justify-content: center;
+
+    @media only screen and (max-width: 768px) {
+      flex-flow: column nowrap;
+    }
   }
 
   &__account-option {
@@ -29,6 +37,11 @@
     margin: 0 .5rem;
     height: 12rem;
     width: 0;
+
+    @media only screen and (max-width: 768px) {
+      width: 100%;
+      margin: 0.5rem 0;
+    }
 
     .icon {
       margin-bottom: 1rem;
