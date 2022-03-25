@@ -59,7 +59,7 @@ export default function ModerationButton(props: Props): ReactElement {
                     size={.875}
                 />
                 <div
-                    className="text-sm ml-2"
+                    className="text-sm ml-2 moderation-btn__label"
                 >
                     {getLabel(replyType)}
                 </div>
