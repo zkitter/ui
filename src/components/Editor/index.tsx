@@ -108,6 +108,7 @@ export default function Editor(props: Props): ReactElement {
             reference: messageId,
             attachment: draft.attachment,
             moderation: draft.moderation,
+            global: draft.global,
         }));
     }, [messageId, readOnly, draft]);
 
@@ -301,7 +302,11 @@ export default function Editor(props: Props): ReactElement {
                     >
                         <div className="editor__submit-btn__wrapper">
                             <div className="editor__submit-btn__wrapper__text">
-                                {draft?.global ? 'Post to global feed' : 'Post to my own feed'}
+                                {
+                                    !draft?.global && selected?.type === 'gun'
+                                        ? 'Post to my own feed'
+                                        : 'Post to global feed'
+                                }
                             </div>
                             {
                                 canNonPostMessage && (
