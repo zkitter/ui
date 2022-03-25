@@ -7,6 +7,7 @@ import "./tag-feed.scss";
 import {useLoggedIn} from "../../ducks/web3";
 import {useHistory, useParams} from "react-router";
 import InfiniteScrollable from "../InfiniteScrollable";
+import {useSelectedLocalId} from "../../ducks/worker";
 
 export default function TagFeed(): ReactElement {
     const {tagName} = useParams<{tagName: string}>();
@@ -18,6 +19,7 @@ export default function TagFeed(): ReactElement {
     const history = useHistory();
     const loggedIn = useLoggedIn();
     const tag = decodeURIComponent(tagName);
+    const selected = useSelectedLocalId();
 
     useEffect(() => {
         (async function onTagFeedMount() {
@@ -30,7 +32,7 @@ export default function TagFeed(): ReactElement {
                 setFetching(false);
             }
         })();
-    }, [loggedIn, tag]);
+    }, [loggedIn, tag, selected]);
 
     const fetchMore = useCallback(async (reset = false) => {
         if (reset) {
