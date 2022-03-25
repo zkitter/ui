@@ -40,6 +40,12 @@ html {
     &::-webkit-scrollbar {
       display: none;
     }
+
+    &__footer {
+      @media only screen and (max-width: 768px) {
+        flex-wrap: wrap;
+      }
+    }
   }
 }
 
