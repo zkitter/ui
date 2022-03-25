@@ -33,6 +33,28 @@ async function getApp(): Promise<AppService> {
     return appStartPromise;
 }
 
+const cacheName = 'autism-pwa';
+const filesToCache = [
+    '/index.html',
+    '/app.js',
+];
+
+global.addEventListener('install', function(e) {
+    e.waitUntil(
+        caches.open(cacheName).then(function(cache) {
+            return cache.addAll(filesToCache);
+        })
+    );
+});
+
+global.addEventListener('fetch', (e) => {
+    e.respondWith(
+        caches.match(e.request).then((response) => {
+            return response || fetch(e.request);
+        })
+    )
+});
+
 global.addEventListener('activate', async () => {
     await getApp();
 });

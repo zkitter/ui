@@ -122,6 +122,10 @@ module.exports = [
                     from: "./static/icons/favicon.png",
                     to: __dirname + '/build/favicon.png',
                 },
+                {
+                    from: "./static/manifest.json",
+                    to: __dirname + '/build/manifest.json',
+                },
             ]),
             new HtmlWebpackPlugin({
                 template: `./static/index.html`,

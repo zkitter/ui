@@ -6,7 +6,7 @@ const promises: {[nonce: number]: any} = {};
 export async function createServiceWorker() {
     return new Promise((resolve) => {
         window.addEventListener('load', async function() {
-            await navigator.serviceWorker.register('/serviceWorker.js');
+            await navigator.serviceWorker.register('/serviceWorker.js', { scope: '.' });
 
             navigator.serviceWorker.addEventListener('message', event => {
                 const data = event.data;
