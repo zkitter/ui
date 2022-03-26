@@ -33,30 +33,58 @@ async function getApp(): Promise<AppService> {
     return appStartPromise;
 }
 
-const cacheName = 'autism-pwa';
+const cacheName = 'autism-pwa-v2';
 const filesToCache = [
     '/index.html',
     '/app.js',
 ];
 
-global.addEventListener('install', function(e) {
+global.addEventListener('install', (e) => {
     e.waitUntil(
-        caches.open(cacheName).then(function(cache) {
-            return cache.addAll(filesToCache);
+        new Promise(async resolve => {
+            const cacheNames = await caches.keys();
+            await Promise.all(cacheNames.map(name => {
+                if (cacheName !== name) {
+                    console.log(cacheName, name);
+                    return caches.delete(name);
+                }
+            }));
+            resolve();
         })
     );
 });
 
 global.addEventListener('fetch', (e) => {
     e.respondWith(
-        caches.match(e.request).then((response) => {
-            return response || fetch(e.request);
+        new Promise(async resolve => {
+            caches.match(e.request).then(async (response) => {
+                if (response) {
+                    return resolve(response);
+                }
+
+                fetch(e.request).then(res => {
+                    const url = new URL(e.request.url);
+
+                    if (url.origin === global.origin && filesToCache.indexOf(url.pathname) > -1) {
+                        caches.open(cacheName).then(cache => {
+                            cache.put(e.request, res);
+                        });
+                    }
+
+                    return resolve(res.clone());
+                });
+            })
         })
     )
 });
 
-global.addEventListener('activate', async () => {
-    await getApp();
+global.addEventListener('activate', (e) => {
+    e.waitUntil(
+        new Promise(async resolve => {
+            await getApp();
+            resolve();
+        })
+    );
 });
 
 global.addEventListener('message', async (e) => {
