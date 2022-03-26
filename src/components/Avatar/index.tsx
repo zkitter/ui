@@ -8,11 +8,6 @@ import Web3 from "web3";
 import {getTwitterUser} from "../../util/twitter";
 import {fetchNameByAddress} from "../../util/web3";
 import {ellipsify} from "../../util/user";
-import {Identity} from "../../serviceWorkers/identity";
-import TwitterPaper from "../../../static/icons/twitter-paper.png";
-import TwitterBronze from "../../../static/icons/twitter-bronze.png";
-import TwitterSilver from "../../../static/icons/twitter-silver.png";
-import TwitterGold from "../../../static/icons/twitter-gold.png";
 
 type Props = {
     name?: string;
