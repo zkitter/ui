@@ -3,7 +3,6 @@ node_modules/
 build/
 build-test/
 config.dev.json
-config.test.json
 config.prod.json
 config.json
 .DS_Store
