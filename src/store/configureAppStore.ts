@@ -47,6 +47,7 @@ function configureAppStore() {
             preloadedState: {
                 web3: web3InitialState,
             },
+            disableWarnings: true,
         }),
     );
 }

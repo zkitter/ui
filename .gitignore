@@ -1,10 +1,12 @@
 .idea
-node_modules
-build*
+node_modules/
+build/
+build-test/
 config.dev.json
+config.test.json
 config.prod.json
 config.json
 .DS_Store
 .env
-*.pem
-*.crt
+coverage/
+.nyc_output
