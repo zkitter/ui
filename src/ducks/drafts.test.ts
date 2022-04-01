@@ -1,12 +1,14 @@
-import {dispatchSpy, ducks, fetchReset, fetchStub, mockGun, store} from "../util/testUtils";
+import {ducks, fetchReset, fetchStub, store} from "../util/testUtils";
 import {createEditorStateWithText} from "@draft-js-plugins/editor";
-import {convertToRaw} from "draft-js";
-import {markdownConvertOptions} from "../components/DraftEditor";
-import {setMirror, submitConnection, submitModeration, submitPost, submitProfile, submitRepost} from "./drafts";
 import {ZkIdentity} from "@zk-kit/identity";
-const { draftToMarkdown } = require('markdown-draft-js');
 
 const {
+    setMirror,
+    submitConnection,
+    submitModeration,
+    submitPost,
+    submitProfile,
+    submitRepost,
     setDraft,
 } = ducks.drafts;
 

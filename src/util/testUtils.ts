@@ -49,9 +49,11 @@ export const mockGun: any = {
 mockGun.get.returns(mockGun);
 mockGun.put.returns(Promise.resolve(mockGun));
 
-sinon.stub(originalGun, 'user').returns(mockGun);
-sinon.stub(originalGun, 'get').returns(mockGun);
-sinon.stub(originalGun, 'put').returns(mockGun);
+export const gunStub = {
+    user: sinon.stub(originalGun, 'user').returns(mockGun),
+    get: sinon.stub(originalGun, 'get').returns(mockGun),
+    put: sinon.stub(originalGun, 'put').returns(mockGun),
+};
 
 export const ducks = {
     web3,
