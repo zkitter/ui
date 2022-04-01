@@ -27,7 +27,7 @@ import {setBlockedPost} from "./posts";
 
 const { draftToMarkdown } = require('markdown-draft-js');
 
-enum ActionTypes {
+export enum ActionTypes {
     SET_DRAFT = 'drafts/setDraft',
     SET_MODERATION = 'drafts/setModeration',
     SET_ATTACHMENT = 'drafts/setAttachment',
@@ -551,6 +551,7 @@ export const submitConnection = (name: string, subtype: ConnectionMessageSubType
             dispatch(setBlocked(connection.payload.name, messageId));
         }
 
+        return connection;
     } catch (e) {
         dispatch({
             type: ActionTypes.SET_SUBMITTING,
@@ -609,6 +610,8 @@ export const submitProfile = (
             type: ActionTypes.SET_SUBMITTING,
             payload: false,
         });
+
+        return post;
     } catch (e) {
         dispatch({
             type: ActionTypes.SET_SUBMITTING,

@@ -1,6 +1,6 @@
-import store from "./configureAppStore";
+import {store} from "../util/testUtils";
 
-test('store', async () => {
+test('store - should initialize', async () => {
     expect(store.getState()).toStrictEqual({
         web3: {
             web3: null,
