@@ -1,9 +1,13 @@
 import {store, ducks, fetchStub} from "../util/testUtils";
-import {fetchUsers, getUser, resetUser, searchUsers, setFollowed, watchUser} from "./users";
 
 const {
     users: {
         fetchAddressByName,
+        fetchUsers,
+        getUser,
+        resetUser,
+        searchUsers,
+        setFollowed,
     },
 } = ducks;
 
