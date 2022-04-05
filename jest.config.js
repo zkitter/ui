@@ -10,6 +10,8 @@ module.exports = {
       '/build/',
       '/build-test/',
       '/static/',
+      '/src/util/message.ts',
+      '/src/util/svc.ts',
   ],
   roots: ['<rootDir>/src'],
   verbose: true,
@@ -48,10 +50,7 @@ module.exports = {
   },
   coverageThreshold: {
     global: {
-      branches: 50,
-      functions: 50,
       lines: 50,
-      statements: 50,
     }
   }
 };
