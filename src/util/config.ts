@@ -11,9 +11,13 @@ let json: {
 } = {};
 
 try {
-    json = require(process.env.NODE_ENV === 'development'
-        ? '../../config.dev.json'
-        : '../../config.prod.json');
+    json = require(
+        process.env.NODE_ENV === 'development'
+            ? '../../config.dev.json'
+            : process.env.NODE_ENV === 'test'
+                ? '../../config.test.json'
+                : '../../config.prod.json'
+    );
 } catch (e) {}
 
 const web3HttpProvider = json.web3HttpProvider || process.env.WEB3_HTTP_PROVIDER;
