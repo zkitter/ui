@@ -1,16 +1,12 @@
 import sinon from 'sinon';
 import {store, ducks, web3Stub, fetchStub, postWorkMessageStub} from "../util/testUtils";
-import config from "../util/config";
 
 const {
     web3: {
         connectWeb3,
         setWeb3,
-        fetchJoinedTx,
-        disconnectWeb3,
         loginGun,
         genSemaphore,
-        generateGunKeyPair,
         updateIdentity,
         web3Modal,
     },
@@ -113,5 +109,24 @@ describe('Web3 Duck', () => {
                 }
             });
         expect(result).toBeTruthy();
+        fetchStub.reset();
+        postWorkMessageStub.reset();
+    });
+
+    it('should update identity', async () => {
+        // @ts-ignore
+        fetchStub.returns(Promise.resolve({
+            status: 200,
+            json: async () => ({
+                payload: {
+                    transactionHash: '0xhash',
+                },
+            }),
+        }));
+        // @ts-ignore
+        await store.dispatch(updateIdentity('0xpubkey'));
+        expect(fetchStub.args[0][0])
+            .toBe('http://127.0.0.1:3000/v1/users');
+        fetchStub.reset();
     });
 });
