@@ -1,4 +1,4 @@
-import React, {ReactElement, useEffect} from "react";
+import React, {ReactElement, ReactNode, useEffect} from "react";
 import {getUser, useUser} from "../../ducks/users";
 import {useDispatch} from "react-redux";
 import {getName} from "../../util/user";
@@ -8,6 +8,8 @@ import TwitterBronze from "../../../static/icons/twitter-bronze.png";
 import TwitterSilver from "../../../static/icons/twitter-silver.png";
 import TwitterGold from "../../../static/icons/twitter-gold.png";
 import Popoverable from "../Popoverable";
+import {getGroupName} from "../../util/interrep";
+import "./nickname.scss";
 
 type Props = {
     className?: string;
@@ -21,7 +23,7 @@ export default function Nickname(props: Props): ReactElement {
     const user = useUser(address);
     const dispatch = useDispatch();
 
-    const badges = [];
+    const badges: ReactNode[] = [];
 
     useEffect(() => {
         if (!user && address) {
@@ -31,58 +33,65 @@ export default function Nickname(props: Props): ReactElement {
 
     if (user) {
         return (
-            <div className={`flex flex-row flex-nowrap items-center ${className}`}>
-                {getName(user)}
+            <div className={`flex flex-row flex-nowrap items-center nickname ${className}`}>
+                <p className="text-ellipsis overflow-hidden nickname__text">
+                    {getName(user)}
+                </p>
             </div>
         )
     }
 
+
+
     if (interepProvider && interepGroup) {
-        if (/twitter/i.test(interepProvider)) {
-            if (/not_sufficient/i.test(interepGroup)) {
-                badges.push(
-                    <Badge
-                        key={interepProvider + '_' + interepGroup}
-                        label="<500 Twitter followers"
-                        url={TwitterPaper}
-                    />
-                );
-            }
-
-            if (/bronze/i.test(interepGroup)) {
-                badges.push(
-                    <Badge
-                        key={interepProvider + '_' + interepGroup}
-                        label="500+ Twitter followers"
-                        url={TwitterBronze}
-                    />
-                );
-            }
-
-            if (/silver/i.test(interepGroup)) {
-                badges.push(
-                    <Badge
-                        key={interepProvider + '_' + interepGroup}
-                        label="2000+ Twitter followers"
-                        url={TwitterSilver}
-                    />
-                );
-            }
-
-            if (/gold/i.test(interepGroup)) {
-                badges.push(
-                    <Badge
-                        key={interepProvider + '_' + interepGroup}
-                        label="7000+ Twitter followers"
-                        url={TwitterGold}
-                    />
-                );
-            }
-        }
+    // TODO: badges is for wallet users only
+    //     if (/twitter/i.test(interepProvider)) {
+    //         if (/not_sufficient/i.test(interepGroup)) {
+    //             badges.push(
+    //                 <Badge
+    //                     key={interepProvider + '_' + interepGroup}
+    //                     label="<500 Twitter followers"
+    //                     url={TwitterPaper}
+    //                 />
+    //             );
+    //         }
+    //
+    //         if (/bronze/i.test(interepGroup)) {
+    //             badges.push(
+    //                 <Badge
+    //                     key={interepProvider + '_' + interepGroup}
+    //                     label="500+ Twitter followers"
+    //                     url={TwitterBronze}
+    //                 />
+    //             );
+    //         }
+    //
+    //         if (/silver/i.test(interepGroup)) {
+    //             badges.push(
+    //                 <Badge
+    //                     key={interepProvider + '_' + interepGroup}
+    //                     label="2000+ Twitter followers"
+    //                     url={TwitterSilver}
+    //                 />
+    //             );
+    //         }
+    //
+    //         if (/gold/i.test(interepGroup)) {
+    //             badges.push(
+    //                 <Badge
+    //                     key={interepProvider + '_' + interepGroup}
+    //                     label="7000+ Twitter followers"
+    //                     url={TwitterGold}
+    //                 />
+    //             );
+    //         }
+    //     }
 
         return (
-            <div className={`flex flex-row flex-nowrap items-center ${className}`}>
-                Anonymous
+            <div className={`flex flex-row flex-nowrap items-center nickname ${className}`}>
+                <p className="text-ellipsis overflow-hidden nickname__text">
+                    {getGroupName(interepProvider, interepGroup)}
+                </p>
                 <div className="flex flex-row flex-nowrap items-center ml-2">
                     { badges }
                 </div>
@@ -91,7 +100,7 @@ export default function Nickname(props: Props): ReactElement {
     }
 
     return (
-        <div className={`flex flex-row flex-nowrap items-center ${className}`}>
+        <div className={`flex flex-row flex-nowrap items-center nickname ${className}`}>
             Anonymous
         </div>
     );

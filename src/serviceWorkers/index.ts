@@ -45,7 +45,6 @@ global.addEventListener('install', (e) => {
             const cacheNames = await caches.keys();
             await Promise.all(cacheNames.map(name => {
                 if (cacheName !== name) {
-                    console.log(cacheName, name);
                     return caches.delete(name);
                 }
             }));
@@ -58,8 +57,10 @@ global.addEventListener('fetch', (e) => {
     e.respondWith(
         new Promise(async resolve => {
             caches.match(e.request).then(async (response) => {
-                if (response) {
-                    return resolve(response);
+                if (process.env.NODE_ENV === 'production') {
+                    if (response) {
+                        return resolve(response);
+                    }
                 }
 
                 fetch(e.request).then(res => {

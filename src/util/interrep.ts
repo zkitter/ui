@@ -63,22 +63,21 @@ export const watchPath = async (commitment: string): Promise<PathData> => {
     });
 }
 
-export const getGroupName = (identity: Identity | {
-    type: 'interrep';
-    provider?: string;
-    name?: string;
-}): string => {
-    if (identity.type !== 'interrep') return '';
+export const getGroupName = (provider: string, name: string): string => {
 
-    const provider = identity?.provider?.toLowerCase();
-    const name = identity?.name?.toLowerCase();
+    const _provider = provider?.toLowerCase();
+    const _name = name?.toLowerCase();
 
-    if (provider === 'twitter') {
-        if (name === 'not_sufficient') return 'Twitter (< 500 followers)';
-        if (name === 'bronze') return 'Twitter (500+ followers)';
-        if (name === 'silver') return 'Twitter (2000+ followers)';
-        if (name === 'gold') return 'Twitter (7000+ followers)';
+    switch (_provider + '.' + _name) {
+        case 'twitter.not_sufficient':
+            return 'Someone from Twitter';
+        case 'twitter.bronze':
+            return 'Someone with 500+ Twitter followers';
+        case 'twitter.silver':
+            return 'Someone with 2k+ Twitter followers';
+        case 'twitter.gold':
+            return 'Someone with 7k+ Twitter followers';
+        default:
+            return provider + ' ' + name;
     }
-
-    return 'Anonymous';
 }

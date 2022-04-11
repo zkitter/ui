@@ -190,14 +190,24 @@ export function ExpandedPost(props: Props & {
                 <Avatar
                     className="mr-3 w-12 h-12"
                     address={user?.address}
-                    incognito={post.creator === ''}
+                    group={post.creator ? undefined : {
+                        provider: meta.interepProvider,
+                        name: meta.interepGroup,
+                    }}
                 />
-                <div className="flex flex-col flex-nowrap items-start text-light w-full cursor-pointer">
+                <div
+                    className={classNames(
+                        "flex flex-col flex-nowrap items-start",
+                        "text-light w-full cursor-pointer",
+                        "flex-grow-1 flex-shrink-1 w-0 overflow-hidden"
+                    )}
+                >
                     <div
-                        className="font-bold text-base mr-1 hover:underline"
+                        className="flex flex-row flex-nowrap w-full whitespace-nowrap font-bold text-base mr-1 hover:underline"
                         onClick={gotoUserProfile}
                     >
                         <Nickname
+                            className="flex flex-row flex-nowrap w-full"
                             address={user?.address}
                             interepProvider={meta?.interepProvider}
                             interepGroup={meta?.interepGroup}
@@ -347,7 +357,10 @@ export function RegularPost(props: Props & {
                     <Avatar
                         className="mr-3 w-12 h-12 border"
                         address={user?.username}
-                        incognito={post.creator === ''}
+                        group={post.creator ? undefined : {
+                            provider: meta.interepProvider,
+                            name: meta.interepGroup,
+                        }}
                         twitterUsername={post.type === MessageType._TWEET ? post.creator : undefined}
                     />
                     {!!isParent && <div className="post__parent-line"/>}

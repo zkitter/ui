@@ -17,6 +17,21 @@ export const getName = (user?: User | null, start = 6, end = 4): string => {
     return ellipsify(user.address, start, end);
 }
 
+export const getGroupName = (provider: string, name: string): string => {
+    switch (provider + '.' + name) {
+        case 'twitter.not_sufficient':
+            return 'Someone from Twitter';
+        case 'twitter.bronze':
+            return 'Someone with 500+ Twitter followers';
+        case 'twitter.silver':
+            return 'Someone with 2k+ Twitter followers';
+        case 'twitter.gold':
+            return 'Someone with 7k+ Twitter followers';
+        default:
+            return provider + ' ' + name;
+    }
+}
+
 export const getUsername = (user?: User | null): string => {
     if (!user) return '';
     if (!user.address) return '';

@@ -8,17 +8,20 @@ import Web3 from "web3";
 import {getTwitterUser} from "../../util/twitter";
 import {fetchNameByAddress} from "../../util/web3";
 import {ellipsify} from "../../util/user";
+import TwitterUnknownPNG from "../../../static/icons/twitter-unknown.png";
+import TwitterBronzePNG from "../../../static/icons/twitter-bronze.png";
+import TwitterSilverPNG from "../../../static/icons/twitter-silver.png";
+import TwitterGoldPNG from "../../../static/icons/twitter-gold.png";
 
 type Props = {
     name?: string;
     address?: string;
     className?: string;
     incognito?: boolean;
-    identity?: {
+    group?: {
         provider?: string;
         name?: string;
     };
-    semaphoreSignals?: any;
     twitterUsername?: string;
 }
 
@@ -50,8 +53,8 @@ export default function Avatar(props: Props): ReactElement {
         address,
         name,
         incognito,
-        identity,
         twitterUsername,
+        group,
         className,
     } = props;
 
@@ -122,7 +125,7 @@ export default function Avatar(props: Props): ReactElement {
         )
     }
 
-    if (!user) {
+    if (!user && !group) {
         return (
             <div
                 className={classNames(
@@ -137,7 +140,7 @@ export default function Avatar(props: Props): ReactElement {
         );
     }
 
-    const imageUrl = getImageUrl(user);
+    const imageUrl = getImageUrl(user, group);
 
     return (
         <div
@@ -155,7 +158,23 @@ export default function Avatar(props: Props): ReactElement {
     )
 }
 
-export function getImageUrl (user: User | null): string {
+export function getImageUrl (user: User | null, group?: { provider?: string; name?: string}): string {
+    if (group) {
+        const { provider = '', name = '' } = group;
+        console.log(provider + '.' + name)
+        switch (provider + '.' + name) {
+            case 'twitter.not_sufficient':
+                return TwitterUnknownPNG;
+            case 'twitter.bronze':
+                return TwitterBronzePNG;
+            case 'twitter.silver':
+                return TwitterSilverPNG;
+            case 'twitter.gold':
+                return TwitterGoldPNG
+            // case 'ape.':
+        }
+    }
+
     if (!user) return '';
 
     let imageUrl = user?.profileImage;
