@@ -161,8 +161,7 @@ export default function Avatar(props: Props): ReactElement {
 export function getImageUrl (user: User | null, group?: { provider?: string; name?: string}): string {
     if (group) {
         const { provider = '', name = '' } = group;
-        console.log(provider + '.' + name)
-        switch (provider + '.' + name) {
+        switch (provider.toLowerCase() + '.' + name.toLowerCase()) {
             case 'twitter.not_sufficient':
                 return TwitterUnknownPNG;
             case 'twitter.bronze':

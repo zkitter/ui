@@ -2,20 +2,14 @@ import React, {ReactElement, ReactNode, useCallback, useEffect, useState} from "
 import "./web3-btn.scss";
 import Button from "../Button";
 import {
-    setWeb3,
-    connectWeb3,
     useAccount,
     useWeb3Loading,
-    useGunKey,
-    useLoggedIn,
     useWeb3Unlocking,
     setGunPrivateKey,
-    loginGun,
-    genSemaphore,
     setSemaphoreID,
     setSemaphoreIDPath,
-    useGunNonce,
-    UserNotExistError, useWeb3Account, disconnectWeb3,
+    useWeb3Account,
+    disconnectWeb3,
 } from "../../ducks/web3";
 import {useDispatch} from "react-redux";
 import classNames from "classnames";
@@ -23,32 +17,27 @@ import Avatar, {Username} from "../Avatar";
 import Icon from "../Icon";
 import Menuable, {ItemProps} from "../Menuable";
 import SpinnerGIF from "../../../static/icons/spinner.gif";
-import MetamaskSVG from "../../../static/icons/metamask-fox.svg";
-import ZKPRSVG from "../../../static/icons/zkpr-logo.svg";
 import gun from "../../util/gun";
 import {useHistory} from "react-router";
-import {ellipsify, getHandle, getName, loginUser} from "../../util/user";
-import {useHasIdConnected, useIdentities, useSelectedLocalId, useWorkerUnlocked} from "../../ducks/worker";
+import {ellipsify, getHandle, loginUser} from "../../util/user";
+import {useIdentities, useSelectedLocalId, useWorkerUnlocked} from "../../ducks/worker";
 import LoginModal from "../LoginModal";
 import {fetchNameByAddress} from "../../util/web3";
 import {useUser} from "../../ducks/users";
 import {selectIdentity, setIdentity} from "../../serviceWorkers/util";
 import {postWorkerMessage} from "../../util/sw";
-import {Identity, InterrepIdentity, ZKPRIdentity} from "../../serviceWorkers/identity";
+import {Identity, InterrepIdentity} from "../../serviceWorkers/identity";
 import QRScanner from "../QRScanner";
 import Modal from "../Modal";
 import ExportPrivateKeyModal from "../ExportPrivateKeyModal";
 import config from "../../util/config";
 import Nickname from "../Nickname";
 import {
-    connectZKPR,
     disconnectZKPR,
     maybeSetZKPRIdentity,
     useIdCommitment,
     useZKPR,
-    useZKPRLoading
 } from "../../ducks/zkpr";
-import {checkPath} from "../../util/interrep";
 
 type Props = {
     onConnect?: () => Promise<void>;
@@ -59,13 +48,9 @@ type Props = {
 
 export default function Web3Button(props: Props): ReactElement {
     const account = useAccount();
-    const web3Loading = useWeb3Loading();
     const identities = useIdentities();
-    const dispatch = useDispatch();
     const selectedLocalId = useSelectedLocalId();
     const [ensName, setEnsName] = useState('');
-    const zkpr = useZKPR();
-    const idCommitment = useIdCommitment();
 
     useEffect(() => {
         (async () => {
@@ -94,16 +79,29 @@ export default function Web3Button(props: Props): ReactElement {
             btnContent = (
                 <>
                     <div>Connected to ZKPR</div>
-                    <Avatar className="ml-2" incognito />
+                    <Avatar
+                        className="ml-2 w-6 h-6"
+                        group={{
+                            provider: id.provider,
+                            name: id.name,
+                        }}
+                    />
                 </>
             )
         }
 
         if (id.type ===  'interrep') {
+            console.log(id);
             btnContent = (
                 <>
                     <div>Incognito</div>
-                    <Avatar className="ml-2" incognito />
+                    <Avatar
+                        className="ml-2 w-6 h-6"
+                        group={{
+                            provider: id.provider,
+                            name: id.name,
+                        }}
+                    />
                 </>
             )
         }
@@ -507,6 +505,12 @@ function CurrentUserItem(props: {
     if (!selectedLocalId) return <></>;
 
     const isInterep = ['interrep', 'zkpr_interrep'].includes(selectedLocalId.type);
+    const group = !isInterep ? undefined : {
+        // @ts-ignore
+        provider: selectedLocalId.provider,
+        // @ts-ignore
+        name: selectedLocalId.name,
+    };
 
     return (
         <div
@@ -517,7 +521,7 @@ function CurrentUserItem(props: {
             <Avatar
                 className="w-20 h-20 mb-2"
                 address={selectedUser?.address}
-                incognito={isInterep}
+                group={group}
             />
             {/*<Button*/}
             {/*    className="my-2"*/}
@@ -559,6 +563,12 @@ function UserMenuItem(props: {
     const user = useUser(identity.address);
 
     const isInterep = identity.type === 'interrep' || identity.type === 'zkpr_interrep';
+    const group = !isInterep ? undefined : {
+        // @ts-ignore
+        provider: identity.provider,
+        // @ts-ignore
+        name: identity.name,
+    };
 
     return (
         <div
@@ -572,7 +582,7 @@ function UserMenuItem(props: {
             <Avatar
                 className="w-9 h-9 mr-2"
                 address={user?.username}
-                incognito={isInterep}
+                group={group}
             />
             <div className="flex flex-col flex-nowrap w-0 flex-grow">
                 <div className="text-sm font-bold truncate">

@@ -135,6 +135,11 @@ module.exports = [
         devServer: {
             historyApiFallback: true,
             stats: "minimal",
+            headers: {
+                "Access-Control-Allow-Origin": "*",
+                "Access-Control-Allow-Methods": "GET, POST, PUT, DELETE, PATCH, OPTIONS",
+                "Access-Control-Allow-Headers": "X-Requested-With, content-type, Authorization"
+            },
             proxy: {
                 "/rest": {
                     target: `http://127.0.0.1:8080`,
