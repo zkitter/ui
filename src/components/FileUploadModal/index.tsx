@@ -208,10 +208,10 @@ export default function FileUploadModal(props: Props): ReactElement {
                             btnType="primary"
                             className="ml-2"
                             loading={isUploading}
+                            onClick={upload}
                         >
                             <Icon
                                 fa="fas fa-check"
-                                onClick={upload}
                             />
                         </Button>
                     </ModalFooter>

@@ -723,24 +723,23 @@ export function ProfileImageEditor(props: {
     url: string;
     onUrlChange: (url: string) => void;
 }): ReactElement {
-    const [showingInput, showInput] = useState(false);
+    const [showingFileModal, setShowingFileModal] = useState(false);
     const [url, setUrl] = useState('');
+    const [loading, setLoading] = useState(false);
 
     const toggle = useCallback(() => {
-        if (showingInput) {
-            setUrl(props.url);
-        }
-        showInput(!showingInput);
-    }, [url, props.url, showingInput]);
+        setShowingFileModal(!showingFileModal);
+    }, [showingFileModal]);
 
-    const confirmUrl = useCallback(() => {
-        showInput(false);
-        props.onUrlChange(url);
-    }, [url]);
+    const onUrlChange = useCallback((link: string) => {
+        props.onUrlChange(link);
+        setShowingFileModal(false);
+        setLoading(true);
+    }, []);
 
     useEffect(() => {
         setUrl(props.url);
-    }, [props.url]);
+    }, [props.url])
 
     return (
         <div
@@ -748,55 +747,41 @@ export function ProfileImageEditor(props: {
                 "h-32 w-32 -mt-15 ml-4 object-cover rounded-full border-4 border-white relative",
                 "flex flex-col flex-nowrap items-center justify-center",
                 "justify-center items-center bg-gray-100",
-                "bg-cover bg-center bg-no-repeat",
             )}
-            style={{ backgroundImage: url ? `url(${url})` : undefined }}
         >
+            {
+                url && (
+                    <img
+                        className="rounded-full absolute w-full h-full object-cover"
+                        src={url}
+                        onLoad={() => setLoading(false)}
+                        onError={() => setLoading(false)}
+                    />
+                )
+            }
             <div
                 className="flex flex-row flex-nowrap items-center justify-center h-full w-full bg-black bg-opacity-30 rounded-full"
             >
-                {
-                    !showingInput && (
-                        <Icon
-                            className={classNames(
-                                "flex flex-row flex-nowrap items-center justify-center",
-                                "rounded-full w-8 h-8",
-                                "bg-white text-white text-opacity-80 bg-opacity-20",
-                            )}
-                            fa="fas fa-upload"
-                            size={.75}
-                        />
-                    )
-                }
                 <Icon
                     className={classNames(
                         "flex flex-row flex-nowrap items-center justify-center",
-                        "rounded-full w-8 h-8 cursor-pointer ml-1",
+                        "rounded-full w-10 h-10",
                         "bg-white text-white text-opacity-80 bg-opacity-20",
-                        "hover:bg-opacity-40 hover:text-opacity-100",
-                        {
-                            'bg-opacity-20 text-opacity-100': showingInput,
-                        }
+                        "relative z-200"
+                        // "cursor-pointer hover:bg-opacity-40 hover:text-opacity-100",
                     )}
-                    fa={showingInput ? "fas fa-times" : "fas fa-link"}
-                    size={.75}
-                    onClick={toggle}
+                    fa={loading ? undefined : "fas fa-upload"}
+                    url={loading ? SpinnerGIF : undefined}
+                    onClick={loading ? undefined : toggle}
+                    size={loading ? 3 : undefined}
                 />
             </div>
             {
-                showingInput && (
-                    <Input
-                        className="absolute w-80 top-10 left-24 border-2"
-                        onChange={e => setUrl(e.target.value)}
-                        value={url}
-                        autoFocus
-                    >
-                        <Icon
-                            className="pr-2 text-green-500"
-                            fa="fas fa-check"
-                            onClick={confirmUrl}
-                        />
-                    </Input>
+                showingFileModal && (
+                    <FileUploadModal
+                        onClose={() => setShowingFileModal(false)}
+                        onAccept={onUrlChange}
+                    />
                 )
             }
         </div>
