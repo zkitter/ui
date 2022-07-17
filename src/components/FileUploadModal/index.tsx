@@ -10,11 +10,14 @@ import "./file-upload-modal.scss";
 import FileSelectButton from "../FileSelectButton";
 import Input from "../Input";
 import config from "../../util/config";
+import URLPreview from "../URLPreview";
 
 type Props = {
     className?: string;
     onClose: () => void;
     onAccept: (url: string) => void;
+    mustLinkBeImage?: boolean;
+    skipLinkPreview?: boolean;
 }
 
 const maxFileSize = 4194304;
@@ -67,15 +70,23 @@ export default function FileUploadModal(props: Props): ReactElement {
     }
 
     const onLinkEntered = useCallback(async () => {
-        const isImageValid = await validateImage(link);
+        setError('');
 
-        if (!isImageValid) {
-            setError('image cannot be previewed');
-            return;
+        if (props.mustLinkBeImage) {
+            const isImageValid = await validateImage(link);
+
+            if (!isImageValid) {
+                setError('image cannot be previewed');
+                return;
+            }
         }
 
-        setFile(null);
-        setPreviewUrl(link);
+        if (props.skipLinkPreview) {
+            props.onAccept(link);
+        } else {
+            setFile(null);
+            setPreviewUrl(link);
+        }
     }, [link]);
 
     const onLinkChange = (e: ChangeEvent<HTMLInputElement>) => {

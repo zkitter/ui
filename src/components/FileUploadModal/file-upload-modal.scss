@@ -16,7 +16,12 @@
     @extend %col-nowrap;
     align-items: center;
     justify-content: center;
-    background-color: $black;
     min-height: 12rem;
+
+    .url-preview {
+      border: none;
+      border-radius: 0;
+      width: 100%;
+    }
   }
 }

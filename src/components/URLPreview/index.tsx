@@ -4,12 +4,14 @@ import Icon from "../Icon";
 import classNames from "classnames";
 import config from "../../util/config";
 import {shouldBlurImage} from "../../pages/SettingView";
+import SpinnerGif from "../../../static/icons/spinner.gif";
 
 type Props = {
     url?: string;
     editable?: boolean;
     showAll?: boolean;
     onRemove?: () => void;
+    className?: string;
 };
 
 type Preview = {
@@ -27,6 +29,7 @@ export default function URLPreview(props: Props): ReactElement {
     const [imageSrc, setImageSrc] = useState('');
     const [preview, setPreview] = useState<Preview|null>(null);
     const [isBlur, setBlur] = useState(shouldBlurImage());
+    const [loading, setLoading] = useState(true);
 
     useEffect(() => {
         (async function onURLPreviewLoad() {
@@ -38,6 +41,8 @@ export default function URLPreview(props: Props): ReactElement {
             }
 
             try {
+                setLoading(true);
+
                 if (await testImage(url)) {
                     setImageSrc(url);
                     return;
@@ -72,6 +77,8 @@ export default function URLPreview(props: Props): ReactElement {
             } catch (e) {
                 setImageSrc('');
                 setPreview(null);
+            } finally {
+                setLoading(false);
             }
         })();
     }, [url]);
@@ -87,13 +94,16 @@ export default function URLPreview(props: Props): ReactElement {
         window.open(preview?.link, '_blank');
     }, [preview?.link]);
 
+    if (loading) {
+        return <Icon className="self-center opacity-50" url={SpinnerGif} size={4} />;
+    }
+
     if (!imageSrc && !preview) {
         return <></>;
     }
 
     return (
-        <div className="url-preview">
-
+        <div className={classNames("url-preview", props.className)}>
             { imageSrc && (
                 <div
                     className={classNames("url-preview__img-container", {
@@ -119,15 +129,18 @@ export default function URLPreview(props: Props): ReactElement {
                     })}
                     onClick={!props.editable ? openLink : undefined}
                 >
-                    <div
-                        className={classNames("url-preview__link-image", {
-                            'blurred-image': !props.editable && isBlur,
-                            'unblurred-image': props.editable || !isBlur,
-                        })}
-                        style={{
-                            backgroundImage: `url(${preview.image})`,
-                        }}
-                    />
+                    {
+                        preview.image && (
+                            <div
+                                className={classNames("url-preview__link-image", {
+                                    'blurred-image': !props.editable && isBlur,
+                                    'unblurred-image': props.editable || !isBlur,
+                                })}
+                            >
+                                <img src={preview.image} />
+                            </div>
+                        )
+                    }
                     <div className="url-preview__link-content">
                         <div className="url-preview__link-title">{preview.title}</div>
                         <div className="url-preview__link-desc">{preview.description}</div>
@@ -158,7 +171,7 @@ export default function URLPreview(props: Props): ReactElement {
             ) }
         </div>
     );
-}
+};
 
 function testImage(url: string) {
     return new Promise(function (resolve, reject) {
@@ -167,7 +180,7 @@ function testImage(url: string) {
             // loading, but doesn't trigger new load
             img.src = "//!!!!/test.jpg";
             resolve(false);
-        }, 5000);
+        }, 60000);
 
         const img = new Image();
 

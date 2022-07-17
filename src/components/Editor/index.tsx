@@ -28,6 +28,7 @@ import {ModerationMessageSubType} from "../../util/message";
 import {usePostModeration} from "../../ducks/mods";
 import {useCommentDisabled, useMeta} from "../../ducks/posts";
 import Menuable from "../Menuable";
+import FileUploadModal from "../FileUploadModal";
 
 type Props = {
     messageId: string;
@@ -61,6 +62,7 @@ export default function Editor(props: Props): ReactElement {
 
     const [errorMessage, setErrorMessage] = useState('');
     const [verifying, setVerifying] = useState(true);
+    const [showingUploadModal, setShowingUploadModal] = useState(false);
     const [verified, setVerified] = useState(false);
     const [verifiedSession, setVerifiedSession] = useState('');
     const selected = useSelectedLocalId();
@@ -139,6 +141,8 @@ export default function Editor(props: Props): ReactElement {
             reference: draft.reference,
             attachment: url,
         }));
+
+        setShowingUploadModal(false);
     }, [messageId, readOnly, draft]);
 
     const handleKeyCommand: (command: string) => DraftHandleValue = useCallback((command: string): DraftHandleValue => {
@@ -287,9 +291,13 @@ export default function Editor(props: Props): ReactElement {
             </div>
             <div className="flex flex-row flex-nowrap border-t pt-2 ml-15">
                 <div className="flex-grow pr-4 mr-4 flex flex-row flex-nowrap items-center">
-                    <LinkIcon
-                        onAddLink={onAddLink}
-                        link={draft.attachment}
+                    <Icon
+                        className={classNames(
+                            "editor__button text-blue-300 w-8 h-8 relative",
+                            'hover:bg-blue-50 hover:text-blue-400',
+                        )}
+                        fa="fas fa-paperclip"
+                        onClick={() => setShowingUploadModal(true)}
                     />
                 </div>
                 <div className="flex-grow flex flex-row flex-nowrap items-center justify-end">
@@ -353,47 +361,15 @@ export default function Editor(props: Props): ReactElement {
                     </Button>
                 </div>
             </div>
-        </div>
-    );
-};
-
-function LinkIcon(props: {
-    onAddLink: (url: string) => void;
-    link?: string;
-}): ReactElement {
-    const [showingInput, showInput] = useState(false);
-
-    return (
-        <Icon
-            className={classNames("editor__button text-blue-300 w-8 h-8 relative",
-                {
-                    'bg-red-50 text-red-400': showingInput,
-                    'hover:bg-blue-50 hover:text-blue-400': !showingInput,
-                }
-            )}
-            fa={showingInput ? "fas fa-times" : "fas fa-link"}
-            onClick={() => showInput(!showingInput)}
-        >
             {
-                showingInput && (
-                    <Input
-                        className="absolute w-80 bottom-10 left-0 z-200 border-2 text-black"
-                        onClick={e => e.stopPropagation()}
-                        onChange={e => props.onAddLink(e.target.value)}
-                        value={props.link}
-                        autoFocus
-                    >
-                        <Icon
-                            className="pr-2 text-green-500"
-                            fa="fas fa-check"
-                            onClick={e => {
-                                e.stopPropagation();
-                                showInput(false);
-                            }}
-                        />
-                    </Input>
+                showingUploadModal && (
+                    <FileUploadModal
+                        onClose={() => setShowingUploadModal(false)}
+                        onAccept={onAddLink}
+                        skipLinkPreview
+                    />
                 )
             }
-        </Icon>
+        </div>
     );
 }

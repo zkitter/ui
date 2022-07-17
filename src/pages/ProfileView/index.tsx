@@ -711,6 +711,7 @@ export function CoverImageEditor(props: {
                     <FileUploadModal
                         onClose={() => setShowingFileModal(false)}
                         onAccept={onUrlChange}
+                        mustLinkBeImage
                     />
                 )
             }
@@ -781,6 +782,7 @@ export function ProfileImageEditor(props: {
                     <FileUploadModal
                         onClose={() => setShowingFileModal(false)}
                         onAccept={onUrlChange}
+                        mustLinkBeImage
                     />
                 )
             }
