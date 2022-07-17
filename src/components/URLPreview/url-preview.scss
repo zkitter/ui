@@ -19,13 +19,14 @@
     left: 0;
     width: 100%;
     height: 100%;
-    object-fit: cover;
+    object-fit: contain;
     object-position: top;
   }
 
   &__img-container {
     position: relative;
     padding-top: 56.25%;
+    background: black;
 
     &--showAll {
       padding-top: 0;
