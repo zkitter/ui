@@ -46,7 +46,7 @@ export default function Modal(props: Props): ReactElement {
 }
 
 type HeaderProps = {
-    onClose: () => void;
+    onClose?: () => void;
     children: ReactNode;
 }
 
@@ -57,20 +57,23 @@ export function ModalHeader(props: HeaderProps): ReactElement {
                 {props.children}
             </div>
             <div className="modal__header__content">
-                <div
-                    className={classNames(
-                        "flex flex-row items-center justify-center",
-                        "p-2 rounded-full opacity-50",
-                        "hover:text-black hover:opacity-100",
-                    )}
-                >
-                    <Icon
-                        url={CancelSVG}
-                        size={1}
-                        onClick={props.onClose}
-                    />
-                </div>
-
+                {
+                    props.onClose && (
+                        <div
+                            className={classNames(
+                                "flex flex-row items-center justify-center",
+                                "p-2 rounded-full opacity-50",
+                                "hover:text-black hover:opacity-100",
+                            )}
+                        >
+                            <Icon
+                                url={CancelSVG}
+                                size={1}
+                                onClick={props.onClose}
+                            />
+                        </div>
+                    )
+                }
             </div>
         </div>
     );

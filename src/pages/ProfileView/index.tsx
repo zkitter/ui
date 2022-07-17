@@ -38,6 +38,8 @@ import config from "../../util/config";
 import {verifyTweet} from "../../util/twitter";
 import {ViewType} from "../ConnectTwitterView";
 import {useSelectedLocalId} from "../../ducks/worker";
+import FileUploadModal from "../../components/FileUploadModal";
+import SpinnerGIF from "../../../static/icons/spinner.gif";
 
 let t: any = null;
 
@@ -522,9 +524,7 @@ type ProfileEditorProps = {
 
 function ProfileEditor(props: ProfileEditorProps): ReactElement {
     const [coverImageUrl, setCoverImageUrl] = useState('');
-    const [coverImageFile, setCoverImageFile] = useState<File|null>(null);
     const [profileImageUrl, setProfileImageUrl] = useState('');
-    const [profileImageFile, setProfileImageFile] = useState<File|null>(null);
     const [name, setName] = useState('');
     const [bio, setBio] = useState('');
     const [website, setWebsite] = useState('');
@@ -594,8 +594,6 @@ function ProfileEditor(props: ProfileEditorProps): ReactElement {
         name,
         bio,
         website,
-        coverImageFile,
-        profileImageFile,
         user,
     ]);
 
@@ -613,12 +611,10 @@ function ProfileEditor(props: ProfileEditorProps): ReactElement {
                 <CoverImageEditor
                     url={coverImageUrl}
                     onUrlChange={setCoverImageUrl}
-                    onFileChange={setCoverImageFile}
                 />
                 <ProfileImageEditor
                     url={profileImageUrl}
                     onUrlChange={setProfileImageUrl}
-                    onFileChange={setProfileImageFile}
                 />
                 <Input
                     className="border relative mx-4 mt-4 mb-8"
@@ -657,22 +653,20 @@ function ProfileEditor(props: ProfileEditorProps): ReactElement {
 export function CoverImageEditor(props: {
     url: string;
     onUrlChange: (url: string) => void;
-    onFileChange: (file: File) => void;
 }): ReactElement {
-    const [showingCoverInput, showCoverInput] = useState(false);
+    const [showingFileModal, setShowingFileModal] = useState(false);
     const [url, setUrl] = useState('');
+    const [loading, setLoading] = useState(false);
 
     const toggle = useCallback(() => {
-        if (showingCoverInput) {
-            setUrl(props.url);
-        }
-        showCoverInput(!showingCoverInput);
-    }, [url, props.url, showingCoverInput]);
+        setShowingFileModal(!showingFileModal);
+    }, [showingFileModal]);
 
-    const confirmUrl = useCallback(() => {
-        showCoverInput(false);
-        props.onUrlChange(url);
-    }, [url]);
+    const onUrlChange = useCallback((link: string) => {
+        props.onUrlChange(link);
+        setShowingFileModal(false);
+        setLoading(true);
+    }, []);
 
     useEffect(() => {
         setUrl(props.url);
@@ -683,56 +677,41 @@ export function CoverImageEditor(props: {
             className={classNames(
                 "w-full h-48 flex flex-col flex-nowrap relative",
                 "justify-center items-center bg-gray-100",
-                "bg-cover bg-center bg-no-repeat",
             )}
-            style={{
-                backgroundImage: url ? `url(${url})` : undefined,
-            }}
         >
+            {
+                url && (
+                    <img
+                        className="absolute w-full h-full object-cover"
+                        src={url}
+                        onLoad={() => setLoading(false)}
+                        onError={() => setLoading(false)}
+                    />
+                )
+            }
             <div
                 className="flex flex-row flex-nowrap items-center justify-center h-full w-full bg-black bg-opacity-30"
             >
-                {
-                    !showingCoverInput && (
-                        <Icon
-                            className={classNames(
-                                "flex flex-row flex-nowrap items-center justify-center",
-                                "rounded-full w-10 h-10",
-                                "bg-white text-white text-opacity-80 bg-opacity-20",
-                                // "cursor-pointer hover:bg-opacity-40 hover:text-opacity-100",
-                            )}
-                            fa="fas fa-upload"
-                        />
-                    )
-                }
                 <Icon
                     className={classNames(
                         "flex flex-row flex-nowrap items-center justify-center",
-                        "rounded-full w-10 h-10 cursor-pointer ml-2",
+                        "rounded-full w-10 h-10",
                         "bg-white text-white text-opacity-80 bg-opacity-20",
-                        "hover:bg-opacity-40 hover:text-opacity-100",
-                        {
-                            'bg-opacity-20 text-opacity-100': showingCoverInput,
-                        }
+                        "relative z-200"
+                        // "cursor-pointer hover:bg-opacity-40 hover:text-opacity-100",
                     )}
-                    fa={showingCoverInput ? "fas fa-times" : "fas fa-link"}
-                    onClick={toggle}
+                    fa={loading ? undefined : "fas fa-upload"}
+                    url={loading ? SpinnerGIF : undefined}
+                    onClick={loading ? undefined : toggle}
+                    size={loading ? 3 : undefined}
                 />
             </div>
             {
-                showingCoverInput && (
-                    <Input
-                        className="absolute w-80 top-32 border-2 z-200"
-                        onChange={e => setUrl(e.target.value)}
-                        value={url}
-                        autoFocus
-                    >
-                        <Icon
-                            className="pr-2 text-green-500"
-                            fa="fas fa-check"
-                            onClick={confirmUrl}
-                        />
-                    </Input>
+                showingFileModal && (
+                    <FileUploadModal
+                        onClose={() => setShowingFileModal(false)}
+                        onAccept={onUrlChange}
+                    />
                 )
             }
         </div>
@@ -743,7 +722,6 @@ export function CoverImageEditor(props: {
 export function ProfileImageEditor(props: {
     url: string;
     onUrlChange: (url: string) => void;
-    onFileChange: (file: File) => void;
 }): ReactElement {
     const [showingInput, showInput] = useState(false);
     const [url, setUrl] = useState('');
