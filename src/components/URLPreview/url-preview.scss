@@ -6,6 +6,10 @@
   border-radius: 1rem;
   overflow: hidden;
 
+  &--wt {
+    border-radius: 0;
+  }
+
   &__close {
     @extend %row-nowrap;
     justify-content: center;

@@ -50,7 +50,7 @@ import Nickname from "../Nickname";
 import {useSelectedLocalId, useWorkerUnlocked} from "../../ducks/worker";
 import {Identity} from "../../serviceWorkers/identity";
 import {usePostModeration} from "../../ducks/mods";
-
+import copy from 'copy-to-clipboard';
 
 type Props = {
     messageId: string;
@@ -165,7 +165,7 @@ export function ExpandedPost(props: Props & {
     const parentUser = useUser(parentCreator);
     const meta = useMeta(props.messageId);
 
-    const gotoUserProfile = useCallback(e => {
+    const gotoUserProfile = useCallback((e: any) => {
         if (!user || !post?.creator) return;
         e.stopPropagation();
         history.push(`/${user?.ens || user?.username}/`);
@@ -303,7 +303,7 @@ export function RegularPost(props: Props & {
     const [parentCreator, parentHash] = post?.payload.reference.split('/') || [];
     const parentUser = useUser(parentCreator);
 
-    const gotoUserProfile = useCallback(e => {
+    const gotoUserProfile = useCallback((e: any) => {
         if (!user || post?.type === MessageType._TWEET) return;
         e.stopPropagation();
         history.push(`/${user?.ens || user?.username}/`);
@@ -705,6 +705,39 @@ function PostMenu(props: Props & {
     }
 
     const postMenuItems = [];
+
+    if (post?.payload.attachment) {
+        try {
+            const url = new URL(post?.payload.attachment);
+            const hosts = url.host.split('.');
+            console.log(url);
+
+            if (hosts.slice(-3).join('.') === 'ipfs.dweb.link' && hosts.length === 4) {
+                postMenuItems.push({
+                    label: `Copy IPFS CID`,
+                    iconFA: 'fas fa-copy',
+                    onClick: () => copy(hosts[0]),
+                    iconClassName: 'text-gray-400',
+                });
+            }
+
+            if (url.protocol === 'magnet:') {
+                postMenuItems.push({
+                    label: `Copy Magnet Link`,
+                    iconFA: 'fas fa-copy',
+                    onClick: () => copy(post?.payload.attachment),
+                    iconClassName: 'text-gray-400',
+                });
+            } else {
+                postMenuItems.push({
+                    label: `Copy Link`,
+                    iconFA: 'fas fa-copy',
+                    onClick: () => copy(post?.payload.attachment),
+                    iconClassName: 'text-gray-400',
+                });
+            }
+        } catch (e) {}
+    }
 
     if (!isCurrentUser) {
         if (user) {

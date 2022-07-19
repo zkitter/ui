@@ -5,6 +5,7 @@ import classNames from "classnames";
 import config from "../../util/config";
 import {shouldBlurImage} from "../../pages/SettingView";
 import SpinnerGif from "../../../static/icons/spinner.gif";
+import WebTorrentViewer from "../WebTorrentViewer";
 
 type Props = {
     url?: string;
@@ -24,12 +25,24 @@ type Preview = {
     favicon: string;
 }
 
+function parseURL(url = ''): URL | null {
+    try {
+        return new URL(url);
+    } catch (e) {
+        return null;
+    }
+}
+
 export default function URLPreview(props: Props): ReactElement {
     const {url, editable} = props;
     const [imageSrc, setImageSrc] = useState('');
     const [preview, setPreview] = useState<Preview|null>(null);
     const [isBlur, setBlur] = useState(shouldBlurImage());
     const [loading, setLoading] = useState(true);
+
+    const urlParams = parseURL(url);
+    const isMagnet = urlParams?.protocol === 'magnet:';
+
 
     useEffect(() => {
         (async function onURLPreviewLoad() {
@@ -42,6 +55,10 @@ export default function URLPreview(props: Props): ReactElement {
 
             try {
                 setLoading(true);
+
+                if (isMagnet) {
+                    return;
+                }
 
                 if (await testImage(url)) {
                     setImageSrc(url);
@@ -83,27 +100,44 @@ export default function URLPreview(props: Props): ReactElement {
         })();
     }, [url]);
 
-    const openImageLink = useCallback((e) => {
+    const openImageLink = useCallback((e: any) => {
         e.stopPropagation();
         window.open(imageSrc, '_blank');
     }, [imageSrc]);
 
-    const openLink = useCallback((e) => {
+    const openLink = useCallback((e: any) => {
         if (!preview?.link) return;
         e.stopPropagation();
         window.open(preview?.link, '_blank');
     }, [preview?.link]);
 
     if (loading) {
-        return <Icon className="self-center opacity-50" url={SpinnerGif} size={4} />;
+        return (
+            <div className={classNames("url-preview", props.className)}>
+                <div className="flex flex-row items-center">
+                    <Icon url={SpinnerGif} size={2.5} />
+                    <small className="text-gray-500 font-semibold text-xs">Loading...</small>
+                </div>
+            </div>
+        );
     }
 
-    if (!imageSrc && !preview) {
+    if (!imageSrc && !preview && !isMagnet) {
         return <></>;
     }
 
     return (
-        <div className={classNames("url-preview", props.className)}>
+        <div
+            className={classNames("url-preview", props.className, {
+                'url-preview--wt': urlParams?.protocol === 'magnet:',
+            })}
+        >
+            { urlParams?.protocol === 'magnet:' && (
+                <WebTorrentViewer
+                    url={urlParams.href}
+                />
+            )}
+
             { imageSrc && (
                 <div
                     className={classNames("url-preview__img-container", {
@@ -142,7 +176,7 @@ export default function URLPreview(props: Props): ReactElement {
                         )
                     }
                     <div className="url-preview__link-content">
-                        <div className="url-preview__link-title">{preview.title}</div>
+                        <div className="url-preview__link-title">{preview.title || 'No Preview'}</div>
                         <div className="url-preview__link-desc">{preview.description}</div>
                     </div>
                 </div>
@@ -159,7 +193,7 @@ export default function URLPreview(props: Props): ReactElement {
                 />
             ) }
 
-            { !editable && (
+            { !editable && !isMagnet && !!(imageSrc || preview?.image) && (
                 <Icon
                     className="url-preview__close bg-black bg-opacity-80 text-white absolute top-4 left-4 w-8 h-8"
                     fa={isBlur ? "fas fa-eye-slash" : "fas fa-eye"}
