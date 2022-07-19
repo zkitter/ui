@@ -11,6 +11,8 @@ import FileSelectButton from "../FileSelectButton";
 import Input from "../Input";
 import config from "../../util/config";
 import URLPreview from "../URLPreview";
+import {useDispatch} from "react-redux";
+import {ipfsUploadOne} from "../../util/upload";
 
 type Props = {
     className?: string;
@@ -23,6 +25,7 @@ type Props = {
 const maxFileSize = 4194304;
 
 export default function FileUploadModal(props: Props): ReactElement {
+    const dispatch = useDispatch();
     const drop = useRef<HTMLDivElement>(null);
     const [err, setError] = useState('');
     const [previewUrl, setPreviewUrl] = useState('');
@@ -111,17 +114,13 @@ export default function FileUploadModal(props: Props): ReactElement {
 
         try {
             if (file) {
-                const data = new FormData();
-                data.append('files', file);
-                const res = await fetch(`${config.indexerAPI}/ipfs/upload`, {
-                    method: 'POST',
-                    body: data,
-                });
-                const json = await res.json();
+                const json: any = await dispatch(ipfsUploadOne(file));
 
                 if (!json.error) {
                     const {url} = json.payload;
                     props.onAccept(url);
+                } else {
+                    setError(json.payload);
                 }
             } else if (link) {
                 props.onAccept(link);
