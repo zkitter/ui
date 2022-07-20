@@ -22,7 +22,8 @@ type Props = {
     skipLinkPreview?: boolean;
 }
 
-const maxFileSize = 4194304;
+const ONE_MB = 1048576;
+const maxFileSize = ONE_MB * 5;
 
 export default function FileUploadModal(props: Props): ReactElement {
     const dispatch = useDispatch();
@@ -114,6 +115,7 @@ export default function FileUploadModal(props: Props): ReactElement {
 
         try {
             if (file) {
+                if (file.size > maxFileSize) throw new Error('cannot exceed 5MB');
                 const json: any = await dispatch(ipfsUploadOne(file));
 
                 if (!json.error) {
@@ -180,7 +182,7 @@ export default function FileUploadModal(props: Props): ReactElement {
                                         accept="image/*"
                                         onChange={e => e.target.files && onFileChange(e.target.files[0])}
                                     />
-                                    <small>Maximum image size: 4MB</small>
+                                    <small>Maximum image size: 5MB</small>
                                 </div>
                                 <div className="m-4 font-semibold">or</div>
                                 <div className="relative w-full mb-4">

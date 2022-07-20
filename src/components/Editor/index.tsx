@@ -29,6 +29,7 @@ import {usePostModeration} from "../../ducks/mods";
 import {useCommentDisabled, useMeta} from "../../ducks/posts";
 import Menuable from "../Menuable";
 import FileUploadModal from "../FileUploadModal";
+import LinkInputModal from "../LinkInputModal";
 
 type Props = {
     messageId: string;
@@ -63,6 +64,7 @@ export default function Editor(props: Props): ReactElement {
     const [errorMessage, setErrorMessage] = useState('');
     const [verifying, setVerifying] = useState(true);
     const [showingImageUploadModal, setShowingImageUploadModal] = useState(false);
+    const [showingLinkModal, setShowingLinkModal] = useState(false);
     const [verified, setVerified] = useState(false);
     const [verifiedSession, setVerifiedSession] = useState('');
     const selected = useSelectedLocalId();
@@ -143,6 +145,7 @@ export default function Editor(props: Props): ReactElement {
         }));
 
         setShowingImageUploadModal(false);
+        setShowingLinkModal(false);
     }, [messageId, readOnly, draft]);
 
     const handleKeyCommand: (command: string) => DraftHandleValue = useCallback((command: string): DraftHandleValue => {
@@ -299,6 +302,14 @@ export default function Editor(props: Props): ReactElement {
                         fa="fas fa-image"
                         onClick={() => setShowingImageUploadModal(true)}
                     />
+                    <Icon
+                        className={classNames(
+                            "editor__button text-blue-300 w-8 h-8 relative",
+                            'hover:bg-blue-50 hover:text-blue-400',
+                        )}
+                        fa="fas fa-link"
+                        onClick={() => setShowingLinkModal(true)}
+                    />
                 </div>
                 <div className="flex-grow flex flex-row flex-nowrap items-center justify-end">
                     <Button
@@ -367,6 +378,14 @@ export default function Editor(props: Props): ReactElement {
                         onClose={() => setShowingImageUploadModal(false)}
                         onAccept={onAddLink}
                         mustLinkBeImage
+                    />
+                )
+            }
+            {
+                showingLinkModal && (
+                    <LinkInputModal
+                        onClose={() => setShowingLinkModal(false)}
+                        onAccept={onAddLink}
                     />
                 )
             }

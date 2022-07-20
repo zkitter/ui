@@ -175,10 +175,19 @@ export default function URLPreview(props: Props): ReactElement {
                             </div>
                         )
                     }
-                    <div className="url-preview__link-content">
-                        <div className="url-preview__link-title">{preview.title || 'No Preview'}</div>
-                        <div className="url-preview__link-desc">{preview.description}</div>
-                    </div>
+                    {
+                        (preview.title || preview.description)
+                            ? (
+                                <div className="url-preview__link-content">
+                                    <div className="url-preview__link-title">{preview.title}</div>
+                                    <div className="url-preview__link-desc">{preview.description}</div>
+                                </div>
+                            )
+                            : (
+                                <a className="px-4 py-2 text-light text-ellipsis overflow-hidden" href={url} target="_blank">{url}</a>
+                            )
+                    }
+
                 </div>
             ) }
 

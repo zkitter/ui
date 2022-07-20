@@ -51,6 +51,10 @@ $red-25: mix($red, $white, 2.5);
   line-height: 1.3125;
 }
 
+.text-ellipsis {
+  text-overflow: ellipsis;
+}
+
 .z-200 {
   z-index: 200;
 }
