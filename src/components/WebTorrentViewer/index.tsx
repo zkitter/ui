@@ -6,6 +6,7 @@ import SpinnerGif from "../../../static/icons/spinner.gif";
 import {Torrent, TorrentFile} from "webtorrent";
 import mime from 'mime-types';
 import prettyBytes from "pretty-bytes";
+import WTIcon from "../../../static/icons/webtorrent-small.png";
 import "./wt-viewer.scss";
 
 type Props = {
@@ -20,6 +21,7 @@ export default function WebTorrentViewer(props: Props): ReactElement {
     const [selectedFile, selectFile] = useState<TorrentFile|null>(null);
     const [currentTorrent, setTorrent] = useState<Torrent|null>(null);
     const [isDownloading, setDownloading] = useState(false);
+    const [isSeeding, setSeeding] = useState(false);
     const [progress, setProgress] = useState(0);
 
     const onFileClick = useCallback(async (fileIndex: number) => {
@@ -57,7 +59,13 @@ export default function WebTorrentViewer(props: Props): ReactElement {
         const onDownload = () => {
             setFiles(torrent.files.map(({ name, length, progress }) => ({ name, length, progress })));
             setProgress(torrent.progress);
-            setDownloading(torrent.progress !== 1);
+            if (torrent.progress === 1) {
+                torrent.off('download', onDownload);
+                setDownloading(false);
+                setSeeding(true);
+            } else {
+                setDownloading(true);
+            }
         }
 
         if (file.progress === 1) {
@@ -195,26 +203,34 @@ export default function WebTorrentViewer(props: Props): ReactElement {
                 </div>
             )}
             {
-                (currentTorrent && isDownloading) && (
-                    <div className="flex flex-row items-center px-4 py-2 bg-gray-200">
+                currentTorrent && (
+                    <div
+                        className="flex flex-row items-center px-4 py-2 bg-gray-200"
+                        onClick={e => e.stopPropagation()}
+                    >
                         <Icon
-                            className="text-gray-400 mr-4 cursor-pointer"
-                            fa={classNames({
-                                'fas fa-pause': isDownloading,
-                            })}
-                            size={.75}
+                            className="text-gray-400 mr-2 cursor-pointer"
+                            fa={(isDownloading || isSeeding) ? 'fas fa-stop' : undefined}
+                            url={(isDownloading || isSeeding) ? undefined : WTIcon}
+                            size={(isDownloading || isSeeding) ? .75 : 1.25}
                             onClick={async (e) => {
-                                e.stopPropagation();
                                 const client = getWebtorrentClient();
                                 const torrent = client.get(getInfoHashFromMagnet(props.url));
                                 if (torrent) {
                                     await new Promise(r => torrent.destroy({ destroyStore: false }, r));
                                     setDownloading(false);
+                                    setSeeding(false);
                                 }
                             }}
                         />
                         <div className="text-xs text-gray-400">
-                            {`${prettyBytes(currentTorrent.downloadSpeed)}/s - Downloading ${currentTorrent.name}`}
+                            {
+                                isDownloading
+                                    ? `${prettyBytes(currentTorrent.downloadSpeed)}/s - Downloading ${currentTorrent.name}`
+                                    : isSeeding
+                                        ? `${prettyBytes(currentTorrent.uploadSpeed)}/s - Sharing with ${currentTorrent.numPeers} peers`
+                                        : 'WebTorrent'
+                            }
                         </div>
                     </div>
                 )

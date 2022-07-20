@@ -62,7 +62,7 @@ export default function Editor(props: Props): ReactElement {
 
     const [errorMessage, setErrorMessage] = useState('');
     const [verifying, setVerifying] = useState(true);
-    const [showingUploadModal, setShowingUploadModal] = useState(false);
+    const [showingImageUploadModal, setShowingImageUploadModal] = useState(false);
     const [verified, setVerified] = useState(false);
     const [verifiedSession, setVerifiedSession] = useState('');
     const selected = useSelectedLocalId();
@@ -119,7 +119,7 @@ export default function Editor(props: Props): ReactElement {
         dispatch(setModeration(messageId || '', type));
     }, [messageId]);
 
-    const onSetMirror = useCallback(async (e) => {
+    const onSetMirror = useCallback(async (e: any) => {
         const checked = e.target.checked;
 
         if (!verifiedSession || !verified) {
@@ -142,7 +142,7 @@ export default function Editor(props: Props): ReactElement {
             attachment: url,
         }));
 
-        setShowingUploadModal(false);
+        setShowingImageUploadModal(false);
     }, [messageId, readOnly, draft]);
 
     const handleKeyCommand: (command: string) => DraftHandleValue = useCallback((command: string): DraftHandleValue => {
@@ -169,7 +169,7 @@ export default function Editor(props: Props): ReactElement {
         }
     }, [props.onPost, verified, verifiedSession, mirror]);
 
-    const onGlobalChange = useCallback((e) => {
+    const onGlobalChange = useCallback((e: any) => {
         dispatch(setGloabl(messageId, e.target.checked));
     }, [messageId]);
 
@@ -296,8 +296,8 @@ export default function Editor(props: Props): ReactElement {
                             "editor__button text-blue-300 w-8 h-8 relative",
                             'hover:bg-blue-50 hover:text-blue-400',
                         )}
-                        fa="fas fa-paperclip"
-                        onClick={() => setShowingUploadModal(true)}
+                        fa="fas fa-image"
+                        onClick={() => setShowingImageUploadModal(true)}
                     />
                 </div>
                 <div className="flex-grow flex flex-row flex-nowrap items-center justify-end">
@@ -362,11 +362,11 @@ export default function Editor(props: Props): ReactElement {
                 </div>
             </div>
             {
-                showingUploadModal && (
+                showingImageUploadModal && (
                     <FileUploadModal
-                        onClose={() => setShowingUploadModal(false)}
+                        onClose={() => setShowingImageUploadModal(false)}
                         onAccept={onAddLink}
-                        skipLinkPreview
+                        mustLinkBeImage
                     />
                 )
             }

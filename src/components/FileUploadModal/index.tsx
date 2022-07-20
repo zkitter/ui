@@ -202,7 +202,7 @@ export default function FileUploadModal(props: Props): ReactElement {
                             </div>
                         )
                 }
-                { err ? <div className="error-message text-xs text-center text-red-500 m-2">{err}</div> : null }
+                { err ? <div className="text-xs text-center text-red-500 mb-4">{err}</div> : null }
             </ModalContent>
             {
                 previewUrl && (
