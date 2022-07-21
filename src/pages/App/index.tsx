@@ -23,6 +23,7 @@ import zkpr, {connectZKPR} from "../../ducks/zkpr";
 import PostModerationPanel from "../../components/PostModerationPanel";
 import SettingView from "../SettingView";
 import MetaPanel from "../../components/MetaPanel";
+import ChatView from "../ChatView";
 
 export default function App(): ReactElement {
     const dispatch = useDispatch();
@@ -97,6 +98,9 @@ export default function App(): ReactElement {
                     </Route>
                     <Route path="/settings">
                         <SettingView />
+                    </Route>
+                    <Route path="/chat">
+                        <ChatView />
                     </Route>
                     <Route path="/:name">
                         <ProfileView />

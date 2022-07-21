@@ -49,6 +49,8 @@ import {
     useZKPRLoading
 } from "../../ducks/zkpr";
 import {checkPath} from "../../util/interrep";
+import {generateECDHKeyPairFromhex, generateZkIdentityFromHex, sha256, sha512, signWithP256} from "../../util/crypto";
+import webcrypto from "../../util/web_cryptography";
 
 type Props = {
     onConnect?: () => Promise<void>;
@@ -308,13 +310,13 @@ function WalletHeader(props: {
     const dispatch = useDispatch();
     const history = useHistory();
 
-    const gotoSignup = useCallback(async (e) => {
+    const gotoSignup = useCallback(async (e: any) => {
         e.stopPropagation();
         history.push('/signup');
         props.setOpened(false);
     }, []);
 
-    const gotoZKSignup = useCallback(async (e) => {
+    const gotoZKSignup = useCallback(async (e: any) => {
         e.stopPropagation();
 
         if (idCommitment) {

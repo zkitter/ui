@@ -1,9 +1,5 @@
 import EC from "elliptic";
-// import {genPubKey, Identity} from 'libsemaphore';
-// import {IProof, IWitnessData} from "semaphore-lib/src/index";
-// import {builder} from "./witness_calculator";
-// const snarkjs = require('snarkjs');
-// const { groth16 } = snarkjs;
+import { ZkIdentity, Strategy } from "@zk-kit/identity"
 
 export const hexToUintArray = (hex: string): Uint8Array => {
     const a = [];
@@ -15,6 +11,20 @@ export const hexToUintArray = (hex: string): Uint8Array => {
 
 export const hexToArrayBuf = (hex: string): ArrayBuffer => {
     return hexToUintArray(hex).buffer;
+}
+
+export const sha256 = async (data: string): Promise<string> => {
+    const arraybuf = new TextEncoder().encode(data);
+    const hashBuffer = await crypto.subtle.digest('SHA-256', arraybuf);
+    const hashArray = Array.from(new Uint8Array(hashBuffer));
+    return hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
+}
+
+export const sha512 = async (data: string): Promise<string> => {
+    const arraybuf = new TextEncoder().encode(data);
+    const hashBuffer = await crypto.subtle.digest('SHA-512', arraybuf);
+    const hashArray = Array.from(new Uint8Array(hashBuffer));
+    return hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
 }
 
 export const signWithP256 = (base64PrivateKey: string, data: string) => {
@@ -72,25 +82,18 @@ export const generateGunKeyPairFromHex = async (hashHex: string): Promise<{pub: 
     };
 }
 
-// export const genWnts = async(input: any, wasmFilePath: string): Promise<Uint8Array> => {
-//     const resp = await fetch(wasmFilePath);
-//     const buffer = await resp.arrayBuffer();
-//
-//     return new Promise((resolve, reject) => {
-//         builder(buffer)
-//             .then(async witnessCalculator => {
-//                 const buff= await witnessCalculator.calculateWTNSBin(input, 0);
-//                 resolve(buff);
-//             }).catch((error) => {
-//             reject(error);
-//         });
-//     })
-// }
-//
-// export const genSemaphoreProof = async(grothInput: any, wasmFilePath: string, finalZkeyPath: string) => {
-//     const wntsBuff = await genWnts(grothInput, wasmFilePath);
-//     const resp = await fetch(finalZkeyPath);
-//     const arrayBuffer = await resp.arrayBuffer();
-//     const { proof, publicSignals } = await groth16.prove(new Uint8Array(arrayBuffer), wntsBuff, null);
-//     return { proof, publicSignals };
-// }
+export const generateZkIdentityFromHex = async (hashHex: string): Promise<ZkIdentity> => {
+    return new ZkIdentity(Strategy.MESSAGE, hashHex);
+}
+
+export const generateECDHKeyPairFromhex = async (hashHex: string): Promise<{pub: string; priv: string}> => {
+    const ec = new EC.ec('curve25519');
+    const key = ec.keyFromPrivate(hashHex);
+    const pubhex = key.getPublic().encodeCompressed('hex');
+    const privhex = key.getPrivate().toString('hex');
+
+    return {
+        priv: privhex,
+        pub: pubhex,
+    }
+}
