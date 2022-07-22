@@ -51,6 +51,7 @@ export default function TopNav(): ReactElement {
                     <Route path="/connect/twitter" component={DefaultHeaderGroup} />
                     <Route path="/signup" component={DefaultHeaderGroup} />
                     <Route path="/notification" component={DefaultHeaderGroup} />
+                    <Route path="/chat" component={DefaultHeaderGroup} />
                     <Route path="/settings" component={SettingHeaderGroup} />
                     <Route path="/:name" component={UserProfileHeaderGroup} />
                     <Route>

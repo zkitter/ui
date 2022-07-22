@@ -1,11 +1,14 @@
 import React, {ReactElement, useCallback, useEffect, useState} from "react";
 import {generateECDHKeyPairFromhex, generateZkIdentityFromHex, sha256, signWithP256} from "../../util/crypto";
 import {useSelectedLocalId} from "../../ducks/worker";
-import Button from "../../components/Button";
 import {useDispatch} from "react-redux";
 import {submitProfile} from "../../ducks/drafts";
 import {ProfileMessageSubType} from "../../util/message";
 import {useUser} from "../../ducks/users";
+import ChatMenu from "../../components/ChatMenu";
+import ChatContent from "../../components/ChatContent";
+import "./chat-view.scss";
+import {Route, Switch} from "react-router";
 
 export default function ChatView(): ReactElement {
     const selectedLocalId = useSelectedLocalId();
@@ -42,15 +45,15 @@ export default function ChatView(): ReactElement {
 
     return (
         <div className="chat-view">
-            <div>{`id commitment: ${idcommitment}`}</div>
-            <div>{`ecdh pub: ${ecdhPub}`}</div>
-            <Button
-                btnType="primary"
-                onClick={onRegister}
-                disabled={!!user?.ecdh && !!user?.idcommitment}
-            >
-                Register
-            </Button>
+            <Switch>
+                <Route path="/chat/dm/:receiver" component={ChatMenu} />
+                <Route component={ChatMenu} />
+            </Switch>
+            <Switch>
+                <Route path="/chat/dm/:receiver/m/:messageId" component={ChatContent} />
+                <Route path="/chat/dm/:receiver" component={ChatContent} />
+                <Route component={ChatContent} />
+            </Switch>
         </div>
     );
 }

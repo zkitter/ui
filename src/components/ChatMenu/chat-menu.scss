@@ -1,0 +1,27 @@
+@import "../../util/variable.scss";
+
+.chat-menu {
+  @extend %col-nowrap;
+  flex: 0 0 auto;
+  overflow-y: auto;
+  overflow-x: hidden;
+  width: 18rem;
+  background-color: $gray-25;
+
+  &__item {
+    margin: .5rem;
+    padding: .5rem;
+    border-radius: .5rem;
+    cursor: pointer;
+    transition: background-color 150ms ease-in-out;
+
+    &:hover {
+      background-color: rgba($gray-100, .7);
+    }
+
+    &:active,
+    &--selected {
+      background-color: $gray-50;
+    }
+  }
+}
