@@ -14,6 +14,7 @@ export default function ChatMenu(): ReactElement {
     const [chats, setChats] = useState<{
         type: 'DIRECT' | 'PUBLIC_ROOM';
         receiver: string;
+        pubkey: string;
     }[]>([]);
 
     useEffect(() => {
@@ -23,6 +24,7 @@ export default function ChatMenu(): ReactElement {
             setChats(json.payload.map((data: any) => ({
                 type: 'DIRECT',
                 receiver: data.wallet_address,
+                pubkey: data.pubkey,
             })))
         })();
     }, []);
@@ -57,7 +59,6 @@ function ChatMenuItem(props: {
 }): ReactElement {
     const params = useParams<{receiver?: string}>();
 
-    console.log(params);
     return (
         <div
             className={classNames("flex flex-row chat-menu__item", {
@@ -81,7 +82,7 @@ function ChatMenuItem(props: {
 }
 
 
-function FromNow(props: {
+export function FromNow(props: {
     timestamp: Date;
     className?: string;
 }): ReactElement {

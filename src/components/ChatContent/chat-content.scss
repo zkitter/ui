@@ -15,6 +15,9 @@
     flex: 1 1 auto;
     height: 0;
     width: 100%;
+    display: flex;
+    flex-flow: column-reverse nowrap;
+    overflow-y: auto;
   }
 
   &__editor-wrapper {
@@ -29,5 +32,35 @@
     textarea {
 
     }
+  }
+}
+
+.chat-message {
+  @extend %col-nowrap;
+  padding: 1rem;
+  border-radius: 2rem;
+  background-color: $gray-100;
+  max-width: 50%;
+  margin: 1rem 2rem;
+  border-bottom-left-radius: 0;
+
+  &--self {
+    align-self: flex-end;
+    border-bottom-left-radius: 2rem;
+    border-bottom-right-radius: 0;
+    background-color: darken($primary-color, 20);
+    color: $white;
+
+    .chat-message__time {
+      color: $white;
+    }
+  }
+
+  &__content {
+    word-break: break-all;
+  }
+
+  &__time {
+
   }
 }
