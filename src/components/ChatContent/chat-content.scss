@@ -38,16 +38,16 @@
 .chat-message {
   @extend %col-nowrap;
   padding: 1rem;
-  border-radius: 2rem;
+  border-radius: 1.5rem;
   background-color: $gray-100;
   max-width: 50%;
-  margin: 1rem 2rem;
-  border-bottom-left-radius: 0;
+  margin: .5rem 1rem;
+  //border-bottom-left-radius: 0;
 
   &--self {
     align-self: flex-end;
-    border-bottom-left-radius: 2rem;
-    border-bottom-right-radius: 0;
+    border-bottom-left-radius: 1.5rem;
+    //border-bottom-right-radius: 0;
     background-color: darken($primary-color, 20);
     color: $white;
 

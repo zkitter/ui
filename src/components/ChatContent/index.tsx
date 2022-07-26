@@ -7,45 +7,61 @@ import {useSelectedLocalId} from "../../ducks/worker";
 import Nickname from "../Nickname";
 import Avatar, {Username} from "../Avatar";
 import Textarea from "../Textarea";
-import {ChatMessage, createMessageBundle, deriveSharedKey} from "../../util/zkchat";
+import {ChatMessage, createMessageBundle, deriveSharedKey, ZKChatClient} from "../../util/zkchat";
 import {generateECDHKeyPairFromhex, generateZkIdentityFromHex, sha256, signWithP256} from "../../util/crypto";
 import {encrypt, decrypt} from "../../util/encrypt";
 import config from "../../util/config";
 import {FromNow} from "../ChatMenu";
-
-const pk = '0ac5d2002069ff804a845eb773fe838ac3f6c9c321455f001d65a0a287c8b5e9';
+import {useUser} from "../../ducks/users";
+import {useChatMessage, zkchat} from "../../ducks/chats";
 
 export default function ChatContent(): ReactElement {
-    const { receiver, messageId } = useParams<{receiver: string; messageId?: string}>();
+    const { receiver, senderECDH } = useParams<{receiver: string; messageId?: string; senderECDH?: string}>();
     const selected = useSelectedLocalId();
     const [content, setContent] = useState('');
     const [sk, setSharedkey] = useState('');
-    const [chats, setChats] = useState<ChatMessage[]>([]);
+    const [order, setOrder] = useState<string[]>([]);
+    const user = useUser(receiver);
+
+    useEffect(() => {
+        const cb = (msg?: ChatMessage) => {
+            if (!msg) {
+                setOrder(zkchat.dms[receiver] || []);
+                return;
+            }
+
+            if (msg.type === 'DIRECT') {
+                if (msg.receiver === receiver && msg.sender.ecdh === senderECDH) {
+                    setOrder(zkchat.dms[receiver] || []);
+                }
+            }
+        };
+
+        cb();
+        zkchat.on(ZKChatClient.EVENTS.MESSAGE_APPENDED, cb);
+        zkchat.on(ZKChatClient.EVENTS.MESSAGE_PREPENDED, cb);
+
+        return () => {
+            zkchat.off(ZKChatClient.EVENTS.MESSAGE_APPENDED, cb);
+            zkchat.off(ZKChatClient.EVENTS.MESSAGE_PREPENDED, cb);
+        }
+    }, [receiver, senderECDH]);
 
     useEffect(() => {
         (async () => {
-            if (!selected) return;
+            if (!selected || !user) return;
 
             const keyPair = await generateECDHFromExistingId();
-            const sharedKey = deriveSharedKey(pk, keyPair!.priv);
-            console.log(sharedKey);
+            const sharedKey = deriveSharedKey(user.ecdh, keyPair!.priv);
             setSharedkey(sharedKey);
 
-            const resp = await fetch(`${config.indexerAPI}/v1/zkchat/chat-messages/dm/${selected.address}/${receiver}`);
-            const json = await resp.json();
-            setChats(json.payload.map((data: any) => {
-                const chat: ChatMessage = {
-                    messageId: data.message_id,
-                    ciphertext: data.ciphertext,
-                    timestamp: new Date(Number(data.timestamp)),
-                    receiver: data.receiver_address,
-                    sender: data.sender_address,
-                    type: data.type,
-                };
-                return chat;
-            }))
+            await zkchat.fetchMessagesByChat({
+                type: 'DIRECT',
+                receiver: receiver,
+                senderECDH: user.ecdh,
+            });
         })();
-    }, [receiver, messageId, selected]);
+    }, [receiver, selected, user]);
 
     const generateECDHFromExistingId = useCallback(async () => {
         if (selected?.type === 'gun') {
@@ -66,30 +82,22 @@ export default function ChatContent(): ReactElement {
     }, [selected]);
 
     const submitMessage = useCallback(async () => {
-        if (selected?.type !== 'gun') return;
-        const keyPair = await generateECDHFromExistingId();
-        const sharedKey = deriveSharedKey(pk, keyPair!.priv);
-        const ciphertext = await encrypt(content, sharedKey);
-        const bundle = await createMessageBundle({
-            type: 'DIRECT',
-            receiver,
-            ciphertext,
-            sender: selected?.address || '',
-        });
+        if (selected?.type !== 'gun' || !user) return;
 
         const signature = signWithP256(selected.privateKey, selected.address) + '.' + selected.address;
-        const res = await fetch(`${config.indexerAPI}/v1/zkchat/chat-messages`, {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
+        const json = await zkchat.sendDirectMessage(
+            {
+                type: 'DIRECT',
+                receiver,
+                senderECDH: user.ecdh,
+            },
+            content,
+            {
                 'X-SIGNED-ADDRESS': signature,
             },
-            body: JSON.stringify(bundle),
-        });
-        const json = await res.json();
-
-        console.log(json);
-    }, [content, receiver, generateECDHFromExistingId, selected]);
+        );
+        setContent('');
+    }, [content, receiver, generateECDHFromExistingId, selected, user]);
 
     const onEnter = useCallback((e: KeyboardEvent<HTMLTextAreaElement>) => {
         if (e.key === 'Enter' && !e.shiftKey) {
@@ -114,37 +122,14 @@ export default function ChatContent(): ReactElement {
             <InfiniteScrollable
                 className="chat-content__messages"
             >
-                {chats.map(chatMessage => {
-                    if (chatMessage.type !== 'DIRECT') return;
-
-                    let content = '';
-
-                    try {
-                        content = decrypt(chatMessage.ciphertext, sk);
-                    } catch (e) {
-                        console.error(e);
-                    }
-
-                    return (
-                        <div
-                            key={chatMessage.messageId}
-                            className={classNames("chat-message", {
-                                'chat-message--self': chatMessage.sender === selected?.address,
-                            })}
-                        >
-                            <div className="chat-message__content text-light">
-                                {content}
-                            </div>
-                            <FromNow
-                                className="chat-message__time text-xs mt-2 text-gray-700"
-                                timestamp={chatMessage.timestamp}
-                            />
-                        </div>
-                    );
+                {order.map(messageId => {
+                   return (
+                       <ChatMessageBubble key={messageId} messageId={messageId} />
+                   );
                 })}
             </InfiniteScrollable>
             <div className="chat-content__editor-wrapper">
-                <div className="chat-content__editor">
+                <div className="chat-content__editor ml-2">
                     <Textarea
                         className="text-light border mr-2 my-2"
                         rows={Math.max(0, content.split('\n').length)}
@@ -154,10 +139,36 @@ export default function ChatContent(): ReactElement {
                     />
                 </div>
                 <Avatar
-                    className="w-8 h-8 m-2"
+                    className="w-10 h-10 m-2"
                     address={selected?.address}
                 />
             </div>
+        </div>
+    );
+}
+
+function ChatMessageBubble(props: { messageId: string }) {
+    const selected = useSelectedLocalId();
+    const chatMessage = useChatMessage(props.messageId);
+
+    if (chatMessage.type !== 'DIRECT') return <></>;
+
+    return (
+        <div
+            key={chatMessage.messageId}
+            className={classNames("chat-message", {
+                'chat-message--self': chatMessage.sender === selected?.address,
+            })}
+        >
+            <div className={classNames("chat-message__content text-light", {
+                'italic opacity-70': chatMessage.encryptionError,
+            })}>
+                {chatMessage.encryptionError ? 'Cannot decrypt message' : chatMessage.content}
+            </div>
+            <FromNow
+                className="chat-message__time text-xs mt-2 text-gray-700"
+                timestamp={chatMessage.timestamp}
+            />
         </div>
     );
 }

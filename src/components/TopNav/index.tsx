@@ -102,6 +102,7 @@ function NavIconRow() {
         >
             <TopNavIcon fa="fas fa-home" pathname="/home" disabled={!loggedIn} />
             <TopNavIcon fa="fas fa-user" pathname={`/${ensName || address}/`} disabled={!loggedIn} />
+            <TopNavIcon fa="fas fa-envelope" pathname={`/chat`} disabled={!loggedIn} />
             <TopNavIcon fa="fas fa-globe-asia" pathname="/explore" />
             {/*<TopNavIcon fa="fas fa-bell" pathname="/notifications" />*/}
         </div>

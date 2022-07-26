@@ -9,6 +9,7 @@ import ChatMenu from "../../components/ChatMenu";
 import ChatContent from "../../components/ChatContent";
 import "./chat-view.scss";
 import {Route, Switch} from "react-router";
+import {zkchat} from "../../ducks/chats";
 
 export default function ChatView(): ReactElement {
     const selectedLocalId = useSelectedLocalId();
@@ -33,8 +34,11 @@ export default function ChatView(): ReactElement {
                 try {
                     const keyPair = await generateECDHKeyPairFromhex(ecdhHex);
                     const zkIdentity = await generateZkIdentityFromHex(zkHex);
-                    setEcdhPub(keyPair.pub);
-                    setIdCommitment(zkIdentity.genIdentityCommitment().toString(16));
+                    zkchat.importIdentity({
+                        address: selectedLocalId.address,
+                        zk: zkIdentity,
+                        ecdh: keyPair,
+                    });
                 } catch (e) {
                     console.error(e);
                 }
@@ -46,11 +50,13 @@ export default function ChatView(): ReactElement {
     return (
         <div className="chat-view">
             <Switch>
+                <Route path="/chat/dm/:receiver/s/:senderECDH" component={ChatMenu} />
                 <Route path="/chat/dm/:receiver" component={ChatMenu} />
                 <Route component={ChatMenu} />
             </Switch>
             <Switch>
                 <Route path="/chat/dm/:receiver/m/:messageId" component={ChatContent} />
+                <Route path="/chat/dm/:receiver/s/:senderECDH" component={ChatContent} />
                 <Route path="/chat/dm/:receiver" component={ChatContent} />
                 <Route component={ChatContent} />
             </Switch>

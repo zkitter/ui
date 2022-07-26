@@ -9,6 +9,7 @@ import {createLogger} from "redux-logger";
 import worker from "../ducks/worker";
 import zkpr from "../ducks/zkpr";
 import mods from "../ducks/mods";
+import chats from "../ducks/chats";
 const rootReducer = combineReducers({
     web3,
     zkpr,
@@ -17,6 +18,7 @@ const rootReducer = combineReducers({
     drafts,
     worker,
     mods,
+    chats,
 });
 
 export type AppRootState = ReturnType<typeof rootReducer>;

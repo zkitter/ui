@@ -24,9 +24,12 @@ import PostModerationPanel from "../../components/PostModerationPanel";
 import SettingView from "../SettingView";
 import MetaPanel from "../../components/MetaPanel";
 import ChatView from "../ChatView";
+import {zkchat} from "../../ducks/chats";
+import {generateECDHKeyPairFromhex, generateZkIdentityFromHex, sha256, signWithP256} from "../../util/crypto";
 
 export default function App(): ReactElement {
     const dispatch = useDispatch();
+    const selected = useSelectedLocalId();
 
     useEffect(() => {
         (async function onAppMount() {
@@ -46,6 +49,24 @@ export default function App(): ReactElement {
             }
         })();
     }, []);
+
+    useEffect(() => {
+        if (!selected || selected.type !== 'gun') return;
+
+        (async () => {
+            const ecdhseed = await signWithP256(selected.privateKey, 'signing for ecdh - 0');
+            const zkseed = await signWithP256(selected.privateKey, 'signing for zk identity - 0');
+            const ecdhHex = await sha256(ecdhseed);
+            const zkHex = await sha256(zkseed);
+            const keyPair = await generateECDHKeyPairFromhex(ecdhHex);
+            const zkIdentity = await generateZkIdentityFromHex(zkHex);
+            zkchat.importIdentity({
+                address: selected.address,
+                zk: zkIdentity,
+                ecdh: keyPair,
+            });
+        })();
+    }, [selected])
 
     useEffect(() => {
         navigator.serviceWorker.addEventListener('message', event => {
