@@ -50,14 +50,11 @@ export default function ChatView(): ReactElement {
     return (
         <div className="chat-view">
             <Switch>
-                <Route path="/chat/dm/:receiver/s/:senderECDH" component={ChatMenu} />
-                <Route path="/chat/dm/:receiver" component={ChatMenu} />
+                <Route path="/chat/:chatId" component={ChatMenu} />
                 <Route component={ChatMenu} />
             </Switch>
             <Switch>
-                <Route path="/chat/dm/:receiver/m/:messageId" component={ChatContent} />
-                <Route path="/chat/dm/:receiver/s/:senderECDH" component={ChatContent} />
-                <Route path="/chat/dm/:receiver" component={ChatContent} />
+                <Route path="/chat/:chatId" component={ChatContent} />
                 <Route component={ChatContent} />
             </Switch>
         </div>

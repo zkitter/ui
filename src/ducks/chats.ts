@@ -38,18 +38,36 @@ type Action<payload> = {
 }
 
 type State = {
-    chats: Chat[];
+    chats: {
+        order: string[];
+        map: {
+            [chatId: string]: Chat & {
+                messages: string[];
+            };
+        };
+    };
     messages:  {
         [messageId: string]: ChatMessage;
     };
 }
 
 const initialState: State = {
-    chats: [],
+    chats: {
+        order: [],
+        map: {},
+    },
     messages: {},
 };
 
-const setChats = (chats: Chat[]): Action<Chat[]> => ({
+const setChats = (chats: {
+    [chatId: string]: Chat & {
+        messages: string[];
+    };
+}): Action<{
+    [chatId: string]: Chat & {
+        messages: string[];
+    };
+}> => ({
     type: ActionTypes.SET_CHATS,
     payload: chats,
 });
@@ -72,15 +90,9 @@ export const fetchChats = (address: string) => async (dispatch: Dispatch, getSta
 export default function chats(state = initialState, action: Action<any>): State {
     switch (action.type) {
         case ActionTypes.SET_CHATS:
-            return {
-                ...state,
-                chats: action.payload,
-            };
+            return handleSetChats(state, action);
         case ActionTypes.ADD_CHAT:
-            return {
-                ...state,
-                chats: [...state.chats, action.payload],
-            };
+            return handeAddChat(state, action);
         case ActionTypes.SET_MESSAGE:
             return {
                 ...state,
@@ -94,9 +106,69 @@ export default function chats(state = initialState, action: Action<any>): State 
     }
 }
 
-export const useChats = () => {
+function handeAddChat(state: State, action: Action<Chat>) {
+    const {receiver, senderECDH} = action.payload!;
+    const chatId = `${receiver}-${senderECDH || ''}`;
+    const chats = state.chats;
+    const { order, map } = chats;
+    const newOrder = [...order, chatId];
+    const newMap = {
+        ...map,
+        [chatId]: {
+            ...action.payload!,
+            messages: [],
+        },
+    };
+
+    return {
+        ...state,
+        chats: {
+            order: newOrder,
+            map: newMap,
+        },
+    }
+}
+
+function handleSetChats(state: State, action: Action<{
+    [chatId: string]: Chat & {
+        messages: string[];
+    };
+}>) {
+    const chats = action.payload!;
+    const order = Object.keys(chats);
+    const map = chats;
+
+    return {
+        ...state,
+        chats: {
+            order,
+            map,
+        },
+    }
+}
+
+export const useChatIds = () => {
     return useSelector((state: AppRootState) => {
-        return state.chats.chats;
+        return state.chats.chats.order;
+    }, deepEqual);
+}
+
+export const useChat = (receiver: string, senderECDH?: string) => {
+    return useSelector((state: AppRootState) => {
+        const { worker: {selected}, users: {map}} = state;
+
+        if (selected?.type !== 'gun') return;
+
+        const ecdh = senderECDH || map[selected.address]?.ecdh;
+        const chatId = `${receiver}-${ecdh || ''}`;
+
+        return state.chats.chats.map[chatId];
+    }, deepEqual);
+}
+
+export const useChatId = (chatId: string) => {
+    return useSelector((state: AppRootState) => {
+        return state.chats.chats.map[chatId];
     }, deepEqual);
 }
 

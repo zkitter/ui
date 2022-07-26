@@ -7,32 +7,36 @@ import {useSelectedLocalId} from "../../ducks/worker";
 import Nickname from "../Nickname";
 import Avatar, {Username} from "../Avatar";
 import Textarea from "../Textarea";
-import {ChatMessage, createMessageBundle, deriveSharedKey, ZKChatClient} from "../../util/zkchat";
+import {ChatMessage, ZKChatClient} from "../../util/zkchat";
 import {generateECDHKeyPairFromhex, generateZkIdentityFromHex, sha256, signWithP256} from "../../util/crypto";
-import {encrypt, decrypt} from "../../util/encrypt";
-import config from "../../util/config";
 import {FromNow} from "../ChatMenu";
 import {useUser} from "../../ducks/users";
-import {useChatMessage, zkchat} from "../../ducks/chats";
+import {useChatId, useChatMessage, zkchat} from "../../ducks/chats";
 
 export default function ChatContent(): ReactElement {
-    const { receiver, senderECDH } = useParams<{receiver: string; messageId?: string; senderECDH?: string}>();
+    const { chatId } = useParams<{chatId: string}>();
     const selected = useSelectedLocalId();
     const [content, setContent] = useState('');
-    const [sk, setSharedkey] = useState('');
     const [order, setOrder] = useState<string[]>([]);
-    const user = useUser(receiver);
+    const selectedUser = useUser(selected?.address);
+    const chat = useChatId(chatId);
 
     useEffect(() => {
         const cb = (msg?: ChatMessage) => {
+            if (!chat) return;
+
             if (!msg) {
-                setOrder(zkchat.dms[receiver] || []);
+                setOrder(zkchat.activeChats[chatId]?.messages || []);
                 return;
             }
 
-            if (msg.type === 'DIRECT') {
-                if (msg.receiver === receiver && msg.sender.ecdh === senderECDH) {
-                    setOrder(zkchat.dms[receiver] || []);
+            if (msg.type === 'DIRECT' && chat.type === 'DIRECT') {
+                if (
+                    [chat.receiverECDH, chat.senderECDH].includes(msg.receiver.ecdh as string)
+                    || [chat.receiverECDH, chat.senderECDH].includes(msg.sender.ecdh as string)
+                ) {
+                    setOrder(zkchat.activeChats[chatId]?.messages || []);
+                    return;
                 }
             }
         };
@@ -45,23 +49,14 @@ export default function ChatContent(): ReactElement {
             zkchat.off(ZKChatClient.EVENTS.MESSAGE_APPENDED, cb);
             zkchat.off(ZKChatClient.EVENTS.MESSAGE_PREPENDED, cb);
         }
-    }, [receiver, senderECDH]);
+    }, [chat, chatId]);
 
     useEffect(() => {
         (async () => {
-            if (!selected || !user) return;
-
-            const keyPair = await generateECDHFromExistingId();
-            const sharedKey = deriveSharedKey(user.ecdh, keyPair!.priv);
-            setSharedkey(sharedKey);
-
-            await zkchat.fetchMessagesByChat({
-                type: 'DIRECT',
-                receiver: receiver,
-                senderECDH: user.ecdh,
-            });
+            if (!chat) return;
+            await zkchat.fetchMessagesByChat(chat);
         })();
-    }, [receiver, selected, user]);
+    }, [chat]);
 
     const generateECDHFromExistingId = useCallback(async () => {
         if (selected?.type === 'gun') {
@@ -82,22 +77,18 @@ export default function ChatContent(): ReactElement {
     }, [selected]);
 
     const submitMessage = useCallback(async () => {
-        if (selected?.type !== 'gun' || !user) return;
+        if (selected?.type !== 'gun' || !chat) return;
 
         const signature = signWithP256(selected.privateKey, selected.address) + '.' + selected.address;
         const json = await zkchat.sendDirectMessage(
-            {
-                type: 'DIRECT',
-                receiver,
-                senderECDH: user.ecdh,
-            },
+            chat,
             content,
             {
                 'X-SIGNED-ADDRESS': signature,
             },
         );
         setContent('');
-    }, [content, receiver, generateECDHFromExistingId, selected, user]);
+    }, [content, selected, chat]);
 
     const onEnter = useCallback((e: KeyboardEvent<HTMLTextAreaElement>) => {
         if (e.key === 'Enter' && !e.shiftKey) {
@@ -106,16 +97,16 @@ export default function ChatContent(): ReactElement {
         }
     }, [submitMessage]);
 
-    if (!receiver) return <></>;
+    if (!chat) return <></>;
 
     return (
         <div className={classNames('chat-content')}>
             <div className="chat-content__header">
-                <Avatar className="w-10 h-10" address={receiver} />
+                <Avatar className="w-10 h-10" address={chat?.receiver} />
                 <div className="flex flex-col flex-grow flex-shrink ml-2">
-                    <Nickname className="font-bold" address={receiver} />
+                    <Nickname className="font-bold" address={chat?.receiver} />
                     <div className="text-xs text-gray-500">
-                        @<Username address={receiver} />
+                        @<Username address={chat?.receiver} />
                     </div>
                 </div>
             </div>
@@ -157,7 +148,7 @@ function ChatMessageBubble(props: { messageId: string }) {
         <div
             key={chatMessage.messageId}
             className={classNames("chat-message", {
-                'chat-message--self': chatMessage.sender === selected?.address,
+                'chat-message--self': chatMessage.sender.address === selected?.address,
             })}
         >
             <div className={classNames("chat-message__content text-light", {

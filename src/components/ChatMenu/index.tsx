@@ -8,7 +8,7 @@ import config from "../../util/config";
 import Nickname from "../Nickname";
 import {useHistory, useParams} from "react-router";
 import {useDispatch} from "react-redux";
-import {fetchChats, useChats, zkchat} from "../../ducks/chats";
+import chats, {fetchChats, useChatId, useChatIds, zkchat} from "../../ducks/chats";
 import Icon from "../Icon";
 import Input from "../Input";
 import {Chat} from "../../util/zkchat";
@@ -21,7 +21,7 @@ export default function ChatMenu(): ReactElement {
     const selected = useSelectedLocalId();
     const history = useHistory();
     const dispatch = useDispatch();
-    const chats = useChats();
+    const chatIds = useChatIds();
     const [showingCreateChat, setShowingCreateChat] = useState(false);
     const [selectedNewConvo, selectNewConvo] = useState<Chat | null>(null);
     const [searchParam, setSearchParam] = useState('');
@@ -29,7 +29,9 @@ export default function ChatMenu(): ReactElement {
 
     useEffect(() => {
         if (selected?.type === 'gun') {
-            dispatch(fetchChats(selected.address));
+            setTimeout(() => {
+                dispatch(fetchChats(selected.address));
+            }, 500);
         }
     }, [selected]);
 
@@ -48,13 +50,7 @@ export default function ChatMenu(): ReactElement {
     }, [selected]);
 
     const openChat = useCallback((chat: Chat) => {
-        if (chat.type === 'DIRECT') {
-            if (chat.senderHash) {
-                history.push(`/chat/dm/${chat.receiver}/s/${chat.senderECDH}`);
-            } else {
-                history.push(`/chat/dm/${chat.receiver}`);
-            }
-        }
+        history.push(`/chat/${zkchat.deriveChatId(chat)}`);
     }, []);
 
     if (!selected) return <></>;
@@ -111,7 +107,7 @@ export default function ChatMenu(): ReactElement {
                     ? searchResults.map((chat) => (
                         <ChatMenuItem
                             key={chat.type + chat.receiver}
-                            type={chat.type}
+                            chatId=""
                             chat={chat}
                             openChat={() => selectNewConvo(chat)}
                             hideLastChat
@@ -123,11 +119,10 @@ export default function ChatMenu(): ReactElement {
                         </div>
                     )
             )}
-            { !showingCreateChat && chats.map((chat) => (
+            { !showingCreateChat && chatIds.map((chatId) => (
                 <ChatMenuItem
-                    key={chat.type + chat.receiver + (chat.type === 'DIRECT' ? chat.senderHash : '')}
-                    type={chat.type}
-                    chat={chat}
+                    key={chatId}
+                    chatId={chatId}
                     openChat={openChat}
                 />
             ))}
@@ -152,21 +147,17 @@ function CreateChatOptionModal(props: {
 }): ReactElement {
     const selected = useSelectedLocalId();
     const user = useUser(selected?.address);
+    const r_user = useUser(props.chat.receiver);
     const history = useHistory();
 
     const startChat = useCallback(async (e: MouseEvent<HTMLButtonElement>, isAnon: boolean) => {
         e.stopPropagation();
-        const chat = zkchat.createDM(props.chat.receiver, isAnon);
+        if (!r_user) return;
+        const chat = zkchat.createDM(r_user.address, r_user.ecdh, isAnon);
         props.onClose();
-        if (chat.type === 'DIRECT') {
-            if (chat.senderHash) {
-                history.push(`/chat/dm/${chat.receiver}/s/${chat.senderECDH}`);
-            } else {
-                history.push(`/chat/dm/${chat.receiver}`);
-            }
-
-        }
-    }, [props.chat]);
+        const chatId = zkchat.deriveChatId(chat);
+        history.push(`/chat/${chatId}`);
+    }, [props.chat, r_user]);
 
     if (!user) return <></>;
 
@@ -209,24 +200,22 @@ const ONE_DAY = 24 * ONE_HOUR;
 const ONE_WEEK = 7 * ONE_DAY;
 
 function ChatMenuItem(props: {
-    type: 'DIRECT' | 'PUBLIC_ROOM';
-    chat: Chat;
+    chatId: string;
+    chat?: Chat;
     openChat: (chat: Chat) => void;
     hideLastChat?: boolean;
 }): ReactElement {
-    const chat = props.chat;
-    const {receiver, senderECDH} = useParams<{receiver?: string, senderECDH?: string}>();
+    let chat = useChatId(props.chatId);
+    const {chatId} = useParams<{chatId: string}>();
 
-    let isSelected = false;
+    const isSelected = props.chatId === chatId;
 
-    if (chat.type === 'DIRECT') {
-        if (senderECDH) {
-            isSelected = senderECDH === chat.senderECDH && receiver === chat.receiver;
-        } else {
-            isSelected = senderECDH === chat.senderECDH;
-        }
+    if (props.chat) {
+        // @ts-ignore
+        chat = props.chat;
     }
 
+    if (!chat) return <></>;
 
     return (
         <div
@@ -234,12 +223,12 @@ function ChatMenuItem(props: {
                 'chat-menu__item--selected': isSelected,
                 'chat-menu__item--anon': chat.type === 'DIRECT' && chat.senderHash,
             })}
-            onClick={() => props.openChat(props.chat)}
+            onClick={() => props.openChat(chat)}
         >
             <div className="relative">
                 <Avatar
                     className="w-12 h-12 flex-grow-0 flex-shrink-0"
-                    address={props.chat.receiver}
+                    address={chat.receiver}
                 />
                 {
                     chat.type === 'DIRECT' && chat.senderHash && (
@@ -251,7 +240,7 @@ function ChatMenuItem(props: {
                 }
             </div>
             <div className="flex flex-col flex-grow flex-shrink mx-4 w-0">
-                <Nickname className="font-bold truncate" address={props.chat.receiver} />
+                <Nickname className="font-bold truncate" address={chat.receiver} />
                 {
                     !props.hideLastChat && (
                         <div
