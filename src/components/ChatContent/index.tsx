@@ -7,7 +7,7 @@ import {useSelectedLocalId} from "../../ducks/worker";
 import Nickname from "../Nickname";
 import Avatar, {Username} from "../Avatar";
 import Textarea from "../Textarea";
-import {ChatMessage, ZKChatClient} from "../../util/zkchat";
+import {Chat, ChatMessage, ZKChatClient} from "../../util/zkchat";
 import {generateECDHKeyPairFromhex, generateZkIdentityFromHex, sha256, signWithP256} from "../../util/crypto";
 import {FromNow} from "../ChatMenu";
 import {useUser} from "../../ducks/users";
@@ -58,24 +58,6 @@ export default function ChatContent(): ReactElement {
         })();
     }, [chat]);
 
-    const generateECDHFromExistingId = useCallback(async () => {
-        if (selected?.type === 'gun') {
-            const ecdhseed = await signWithP256(selected.privateKey, 'signing for ecdh - 0');
-            const zkseed = await signWithP256(selected.privateKey, 'signing for zk identity - 0');
-            const ecdhHex = await sha256(ecdhseed);
-            const zkHex = await sha256(zkseed);
-
-            try {
-                const keyPair = await generateECDHKeyPairFromhex(ecdhHex);
-                const zkIdentity = await generateZkIdentityFromHex(zkHex);
-                return keyPair;
-                // setIdCommitment(zkIdentity.genIdentityCommitment().toString(16));
-            } catch (e) {
-                console.error(e);
-            }
-        }
-    }, [selected]);
-
     const submitMessage = useCallback(async () => {
         if (selected?.type !== 'gun' || !chat) return;
 
@@ -100,13 +82,34 @@ export default function ChatContent(): ReactElement {
     if (!chat) return <></>;
 
     return (
-        <div className={classNames('chat-content')}>
+        <div
+            className={classNames('chat-content', {
+                'chat-content--anon': chat?.senderHash,
+            })}>
             <div className="chat-content__header">
-                <Avatar className="w-10 h-10" address={chat?.receiver} />
+                <Avatar
+                    className="w-10 h-10"
+                    address={chat?.receiver}
+                    incognito={!chat?.receiver}
+                />
                 <div className="flex flex-col flex-grow flex-shrink ml-2">
-                    <Nickname className="font-bold" address={chat?.receiver} />
-                    <div className="text-xs text-gray-500">
-                        @<Username address={chat?.receiver} />
+                    <Nickname
+                        className="font-bold"
+                        address={chat?.receiver}
+                    />
+                    <div
+                        className={classNames("text-xs", {
+                            'text-gray-500': true,
+                            // 'text-gray-400': chat?.senderHash,
+                        })}
+                    >
+                        {chat?.receiver && (
+                            <>
+                                <span>@</span>
+                                <Username address={chat?.receiver || ''} />
+                            </>
+                        )}
+
                     </div>
                 </div>
             </div>
@@ -115,7 +118,11 @@ export default function ChatContent(): ReactElement {
             >
                 {order.map(messageId => {
                    return (
-                       <ChatMessageBubble key={messageId} messageId={messageId} />
+                       <ChatMessageBubble
+                           key={messageId}
+                           messageId={messageId}
+                           chat={chat}
+                       />
                    );
                 })}
             </InfiniteScrollable>
@@ -132,23 +139,27 @@ export default function ChatContent(): ReactElement {
                 <Avatar
                     className="w-10 h-10 m-2"
                     address={selected?.address}
+                    incognito={!!chat.senderHash}
                 />
             </div>
         </div>
     );
 }
 
-function ChatMessageBubble(props: { messageId: string }) {
-    const selected = useSelectedLocalId();
+function ChatMessageBubble(props: {
+    messageId: string;
+    chat: Chat;
+}) {
     const chatMessage = useChatMessage(props.messageId);
 
-    if (chatMessage.type !== 'DIRECT') return <></>;
+    if (chatMessage?.type !== 'DIRECT') return <></>;
 
     return (
         <div
             key={chatMessage.messageId}
             className={classNames("chat-message", {
-                'chat-message--self': chatMessage.sender.address === selected?.address,
+                'chat-message--self': chatMessage.sender.ecdh === props.chat.senderECDH,
+                'chat-message--anon': chatMessage.sender.hash,
             })}
         >
             <div className={classNames("chat-message__content text-light", {

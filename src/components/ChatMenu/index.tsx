@@ -19,6 +19,7 @@ import {useUser} from "../../ducks/users";
 
 export default function ChatMenu(): ReactElement {
     const selected = useSelectedLocalId();
+    const selecteduser = useUser(selected?.address);
     const history = useHistory();
     const dispatch = useDispatch();
     const chatIds = useChatIds();
@@ -28,12 +29,12 @@ export default function ChatMenu(): ReactElement {
     const [searchResults, setSearchResults] = useState<Chat[] | null>(null);
 
     useEffect(() => {
-        if (selected?.type === 'gun') {
+        if (selecteduser?.ecdh && selected?.type === 'gun') {
             setTimeout(() => {
-                dispatch(fetchChats(selected.address));
+                dispatch(fetchChats(selecteduser.ecdh));
             }, 500);
         }
-    }, [selected]);
+    }, [selected, selecteduser]);
 
     const onSearchNewChatChange = useCallback(async (e: ChangeEvent<HTMLInputElement>) => {
         if (selected?.type !== 'gun') return;
@@ -153,7 +154,7 @@ function CreateChatOptionModal(props: {
     const startChat = useCallback(async (e: MouseEvent<HTMLButtonElement>, isAnon: boolean) => {
         e.stopPropagation();
         if (!r_user) return;
-        const chat = zkchat.createDM(r_user.address, r_user.ecdh, isAnon);
+        const chat = await zkchat.createDM(r_user.address, r_user.ecdh, isAnon);
         props.onClose();
         const chatId = zkchat.deriveChatId(chat);
         history.push(`/chat/${chatId}`);
@@ -228,7 +229,8 @@ function ChatMenuItem(props: {
             <div className="relative">
                 <Avatar
                     className="w-12 h-12 flex-grow-0 flex-shrink-0"
-                    address={chat.receiver}
+                    address={chat.receiver || ''}
+                    incognito={!chat.receiver}
                 />
                 {
                     chat.type === 'DIRECT' && chat.senderHash && (
@@ -240,7 +242,10 @@ function ChatMenuItem(props: {
                 }
             </div>
             <div className="flex flex-col flex-grow flex-shrink mx-4 w-0">
-                <Nickname className="font-bold truncate" address={chat.receiver} />
+                <Nickname
+                    className="font-bold truncate"
+                    address={chat.receiver || ''}
+                />
                 {
                     !props.hideLastChat && (
                         <div

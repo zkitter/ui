@@ -1,11 +1,12 @@
 import EC from "elliptic";
-import {RLNFullProof} from "@zk-kit/protocols";
+import {genExternalNullifier, RLNFullProof, RLN} from "@zk-kit/protocols";
 import crypto from "crypto";
 import {ZkIdentity} from "@zk-kit/identity";
 import config from "./config";
 import EventEmitter2, {ConstructorOptions} from "eventemitter2";
 import {decrypt, encrypt} from "./encrypt";
-import {base64ToArrayBuffer} from "./crypto";
+import {base64ToArrayBuffer, generateECDHKeyPairFromhex, sha256} from "./crypto";
+import {findProof} from "./merkle";
 
 export enum ChatMessageType {
     DIRECT = 'DIRECT',
@@ -23,7 +24,7 @@ export type DirectChatMessage = {
         hash?: string;
     };
     rln?: RLNFullProof & {
-        epoch: number;
+        epoch: string;
         x_share: string;
     };
     receiver: {
@@ -48,7 +49,7 @@ export type PublicRoomChatMessage = {
         hash?: string;
     };
     rln?: RLNFullProof & {
-        epoch: number;
+        epoch: string;
         x_share: string;
     };
     receiver: {
@@ -111,7 +112,7 @@ type createMessageBundleOptions = {
     };
     ciphertext?: string;
     rln?: RLNFullProof & {
-        epoch: number;
+        epoch: string;
         x_share: string;
     };
 } | {
@@ -132,7 +133,7 @@ type createMessageBundleOptions = {
     reference?: string;
     attachment?: string;
     rln?: RLNFullProof & {
-        epoch: number;
+        epoch: string;
         x_share: string;
     };
 }
@@ -187,6 +188,16 @@ export const deriveMessageId = async (chatMessage: ChatMessage): Promise<string>
     }
 
     return crypto.createHash('sha256').update(data).digest('hex');
+}
+
+/**
+ * Returns rounded timestamp to the nearest 10-second in milliseconds.
+ */
+export const getEpoch = (): string => {
+    const timeNow = new Date();
+    timeNow.setSeconds(Math.floor(timeNow.getSeconds() / 5) * 5);
+    timeNow.setMilliseconds(0);
+    return timeNow.getTime().toString();
 }
 
 type ZKChatIdentity = {
@@ -283,12 +294,12 @@ export class ZKChatClient extends EventEmitter2 {
 
         try {
             bucket = rawData ? JSON.parse(rawData) : {
-                activeChats: [],
+                activeChats: {},
             };
         } catch (e) {
             console.error(e);
             bucket = {
-                activeChats: [],
+                activeChats: {},
             };
         }
 
@@ -301,7 +312,7 @@ export class ZKChatClient extends EventEmitter2 {
         this._load();
     }
 
-    createDM = (receiver: string, receiverECDH: string, isAnon?: boolean): Chat => {
+    createDM = async (receiver: string, receiverECDH: string, isAnon?: boolean): Promise<Chat> => {
         this._ensureIdentity();
         const chat: Chat = {
             type: 'DIRECT',
@@ -313,7 +324,10 @@ export class ZKChatClient extends EventEmitter2 {
         if (isAnon) {
             const token = crypto.randomBytes(16).toString('hex');
             const senderHash = signWithP256(this.identity!.ecdh.priv, receiver + token);
+            const seedHash = signWithP256(this.identity!.ecdh.priv, senderHash);
+            const keypair = await generateECDHKeyPairFromhex(seedHash);
             chat.senderHash = senderHash;
+            chat.senderECDH = keypair.pub;
         }
 
         this.appendActiveChats(chat);
@@ -352,11 +366,28 @@ export class ZKChatClient extends EventEmitter2 {
         const messages: ChatMessage[] = [];
 
         if (chat.type === 'DIRECT') {
-            const last = existingMsgs[existingMsgs.length - 1];
-            const offset = last ? this.messages[last].timestamp.getTime() : Date.now();
-            const url = `${this.api}/chat-messages/dm/${chat.receiver}/${this.identity!.address}`;
+            const last = this.messages[existingMsgs[existingMsgs.length - 1]];
+            const offset = last ? last.timestamp.getTime() : Date.now();
+            const url = `${this.api}/chat-messages/dm/${chat.receiverECDH}/${chat.senderECDH}`;
             const resp = await fetch(`${url}?offset=${offset}`);
             const json = await resp.json();
+
+            let priv, sk = '';
+
+            if (chat.senderHash) {
+                const seedHash = signWithP256(this.identity!.ecdh.priv, chat.senderHash);
+                const keypair = await generateECDHKeyPairFromhex(seedHash);
+                priv = keypair.priv;
+            } else {
+                priv = this.identity!.ecdh.priv;
+            }
+
+            if (chat.type === 'DIRECT') {
+                sk = deriveSharedKey(
+                    chat.receiverECDH,
+                    priv,
+                );
+            }
 
             for (const data of json.payload) {
                 let content = '';
@@ -364,7 +395,6 @@ export class ZKChatClient extends EventEmitter2 {
 
                 try {
                     if (data.ciphertext) {
-                        const sk = deriveSharedKey(chat.receiverECDH, this.identity!.ecdh.priv);
                         content = decrypt(data.ciphertext, sk);
                         error = !content;
                     }
@@ -393,7 +423,7 @@ export class ZKChatClient extends EventEmitter2 {
                 if (!this.messages[data.message_id]) {
                     this.insertMessage(message);
                     const order = this.activeChats[chatId].messages;
-                    this.activeChats[chatId].messages = [...order, data.message_id];
+                    this.activeChats[chatId].messages = [...new Set([...order, data.message_id])];
                     messages.push(message);
                     this.emit(ZKChatClient.EVENTS.MESSAGE_PREPENDED, message);
                 }
@@ -435,18 +465,62 @@ export class ZKChatClient extends EventEmitter2 {
         if (chat.type !== 'DIRECT') return;
 
         const ecdh = chat.receiverECDH;
-        const sharedKey = deriveSharedKey(ecdh, this.identity!.ecdh.priv);
+
+        let senderECDH;
+        let priv = this.identity!.ecdh.priv;
+
+        if (chat.senderHash) {
+            const seedHash = signWithP256(this.identity!.ecdh.priv, chat.senderHash);
+            const keypair = await generateECDHKeyPairFromhex(seedHash);
+            priv = keypair.priv;
+            senderECDH = keypair.pub;
+        }
+
+        const sharedKey = deriveSharedKey(ecdh, priv);
+
         const ciphertext = await encrypt(content, sharedKey);
         const bundle = await createMessageBundle({
             type: 'DIRECT',
             receiver: {
                 address: chat.receiver,
+                ecdh: chat.receiverECDH,
             },
             ciphertext,
             sender: {
-                address: this.identity!.address,
+                address: chat.senderHash ? undefined : this.identity!.address,
+                ecdh: senderECDH,
+                hash: chat.senderHash,
             },
         });
+
+        if (chat.senderHash) {
+            const epoch = getEpoch();
+            const externalNullifier = genExternalNullifier(epoch);
+            const signal = bundle!.messageId;
+            const identitySecretHash = this.identity!.zk.getSecretHash();
+            const identityCommitment = this.identity!.zk.genIdentityCommitment();
+            const merkleProof = await findProof('rln', 'zksocial_all', identityCommitment.toString(16));
+            const rlnIdentifier = await sha256('zkchat');
+            const xShare = RLN.genSignalHash(signal);
+            const witness = RLN.genWitness(
+                identitySecretHash,
+                merkleProof!,
+                externalNullifier,
+                signal,
+                BigInt('0x' + rlnIdentifier),
+            );
+            const proof = await RLN.genProof(
+                witness,
+                `${config.indexerAPI}/circuits/rln/wasm`,
+                `${config.indexerAPI}/circuits/rln/zkey`,
+            );
+            bundle!.rln = {
+                ...proof,
+                x_share: xShare.toString(),
+                epoch,
+            }
+
+        }
 
         const res = await fetch(`${config.indexerAPI}/v1/zkchat/chat-messages`, {
             method: 'POST',
@@ -470,9 +544,12 @@ export class ZKChatClient extends EventEmitter2 {
             ciphertext: json.payload.ciphertext,
             receiver: {
                 address: json.payload.receiver_address,
+                ecdh: json.payload.receiver_pubkey,
             },
             sender: {
                 address: json.payload.sender_address,
+                ecdh: json.payload.sender_pubkey,
+                hash: json.payload.sender_hash,
             },
         };
 

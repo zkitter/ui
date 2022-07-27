@@ -23,30 +23,6 @@ export default function ChatView(): ReactElement {
         await dispatch(submitProfile(ProfileMessageSubType.Custom, ecdhPub, 'ecdh_pubkey'));
     }, [idcommitment, ecdhPub]);
 
-    useEffect(() => {
-        (async () => {
-            if (selectedLocalId?.type === 'gun') {
-                const ecdhseed = await signWithP256(selectedLocalId.privateKey, 'signing for ecdh - 0');
-                const zkseed = await signWithP256(selectedLocalId.privateKey, 'signing for zk identity - 0');
-                const ecdhHex = await sha256(ecdhseed);
-                const zkHex = await sha256(zkseed);
-
-                try {
-                    const keyPair = await generateECDHKeyPairFromhex(ecdhHex);
-                    const zkIdentity = await generateZkIdentityFromHex(zkHex);
-                    zkchat.importIdentity({
-                        address: selectedLocalId.address,
-                        zk: zkIdentity,
-                        ecdh: keyPair,
-                    });
-                } catch (e) {
-                    console.error(e);
-                }
-            }
-        })();
-
-    }, [selectedLocalId, user]);
-
     return (
         <div className="chat-view">
             <Switch>

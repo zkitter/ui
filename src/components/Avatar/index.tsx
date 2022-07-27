@@ -26,21 +26,22 @@ const CACHE: {
     [address: string]: string;
 } = {};
 
-export function Username(props: { address: string }): ReactElement {
+export function Username(props: { address?: string }): ReactElement {
     const [ensName, setEnsName] = useState('');
+    const {address = ''} = props;
 
     useEffect(() => {
         (async () => {
-            if (!props.address) return;
             setEnsName('');
-            const ens = await fetchNameByAddress(props.address);
+            if (!address) return;
+            const ens = await fetchNameByAddress(address);
             setEnsName(ens);
         })();
-    }, [props.address]);
+    }, [address]);
 
     return (
         <>
-            {ensName ? ensName : ellipsify(props.address)}
+            {ensName ? ensName : ellipsify(address)}
         </>
     );
 }

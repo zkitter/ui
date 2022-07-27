@@ -4,6 +4,33 @@
   @extend %col-nowrap;
   width: 100%;
 
+  &--anon {
+    background-color: $gray-50;
+    //color: $white;
+
+    .chat-content {
+      &__header,
+      &__editor-wrapper {
+        border-color: $gray-100;
+      }
+
+      &__editor {
+        .textarea-group {
+          //overflow: hidden;
+          //border-color: $gray-900;
+          //
+          //&:focus-within {
+          //  border-color: $gray-700;
+          //}
+        }
+
+        textarea {
+          //background-color: $gray-800;
+        }
+      }
+    }
+  }
+
   &__header {
     @extend %row-nowrap;
     padding: 0.75rem;
@@ -38,10 +65,10 @@
 .chat-message {
   @extend %col-nowrap;
   padding: 1rem;
-  border-radius: 1.5rem;
+  border-radius: 1.25rem;
   background-color: $gray-100;
   max-width: 50%;
-  margin: .5rem 1rem;
+  margin: .25rem 1rem;
   //border-bottom-left-radius: 0;
 
   &--self {
@@ -53,6 +80,15 @@
 
     .chat-message__time {
       color: $white;
+    }
+  }
+
+  &--anon {
+    background-color: $black;
+    color: $gray-100;
+
+    .chat-message__time {
+      color: $gray-300;
     }
   }
 
