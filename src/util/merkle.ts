@@ -10,11 +10,10 @@ type PathData = {
 type ValidGroups = 'zksocial_all';
 
 export const findProof = async (
-    proofType: 'rln' | 'semaphore',
     group: ValidGroups,
     idCommitment: string,
 ): Promise<MerkleProof|null> => {
-    const resp = await fetch(`${config.indexerAPI}/v1/proofs/${proofType}/${idCommitment}?group=${group}`);
+    const resp = await fetch(`${config.indexerAPI}/v1/proofs/${idCommitment}?group=${group}`);
     const { payload: {data}, error } = await resp.json();
 
     let path = null;

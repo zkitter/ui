@@ -107,10 +107,15 @@ export default function chats(state = initialState, action: Action<any>): State 
 }
 
 function handeAddChat(state: State, action: Action<Chat>) {
-    const {receiver, senderECDH} = action.payload!;
-    const chatId = `${receiver}-${senderECDH || ''}`;
+    const chatId = zkchat.deriveChatId(action.payload!);
     const chats = state.chats;
+
     const { order, map } = chats;
+
+    if (map[chatId]) {
+        return state;
+    }
+
     const newOrder = [...order, chatId];
     const newMap = {
         ...map,

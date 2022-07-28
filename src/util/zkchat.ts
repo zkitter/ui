@@ -7,6 +7,7 @@ import EventEmitter2, {ConstructorOptions} from "eventemitter2";
 import {decrypt, encrypt} from "./encrypt";
 import {base64ToArrayBuffer, generateECDHKeyPairFromhex, sha256} from "./crypto";
 import {findProof} from "./merkle";
+import {safeJsonParse} from "./misc";
 
 export enum ChatMessageType {
     DIRECT = 'DIRECT',
@@ -26,6 +27,7 @@ export type DirectChatMessage = {
     rln?: RLNFullProof & {
         epoch: string;
         x_share: string;
+        group_id: string;
     };
     receiver: {
         address?: string;
@@ -51,6 +53,7 @@ export type PublicRoomChatMessage = {
     rln?: RLNFullProof & {
         epoch: string;
         x_share: string;
+        group_id: string;
     };
     receiver: {
         address?: string;
@@ -114,6 +117,7 @@ type createMessageBundleOptions = {
     rln?: RLNFullProof & {
         epoch: string;
         x_share: string;
+        group_id: string;
     };
 } | {
     type: 'PUBLIC_ROOM',
@@ -135,6 +139,7 @@ type createMessageBundleOptions = {
     rln?: RLNFullProof & {
         epoch: string;
         x_share: string;
+        group_id: string;
     };
 }
 
@@ -416,6 +421,7 @@ export class ZKChatClient extends EventEmitter2 {
                         hash: data.sender_hash,
                         ecdh: data.sender_pubkey,
                     },
+                    rln: data.rln_serialized_proof && safeJsonParse(data.rln_serialized_proof),
                     type: data.type,
                     encryptionError: error,
                 };
@@ -499,7 +505,7 @@ export class ZKChatClient extends EventEmitter2 {
             const signal = bundle!.messageId;
             const identitySecretHash = this.identity!.zk.getSecretHash();
             const identityCommitment = this.identity!.zk.genIdentityCommitment();
-            const merkleProof = await findProof('rln', 'zksocial_all', identityCommitment.toString(16));
+            const merkleProof = await findProof('zksocial_all', identityCommitment.toString(16));
             const rlnIdentifier = await sha256('zkchat');
             const xShare = RLN.genSignalHash(signal);
             const witness = RLN.genWitness(
@@ -518,6 +524,7 @@ export class ZKChatClient extends EventEmitter2 {
                 ...proof,
                 x_share: xShare.toString(),
                 epoch,
+                group_id: 'zksocial_all',
             }
 
         }
