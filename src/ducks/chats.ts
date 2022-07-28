@@ -27,6 +27,7 @@ zkchat.on(EVENTS.CHAT_CREATED, (chat: Chat) => {
 enum ActionTypes {
     SET_CHATS = 'chats/setChats',
     ADD_CHAT = 'chats/addChat',
+    SET_CHAT_NICKNAME = 'chats/setChatNickname',
     SET_MESSAGE = 'chats/SET_MESSAGE',
 }
 
@@ -41,14 +42,17 @@ type State = {
     chats: {
         order: string[];
         map: {
-            [chatId: string]: Chat & {
-                messages: string[];
-            };
+            [chatId: string]: InflatedChat;
         };
     };
     messages:  {
         [messageId: string]: ChatMessage;
     };
+}
+
+export type InflatedChat = Chat & {
+    messages: string[];
+    nickname?: string;
 }
 
 const initialState: State = {
@@ -60,13 +64,9 @@ const initialState: State = {
 };
 
 const setChats = (chats: {
-    [chatId: string]: Chat & {
-        messages: string[];
-    };
+    [chatId: string]: Chat;
 }): Action<{
-    [chatId: string]: Chat & {
-        messages: string[];
-    };
+    [chatId: string]: Chat;
 }> => ({
     type: ActionTypes.SET_CHATS,
     payload: chats,
@@ -75,6 +75,14 @@ const setChats = (chats: {
 const addChat = (chat: Chat): Action<Chat> => ({
     type: ActionTypes.ADD_CHAT,
     payload: chat,
+});
+
+const setNickname = (chat: Chat, nickname: string): Action<{
+    chat: Chat,
+    nickname: string,
+}> => ({
+    type: ActionTypes.SET_CHAT_NICKNAME,
+    payload: {chat, nickname},
 });
 
 const setMessage = (msg: ChatMessage): Action<ChatMessage> => ({
@@ -93,6 +101,8 @@ export default function chats(state = initialState, action: Action<any>): State 
             return handleSetChats(state, action);
         case ActionTypes.ADD_CHAT:
             return handeAddChat(state, action);
+        case ActionTypes.SET_CHAT_NICKNAME:
+            return handeSetNickname(state, action);
         case ActionTypes.SET_MESSAGE:
             return {
                 ...state,
@@ -103,6 +113,31 @@ export default function chats(state = initialState, action: Action<any>): State 
             };
         default:
             return state;
+    }
+}
+
+function handeSetNickname(state: State, action: Action<{ chat: Chat, nickname: string }>) {
+    const chatId = zkchat.deriveChatId(action.payload!.chat);
+    const chats = state.chats;
+    const { map } = chats;
+    const chat = map[chatId];
+
+    if (!chat || chat.nickname === action.payload!.nickname) {
+        return state;
+    }
+
+    return {
+        ...state,
+        chats: {
+            ...chats,
+            map: {
+                ...map,
+                [chatId]: {
+                    ...chat,
+                    nickname: action.payload!.nickname,
+                },
+            },
+        },
     }
 }
 
@@ -141,7 +176,9 @@ function handleSetChats(state: State, action: Action<{
 }>) {
     const chats = action.payload!;
     const order = Object.keys(chats);
-    const map = chats;
+    const map = {
+        ...chats,
+    };
 
     return {
         ...state,
@@ -155,19 +192,6 @@ function handleSetChats(state: State, action: Action<{
 export const useChatIds = () => {
     return useSelector((state: AppRootState) => {
         return state.chats.chats.order;
-    }, deepEqual);
-}
-
-export const useChat = (receiver: string, senderECDH?: string) => {
-    return useSelector((state: AppRootState) => {
-        const { worker: {selected}, users: {map}} = state;
-
-        if (selected?.type !== 'gun') return;
-
-        const ecdh = senderECDH || map[selected.address]?.ecdh;
-        const chatId = `${receiver}-${ecdh || ''}`;
-
-        return state.chats.chats.map[chatId];
     }, deepEqual);
 }
 

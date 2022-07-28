@@ -27,6 +27,12 @@
         textarea {
           //background-color: $gray-800;
         }
+
+        &__loading-gif {
+          position: absolute;
+          top: .25rem;
+          left: .25rem;
+        }
       }
     }
   }

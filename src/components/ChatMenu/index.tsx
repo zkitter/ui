@@ -170,11 +170,6 @@ function CreateChatOptionModal(props: {
             <ModalHeader>
                 { props.chat.type === 'DIRECT' ? 'Create Direct Message' : 'Create New Group'}
             </ModalHeader>
-            <ModalContent>
-                <div>
-
-                </div>
-            </ModalContent>
             <ModalFooter className="create-chat-options__footer">
                 <Button
                     className="mr-1 create-chat-options__create-btn"

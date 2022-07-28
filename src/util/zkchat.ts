@@ -89,11 +89,9 @@ export const deriveSharedKey = (receiverPubkey: string, senderPrivateKey: string
     return shared.toString(16);
 }
 
-const signWithP256 = (base64PrivateKey: string, data: string) => {
-    const buff = base64ToArrayBuffer(base64PrivateKey);
-    const hex = Buffer.from(buff).toString('hex');
+const signWithP256 = (privHex: string, data: string) => {
     const ec = new EC.ec('p256');
-    const key = ec.keyFromPrivate(hex);
+    const key = ec.keyFromPrivate(privHex);
     const msgHash = Buffer.from(data, 'utf-8').toString('hex');
     const signature = key.sign(msgHash);
     return Buffer.from(signature.toDER()).toString('hex');
@@ -309,7 +307,14 @@ export class ZKChatClient extends EventEmitter2 {
         }
 
         this.messages = {};
-        this.activeChats = bucket.activeChats;
+        this.activeChats = Object.entries(bucket.activeChats)
+            .reduce((acc: any, [chatId, chat]: any[]) => {
+                acc[chatId] = {
+                    ...chat,
+                    messages: [],
+                };
+                return acc;
+            }, {});
     }
 
     importIdentity(identity: ZKChatIdentity) {
@@ -328,7 +333,7 @@ export class ZKChatClient extends EventEmitter2 {
 
         if (isAnon) {
             const token = crypto.randomBytes(16).toString('hex');
-            const senderHash = signWithP256(this.identity!.ecdh.priv, receiver + token);
+            const senderHash = signWithP256(this.identity!.ecdh.priv, await sha256(receiver + token));
             const seedHash = signWithP256(this.identity!.ecdh.priv, senderHash);
             const keypair = await generateECDHKeyPairFromhex(seedHash);
             chat.senderHash = senderHash;
