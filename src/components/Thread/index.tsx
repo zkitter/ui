@@ -29,7 +29,6 @@ export default function Thread(props: Props): ReactElement {
     const modOverride = usePostModeration(meta?.rootId);
     const [end, setEnd] = useState(false);
 
-    console.log(end);
     const fetchMore = useCallback(async (reset = false) => {
         let messageIds: any;
         if (reset) {

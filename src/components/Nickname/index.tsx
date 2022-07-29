@@ -39,7 +39,7 @@ export default function Nickname(props: Props): ReactElement {
 
     if (interepProvider && interepGroup) {
         if (/twitter/i.test(interepProvider)) {
-            if (/not_sufficient/i.test(interepGroup)) {
+            if (/unrated/i.test(interepGroup)) {
                 badges.push(
                     <Badge
                         key={interepProvider + '_' + interepGroup}

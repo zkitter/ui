@@ -150,7 +150,7 @@ export const submitSemaphorePost = (post: Post) => async (dispatch: Dispatch, ge
             siblings: identityPathElements,
         },
         externalNullifier,
-        hash,
+        hash.slice(0, 16),
     );
 
     const {
