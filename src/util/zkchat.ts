@@ -1,5 +1,5 @@
 import EC from "elliptic";
-import {genExternalNullifier, RLNFullProof, RLN} from "@zk-kit/protocols";
+import {genExternalNullifier, RLNFullProof, RLN, MerkleProof} from "@zk-kit/protocols";
 import crypto from "crypto";
 import {ZkIdentity} from "@zk-kit/identity";
 import config from "./config";
@@ -464,6 +464,33 @@ export class ZKChatClient extends EventEmitter2 {
             return json.payload;
         } else {
             throw new Error(json.payload);
+        }
+    }
+
+    generateRLNProof = async (signal: string, merkleProof: MerkleProof) => {
+        const epoch = getEpoch();
+        const externalNullifier = genExternalNullifier(epoch);
+        const identitySecretHash = this.identity!.zk.getSecretHash();
+        const rlnIdentifier = await sha256('zkchat');
+        const xShare = RLN.genSignalHash(signal);
+        const witness = RLN.genWitness(
+            identitySecretHash,
+            merkleProof!,
+            externalNullifier,
+            signal,
+            BigInt('0x' + rlnIdentifier),
+        );
+        const proof = await RLN.genProof(
+            witness,
+            `${config.indexerAPI}/circuits/rln/wasm`,
+            `${config.indexerAPI}/circuits/rln/zkey`,
+        );
+
+        return {
+            ...proof,
+            x_share: xShare.toString(),
+            epoch,
+            group_id: 'zksocial_all',
         }
     }
 
