@@ -8,7 +8,7 @@ import config from "../../util/config";
 import Nickname from "../Nickname";
 import {useHistory, useParams} from "react-router";
 import {useDispatch} from "react-redux";
-import chats, {fetchChats, useChatId, useChatIds, zkchat} from "../../ducks/chats";
+import chats, {fetchChats, setChats, useChatId, useChatIds, zkchat} from "../../ducks/chats";
 import Icon from "../Icon";
 import Input from "../Input";
 import {Chat} from "../../util/zkchat";
@@ -33,12 +33,14 @@ export default function ChatMenu(): ReactElement {
             setTimeout(() => {
                 dispatch(fetchChats(selecteduser.ecdh));
             }, 500);
+        } else if (selected?.type === 'interrep') {
+            setTimeout(() => {
+                dispatch(fetchChats(selected.identityCommitment));
+            }, 500);
         }
     }, [selected, selecteduser]);
 
     const onSearchNewChatChange = useCallback(async (e: ChangeEvent<HTMLInputElement>) => {
-        if (selected?.type !== 'gun') return;
-
         setSearchParam(e.target.value);
         const res = await fetch(`${config.indexerAPI}/v1/zkchat/chats/search/${e.target.value}`);
         const json = await res.json();
@@ -48,7 +50,7 @@ export default function ChatMenu(): ReactElement {
             receiver: data.receiver_address,
             ecdh: data.receiver_ecdh,
         })))
-    }, [selected]);
+    }, []);
 
     const openChat = useCallback((chat: Chat) => {
         history.push(`/chat/${zkchat.deriveChatId(chat)}`);

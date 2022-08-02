@@ -27,7 +27,7 @@ export type DirectChatMessage = {
     rln?: RLNFullProof & {
         epoch: string;
         x_share: string;
-        group_id: string;
+        group_id?: string;
     };
     receiver: {
         address?: string;
@@ -494,7 +494,13 @@ export class ZKChatClient extends EventEmitter2 {
         }
     }
 
-    sendDirectMessage = async (chat: Chat, content: string, headerOptions?: {[key: string]: string}) => {
+    sendDirectMessage = async (
+        chat: Chat,
+        content: string,
+        headerOptions?: {[key: string]: string},
+        merkleProof?: MerkleProof | null,
+        identitySecretHash?: bigint,
+    ) => {
         this._ensureIdentity();
         this._ensureChat(chat);
 
@@ -535,13 +541,10 @@ export class ZKChatClient extends EventEmitter2 {
             const epoch = getEpoch();
             const externalNullifier = genExternalNullifier(epoch);
             const signal = bundle!.messageId;
-            const identitySecretHash = this.identity!.zk.getSecretHash();
-            const identityCommitment = this.identity!.zk.genIdentityCommitment();
-            const merkleProof = await findProof('zksocial_all', identityCommitment.toString(16));
             const rlnIdentifier = await sha256('zkchat');
             const xShare = RLN.genSignalHash(signal);
             const witness = RLN.genWitness(
-                identitySecretHash,
+                identitySecretHash!,
                 merkleProof!,
                 externalNullifier,
                 signal,
@@ -556,7 +559,6 @@ export class ZKChatClient extends EventEmitter2 {
                 ...proof,
                 x_share: xShare.toString(),
                 epoch,
-                group_id: 'zksocial_all',
             }
 
         }

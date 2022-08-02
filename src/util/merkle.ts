@@ -7,10 +7,11 @@ type PathData = {
     root: string;
 };
 
-type ValidGroups = 'zksocial_all';
+export type ValidGroups = 'zksocial_all'
+    | 'interep_twitter_unrated';
 
 export const findProof = async (
-    group: ValidGroups,
+    group: string,
     idCommitment: string,
 ): Promise<MerkleProof|null> => {
     const resp = await fetch(`${config.indexerAPI}/v1/proofs/${idCommitment}?group=${group}`);

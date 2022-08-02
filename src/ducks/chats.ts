@@ -63,7 +63,7 @@ const initialState: State = {
     messages: {},
 };
 
-const setChats = (chats: {
+export const setChats = (chats: {
     [chatId: string]: Chat;
 }): Action<{
     [chatId: string]: Chat;

@@ -14,6 +14,9 @@ import {useUser} from "../../ducks/users";
 import chats, {InflatedChat, useChatId, useChatMessage, zkchat} from "../../ducks/chats";
 import Icon from "../Icon";
 import SpinnerGIF from "../../../static/icons/spinner.gif";
+import {useDispatch} from "react-redux";
+import {findProof} from "../../util/merkle";
+import {Strategy, ZkIdentity} from "@zk-kit/identity";
 
 export default function ChatContent(): ReactElement {
     const { chatId } = useParams<{chatId: string}>();
@@ -124,18 +127,48 @@ function ChatEditor(): ReactElement {
     const chat = useChatId(chatId);
     const [error, setError] = useState('');
     const [isSending, setSending] = useState(false);
+    const dispatch = useDispatch();
 
     const submitMessage = useCallback(async () => {
-        if (selected?.type !== 'gun' || !chat) return;
+        if (!chat) return;
 
-        const signature = signWithP256(selected.privateKey, selected.address) + '.' + selected.address;
+        let signature = '';
+        let merkleProof, identitySecretHash;
+
+        if (selected?.type === 'gun') {
+            signature = signWithP256(selected.privateKey, selected.address) + '.' + selected.address;
+            if (chat.senderHash) {
+                const zkseed = await signWithP256(selected.privateKey, 'signing for zk identity - 0');
+                const zkHex = await sha256(zkseed);
+                const zkIdentity = await generateZkIdentityFromHex(zkHex);
+                merkleProof = await findProof(
+                    'zksocial_all',
+                    zkIdentity.genIdentityCommitment().toString(16),
+                );
+                identitySecretHash = zkIdentity.getSecretHash();
+            }
+        } else if (selected?.type === 'interrep') {
+            const {type, provider, name, identityCommitment, serializedIdentity} = selected;
+            const group = `${type}_${provider.toLowerCase()}_${name}`;
+            const zkIdentity = new ZkIdentity(Strategy.SERIALIZED, serializedIdentity);
+            merkleProof = await findProof(
+                group,
+                BigInt(identityCommitment).toString(16),
+            );
+            identitySecretHash = zkIdentity.getSecretHash();
+        }
+
         const json = await zkchat.sendDirectMessage(
             chat,
             content,
             {
                 'X-SIGNED-ADDRESS': signature,
             },
+            merkleProof,
+            identitySecretHash,
         );
+
+
         setContent('');
     }, [content, selected, chat]);
 

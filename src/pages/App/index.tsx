@@ -1,4 +1,4 @@
-import React, {ReactElement, ReactNode, useEffect, useState} from "react";
+import React, {ReactElement, useEffect} from "react";
 import {Redirect, Route, RouteProps, Switch} from "react-router";
 import TopNav from "../../components/TopNav";
 import GlobalFeed from "../GlobalFeed";
@@ -8,24 +8,20 @@ import {useDispatch} from "react-redux";
 import PostView from "../PostView";
 import ProfileView from "../ProfileView";
 import HomeFeed from "../HomeFeed";
-import DiscoverUserPanel from "../../components/DiscoverUserPanel";
 import TagFeed from "../../components/TagFeed";
-import DiscoverTagPanel from "../../components/DiscoverTagPanel";
-import Icon from "../../components/Icon";
 import SignupView, {ViewType} from "../SignupView";
 import {syncWorker, useSelectedLocalId} from "../../ducks/worker";
-import {Identity} from "../../serviceWorkers/identity";
 import BottomNav from "../../components/BottomNav";
 import InterrepOnboarding from "../InterrepOnboarding";
 import ConnectTwitterView from "../ConnectTwitterView";
 import {loginUser} from "../../util/user";
-import zkpr, {connectZKPR} from "../../ducks/zkpr";
-import PostModerationPanel from "../../components/PostModerationPanel";
+import {connectZKPR} from "../../ducks/zkpr";
 import SettingView from "../SettingView";
 import MetaPanel from "../../components/MetaPanel";
 import ChatView from "../ChatView";
 import {zkchat} from "../../ducks/chats";
 import {generateECDHKeyPairFromhex, generateZkIdentityFromHex, sha256, signWithP256} from "../../util/crypto";
+import {Strategy, ZkIdentity} from "@zk-kit/identity";
 
 export default function App(): ReactElement {
     const dispatch = useDispatch();
@@ -51,21 +47,35 @@ export default function App(): ReactElement {
     }, []);
 
     useEffect(() => {
-        if (!selected || selected.type !== 'gun') return;
+        if (selected?.type === 'gun') {
+            (async () => {
+                const ecdhseed = await signWithP256(selected.privateKey, 'signing for ecdh - 0');
+                const zkseed = await signWithP256(selected.privateKey, 'signing for zk identity - 0');
+                const ecdhHex = await sha256(ecdhseed);
+                const zkHex = await sha256(zkseed);
+                const keyPair = await generateECDHKeyPairFromhex(ecdhHex);
+                const zkIdentity = await generateZkIdentityFromHex(zkHex);
+                zkchat.importIdentity({
+                    address: selected.address,
+                    zk: zkIdentity,
+                    ecdh: keyPair,
+                });
+            })();
+        } else if (selected?.type === 'interrep') {
+            (async () => {
+                const zkIdentity = new ZkIdentity(Strategy.SERIALIZED, selected.serializedIdentity);
+                const ecdhseed = await sha256(zkIdentity.getSecret().map(d => d.toString()).join());
+                const ecdhHex = await sha256(ecdhseed);
+                const keyPair = await generateECDHKeyPairFromhex(ecdhHex);
+                zkchat.importIdentity({
+                    address: selected?.identityCommitment,
+                    zk: zkIdentity,
+                    ecdh: keyPair,
+                });
+            })();
+        }
 
-        (async () => {
-            const ecdhseed = await signWithP256(selected.privateKey, 'signing for ecdh - 0');
-            const zkseed = await signWithP256(selected.privateKey, 'signing for zk identity - 0');
-            const ecdhHex = await sha256(ecdhseed);
-            const zkHex = await sha256(zkseed);
-            const keyPair = await generateECDHKeyPairFromhex(ecdhHex);
-            const zkIdentity = await generateZkIdentityFromHex(zkHex);
-            zkchat.importIdentity({
-                address: selected.address,
-                zk: zkIdentity,
-                ecdh: keyPair,
-            });
-        })();
+
     }, [selected])
 
     useEffect(() => {
