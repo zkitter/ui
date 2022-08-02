@@ -1,7 +1,7 @@
 import {AppRootState} from "../store/configureAppStore";
 import config from "./config";
 import {signWithP256} from "./crypto";
-import {generateSemaphoreProof} from "./zk";
+import {generateRLNProof} from "./zk";
 import {ThunkDispatch} from "redux-thunk";
 
 export const ipfsUploadOne = (file: File) => async (
@@ -11,16 +11,15 @@ export const ipfsUploadOne = (file: File) => async (
     const { worker: {selected}} = getState();
 
     let signature = '';
-    let semaphore = '';
+    let rln = '';
 
     if (selected?.type === 'gun') {
         signature = signWithP256(selected.privateKey, selected.address) + '.' + selected.address;
     } else {
-        const fullProof = await dispatch(generateSemaphoreProof(
-            'FILE_UPLOAD',
+        const fullProof = await dispatch(generateRLNProof(
             file.name.slice(0, 16),
         ));
-        semaphore = JSON.stringify(fullProof);
+        rln = JSON.stringify(fullProof);
     }
 
     const data = new FormData();
@@ -32,7 +31,7 @@ export const ipfsUploadOne = (file: File) => async (
         body: data,
         headers: {
             'X-SIGNED-ADDRESS': signature,
-            'X-SEMAPHORE-PROOF': semaphore,
+            'X-RLN-PROOF': rln,
         },
     });
 

@@ -19,7 +19,7 @@ import {useDispatch} from "react-redux";
 import URLPreview from "../URLPreview";
 import SpinnerGif from "../../../static/icons/spinner.gif";
 import {useUser} from "../../ducks/users";
-import {useSelectedLocalId} from "../../ducks/worker";
+import {useSelectedLocalId, useSelectedZKGroup} from "../../ducks/worker";
 import {useHistory} from "react-router";
 import Checkbox from "../Checkbox";
 import {getSession, verifyTweet} from "../../util/twitter";
@@ -60,6 +60,7 @@ export default function Editor(props: Props): ReactElement {
     const selectedId = useSelectedLocalId();
     const isEmpty = !editorState.getCurrentContent().hasText() && !draft.attachment;
     const mirror = useMirror();
+    const selectedZKGroup = useSelectedZKGroup();
 
     const [errorMessage, setErrorMessage] = useState('');
     const [verifying, setVerifying] = useState(true);
@@ -252,6 +253,7 @@ export default function Editor(props: Props): ReactElement {
                 <Avatar
                     className="w-12 h-12 mr-3"
                     address={address}
+                    group={selectedZKGroup}
                     incognito={['interrep', 'zkpr_interrep'].includes(selectedId?.type as string)}
                 />
                 <div className="flex flex-row flex-nowrap w-full h-full">
