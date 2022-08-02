@@ -15,12 +15,13 @@ export const findProof = async (
     idCommitment: string,
 ): Promise<MerkleProof|null> => {
     const resp = await fetch(`${config.indexerAPI}/v1/proofs/${idCommitment}?group=${group}`);
-    const { payload: {data}, error } = await resp.json();
+    const { payload, error } = await resp.json();
+    const { data } = payload;
 
     let path = null;
 
     if (error) {
-        return null;
+        throw new Error(payload);
     }
 
     if (!error && data) {

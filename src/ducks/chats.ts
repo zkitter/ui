@@ -11,21 +11,30 @@ export const zkchat = new ZKChatClient({
     api: `${config.indexerAPI}/v1/zkchat`,
 });
 
+const onNewMessage = (message: ChatMessage) => {
+    const {
+        receiver,
+        sender,
+    } = message;
+    const chatId = zkchat.deriveChatId({
+        type: 'DIRECT',
+        receiver: '',
+        receiverECDH: receiver.ecdh!,
+        senderECDH: sender.ecdh!,
+    });
+    store.dispatch(setMessage(message));
+    store.dispatch(setMessagesForChat(chatId, zkchat.activeChats[chatId].messages));
+};
 
-zkchat.on(EVENTS.MESSAGE_APPENDED, (message: ChatMessage) => {
-     store.dispatch(setMessage(message));
-});
-
-zkchat.on(EVENTS.MESSAGE_PREPENDED, (message: ChatMessage) => {
-     store.dispatch(setMessage(message));
-});
-
+zkchat.on(EVENTS.MESSAGE_APPENDED, onNewMessage);
+zkchat.on(EVENTS.MESSAGE_PREPENDED, onNewMessage);
 zkchat.on(EVENTS.CHAT_CREATED, (chat: Chat) => {
      store.dispatch(addChat(chat));
 });
 
 enum ActionTypes {
     SET_CHATS = 'chats/setChats',
+    SET_MESSAGES_FOR_CHAT = 'chats/setMessagesForChat',
     ADD_CHAT = 'chats/addChat',
     SET_CHAT_NICKNAME = 'chats/setChatNickname',
     SET_MESSAGE = 'chats/SET_MESSAGE',
@@ -90,6 +99,11 @@ const setMessage = (msg: ChatMessage): Action<ChatMessage> => ({
     payload: msg,
 });
 
+const setMessagesForChat = (chatId: string, messages: string[]): Action<{ chatId: string; messages: string[] }> => ({
+    type: ActionTypes.SET_MESSAGES_FOR_CHAT,
+    payload: { chatId, messages },
+});
+
 export const fetchChats = (address: string) => async (dispatch: Dispatch, getState: () => AppRootState) => {
     await zkchat.fetchActiveChats(address);
     dispatch(setChats(zkchat.activeChats));
@@ -101,6 +115,8 @@ export default function chats(state = initialState, action: Action<any>): State 
             return handleSetChats(state, action);
         case ActionTypes.ADD_CHAT:
             return handeAddChat(state, action);
+        case ActionTypes.SET_MESSAGES_FOR_CHAT:
+            return handleSetMessagesForChats(state, action);
         case ActionTypes.SET_CHAT_NICKNAME:
             return handeSetNickname(state, action);
         case ActionTypes.SET_MESSAGE:
@@ -189,6 +205,30 @@ function handleSetChats(state: State, action: Action<{
     }
 }
 
+function handleSetMessagesForChats(state: State, action: Action<{
+    chatId: string;
+    messages: string[]
+}>) {
+    const { chatId, messages } = action.payload!;
+    const chat = state.chats.map[chatId];
+
+    if (!chat) return state;
+
+    return {
+        ...state,
+        chats: {
+            ...state.chats,
+            map: {
+                ...state.chats.map,
+                [chatId]: {
+                    ...chat,
+                    messages: messages,
+                }
+            }
+        },
+    }
+}
+
 export const useChatIds = () => {
     return useSelector((state: AppRootState) => {
         return state.chats.chats.order;
@@ -198,6 +238,28 @@ export const useChatIds = () => {
 export const useChatId = (chatId: string) => {
     return useSelector((state: AppRootState) => {
         return state.chats.chats.map[chatId];
+    }, deepEqual);
+}
+
+export const useMessagesByChatId = (chatId: string) => {
+    return useSelector((state: AppRootState) => {
+        return state.chats.chats.map[chatId]?.messages || [];
+    }, deepEqual);
+}
+
+
+export const useLastNMessages = (chatId: string, n = 1): ChatMessage[] => {
+    return useSelector((state: AppRootState) => {
+        const {
+            chats: {
+                chats: {
+                    map,
+                },
+                messages,
+            }
+        } = state;
+        const ids = state.chats.chats.map[chatId]?.messages || [];
+        return ids.slice(0, n).map(messageId => messages[messageId]);
     }, deepEqual);
 }
 

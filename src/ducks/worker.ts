@@ -113,6 +113,28 @@ export const useSelectedLocalId = () => {
     }, deepEqual);
 }
 
+export const getZKGroupFromIdentity = (id: Identity) => {
+    if (id?.type !== 'interrep' && id?.type !== 'zkpr_interrep') {
+        return null;
+    }
+
+    return `interrep_${id.provider.toLowerCase()}_${id.name.toLowerCase()}`;
+}
+
+export const useSelectedZKGroup = () => {
+    return useSelector((state: AppRootState) => {
+        const {
+            worker: { selected },
+        } = state;
+
+        if (selected?.type !== 'interrep' && selected?.type !== 'zkpr_interrep') {
+            return null;
+        }
+
+        return `interrep_${selected.provider.toLowerCase()}_${selected.name.toLowerCase()}`;
+    }, deepEqual);
+}
+
 export const useHasIdConnected = () => {
     return useSelector((state: AppRootState) => {
         const { worker: { selected } } = state;

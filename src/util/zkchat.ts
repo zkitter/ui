@@ -6,7 +6,6 @@ import config from "./config";
 import EventEmitter2, {ConstructorOptions} from "eventemitter2";
 import {decrypt, encrypt} from "./encrypt";
 import {base64ToArrayBuffer, generateECDHKeyPairFromhex, sha256} from "./crypto";
-import {findProof} from "./merkle";
 import {safeJsonParse} from "./misc";
 
 export enum ChatMessageType {
@@ -74,6 +73,7 @@ export type Chat = {
     receiverECDH: string;
     senderECDH: string;
     senderHash?: string;
+    group?: string;
 } | {
     type: 'PUBLIC_ROOM';
     receiver: string;
@@ -367,7 +367,7 @@ export class ZKChatClient extends EventEmitter2 {
         };
     }
 
-    fetchMessagesByChat = async (chat: Chat): Promise<ChatMessage[]> => {
+    fetchMessagesByChat = async (chat: Chat, limit = 50): Promise<ChatMessage[]> => {
         this._ensureIdentity();
         this._ensureChat(chat);
 
@@ -379,7 +379,7 @@ export class ZKChatClient extends EventEmitter2 {
             const last = this.messages[existingMsgs[existingMsgs.length - 1]];
             const offset = last ? last.timestamp.getTime() : Date.now();
             const url = `${this.api}/chat-messages/dm/${chat.receiverECDH}/${chat.senderECDH}`;
-            const resp = await fetch(`${url}?offset=${offset}`);
+            const resp = await fetch(`${url}?offset=${offset}&limit=${limit}`);
             const json = await resp.json();
 
             let priv, sk = '';
@@ -467,33 +467,6 @@ export class ZKChatClient extends EventEmitter2 {
         }
     }
 
-    generateRLNProof = async (signal: string, merkleProof: MerkleProof) => {
-        const epoch = getEpoch();
-        const externalNullifier = genExternalNullifier(epoch);
-        const identitySecretHash = this.identity!.zk.getSecretHash();
-        const rlnIdentifier = await sha256('zkchat');
-        const xShare = RLN.genSignalHash(signal);
-        const witness = RLN.genWitness(
-            identitySecretHash,
-            merkleProof!,
-            externalNullifier,
-            signal,
-            BigInt('0x' + rlnIdentifier),
-        );
-        const proof = await RLN.genProof(
-            witness,
-            `${config.indexerAPI}/circuits/rln/wasm`,
-            `${config.indexerAPI}/circuits/rln/zkey`,
-        );
-
-        return {
-            ...proof,
-            x_share: xShare.toString(),
-            epoch,
-            group_id: 'zksocial_all',
-        }
-    }
-
     sendDirectMessage = async (
         chat: Chat,
         content: string,
@@ -560,7 +533,6 @@ export class ZKChatClient extends EventEmitter2 {
                 x_share: xShare.toString(),
                 epoch,
             }
-
         }
 
         const res = await fetch(`${config.indexerAPI}/v1/zkchat/chat-messages`, {

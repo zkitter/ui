@@ -10,9 +10,10 @@ export default function QRScanner(props: {
     const [errorMessage, setErrorMessage] = useState('');
     const [scannedData, setScannedData] = useState('');
 
-    const onScan = useCallback(async (data) => {
-        setScannedData(data);
+    const onScan = useCallback(async (data: string | null) => {
         if (!data) return;
+
+        setScannedData(data);
 
         try {
             const identity: Identity = JSON.parse(data);
@@ -26,7 +27,7 @@ export default function QRScanner(props: {
         }
     }, [])
 
-    const onError = useCallback((err) => {
+    const onError = useCallback((err: string) => {
         setErrorMessage(err);
     }, [])
 

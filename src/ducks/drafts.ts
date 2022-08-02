@@ -1,5 +1,5 @@
 import {useSelector} from "react-redux";
-import {genExternalNullifier, Semaphore,} from '@zk-kit/protocols';
+import {genExternalNullifier, MerkleProof, RLN, Semaphore,} from '@zk-kit/protocols';
 import {Strategy, ZkIdentity} from '@zk-kit/identity'
 import {AppRootState} from "../store/configureAppStore";
 import deepEqual from "fast-deep-equal";
@@ -24,6 +24,9 @@ import {setBlocked, setFollowed} from "./users";
 import {updateStatus} from "../util/twitter";
 import {checkPath} from "../util/interrep";
 import {setBlockedPost} from "./posts";
+import {findProof} from "../util/merkle";
+import {sha256} from "../util/crypto";
+import {getEpoch} from "../util/zkchat";
 
 const { draftToMarkdown } = require('markdown-draft-js');
 
@@ -120,11 +123,16 @@ export const submitSemaphorePost = (post: Post) => async (dispatch: Dispatch, ge
     const identityTrapdoor = zkIdentity.getTrapdoor();
     const identityNullifier = zkIdentity.getNullifier();
     const identityCommitment = selected.identityCommitment;
-    const data: any = await checkPath(identityCommitment);
+    const identitySecretHash = zkIdentity.getSecretHash();
+    const { name, provider } = selected;
+    const merkleProof: MerkleProof | null = await findProof(
+        `interrep_${provider.toLowerCase()}_${name}`,
+        BigInt(identityCommitment).toString(16),
+    );
 
-    const identityPathElements = data?.path?.path_elements;
-    const identityPathIndex = data?.path?.path_index;
-    const root = data?.path?.root;
+    const identityPathElements = merkleProof!.siblings;
+    const identityPathIndex = merkleProof!.pathIndices;
+    const root = merkleProof!.root;
 
     if (!identityCommitment || !identityPathElements || !identityPathIndex || !identityTrapdoor || !identityNullifier) {
         return null;
@@ -136,27 +144,23 @@ export const submitSemaphorePost = (post: Post) => async (dispatch: Dispatch, ge
         ...json
     } = post.toJSON();
 
-    const externalNullifier = genExternalNullifier('POST');
-    const wasmFilePath = `${config.indexerAPI}/dev/semaphore_wasm`;
-    const finalZkeyPath = `${config.indexerAPI}/dev/semaphore_final_zkey`;
-
-    const witness = Semaphore.genWitness(
-        identityTrapdoor,
-        identityNullifier,
-        {
-            root: root,
-            leaf: BigInt(identityCommitment),
-            pathIndices: identityPathIndex,
-            siblings: identityPathElements,
-        },
+    const epoch = getEpoch();
+    const externalNullifier = genExternalNullifier(epoch);
+    const signal = messageId;
+    const rlnIdentifier = await sha256('zkchat');
+    const xShare = RLN.genSignalHash(signal);
+    const witness = RLN.genWitness(
+        identitySecretHash!,
+        merkleProof!,
         externalNullifier,
-        hash.slice(0, 16),
+        signal,
+        BigInt('0x' + rlnIdentifier),
     );
-
-    const {
-        proof,
-        publicSignals,
-    } = await Semaphore.genProof(witness, wasmFilePath, finalZkeyPath);
+    const {proof, publicSignals} = await RLN.genProof(
+        witness,
+        `${config.indexerAPI}/circuits/rln/wasm`,
+        `${config.indexerAPI}/circuits/rln/zkey`,
+    );
 
     try {
         // @ts-ignore
@@ -164,6 +168,8 @@ export const submitSemaphorePost = (post: Post) => async (dispatch: Dispatch, ge
             ...json,
             proof: JSON.stringify(proof),
             publicSignals: JSON.stringify(publicSignals),
+            x_share: xShare.toString(),
+            epoch,
         };
 
         // @ts-ignore

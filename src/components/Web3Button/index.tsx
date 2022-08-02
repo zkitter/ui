@@ -28,7 +28,14 @@ import ZKPRSVG from "../../../static/icons/zkpr-logo.svg";
 import gun from "../../util/gun";
 import {useHistory} from "react-router";
 import {ellipsify, getHandle, getName, loginUser} from "../../util/user";
-import {useHasIdConnected, useIdentities, useSelectedLocalId, useWorkerUnlocked} from "../../ducks/worker";
+import {
+    getZKGroupFromIdentity,
+    useHasIdConnected,
+    useIdentities,
+    useSelectedLocalId,
+    useSelectedZKGroup,
+    useWorkerUnlocked
+} from "../../ducks/worker";
 import LoginModal from "../LoginModal";
 import {fetchNameByAddress} from "../../util/web3";
 import {useUser} from "../../ducks/users";
@@ -505,6 +512,7 @@ function CurrentUserItem(props: {
 }): ReactElement {
     const selectedLocalId = useSelectedLocalId();
     const selectedUser = useUser(selectedLocalId?.address);
+    const group = useSelectedZKGroup();
 
     if (!selectedLocalId) return <></>;
 
@@ -520,6 +528,7 @@ function CurrentUserItem(props: {
                 className="w-20 h-20 mb-2"
                 address={selectedUser?.address}
                 incognito={isInterep}
+                group={group}
             />
             {/*<Button*/}
             {/*    className="my-2"*/}
@@ -534,10 +543,7 @@ function CurrentUserItem(props: {
                     <Nickname
                         className="justify-center"
                         address={isInterep ? '' : selectedUser?.address}
-                        // @ts-ignore
-                        interepProvider={isInterep ? selectedLocalId.provider : ''}
-                        // @ts-ignore
-                        interepGroup={isInterep ? selectedLocalId.name : ''}
+                        group={group}
                     />
                 </div>
                 <div className="text-sm">
@@ -559,6 +565,7 @@ function UserMenuItem(props: {
 }) {
     const {identity, openLogin} = props;
     const user = useUser(identity.address);
+    const group = getZKGroupFromIdentity(identity);
 
     const isInterep = identity.type === 'interrep' || identity.type === 'zkpr_interrep';
 
@@ -575,11 +582,13 @@ function UserMenuItem(props: {
                 className="w-9 h-9 mr-2"
                 address={user?.username}
                 incognito={isInterep}
+                group={group}
             />
             <div className="flex flex-col flex-nowrap w-0 flex-grow">
                 <div className="text-sm font-bold truncate">
                     <Nickname
                         address={isInterep ? '' : user?.address}
+                        group={group}
                         interepProvider={isInterep ? (identity as InterrepIdentity).provider : ''}
                         interepGroup={isInterep ? (identity as InterrepIdentity).name : ''}
                     />

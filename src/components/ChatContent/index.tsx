@@ -3,15 +3,13 @@ import React, {ReactElement, useState, KeyboardEvent, useCallback, useEffect} fr
 import classNames from "classnames";
 import {useParams} from "react-router";
 import InfiniteScrollable from "../InfiniteScrollable";
-import {useSelectedLocalId} from "../../ducks/worker";
+import {useSelectedLocalId, useSelectedZKGroup} from "../../ducks/worker";
 import Nickname from "../Nickname";
 import Avatar, {Username} from "../Avatar";
 import Textarea from "../Textarea";
-import {Chat, ChatMessage, ZKChatClient} from "../../util/zkchat";
 import {generateECDHKeyPairFromhex, generateZkIdentityFromHex, sha256, signWithP256} from "../../util/crypto";
 import {FromNow} from "../ChatMenu";
-import {useUser} from "../../ducks/users";
-import chats, {InflatedChat, useChatId, useChatMessage, zkchat} from "../../ducks/chats";
+import chats, {InflatedChat, useChatId, useChatMessage, useMessagesByChatId, zkchat} from "../../ducks/chats";
 import Icon from "../Icon";
 import SpinnerGIF from "../../../static/icons/spinner.gif";
 import {useDispatch} from "react-redux";
@@ -20,38 +18,8 @@ import {Strategy, ZkIdentity} from "@zk-kit/identity";
 
 export default function ChatContent(): ReactElement {
     const { chatId } = useParams<{chatId: string}>();
-    const [order, setOrder] = useState<string[]>([]);
+    const messages = useMessagesByChatId(chatId);
     const chat = useChatId(chatId);
-
-    useEffect(() => {
-        const cb = (msg?: ChatMessage) => {
-            if (!chat) return;
-
-            if (!msg) {
-                setOrder(zkchat.activeChats[chatId]?.messages || []);
-                return;
-            }
-
-            if (msg.type === 'DIRECT' && chat.type === 'DIRECT') {
-                if (
-                    [chat.receiverECDH, chat.senderECDH].includes(msg.receiver.ecdh as string)
-                    || [chat.receiverECDH, chat.senderECDH].includes(msg.sender.ecdh as string)
-                ) {
-                    setOrder(zkchat.activeChats[chatId]?.messages || []);
-                    return;
-                }
-            }
-        };
-
-        cb();
-        zkchat.on(ZKChatClient.EVENTS.MESSAGE_APPENDED, cb);
-        zkchat.on(ZKChatClient.EVENTS.MESSAGE_PREPENDED, cb);
-
-        return () => {
-            zkchat.off(ZKChatClient.EVENTS.MESSAGE_APPENDED, cb);
-            zkchat.off(ZKChatClient.EVENTS.MESSAGE_PREPENDED, cb);
-        }
-    }, [chat, chatId]);
 
     useEffect(() => {
         (async () => {
@@ -71,7 +39,7 @@ export default function ChatContent(): ReactElement {
             <InfiniteScrollable
                 className="chat-content__messages"
             >
-                {order.map(messageId => {
+                {messages.map(messageId => {
                    return (
                        <ChatMessageBubble
                            key={messageId}
@@ -96,11 +64,13 @@ function ChatHeader(): ReactElement {
                 className="w-10 h-10"
                 address={chat?.receiver}
                 incognito={!chat?.receiver}
+                group={chat.type === 'DIRECT' ? chat.group : undefined}
             />
             <div className="flex flex-col flex-grow flex-shrink ml-2">
                 <Nickname
                     className="font-bold"
                     address={chat?.receiver}
+                    group={chat.type === 'DIRECT' ? chat.group : undefined}
                 />
                 <div
                     className={classNames("text-xs", {
@@ -128,6 +98,11 @@ function ChatEditor(): ReactElement {
     const [error, setError] = useState('');
     const [isSending, setSending] = useState(false);
     const dispatch = useDispatch();
+    const zkGroup = useSelectedZKGroup();
+
+    useEffect(() => {
+        setContent('');
+    }, [chatId]);
 
     const submitMessage = useCallback(async () => {
         if (!chat) return;
@@ -194,27 +169,30 @@ function ChatEditor(): ReactElement {
 
     return (
         <div className="chat-content__editor-wrapper">
-            <div className="chat-content__editor ml-2">
-                <Textarea
-                    className="text-light border mr-2 my-2"
-                    rows={Math.max(0, content.split('\n').length)}
-                    value={content}
-                    onChange={onChange}
-                    onKeyPress={onEnter}
-                    disabled={isSending}
-                />
+            { !!error && <small className="error-message text-xs text-center text-red-500 mb-1 mt-2">{error}</small> }
+            <div className="flex flex-row w-full">
+                <div className="chat-content__editor ml-2">
+                    <Textarea
+                        className="text-light border mr-2 my-2"
+                        rows={Math.max(0, content.split('\n').length)}
+                        value={content}
+                        onChange={onChange}
+                        onKeyPress={onEnter}
+                        disabled={isSending}
+                    />
+                </div>
+                <div className="relative flex flex-row items-center">
+                    <Avatar
+                        className={classNames("w-10 h-10 m-2", {
+                            'opacity-50': isSending,
+                        })}
+                        address={selected?.address}
+                        incognito={!!chat.senderHash}
+                        group={zkGroup}
+                    />
+                    { isSending && <Icon className="chat-content__editor__loading-gif" url={SpinnerGIF} size={3}/>}
+                </div>
             </div>
-            <div className="relative flex flex-row items-center">
-                <Avatar
-                    className={classNames("w-10 h-10 m-2", {
-                        'opacity-50': isSending,
-                    })}
-                    address={selected?.address}
-                    incognito={!!chat.senderHash}
-                />
-                { isSending && <Icon className="chat-content__editor__loading-gif" url={SpinnerGIF} size={3}/>}
-            </div>
-
         </div>
     );
 }

@@ -168,6 +168,7 @@ export default function Editor(props: Props): ReactElement {
                 await props.onPost();
             }
         } catch (e) {
+            console.log(e);
             setErrorMessage(e.message);
         }
     }, [props.onPost, verified, verifiedSession, mirror]);

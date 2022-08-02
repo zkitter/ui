@@ -2,13 +2,13 @@ import "./chat-menu.scss";
 import React, {ChangeEvent, MouseEvent, ReactElement, useCallback, useEffect, useState} from "react";
 import classNames from "classnames";
 import Avatar, {Username} from "../Avatar";
-import {useSelectedLocalId} from "../../ducks/worker";
+import {useSelectedLocalId, useSelectedZKGroup} from "../../ducks/worker";
 import moment from "moment";
 import config from "../../util/config";
 import Nickname from "../Nickname";
 import {useHistory, useParams} from "react-router";
 import {useDispatch} from "react-redux";
-import chats, {fetchChats, setChats, useChatId, useChatIds, zkchat} from "../../ducks/chats";
+import chats, {fetchChats, setChats, useChatId, useChatIds, useLastNMessages, zkchat} from "../../ducks/chats";
 import Icon from "../Icon";
 import Input from "../Input";
 import {Chat} from "../../util/zkchat";
@@ -50,10 +50,6 @@ export default function ChatMenu(): ReactElement {
             receiver: data.receiver_address,
             ecdh: data.receiver_ecdh,
         })))
-    }, []);
-
-    const openChat = useCallback((chat: Chat) => {
-        history.push(`/chat/${zkchat.deriveChatId(chat)}`);
     }, []);
 
     if (!selected) return <></>;
@@ -98,7 +94,7 @@ export default function ChatMenu(): ReactElement {
                 </div>
                 <Input
                     className="border text-sm chat-menu__search"
-                    onChange={showingCreateChat ? onSearchNewChatChange : undefined}
+                    onChange={showingCreateChat ? onSearchNewChatChange : () => null}
                     value={searchParam}
                     placeholder={!showingCreateChat ? 'Search' : 'Search by name'}
                 >
@@ -112,7 +108,9 @@ export default function ChatMenu(): ReactElement {
                             key={chat.type + chat.receiver}
                             chatId=""
                             chat={chat}
-                            openChat={() => selectNewConvo(chat)}
+                            selectNewConvo={selectNewConvo}
+                            setCreating={setShowingCreateChat}
+                            isCreating={showingCreateChat}
                             hideLastChat
                         />
                     ))
@@ -126,7 +124,9 @@ export default function ChatMenu(): ReactElement {
                 <ChatMenuItem
                     key={chatId}
                     chatId={chatId}
-                    openChat={openChat}
+                    selectNewConvo={selectNewConvo}
+                    setCreating={setShowingCreateChat}
+                    isCreating={showingCreateChat}
                 />
             ))}
             {
@@ -200,18 +200,51 @@ const ONE_WEEK = 7 * ONE_DAY;
 function ChatMenuItem(props: {
     chatId: string;
     chat?: Chat;
-    openChat: (chat: Chat) => void;
     hideLastChat?: boolean;
+    selectNewConvo: (chat: Chat) => void;
+    setCreating: (showing: boolean) => void;
+    isCreating: boolean;
 }): ReactElement {
+    const selected = useSelectedLocalId();
+    const zkGroup = useSelectedZKGroup();
     let chat = useChatId(props.chatId);
-    const {chatId} = useParams<{chatId: string}>();
+    const params = useParams<{chatId: string}>();
+    const history = useHistory();
+    const [last] = useLastNMessages(props.chatId, 1);
 
-    const isSelected = props.chatId === chatId;
+    const isSelected = props.chatId === params.chatId;
 
     if (props.chat) {
         // @ts-ignore
         chat = props.chat;
     }
+
+    const r_user = useUser(chat.receiver);
+
+    const onClick = useCallback(async () => {
+        if (!chat) return;
+
+        if (!props.isCreating) {
+            history.push(`/chat/${zkchat.deriveChatId(chat)}`);
+        } else {
+            if (!r_user) return;
+            if (selected?.type === 'interrep') {
+                const newChat = await zkchat.createDM(r_user.address, r_user.ecdh, true);
+                const chatId = zkchat.deriveChatId(newChat);
+                props.setCreating(false);
+                history.push(`/chat/${chatId}`);
+            } else if (selected?.type === 'gun') {
+                props.selectNewConvo(chat);
+            }
+        }
+    }, [chat, r_user, selected, props.isCreating]);
+
+    useEffect(() => {
+        if (!props.chatId) return;
+        (async () => {
+            await zkchat.fetchMessagesByChat(chat, 1);
+        })();
+    }, [props.chatId, chat]);
 
     if (!chat) return <></>;
 
@@ -221,19 +254,24 @@ function ChatMenuItem(props: {
                 'chat-menu__item--selected': isSelected,
                 'chat-menu__item--anon': chat.type === 'DIRECT' && chat.senderHash,
             })}
-            onClick={() => props.openChat(chat)}
+            onClick={onClick}
         >
             <div className="relative">
                 <Avatar
                     className="w-12 h-12 flex-grow-0 flex-shrink-0"
                     address={chat.receiver || ''}
                     incognito={!chat.receiver}
+                    group={chat.type === 'DIRECT' ? chat.group : undefined}
                 />
                 {
                     chat.type === 'DIRECT' && chat.senderHash && (
                         <Avatar
-                            className="chat-menu__item__anon-marker"
+                            className={classNames("chat-menu__item__anon-marker", {
+                                'bg-gray-800': !zkGroup,
+                                'bg-white': zkGroup,
+                            })}
                             incognito
+                            group={zkGroup}
                         />
                     )
                 }
@@ -242,6 +280,7 @@ function ChatMenuItem(props: {
                 <Nickname
                     className="font-bold truncate"
                     address={chat.receiver || ''}
+                    group={chat.type === 'DIRECT' ? chat.group : undefined}
                 />
                 {
                     !props.hideLastChat && (
@@ -251,7 +290,7 @@ function ChatMenuItem(props: {
                                 'text-gray-800': chat.type !== 'DIRECT' || !chat.senderHash,
                             })}
                         >
-                            sudsfasdfasdfasdfasdfasdfasdfasdfasdfasfasfp?
+                            {last?.content}
                         </div>
                     )
                 }
@@ -264,7 +303,14 @@ function ChatMenuItem(props: {
                             'text-gray-500': chat.type !== 'DIRECT' || !chat.senderHash,
                         })}
                     >
-                        <FromNow className="text-xs" timestamp={new Date(Date.now() - ONE_HOUR * Math.random())} />
+                        {
+                            last?.timestamp && (
+                                <FromNow
+                                    className="text-xs"
+                                    timestamp={last.timestamp}
+                                />
+                            )
+                        }
                     </div>
                 )
             }
