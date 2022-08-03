@@ -15,18 +15,21 @@ import SpinnerGIF from "../../../static/icons/spinner.gif";
 import {useDispatch} from "react-redux";
 import {findProof} from "../../util/merkle";
 import {Strategy, ZkIdentity} from "@zk-kit/identity";
+import {Chat} from "../../util/zkchat";
 
 export default function ChatContent(): ReactElement {
     const { chatId } = useParams<{chatId: string}>();
     const messages = useMessagesByChatId(chatId);
     const chat = useChatId(chatId);
 
+    const loadMore = useCallback(async () => {
+        if (!chat) return;
+        await zkchat.fetchMessagesByChat(chat);
+    }, [chat])
+
     useEffect(() => {
-        (async () => {
-            if (!chat) return;
-            await zkchat.fetchMessagesByChat(chat);
-        })();
-    }, [chat]);
+        loadMore();
+    }, [loadMore]);
 
     if (!chat) return <></>;
 
@@ -38,6 +41,8 @@ export default function ChatContent(): ReactElement {
             <ChatHeader />
             <InfiniteScrollable
                 className="chat-content__messages"
+                onScrolledToTop={loadMore}
+                topOffset={128}
             >
                 {messages.map(messageId => {
                    return (
@@ -64,18 +69,17 @@ function ChatHeader(): ReactElement {
                 className="w-10 h-10"
                 address={chat?.receiver}
                 incognito={!chat?.receiver}
-                group={chat.type === 'DIRECT' ? chat.group : undefined}
+                group={chat?.type === 'DIRECT' ? chat.group : undefined}
             />
             <div className="flex flex-col flex-grow flex-shrink ml-2">
                 <Nickname
                     className="font-bold"
                     address={chat?.receiver}
-                    group={chat.type === 'DIRECT' ? chat.group : undefined}
+                    group={chat?.type === 'DIRECT' ? chat.group : undefined}
                 />
                 <div
                     className={classNames("text-xs", {
                         'text-gray-500': true,
-                        // 'text-gray-400': chat?.senderHash,
                     })}
                 >
                     {chat?.receiver && (
@@ -105,7 +109,7 @@ function ChatEditor(): ReactElement {
     }, [chatId]);
 
     const submitMessage = useCallback(async () => {
-        if (!chat) return;
+        if (!chat || !content) return;
 
         let signature = '';
         let merkleProof, identitySecretHash;
@@ -158,6 +162,7 @@ function ChatEditor(): ReactElement {
                 setError(e.message);
             } finally {
                 setSending(false);
+                e.target.focus();
             }
         }
     }, [submitMessage]);
@@ -173,12 +178,15 @@ function ChatEditor(): ReactElement {
             <div className="flex flex-row w-full">
                 <div className="chat-content__editor ml-2">
                     <Textarea
+                        key={chatId}
                         className="text-light border mr-2 my-2"
+                        // ref={(el) => el?.focus()}
                         rows={Math.max(0, content.split('\n').length)}
                         value={content}
                         onChange={onChange}
                         onKeyPress={onEnter}
                         disabled={isSending}
+                        autoFocus
                     />
                 </div>
                 <div className="relative flex flex-row items-center">
@@ -187,7 +195,7 @@ function ChatEditor(): ReactElement {
                             'opacity-50': isSending,
                         })}
                         address={selected?.address}
-                        incognito={!!chat.senderHash}
+                        incognito={!!chat?.senderHash}
                         group={zkGroup}
                     />
                     { isSending && <Icon className="chat-content__editor__loading-gif" url={SpinnerGIF} size={3}/>}
@@ -199,13 +207,9 @@ function ChatEditor(): ReactElement {
 
 function ChatMessageBubble(props: {
     messageId: string;
-    chat: InflatedChat;
+    chat: Chat;
 }) {
     const chatMessage = useChatMessage(props.messageId);
-
-    useEffect(() => {
-        // console.log(props.chat.nickname, chatMessage.rln?.group_id);
-    }, [props.chat.nickname, chatMessage])
 
     if (chatMessage?.type !== 'DIRECT') return <></>;
 

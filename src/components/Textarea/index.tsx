@@ -1,8 +1,9 @@
-import React, {TextareaHTMLAttributes, ReactElement} from "react";
+import React, {TextareaHTMLAttributes, ReactElement, LegacyRef} from "react";
 import classNames from "classnames";
 import "./textarea.scss";
 
 type Props = {
+    ref?: LegacyRef<HTMLTextAreaElement>;
     label?: string;
     errorMessage?: string;
 } & TextareaHTMLAttributes<HTMLTextAreaElement>;
@@ -29,6 +30,7 @@ export default function Textarea(props: Props): ReactElement {
         >
             { label && <div className="textarea-group__label">{label}</div> }
             <textarea
+                ref={props.ref}
                 {...textareaProps}
             />
             { errorMessage && <small className="error-message">{errorMessage}</small> }

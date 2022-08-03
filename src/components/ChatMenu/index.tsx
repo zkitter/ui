@@ -16,6 +16,7 @@ import Modal, {ModalContent, ModalFooter, ModalHeader} from "../Modal";
 import Button from "../Button";
 import {getName} from "../../util/user";
 import {useUser} from "../../ducks/users";
+import sse from "../../util/sse";
 
 export default function ChatMenu(): ReactElement {
     const selected = useSelectedLocalId();
@@ -243,6 +244,11 @@ function ChatMenuItem(props: {
         if (!props.chatId) return;
         (async () => {
             await zkchat.fetchMessagesByChat(chat, 1);
+            if (chat.type === 'DIRECT') {
+                if (chat.senderHash && chat.senderECDH) {
+                    await sse.updateTopics([`ecdh:${chat.senderECDH}`]);
+                }
+            }
         })();
     }, [props.chatId, chat]);
 

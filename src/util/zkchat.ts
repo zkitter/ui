@@ -7,6 +7,7 @@ import EventEmitter2, {ConstructorOptions} from "eventemitter2";
 import {decrypt, encrypt} from "./encrypt";
 import {base64ToArrayBuffer, generateECDHKeyPairFromhex, sha256} from "./crypto";
 import {safeJsonParse} from "./misc";
+import {InflatedChat} from "../ducks/chats";
 
 export enum ChatMessageType {
     DIRECT = 'DIRECT',
@@ -340,24 +341,29 @@ export class ZKChatClient extends EventEmitter2 {
             chat.senderECDH = keypair.pub;
         }
 
-        this.appendActiveChats(chat);
+        this.appendActiveChats({
+            ...chat,
+            messages: [],
+        });
 
         return chat;
     }
 
-    appendActiveChats = (chat: Chat) => {
+    appendActiveChats = (chat: InflatedChat) => {
         const chatId = this.deriveChatId(chat);
 
         const exist = this.activeChats[chatId];
 
+        this.activeChats[chatId] = {
+            ...exist,
+            ...chat,
+        };
+
         if (!exist) {
-            this.activeChats[chatId] = {
-                ...chat,
-                messages: [],
-            };
             this.emit(ZKChatClient.EVENTS.CHAT_CREATED, chat);
-            this._save();
         }
+
+        this._save();
     }
 
     insertMessage = (message: ChatMessage) => {
@@ -367,7 +373,107 @@ export class ZKChatClient extends EventEmitter2 {
         };
     }
 
-    fetchMessagesByChat = async (chat: Chat, limit = 50): Promise<ChatMessage[]> => {
+    deriveSharedKey = async (chat: Chat) => {
+        let priv, sk = '';
+
+        if (chat.senderHash) {
+            const seedHash = signWithP256(this.identity!.ecdh.priv, chat.senderHash);
+            const keypair = await generateECDHKeyPairFromhex(seedHash);
+            priv = keypair.priv;
+        } else {
+            priv = this.identity!.ecdh.priv;
+        }
+
+        if (chat.type === 'DIRECT') {
+            sk = deriveSharedKey(
+                chat.receiverECDH,
+                priv,
+            );
+        }
+
+        return sk;
+    }
+
+    inflateMessage = async (data: any) => {
+        const chat: Chat = {
+            type: 'DIRECT',
+            receiver: '',
+            receiverECDH: data.receiver_pubkey,
+            senderECDH: data.sender_pubkey,
+            senderHash: data.sender_hash,
+        };
+
+        const chatId = this.deriveChatId(chat);
+        const rln = data.rln_serialized_proof && safeJsonParse(data.rln_serialized_proof);
+
+        if (!this.activeChats[chatId]) {
+            const newChat: InflatedChat = {
+                type: 'DIRECT',
+                senderECDH: data.receiver_pubkey || this.identity!.ecdh.pub!,
+                receiverECDH: data.sender_pubkey,
+                receiver: data.sender_address || '',
+                messages: [],
+                group: rln.group_id,
+            };
+            this.activeChats[chatId] = newChat;
+            this.emit(ZKChatClient.EVENTS.CHAT_CREATED, newChat);
+        }
+
+        const activeChat = this.activeChats[chatId];
+        const sk = await this.deriveSharedKey(activeChat);
+        let content = '';
+        let error = false;
+
+        try {
+            if (data.ciphertext) {
+                content = decrypt(data.ciphertext, sk);
+                error = !content;
+            }
+        } catch (e) {
+            error = true;
+        }
+
+        const message: ChatMessage = {
+            messageId: data.message_id,
+            ciphertext: data.ciphertext,
+            content: content,
+            timestamp: new Date(Number(data.timestamp)),
+            receiver: {
+                address: data.receiver_address,
+                ecdh: data.receiver_pubkey,
+            },
+            sender: {
+                address: data.sender_address,
+                hash: data.sender_hash,
+                ecdh: data.sender_pubkey,
+            },
+            rln: data.rln_serialized_proof && safeJsonParse(data.rln_serialized_proof),
+            type: data.type,
+            encryptionError: error,
+        };
+
+        return message;
+    }
+
+    prependMessage = async (message: ChatMessage) => {
+        const chat: Chat = {
+            type: 'DIRECT',
+            receiver: '',
+            receiverECDH: message.receiver.ecdh!,
+            senderECDH: message.sender.ecdh!,
+            senderHash: message.sender.hash,
+        };
+
+        if (!this.messages[message.messageId]) {
+            const chatId = this.deriveChatId(chat);
+            const order = this.activeChats[chatId].messages;
+            this.insertMessage(message);
+            this.activeChats[chatId].messages = [message.messageId, ...order];
+            this.emit(ZKChatClient.EVENTS.MESSAGE_PREPENDED, message);
+        }
+    }
+
+    fetchMessagesByChat = async (chat: Chat, limit = 20): Promise<ChatMessage[]> => {
         this._ensureIdentity();
         this._ensureChat(chat);
 
@@ -566,11 +672,7 @@ export class ZKChatClient extends EventEmitter2 {
             },
         };
 
-        const order = this.activeChats[chatId].messages || [];
-        this.activeChats[chatId].messages = [json.payload.message_id, ...order];
-        this.insertMessage(message);
-        this.emit(ZKChatClient.EVENTS.MESSAGE_PREPENDED, message);
-
+        await this.prependMessage(message);
         return json;
     }
 

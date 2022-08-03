@@ -9,7 +9,6 @@ import ChatMenu from "../../components/ChatMenu";
 import ChatContent from "../../components/ChatContent";
 import "./chat-view.scss";
 import {Route, Switch} from "react-router";
-import {zkchat} from "../../ducks/chats";
 
 export default function ChatView(): ReactElement {
     const selectedLocalId = useSelectedLocalId();

@@ -1,4 +1,4 @@
-import React, {ReactElement, useEffect} from "react";
+import React, {ReactElement, useCallback, useEffect} from "react";
 import {Redirect, Route, RouteProps, Switch} from "react-router";
 import TopNav from "../../components/TopNav";
 import GlobalFeed from "../GlobalFeed";
@@ -22,6 +22,7 @@ import ChatView from "../ChatView";
 import {zkchat} from "../../ducks/chats";
 import {generateECDHKeyPairFromhex, generateZkIdentityFromHex, sha256, signWithP256} from "../../util/crypto";
 import {Strategy, ZkIdentity} from "@zk-kit/identity";
+import sse from "../../util/sse";
 
 export default function App(): ReactElement {
     const dispatch = useDispatch();
@@ -55,6 +56,7 @@ export default function App(): ReactElement {
                 const zkHex = await sha256(zkseed);
                 const keyPair = await generateECDHKeyPairFromhex(ecdhHex);
                 const zkIdentity = await generateZkIdentityFromHex(zkHex);
+                await sse.updateTopics([`ecdh:${keyPair.pub}`]);
                 zkchat.importIdentity({
                     address: selected.address,
                     zk: zkIdentity,
@@ -74,8 +76,6 @@ export default function App(): ReactElement {
                 });
             })();
         }
-
-
     }, [selected])
 
     useEffect(() => {

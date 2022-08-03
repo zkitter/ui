@@ -5,10 +5,16 @@ import store, {AppRootState} from "../store/configureAppStore";
 import config from "../util/config";
 import {useSelector} from "react-redux";
 import deepEqual from "fast-deep-equal";
+import sse from "../util/sse";
 const EVENTS = ZKChatClient.EVENTS;
 
 export const zkchat = new ZKChatClient({
     api: `${config.indexerAPI}/v1/zkchat`,
+});
+
+sse.on('NEW_CHAT_MESSAGE', async (payload: any) => {
+    const message = await zkchat.inflateMessage(payload);
+    zkchat.prependMessage(message);
 });
 
 const onNewMessage = (message: ChatMessage) => {
@@ -237,7 +243,17 @@ export const useChatIds = () => {
 
 export const useChatId = (chatId: string) => {
     return useSelector((state: AppRootState) => {
-        return state.chats.chats.map[chatId];
+        const chat = state.chats.chats.map[chatId];
+
+        if (!chat) return;
+
+        const {
+            messages,
+            nickname,
+            ...rest
+        } = chat;
+
+        return rest;
     }, deepEqual);
 }
 

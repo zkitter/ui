@@ -1,9 +1,12 @@
-import {resetUser, User} from "../ducks/users";
+import {getUser, resetUser, User} from "../ducks/users";
 import {Identity} from "../serviceWorkers/identity";
 import {authenticateGun} from "./gun";
 import {postWorkerMessage} from "./sw";
 import {addIdentity, selectIdentity, setIdentity} from "../serviceWorkers/util";
-import store from "../store/configureAppStore";
+import store, {AppRootState} from "../store/configureAppStore";
+import {generateECDHKeyPairFromhex, generateZkIdentityFromHex, sha256, signWithP256} from "./crypto";
+import {submitProfile} from "../ducks/drafts";
+import {ProfileMessageSubType} from "./message";
 
 export const ellipsify = (str: string, start = 6, end = 4) => {
     return str.slice(0, start) + '...' + str.slice(-end);
@@ -41,6 +44,7 @@ export async function loginUser(id: Identity | null) {
                 priv: decrypted.privateKey,
             });
         }
+        await checkChat();
     }
 
     if (id?.type === 'interrep') {
@@ -48,4 +52,42 @@ export async function loginUser(id: Identity | null) {
     }
 
     store.dispatch(resetUser());
+}
+
+async function checkChat() {
+    const state: AppRootState = store.getState();
+    const {
+        worker: { selected },
+        users: { map },
+    } = state;
+
+
+    if (selected?.type !== 'gun') return;
+
+    let selectedUser = map[selected?.address];
+
+    if (!selectedUser) {
+        // @ts-ignore
+        selectedUser = await store.dispatch(getUser(selected?.address));
+    }
+
+    (async () => {
+        if (!selectedUser.ecdh) {
+            const ecdhseed = await signWithP256(selected.privateKey, 'signing for ecdh - 0');
+            const ecdhHex = await sha256(ecdhseed);
+            const keyPair = await generateECDHKeyPairFromhex(ecdhHex);
+            const ecdhPub = keyPair.pub;
+            // @ts-ignore
+            await store.dispatch(submitProfile(ProfileMessageSubType.Custom, ecdhPub, 'ecdh_pubkey'));
+        }
+
+        if (!selectedUser.idcommitment) {
+            const zkseed = await signWithP256(selected.privateKey, 'signing for zk identity - 0');
+            const zkHex = await sha256(zkseed);
+            const zkIdentity = await generateZkIdentityFromHex(zkHex);
+            const idcommitment = zkIdentity.genIdentityCommitment().toString(16);
+            // @ts-ignore
+            await store.dispatch(submitProfile(ProfileMessageSubType.Custom, idcommitment, 'id_commitment'));
+        }
+    })();
 }
