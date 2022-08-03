@@ -33,7 +33,7 @@ async function getApp(): Promise<AppService> {
     return appStartPromise;
 }
 
-const cacheName = 'autism-pwa-v2';
+const cacheName = 'autism-pwa-v3';
 const filesToCache = [
     '/index.html',
     '/app.js',
