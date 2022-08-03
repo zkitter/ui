@@ -8,16 +8,18 @@ import Web3 from "web3";
 import {getTwitterUser} from "../../util/twitter";
 import {fetchNameByAddress} from "../../util/web3";
 import {ellipsify} from "../../util/user";
+import TwitterBronze from "../../../static/icons/twitter_bronze.png";
+import TwitterSilver from "../../../static/icons/twitter_silver.png";
+import TwitterGold from "../../../static/icons/twitter_gold.png";
+import TwitterUnrated from "../../../static/icons/twitter_unrated.png";
+import "./avatar.scss";
 
 type Props = {
     name?: string;
     address?: string;
     className?: string;
     incognito?: boolean;
-    identity?: {
-        provider?: string;
-        name?: string;
-    };
+    group?: string | null;
     semaphoreSignals?: any;
     twitterUsername?: string;
 }
@@ -26,21 +28,32 @@ const CACHE: {
     [address: string]: string;
 } = {};
 
-export function Username(props: { address: string }): ReactElement {
+const GROUP_TO_PFP: {
+    [group: string]: string;
+} = {
+  'interrep_twitter_not_sufficient': TwitterUnrated,
+  'interrep_twitter_unrated': TwitterUnrated,
+  'interrep_twitter_bronze': TwitterBronze,
+  'interrep_twitter_silver': TwitterSilver,
+  'interrep_twitter_gold': TwitterGold,
+};
+
+export function Username(props: { address?: string }): ReactElement {
     const [ensName, setEnsName] = useState('');
+    const {address = ''} = props;
 
     useEffect(() => {
         (async () => {
-            if (!props.address) return;
             setEnsName('');
-            const ens = await fetchNameByAddress(props.address);
+            if (!address) return;
+            const ens = await fetchNameByAddress(address);
             setEnsName(ens);
         })();
-    }, [props.address]);
+    }, [address]);
 
     return (
         <>
-            {ensName ? ensName : ellipsify(props.address)}
+            {ensName ? ensName : ellipsify(address)}
         </>
     );
 }
@@ -50,7 +63,7 @@ export default function Avatar(props: Props): ReactElement {
         address,
         name,
         incognito,
-        identity,
+        group,
         twitterUsername,
         className,
     } = props;
@@ -105,19 +118,23 @@ export default function Avatar(props: Props): ReactElement {
     }
 
     if (incognito) {
-        let url;
-
+        const url = group ? GROUP_TO_PFP[group] : undefined;
         return (
             <Icon
                 className={classNames(
                     'inline-flex flex-row flex-nowrap items-center justify-center',
                     'rounded-full',
                     'flex-shrink-0 flex-grow-0',
-                    'bg-gray-800 text-gray-100',
+                    'text-gray-100',
                     'avatar',
+                    {
+                      'bg-gray-800': !url,
+                      'bg-transparent': url,
+                    },
                     className,
                 )}
                 fa="fas fa-user-secret"
+                url={url}
             />
         )
     }

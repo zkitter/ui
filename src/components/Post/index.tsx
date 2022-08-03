@@ -14,7 +14,7 @@ import {
     setReposted,
     unsetPost, useCommentDisabled,
     useMeta,
-    usePost
+    usePost, useZKGroupFromPost
 } from "../../ducks/posts";
 import {setBlocked, useUser} from "../../ducks/users";
 import Avatar from "../Avatar";
@@ -50,7 +50,7 @@ import Nickname from "../Nickname";
 import {useSelectedLocalId, useWorkerUnlocked} from "../../ducks/worker";
 import {Identity} from "../../serviceWorkers/identity";
 import {usePostModeration} from "../../ducks/mods";
-
+import copy from 'copy-to-clipboard';
 
 type Props = {
     messageId: string;
@@ -164,8 +164,9 @@ export function ExpandedPost(props: Props & {
     const [parentCreator, parentHash] = post?.payload.reference.split('/') || [];
     const parentUser = useUser(parentCreator);
     const meta = useMeta(props.messageId);
+    const zkGroup = useZKGroupFromPost(props.messageId);
 
-    const gotoUserProfile = useCallback(e => {
+    const gotoUserProfile = useCallback((e: any) => {
         if (!user || !post?.creator) return;
         e.stopPropagation();
         history.push(`/${user?.ens || user?.username}/`);
@@ -191,6 +192,7 @@ export function ExpandedPost(props: Props & {
                     className="mr-3 w-12 h-12"
                     address={user?.address}
                     incognito={post.creator === ''}
+                    group={zkGroup}
                 />
                 <div className="flex flex-col flex-nowrap items-start text-light w-full cursor-pointer">
                     <div
@@ -199,8 +201,7 @@ export function ExpandedPost(props: Props & {
                     >
                         <Nickname
                             address={user?.address}
-                            interepProvider={meta?.interepProvider}
-                            interepGroup={meta?.interepGroup}
+                            group={zkGroup}
                         />
                     </div>
                     <div className="text-gray-400 mr-1" onClick={gotoUserProfile}>
@@ -298,12 +299,14 @@ export function RegularPost(props: Props & {
     let user = useUser(post?.creator);
     let op = useUser(originalPost?.creator);
     const history = useHistory();
-    const meta = useMeta(post?.toJSON().messageId as string);
+    const postJson = post?.toJSON();
+    const meta = useMeta(postJson?.messageId);
+    const zkGroup = useZKGroupFromPost(postJson?.messageId);
 
     const [parentCreator, parentHash] = post?.payload.reference.split('/') || [];
     const parentUser = useUser(parentCreator);
 
-    const gotoUserProfile = useCallback(e => {
+    const gotoUserProfile = useCallback((e: any) => {
         if (!user || post?.type === MessageType._TWEET) return;
         e.stopPropagation();
         history.push(`/${user?.ens || user?.username}/`);
@@ -348,6 +351,7 @@ export function RegularPost(props: Props & {
                         className="mr-3 w-12 h-12 border"
                         address={user?.username}
                         incognito={post.creator === ''}
+                        group={zkGroup}
                         twitterUsername={post.type === MessageType._TWEET ? post.creator : undefined}
                     />
                     {!!isParent && <div className="post__parent-line"/>}
@@ -378,6 +382,7 @@ export function RegularPost(props: Props & {
                                     >
                                         <Nickname
                                             address={user?.address}
+                                            group={zkGroup}
                                             interepProvider={meta?.interepProvider}
                                             interepGroup={meta?.interepGroup}
                                         />
@@ -705,6 +710,38 @@ function PostMenu(props: Props & {
     }
 
     const postMenuItems = [];
+
+    if (post?.payload.attachment) {
+        try {
+            const url = new URL(post?.payload.attachment);
+            const hosts = url.host.split('.');
+
+            if (hosts.slice(-3).join('.') === 'ipfs.dweb.link' && hosts.length === 4) {
+                postMenuItems.push({
+                    label: `Copy IPFS CID`,
+                    iconFA: 'fas fa-copy',
+                    onClick: () => copy(hosts[0]),
+                    iconClassName: 'text-gray-400',
+                });
+            }
+
+            if (url.protocol === 'magnet:') {
+                postMenuItems.push({
+                    label: `Copy Magnet Link`,
+                    iconFA: 'fas fa-copy',
+                    onClick: () => copy(post?.payload.attachment),
+                    iconClassName: 'text-gray-400',
+                });
+            } else {
+                postMenuItems.push({
+                    label: `Copy Link`,
+                    iconFA: 'fas fa-copy',
+                    onClick: () => copy(post?.payload.attachment),
+                    iconClassName: 'text-gray-400',
+                });
+            }
+        } catch (e) {}
+    }
 
     if (!isCurrentUser) {
         if (user) {

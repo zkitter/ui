@@ -270,13 +270,13 @@ function ChooseWalletView(props: { setViewType: (v: ViewType) => void}): ReactEl
         }
     }, [selected]);
 
-    const connectWallet = useCallback(async (e) => {
+    const connectWallet = useCallback(async () => {
         disconnect();
         await dispatch(connectWeb3());
         props.setViewType(ViewType.accountOptions);
     }, []);
 
-    const connectKeeper = useCallback(async (e) => {
+    const connectKeeper = useCallback(async () => {
         disconnect();
         const id: any = await dispatch(connectZKPR());
         if (id) {
@@ -594,12 +594,10 @@ function SetupProfileView(props: { setViewType: (v: ViewType) => void}): ReactEl
                 <CoverImageEditor
                     url={coverImageUrl}
                     onUrlChange={setCoverImageUrl}
-                    onFileChange={setCoverImageFile}
                 />
                 <ProfileImageEditor
                     url={profileImageUrl}
                     onUrlChange={setProfileImageUrl}
-                    onFileChange={setProfileImageFile}
                 />
                 <Input
                     className="border relative mx-4 mt-4 mb-8"

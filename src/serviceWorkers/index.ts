@@ -58,17 +58,17 @@ global.addEventListener('fetch', (e) => {
     e.respondWith(
         new Promise(async resolve => {
             caches.match(e.request).then(async (response) => {
-                if (response) {
-                    return resolve(response);
-                }
+                // if (response) {
+                //     return resolve(response);
+                // }
 
                 fetch(e.request).then(res => {
                     const url = new URL(e.request.url);
 
                     if (url.origin === global.origin && filesToCache.indexOf(url.pathname) > -1) {
-                        caches.open(cacheName).then(cache => {
-                            cache.put(e.request, res);
-                        });
+                        // caches.open(cacheName).then(cache => {
+                        //     cache.put(e.request, res);
+                        // });
                     }
 
                     return resolve(res.clone());

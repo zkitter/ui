@@ -1,0 +1,10 @@
+@import "../../util/variable.scss";
+
+.chat-view {
+  @extend %row-nowrap;
+  width: 100vw;
+  max-width: 59.25rem;
+  border-left: 1px solid $gray-50;
+  border-right: 1px solid $gray-50;
+  overflow: hidden;
+}

@@ -14,10 +14,21 @@ type Props = {
     address?: string;
     interepProvider?: string;
     interepGroup?: string;
+    group?: string | null;
 };
 
+const GROUP_TO_NICKNAME: {
+    [group: string]: string;
+} = {
+    'zksocial_all': 'Anonymous',
+    'interrep_twitter_unrated': 'A Twitter user',
+    'interrep_twitter_bronze': 'A Twitter user with 500+ followers',
+    'interrep_twitter_silver': 'A Twitter user with 2k+ followers',
+    'interrep_twitter_gold': 'A Twitter user with 7k+ followers',
+}
+
 export default function Nickname(props: Props): ReactElement {
-    const { address, interepProvider, interepGroup, className = '' } = props;
+    const { address, interepProvider, interepGroup, className = '', group } = props;
     const user = useUser(address);
     const dispatch = useDispatch();
 
@@ -37,9 +48,17 @@ export default function Nickname(props: Props): ReactElement {
         )
     }
 
+    if (group) {
+        return (
+            <div className={`flex flex-row flex-nowrap items-center text-sm ${className}`}>
+                {GROUP_TO_NICKNAME[group] || 'Anonymous'}
+            </div>
+        )
+    }
+
     if (interepProvider && interepGroup) {
         if (/twitter/i.test(interepProvider)) {
-            if (/not_sufficient/i.test(interepGroup)) {
+            if (/unrated/i.test(interepGroup)) {
                 badges.push(
                     <Badge
                         key={interepProvider + '_' + interepGroup}
@@ -81,7 +100,7 @@ export default function Nickname(props: Props): ReactElement {
         }
 
         return (
-            <div className={`flex flex-row flex-nowrap items-center ${className}`}>
+            <div className={`flex flex-row flex-nowrap items-center text-sm ${className}`}>
                 Anonymous
                 <div className="flex flex-row flex-nowrap items-center ml-2">
                     { badges }
@@ -91,7 +110,9 @@ export default function Nickname(props: Props): ReactElement {
     }
 
     return (
-        <div className={`flex flex-row flex-nowrap items-center ${className}`}>
+        <div
+            className={`flex flex-row flex-nowrap items-center text-sm ${className}`}
+        >
             Anonymous
         </div>
     );

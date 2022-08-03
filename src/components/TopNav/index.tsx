@@ -51,6 +51,7 @@ export default function TopNav(): ReactElement {
                     <Route path="/connect/twitter" component={DefaultHeaderGroup} />
                     <Route path="/signup" component={DefaultHeaderGroup} />
                     <Route path="/notification" component={DefaultHeaderGroup} />
+                    <Route path="/chat/:chatId?" component={ChatHeaderGroup} />
                     <Route path="/settings" component={SettingHeaderGroup} />
                     <Route path="/:name" component={UserProfileHeaderGroup} />
                     <Route>
@@ -100,7 +101,7 @@ function NavIconRow() {
             )}
         >
             <TopNavIcon fa="fas fa-home" pathname="/home" disabled={!loggedIn} />
-            <TopNavIcon fa="fas fa-user" pathname={`/${ensName || address}/`} disabled={!loggedIn} />
+            <TopNavIcon fa="fas fa-envelope" pathname={`/chat`} disabled={!selectedLocalId} />
             <TopNavIcon fa="fas fa-globe-asia" pathname="/explore" />
             {/*<TopNavIcon fa="fas fa-bell" pathname="/notifications" />*/}
         </div>
@@ -231,6 +232,41 @@ function SettingHeaderGroup() {
                     className="flex flex-col flex-nowrap justify-center ml-2 font-bold text-lg "
                 >
                     Settings
+                </div>
+            </div>
+        </div>
+    )
+}
+
+function ChatHeaderGroup() {
+    const history = useHistory();
+    const {chatId} = useParams<{chatId: string}>();
+
+    const goBack = useCallback(() => {
+        if (history.action !== 'POP') return history.goBack();
+        history.push('/');
+    }, [history, chatId]);
+
+    return (
+        <div
+            className={classNames(
+                "flex flex-row flex-nowrap items-center flex-shrink-0",
+                "rounded-xl p-1 mx-4 overflow-hidden",
+                "bg-white profile-header-group",
+            )}
+        >
+            <Icon
+                className="w-8 h-8 flex flex-row items-center justify-center top-nav__back-icon"
+                fa="fas fa-chevron-left"
+                onClick={goBack}
+            />
+            <div
+                className="flex flex-row flex-nowrap items-center px-2 py-2 profile-header-group__title-group"
+            >
+                <div
+                    className="flex flex-col flex-nowrap justify-center ml-2 font-bold text-lg "
+                >
+                    Chat
                 </div>
             </div>
         </div>

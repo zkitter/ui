@@ -5,16 +5,20 @@ import debounce from "lodash.debounce";
 type Props = {
     className?: string;
     onScrolledToBottom?: () => void;
+    onScrolledToTop?: () => void;
     children?: ReactNode;
     bottomOffset?: number;
+    topOffset?: number;
 };
 
 export default function InfiniteScrollable(props: Props): ReactElement {
     const {
         className,
         onScrolledToBottom,
+        onScrolledToTop,
         children,
         bottomOffset = 0,
+        topOffset = 0,
     } = props;
 
     const el = useRef<HTMLDivElement>(null);
@@ -30,10 +34,20 @@ export default function InfiniteScrollable(props: Props): ReactElement {
             scrollHeight,
         } = current;
 
-        if ((scrollTop + offsetHeight) >= scrollHeight - bottomOffset) {
-            onScrolledToBottom && onScrolledToBottom();
+        if (onScrolledToBottom) {
+            if ((scrollTop + offsetHeight) >= scrollHeight - bottomOffset) {
+                onScrolledToBottom();
+            }
         }
-    }, [el, onScrolledToBottom]);
+
+        if (onScrolledToTop) {
+            if ((scrollTop + scrollHeight) <= offsetHeight + topOffset) {
+                onScrolledToTop();
+            }
+        }
+
+
+    }, [el, onScrolledToBottom, onScrolledToTop]);
 
     const debouncedOnScroll = debounce(onScroll, 100, { leading: true })
 

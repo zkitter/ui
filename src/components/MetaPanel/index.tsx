@@ -32,6 +32,7 @@ export default function MetaPanel(props: {
             <Route path="/onboarding/interrep" />
             <Route path="/connect/twitter" />
             <Route path="/signup" />
+            <Route path="/chat" />
             <Route path="/:name">
                 <DefaultMetaPanels className={props.className} />
             </Route>

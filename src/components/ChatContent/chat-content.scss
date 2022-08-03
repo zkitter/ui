@@ -1,0 +1,119 @@
+@import "../../util/variable.scss";
+
+.chat-content {
+  @extend %col-nowrap;
+  width: 100%;
+
+  @media only screen and (max-width: 768px) {
+    transition: width 75ms ease-in-out;
+    width: 0vw;
+  }
+
+  &--chat-selected {
+    @media only screen and (max-width: 768px) {
+      width: 100vw;
+    }
+  }
+
+  &--anon {
+    background-color: $gray-50;
+    //color: $white;
+
+    .chat-content {
+      &__header,
+      &__editor-wrapper {
+        border-color: $gray-100;
+      }
+
+      &__editor {
+        .textarea-group {
+          //overflow: hidden;
+          //border-color: $gray-900;
+          //
+          //&:focus-within {
+          //  border-color: $gray-700;
+          //}
+        }
+
+        textarea {
+          //background-color: $gray-800;
+        }
+
+        &__loading-gif {
+          position: absolute;
+          top: .25rem;
+          left: .25rem;
+        }
+      }
+    }
+  }
+
+  &__header {
+    @extend %row-nowrap;
+    padding: 0.75rem;
+    width: 100%;
+    border-bottom: 1px solid $gray-50;
+  }
+
+  &__messages {
+    flex: 1 1 auto;
+    height: 0;
+    width: 100%;
+    display: flex;
+    flex-flow: column-reverse nowrap;
+    overflow-y: auto;
+  }
+
+  &__editor-wrapper {
+    @extend %col-nowrap;
+    align-items: center;
+    flex: 0 0 auto;
+    border-top: 1px solid $gray-50;
+  }
+
+  &__editor {
+    flex: 1 1 auto;
+    textarea {
+
+    }
+  }
+}
+
+.chat-message {
+  @extend %col-nowrap;
+  padding: 1rem;
+  border-radius: 1.25rem;
+  background-color: $gray-100;
+  max-width: 50%;
+  margin: .25rem 1rem;
+  //border-bottom-left-radius: 0;
+
+  &--self {
+    align-self: flex-end;
+    border-bottom-left-radius: 1.5rem;
+    //border-bottom-right-radius: 0;
+    background-color: darken($primary-color, 20);
+    color: $white;
+
+    .chat-message__time {
+      color: $white;
+    }
+  }
+
+  &--anon {
+    background-color: $black;
+    color: $gray-100;
+
+    .chat-message__time {
+      color: $gray-300;
+    }
+  }
+
+  &__content {
+    word-break: break-word;
+  }
+
+  &__time {
+
+  }
+}

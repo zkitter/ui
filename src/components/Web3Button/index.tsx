@@ -28,7 +28,14 @@ import ZKPRSVG from "../../../static/icons/zkpr-logo.svg";
 import gun from "../../util/gun";
 import {useHistory} from "react-router";
 import {ellipsify, getHandle, getName, loginUser} from "../../util/user";
-import {useHasIdConnected, useIdentities, useSelectedLocalId, useWorkerUnlocked} from "../../ducks/worker";
+import {
+    getZKGroupFromIdentity,
+    useHasIdConnected,
+    useIdentities,
+    useSelectedLocalId,
+    useSelectedZKGroup,
+    useWorkerUnlocked
+} from "../../ducks/worker";
 import LoginModal from "../LoginModal";
 import {fetchNameByAddress} from "../../util/web3";
 import {useUser} from "../../ducks/users";
@@ -49,6 +56,8 @@ import {
     useZKPRLoading
 } from "../../ducks/zkpr";
 import {checkPath} from "../../util/interrep";
+import {generateECDHKeyPairFromhex, generateZkIdentityFromHex, sha256, sha512, signWithP256} from "../../util/crypto";
+import webcrypto from "../../util/web_cryptography";
 
 type Props = {
     onConnect?: () => Promise<void>;
@@ -308,13 +317,13 @@ function WalletHeader(props: {
     const dispatch = useDispatch();
     const history = useHistory();
 
-    const gotoSignup = useCallback(async (e) => {
+    const gotoSignup = useCallback(async (e: any) => {
         e.stopPropagation();
         history.push('/signup');
         props.setOpened(false);
     }, []);
 
-    const gotoZKSignup = useCallback(async (e) => {
+    const gotoZKSignup = useCallback(async (e: any) => {
         e.stopPropagation();
 
         if (idCommitment) {
@@ -475,7 +484,10 @@ function UserMenu(props: {
                 <ExportPrivateKeyModal onClose={() => showExportPrivateKey(false)} />
             )}
             <div className="flex flex-col flex-nowrap w-full">
-                <CurrentUserItem onShowExportPrivateKey={onShowExportPrivateKey} />
+                <CurrentUserItem
+                    onShowExportPrivateKey={onShowExportPrivateKey}
+                    closePopup={() => props.setOpened(false)}
+                />
                 {
                     !!availableIds.length && (
                         <div className="border-b w-full py-2 mb-2 local-users-menu__container">
@@ -500,11 +512,16 @@ function UserMenu(props: {
 
 function CurrentUserItem(props: {
     onShowExportPrivateKey: () => void;
+    closePopup: () => void;
 }): ReactElement {
     const selectedLocalId = useSelectedLocalId();
     const selectedUser = useUser(selectedLocalId?.address);
+    const group = useSelectedZKGroup();
+    const history = useHistory();
 
-    if (!selectedLocalId) return <></>;
+    if (!selectedLocalId || !selectedUser) return <></>;
+
+    const { ens, name, address } = selectedUser;
 
     const isInterep = ['interrep', 'zkpr_interrep'].includes(selectedLocalId.type);
 
@@ -518,24 +535,25 @@ function CurrentUserItem(props: {
                 className="w-20 h-20 mb-2"
                 address={selectedUser?.address}
                 incognito={isInterep}
+                group={group}
             />
-            {/*<Button*/}
-            {/*    className="my-2"*/}
-            {/*    btnType="secondary"*/}
-            {/*    onClick={props.onShowExportPrivateKey}*/}
-            {/*    small*/}
-            {/*>*/}
-            {/*    Link Device*/}
-            {/*</Button>*/}
+            <Button
+                className="my-2"
+                btnType="secondary"
+                onClick={() => {
+                    history.push(`/${ens || address}`);
+                    props.closePopup();
+                }}
+                small
+            >
+                View Profile
+            </Button>
             <div className="flex flex-col flex-nowrap items-center w-full">
                 <div className="text-base font-bold w-full truncate text-center">
                     <Nickname
                         className="justify-center"
                         address={isInterep ? '' : selectedUser?.address}
-                        // @ts-ignore
-                        interepProvider={isInterep ? selectedLocalId.provider : ''}
-                        // @ts-ignore
-                        interepGroup={isInterep ? selectedLocalId.name : ''}
+                        group={group}
                     />
                 </div>
                 <div className="text-sm">
@@ -557,6 +575,7 @@ function UserMenuItem(props: {
 }) {
     const {identity, openLogin} = props;
     const user = useUser(identity.address);
+    const group = getZKGroupFromIdentity(identity);
 
     const isInterep = identity.type === 'interrep' || identity.type === 'zkpr_interrep';
 
@@ -573,11 +592,13 @@ function UserMenuItem(props: {
                 className="w-9 h-9 mr-2"
                 address={user?.username}
                 incognito={isInterep}
+                group={group}
             />
             <div className="flex flex-col flex-nowrap w-0 flex-grow">
                 <div className="text-sm font-bold truncate">
                     <Nickname
                         address={isInterep ? '' : user?.address}
+                        group={group}
                         interepProvider={isInterep ? (identity as InterrepIdentity).provider : ''}
                         interepGroup={isInterep ? (identity as InterrepIdentity).name : ''}
                     />

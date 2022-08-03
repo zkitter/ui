@@ -19,7 +19,7 @@ import {useDispatch} from "react-redux";
 import URLPreview from "../URLPreview";
 import SpinnerGif from "../../../static/icons/spinner.gif";
 import {useUser} from "../../ducks/users";
-import {useSelectedLocalId} from "../../ducks/worker";
+import {useSelectedLocalId, useSelectedZKGroup} from "../../ducks/worker";
 import {useHistory} from "react-router";
 import Checkbox from "../Checkbox";
 import {getSession, verifyTweet} from "../../util/twitter";
@@ -28,6 +28,8 @@ import {ModerationMessageSubType} from "../../util/message";
 import {usePostModeration} from "../../ducks/mods";
 import {useCommentDisabled, useMeta} from "../../ducks/posts";
 import Menuable from "../Menuable";
+import FileUploadModal from "../FileUploadModal";
+import LinkInputModal from "../LinkInputModal";
 
 type Props = {
     messageId: string;
@@ -58,9 +60,12 @@ export default function Editor(props: Props): ReactElement {
     const selectedId = useSelectedLocalId();
     const isEmpty = !editorState.getCurrentContent().hasText() && !draft.attachment;
     const mirror = useMirror();
+    const selectedZKGroup = useSelectedZKGroup();
 
     const [errorMessage, setErrorMessage] = useState('');
     const [verifying, setVerifying] = useState(true);
+    const [showingImageUploadModal, setShowingImageUploadModal] = useState(false);
+    const [showingLinkModal, setShowingLinkModal] = useState(false);
     const [verified, setVerified] = useState(false);
     const [verifiedSession, setVerifiedSession] = useState('');
     const selected = useSelectedLocalId();
@@ -117,7 +122,7 @@ export default function Editor(props: Props): ReactElement {
         dispatch(setModeration(messageId || '', type));
     }, [messageId]);
 
-    const onSetMirror = useCallback(async (e) => {
+    const onSetMirror = useCallback(async (e: any) => {
         const checked = e.target.checked;
 
         if (!verifiedSession || !verified) {
@@ -139,6 +144,9 @@ export default function Editor(props: Props): ReactElement {
             reference: draft.reference,
             attachment: url,
         }));
+
+        setShowingImageUploadModal(false);
+        setShowingLinkModal(false);
     }, [messageId, readOnly, draft]);
 
     const handleKeyCommand: (command: string) => DraftHandleValue = useCallback((command: string): DraftHandleValue => {
@@ -161,11 +169,12 @@ export default function Editor(props: Props): ReactElement {
                 await props.onPost();
             }
         } catch (e) {
+            console.log(e);
             setErrorMessage(e.message);
         }
     }, [props.onPost, verified, verifiedSession, mirror]);
 
-    const onGlobalChange = useCallback((e) => {
+    const onGlobalChange = useCallback((e: any) => {
         dispatch(setGloabl(messageId, e.target.checked));
     }, [messageId]);
 
@@ -244,6 +253,7 @@ export default function Editor(props: Props): ReactElement {
                 <Avatar
                     className="w-12 h-12 mr-3"
                     address={address}
+                    group={selectedZKGroup}
                     incognito={['interrep', 'zkpr_interrep'].includes(selectedId?.type as string)}
                 />
                 <div className="flex flex-row flex-nowrap w-full h-full">
@@ -287,9 +297,21 @@ export default function Editor(props: Props): ReactElement {
             </div>
             <div className="flex flex-row flex-nowrap border-t pt-2 ml-15">
                 <div className="flex-grow pr-4 mr-4 flex flex-row flex-nowrap items-center">
-                    <LinkIcon
-                        onAddLink={onAddLink}
-                        link={draft.attachment}
+                    <Icon
+                        className={classNames(
+                            "editor__button text-blue-300 w-8 h-8 relative",
+                            'hover:bg-blue-50 hover:text-blue-400',
+                        )}
+                        fa="fas fa-image"
+                        onClick={() => setShowingImageUploadModal(true)}
+                    />
+                    <Icon
+                        className={classNames(
+                            "editor__button text-blue-300 w-8 h-8 relative",
+                            'hover:bg-blue-50 hover:text-blue-400',
+                        )}
+                        fa="fas fa-link"
+                        onClick={() => setShowingLinkModal(true)}
                     />
                 </div>
                 <div className="flex-grow flex flex-row flex-nowrap items-center justify-end">
@@ -353,47 +375,23 @@ export default function Editor(props: Props): ReactElement {
                     </Button>
                 </div>
             </div>
-        </div>
-    );
-};
-
-function LinkIcon(props: {
-    onAddLink: (url: string) => void;
-    link?: string;
-}): ReactElement {
-    const [showingInput, showInput] = useState(false);
-
-    return (
-        <Icon
-            className={classNames("editor__button text-blue-300 w-8 h-8 relative",
-                {
-                    'bg-red-50 text-red-400': showingInput,
-                    'hover:bg-blue-50 hover:text-blue-400': !showingInput,
-                }
-            )}
-            fa={showingInput ? "fas fa-times" : "fas fa-link"}
-            onClick={() => showInput(!showingInput)}
-        >
             {
-                showingInput && (
-                    <Input
-                        className="absolute w-80 bottom-10 left-0 z-200 border-2 text-black"
-                        onClick={e => e.stopPropagation()}
-                        onChange={e => props.onAddLink(e.target.value)}
-                        value={props.link}
-                        autoFocus
-                    >
-                        <Icon
-                            className="pr-2 text-green-500"
-                            fa="fas fa-check"
-                            onClick={e => {
-                                e.stopPropagation();
-                                showInput(false);
-                            }}
-                        />
-                    </Input>
+                showingImageUploadModal && (
+                    <FileUploadModal
+                        onClose={() => setShowingImageUploadModal(false)}
+                        onAccept={onAddLink}
+                        mustLinkBeImage
+                    />
                 )
             }
-        </Icon>
+            {
+                showingLinkModal && (
+                    <LinkInputModal
+                        onClose={() => setShowingLinkModal(false)}
+                        onAccept={onAddLink}
+                    />
+                )
+            }
+        </div>
     );
 }

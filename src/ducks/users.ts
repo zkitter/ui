@@ -14,6 +14,8 @@ enum ActionTypes {
     SET_FOLLOWED = 'users/setFollowed',
     SET_BLOCKED = 'users/setBlocked',
     SET_USER_ADDRESS = 'users/setUserAddress',
+    SET_ECDH = 'users/setECDH',
+    SET_ID_COMMITMENT = 'users/setIdCommitment',
 }
 
 type Action<payload> = {
@@ -34,6 +36,8 @@ export type User = {
     twitterVerification: string;
     bio: string;
     website: string;
+    ecdh: string;
+    idcommitment: string;
     joinedAt: number;
     joinedTx: string;
     type: 'ens' | 'arbitrum' | '';
@@ -196,6 +200,16 @@ export const setBlocked = (address: string, blocked: string | null): Action<{ ad
     payload: {address, blocked},
 });
 
+export const setEcdh = (address: string, ecdh: string): Action<{ address: string; ecdh: string }> => ({
+    type: ActionTypes.SET_ECDH,
+    payload: {address, ecdh},
+});
+
+export const setIdCommitment = (address: string, idcommitment: string): Action<{ address: string; idcommitment: string }> => ({
+    type: ActionTypes.SET_ID_COMMITMENT,
+    payload: {address, idcommitment},
+});
+
 export const resetUser = () => {
     fetchPromises = {};
     cachedUser = {};
@@ -216,6 +230,8 @@ const processUserPayload = (user: any) => (dispatch: Dispatch) => {
         coverImage: user.coverImage || '',
         twitterVerification: user.twitterVerification || '',
         website: user.website || '',
+        ecdh: user.ecdh || '',
+        idcommitment: user.idcommitment || '',
         joinedAt: user.joinedAt || '',
         joinedTx: user.joinedTx || '',
         type: user.type || '',
@@ -273,6 +289,8 @@ export const useUser = (address = ''): User | null => {
                 twitterVerification: '',
                 bio: '',
                 website: '',
+                ecdh: '',
+                idcommitment: '',
                 joinedAt: 0,
                 joinedTx: '',
                 type: '',
@@ -328,6 +346,28 @@ export default function users(state = initialState, action: Action<any>): State 
                     },
                 },
             };
+        case ActionTypes.SET_ECDH:
+            return {
+                ...state,
+                map: {
+                    ...state.map,
+                    [action.payload.address]: {
+                        ...state.map[action.payload.address],
+                        ecdh: action.payload.ecdh,
+                    },
+                },
+            };
+        case ActionTypes.SET_ID_COMMITMENT:
+            return {
+                ...state,
+                map: {
+                    ...state.map,
+                    [action.payload.address]: {
+                        ...state.map[action.payload.address],
+                        idcommitment: action.payload.idcommitment,
+                    },
+                },
+            };
         case ActionTypes.SET_USER_ADDRESS:
             return reduceSetUserAddress(state, action);
         default:
@@ -375,6 +415,8 @@ function reduceSetUser(state: State, action: Action<User>): State {
                 twitterVerification: action.payload.twitterVerification,
                 coverImage: action.payload.coverImage,
                 website: action.payload.website,
+                ecdh: action.payload.ecdh,
+                idcommitment: action.payload.idcommitment,
                 joinedAt: action.payload.joinedAt,
                 joinedTx: action.payload.joinedTx,
                 type: action.payload.type,

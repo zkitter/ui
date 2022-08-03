@@ -100,6 +100,7 @@ module.exports = [
                 os: require.resolve("os-browserify/browser"),
                 http: require.resolve("stream-http"),
                 https: require.resolve("https-browserify"),
+                constants: false,
                 fs: false,
             },
         },

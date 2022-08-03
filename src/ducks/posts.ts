@@ -453,7 +453,7 @@ export const usePost = (messageId?: string): Post | null => {
     }, deepEqual);
 }
 
-export const useMeta = (messageId: string)  => {
+export const useMeta = (messageId = '')  => {
     return useSelector((state: AppRootState): PostMeta => {
         return state.posts.meta[messageId] || {
             replyCount: 0,
@@ -461,6 +461,14 @@ export const useMeta = (messageId: string)  => {
             likeCount: 0,
             reposted: 0,
         };
+    }, deepEqual);
+}
+
+export const useZKGroupFromPost = (messageId?: string)  => {
+    return useSelector((state: AppRootState): string | undefined => {
+        if (!messageId) return;
+        const post = state.posts.meta[messageId];
+        return post && `interrep_${post.interepProvider}_${post.interepGroup}`;
     }, deepEqual);
 }
 

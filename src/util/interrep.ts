@@ -74,7 +74,7 @@ export const getGroupName = (identity: Identity | {
     const name = identity?.name?.toLowerCase();
 
     if (provider === 'twitter') {
-        if (name === 'not_sufficient') return 'Twitter (< 500 followers)';
+        if (name === 'unrated') return 'Twitter (< 500 followers)';
         if (name === 'bronze') return 'Twitter (500+ followers)';
         if (name === 'silver') return 'Twitter (2000+ followers)';
         if (name === 'gold') return 'Twitter (7000+ followers)';

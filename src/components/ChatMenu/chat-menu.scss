@@ -1,0 +1,93 @@
+@import "../../util/variable.scss";
+
+.chat-menu {
+  @extend %col-nowrap;
+  flex: 0 0 auto;
+  overflow-y: auto;
+  overflow-x: hidden;
+  width: 18rem;
+  background-color: $gray-25;
+
+  @media only screen and (max-width: 768px) {
+    transition: width 75ms ease-in-out;
+    width: 100vw;
+  }
+
+  &--chat-selected {
+    @media only screen and (max-width: 768px) {
+      width: 0vw;
+    }
+  }
+
+  &__item {
+    margin: .25rem .5rem;
+    padding: .5rem;
+    border-radius: .5rem;
+    cursor: pointer;
+    transition: background-color 150ms ease-in-out;
+    align-items: center;
+
+    &:hover {
+      background-color: rgba($gray-100, .7);
+    }
+
+    &:active,
+    &--selected {
+      background-color: $gray-50;
+    }
+
+    &__anon-marker {
+      position: absolute;
+      top: calc(100% - 1.5rem);
+      left: calc(100% - 1.125rem);
+      padding: 0.25rem;
+      width: 1.5rem;
+      height: 1.5rem;
+    }
+
+    &--anon {
+      //background-color: $gray-800;
+      //color: $white;
+    }
+  }
+
+  &__header {
+    @extend %col-nowrap;
+    align-items: center;
+    margin: .5rem;
+
+    &__r {
+      @extend %row-nowrap;
+      align-items: center;
+      width: 100%;
+    }
+  }
+
+  &__search {
+    flex: 1 1 auto;
+    width: 100%;
+  }
+
+  &__create-icon {
+  }
+}
+
+.create-chat-options {
+  &__footer {
+    @extend %col-nowrap;
+    align-items: center;
+    justify-content: center;
+  }
+
+  &__create-btn {
+    padding: 2rem 1rem;
+    background-color: $gray-50;
+    margin-bottom: 1rem;
+    width: 100%;
+
+    &--anon {
+      background-color: $gray-900;
+      color: $white;
+    }
+  }
+}
