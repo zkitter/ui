@@ -484,7 +484,10 @@ function UserMenu(props: {
                 <ExportPrivateKeyModal onClose={() => showExportPrivateKey(false)} />
             )}
             <div className="flex flex-col flex-nowrap w-full">
-                <CurrentUserItem onShowExportPrivateKey={onShowExportPrivateKey} />
+                <CurrentUserItem
+                    onShowExportPrivateKey={onShowExportPrivateKey}
+                    closePopup={() => props.setOpened(false)}
+                />
                 {
                     !!availableIds.length && (
                         <div className="border-b w-full py-2 mb-2 local-users-menu__container">
@@ -509,12 +512,16 @@ function UserMenu(props: {
 
 function CurrentUserItem(props: {
     onShowExportPrivateKey: () => void;
+    closePopup: () => void;
 }): ReactElement {
     const selectedLocalId = useSelectedLocalId();
     const selectedUser = useUser(selectedLocalId?.address);
     const group = useSelectedZKGroup();
+    const history = useHistory();
 
-    if (!selectedLocalId) return <></>;
+    if (!selectedLocalId || !selectedUser) return <></>;
+
+    const { ens, name, address } = selectedUser;
 
     const isInterep = ['interrep', 'zkpr_interrep'].includes(selectedLocalId.type);
 
@@ -530,14 +537,17 @@ function CurrentUserItem(props: {
                 incognito={isInterep}
                 group={group}
             />
-            {/*<Button*/}
-            {/*    className="my-2"*/}
-            {/*    btnType="secondary"*/}
-            {/*    onClick={props.onShowExportPrivateKey}*/}
-            {/*    small*/}
-            {/*>*/}
-            {/*    Link Device*/}
-            {/*</Button>*/}
+            <Button
+                className="my-2"
+                btnType="secondary"
+                onClick={() => {
+                    history.push(`/${ens || address}`);
+                    props.closePopup();
+                }}
+                small
+            >
+                View Profile
+            </Button>
             <div className="flex flex-col flex-nowrap items-center w-full">
                 <div className="text-base font-bold w-full truncate text-center">
                     <Nickname

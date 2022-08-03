@@ -30,7 +30,8 @@ export default function BottomNav(): ReactElement {
     return (
         <div className="bottom-nav">
             <BottomNavIcon fa="fas fa-home" pathname="/home" disabled={!loggedIn} />
-            <BottomNavIcon fa="fas fa-user" pathname={`/${ensName || address}/`} disabled={!loggedIn} />
+            {/*<BottomNavIcon fa="fas fa-envelope" pathname={`/${ensName || address}/`} disabled={!loggedIn} />*/}
+            <BottomNavIcon fa="fas fa-envelope" pathname={`/chat`} disabled={!loggedIn} />
             <BottomNavIcon fa="fas fa-globe-asia" pathname="/explore" />
             <Web3Button className="bottom-nav__web3-icon" />
         </div>

@@ -562,7 +562,13 @@ export class ZKChatClient extends EventEmitter2 {
 
         if (!json.error) {
             for (const chat of json.payload) {
+                const chatId = this.deriveChatId(chat);
+                const existing = this.activeChats[chatId] || {
+                    messages: [],
+                };
+
                 this.appendActiveChats({
+                    ...existing,
                     ...chat,
                     senderECDH: this.identity!.ecdh.pub,
                 });

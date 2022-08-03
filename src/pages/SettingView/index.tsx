@@ -99,7 +99,7 @@ export const shouldBlurImage = () => {
 }
 function ModerationSetting(): ReactElement {
     const [blurImage, setBlurImage] = useState(shouldBlurImage());
-    const onBlurImageChange = useCallback((e) => {
+    const onBlurImageChange = useCallback((e: any) => {
         const checked = e.target.checked;
         localStorage.setItem(BLUR_IMAGE_KEY, checked ? '1' : '');
         setBlurImage(checked);

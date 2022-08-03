@@ -8,6 +8,17 @@
   width: 18rem;
   background-color: $gray-25;
 
+  @media only screen and (max-width: 768px) {
+    transition: width 75ms ease-in-out;
+    width: 100vw;
+  }
+
+  &--chat-selected {
+    @media only screen and (max-width: 768px) {
+      width: 0vw;
+    }
+  }
+
   &__item {
     margin: .25rem .5rem;
     padding: .5rem;

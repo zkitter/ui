@@ -4,6 +4,17 @@
   @extend %col-nowrap;
   width: 100%;
 
+  @media only screen and (max-width: 768px) {
+    transition: width 75ms ease-in-out;
+    width: 0vw;
+  }
+
+  &--chat-selected {
+    @media only screen and (max-width: 768px) {
+      width: 100vw;
+    }
+  }
+
   &--anon {
     background-color: $gray-50;
     //color: $white;

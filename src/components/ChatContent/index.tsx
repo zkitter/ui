@@ -21,6 +21,7 @@ export default function ChatContent(): ReactElement {
     const { chatId } = useParams<{chatId: string}>();
     const messages = useMessagesByChatId(chatId);
     const chat = useChatId(chatId);
+    const params = useParams<{chatId: string}>();
 
     const loadMore = useCallback(async () => {
         if (!chat) return;
@@ -37,6 +38,7 @@ export default function ChatContent(): ReactElement {
         <div
             className={classNames('chat-content', {
                 'chat-content--anon': chat?.senderHash,
+                'chat-content--chat-selected': params.chatId,
             })}>
             <ChatHeader />
             <InfiniteScrollable

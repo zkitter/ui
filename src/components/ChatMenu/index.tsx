@@ -28,6 +28,7 @@ export default function ChatMenu(): ReactElement {
     const [selectedNewConvo, selectNewConvo] = useState<Chat | null>(null);
     const [searchParam, setSearchParam] = useState('');
     const [searchResults, setSearchResults] = useState<Chat[] | null>(null);
+    const params = useParams<{chatId: string}>();
 
     useEffect(() => {
         if (selecteduser?.ecdh && selected?.type === 'gun') {
@@ -56,7 +57,11 @@ export default function ChatMenu(): ReactElement {
     if (!selected) return <></>;
 
     return (
-        <div className="chat-menu">
+        <div
+            className={classNames("chat-menu", {
+                "chat-menu--chat-selected": params.chatId,
+            })}
+        >
             <div className="chat-menu__header">
                 <div className="flex flex-row chat-menu__header__r">
                     {
@@ -220,7 +225,7 @@ function ChatMenuItem(props: {
         chat = props.chat;
     }
 
-    const r_user = useUser(chat.receiver);
+    const r_user = useUser(chat?.receiver);
 
     const onClick = useCallback(async () => {
         if (!chat) return;
@@ -241,7 +246,7 @@ function ChatMenuItem(props: {
     }, [chat, r_user, selected, props.isCreating]);
 
     useEffect(() => {
-        if (!props.chatId) return;
+        if (!props.chatId || !chat) return;
         (async () => {
             await zkchat.fetchMessagesByChat(chat, 1);
             if (chat.type === 'DIRECT') {
