@@ -14,6 +14,7 @@ import {disconnectWeb3, genSemaphore, useWeb3Account, useWeb3Unlocking} from "..
 import {useDispatch} from "react-redux";
 import {createZKPRIdentity, disconnectZKPR, useIdCommitment, useZKPR} from "../../ducks/zkpr";
 import Avatar, {Username} from "../../components/Avatar";
+import {findProof} from "../../util/merkle";
 
 export enum ViewType {
     welcome,
@@ -285,31 +286,35 @@ function JoinGroupView(props: {
             identityCommitment = selected.identityCommitment;
         }
 
+        const idcommitmentHex = BigInt(identityCommitment).toString(16);
+
         (async () => {
-            const data = await checkPath(identityCommitment);
+            const data = await findProof('', idcommitmentHex);
 
             if (!data) return;
+
+            const [protocol, groupType, groupName] = data.group.split('_');
 
             if (zkpr) {
                 await postWorkerMessage(setIdentity({
                     type: 'zkpr_interrep',
                     identityCommitment: identityCommitment,
-                    provider: data.provider,
-                    name: data.name,
+                    provider: groupType,
+                    name: groupName,
                     identityPath: {
-                        path_elements: data.path.path_elements.map(d => d.toString()),
-                        path_index: data.path.path_index,
-                        root: data.path.root.toString(),
+                        path_elements: data.siblings,
+                        path_index: data.pathIndices,
+                        root: data.root,
                     },
                 }))
             } else if (selected?.type === 'interrep') {
                 await postWorkerMessage(setIdentity({
                     ...selected,
-                    name: data.name,
+                    name: groupName,
                     identityPath: {
-                        path_elements: data.path.path_elements.map(d => d.toString()),
-                        path_index: data.path.path_index,
-                        root: data.path.root.toString(),
+                        path_elements: data.siblings,
+                        path_index: data.pathIndices,
+                        root: data.root,
                     },
                 }))
             }

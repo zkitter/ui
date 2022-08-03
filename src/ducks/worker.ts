@@ -131,6 +131,8 @@ export const useSelectedZKGroup = () => {
             return null;
         }
 
+        if (!selected.provider || !selected.name) return '';
+
         return `interrep_${selected.provider.toLowerCase()}_${selected.name.toLowerCase()}`;
     }, deepEqual);
 }

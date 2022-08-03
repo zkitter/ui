@@ -16,6 +16,7 @@ import {getIdentityHash} from "../util/arb3";
 import {postWorkerMessage} from "../util/sw";
 import {setIdentity} from "../serviceWorkers/util";
 import {checkPath} from "../util/interrep";
+import {findProof} from "../util/merkle";
 
 export const web3Modal = new Web3Modal({
     network: "main", // optional
@@ -355,13 +356,14 @@ export const genSemaphore = (web2Provider: 'Twitter' | 'Github' | 'Reddit' = 'Tw
         const result: any = await dispatch(generateSemaphoreID(web2Provider, nonce));
         const commitment = await result.genIdentityCommitment();
 
-        const data: any = await checkPath(commitment.toString());
+        const data: any = await findProof('', commitment.toString(16));
+        const [protocol, groupType, groupName] = data.group.split('_');
         postWorkerMessage(setIdentity({
             type: 'interrep',
             address: account,
             nonce: nonce,
-            provider: web2Provider,
-            name: data?.name,
+            provider: groupType,
+            name: groupName,
             identityPath: data?.path,
             identityCommitment: commitment.toString(),
             serializedIdentity: result.serializeIdentity(),

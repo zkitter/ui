@@ -13,7 +13,7 @@ export type ValidGroups = 'zksocial_all'
 export const findProof = async (
     group: string,
     idCommitment: string,
-): Promise<MerkleProof|null> => {
+): Promise<MerkleProof & {group: string}|null> => {
     const resp = await fetch(`${config.indexerAPI}/v1/proofs/${idCommitment}?group=${group}`);
     const { payload, error } = await resp.json();
     const { data } = payload;
@@ -30,6 +30,7 @@ export const findProof = async (
             pathIndices: data.pathIndices,
             root: data.root,
             leaf: data.leaf,
+            group: data.group,
         };
 
         return path;
