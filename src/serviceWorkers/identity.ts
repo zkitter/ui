@@ -161,8 +161,9 @@ export class IdentityService extends GenericService {
 
             return {
                 ...id,
+                name: id.name === 'NOT_SUFFICIENT' ? 'unrated' : id.name,
                 serializedIdentity: serializeidentity,
-            }
+            };
         }
 
         return id;
