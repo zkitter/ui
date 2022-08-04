@@ -2,6 +2,7 @@ import {GenericService} from "../util/svc";
 import {decrypt, encrypt, randomSalt} from "../util/encrypt";
 import {pushReduxAction} from "./util";
 import {setIdentities, setSelectedId, setUnlocked} from "../ducks/worker";
+import {safeJsonParse} from "../util/misc";
 
 export type GunIdentity = {
     type: 'gun',
@@ -143,11 +144,24 @@ export class IdentityService extends GenericService {
         }
 
         if (id.type === 'interrep') {
+            let serializeidentity = this.passphrase
+                ? decrypt(id.serializedIdentity, this.passphrase)
+                : '';
+
+            const idJson = safeJsonParse(serializeidentity);
+
+            if (Array.isArray(idJson) && idJson.length === 2) {
+                const [idNullifierHex, idTrapdoorhex] = idJson;
+                serializeidentity = JSON.stringify({
+                    identityNullifier: idNullifierHex,
+                    identityTrapdoor: idTrapdoorhex,
+                    secret: [idNullifierHex, idTrapdoorhex],
+                });
+            }
+
             return {
                 ...id,
-                serializedIdentity: this.passphrase
-                    ? decrypt(id.serializedIdentity, this.passphrase)
-                    : '',
+                serializedIdentity: serializeidentity,
             }
         }
 
