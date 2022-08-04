@@ -340,7 +340,7 @@ function JoinGroupView(props: {
             if (zkpr) {
                 dispatch(createZKPRIdentity());
             } else {
-                dispatch(genSemaphore(name))
+                dispatch(genSemaphore(name, reputation))
             }
         }
     }, [name, zkpr]);
@@ -366,35 +366,38 @@ function JoinGroupView(props: {
                 credentials: 'include',
             });
             const json = await resp.json();
+            const idcommitmentHex = BigInt(identityCommitment).toString(16);
 
             if (json.error) {
                 setErrorMessage(json.payload);
             } else {
-                const data = await watchPath(identityCommitment);
+                const data = await watchPath(`interrep_${group}_${reputation}`, idcommitmentHex);
                 // props.setViewType(ViewType.done);
                 history.push('/create-local-backup');
 
+                const [protocol, groupType, groupName] = (data?.group || '').split('_');
                 if (zkpr) {
                     await postWorkerMessage(setIdentity({
                         type: 'zkpr_interrep',
-                        provider: data.provider,
-                        name: data.name,
-                        identityPath: {
-                            path_elements: data.path.path_elements.map(d => d.toString()),
-                            path_index: data.path.path_index,
-                            root: data.path.root.toString(),
-                        },
+                        provider: groupType,
+                        name: groupName,
+                        identityPath: data ? {
+                            path_elements: data?.siblings,
+                            path_index: data?.siblings,
+                            root: data?.root,
+                        } : null,
                         identityCommitment: identityCommitment,
                     }))
                 } else if (selected?.type === 'interrep') {
                     await postWorkerMessage(setIdentity({
                         ...selected,
-                        name: data.name,
-                        identityPath: {
-                            path_elements: data.path.path_elements.map(d => d.toString()),
-                            path_index: data.path.path_index,
-                            root: data.path.root.toString(),
-                        },
+                        provider: groupType,
+                        name: groupName,
+                        identityPath: data ? {
+                            path_elements: data?.siblings,
+                            path_index: data?.siblings,
+                            root: data?.root,
+                        } : null,
                     }))
                 }
             }

@@ -181,10 +181,7 @@ export class IdentityService extends GenericService {
             await this.writePassphrase('');
         } else {
             if (identity.type === 'interrep') {
-                await this.updateIdentity({
-                    ...identity,
-                    serializedIdentity: 'whacky',
-                });
+                await this.updateIdentity(identity);
             }
         }
         await pushReduxAction(setSelectedId(identity));
@@ -239,7 +236,6 @@ export class IdentityService extends GenericService {
                         const store = tx?.objectStore("identity");
                         if (!identity.provider) throw new Error('missing provider');
                         if (!identity.name) throw new Error('missing name');
-                        if (!identity.identityPath) throw new Error('missing identityPath');
                         if (!identity.identityCommitment) throw new Error('missing identityCommitment');
                         if (!identity.serializedIdentity) throw new Error('missing serializedIdentity');
                         if (typeof identity.nonce !== 'number') throw new Error('invalid nonce');

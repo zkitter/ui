@@ -15,7 +15,6 @@ import {getUser} from "./users";
 import {getIdentityHash} from "../util/arb3";
 import {postWorkerMessage} from "../util/sw";
 import {setIdentity} from "../serviceWorkers/util";
-import {checkPath} from "../util/interrep";
 import {findProof} from "../util/merkle";
 
 export const web3Modal = new Web3Modal({
@@ -345,7 +344,10 @@ export const loginGun = (nonce = 0) => async (
     }
 }
 
-export const genSemaphore = (web2Provider: 'Twitter' | 'Github' | 'Reddit' = 'Twitter') =>
+export const genSemaphore = (
+    web2Provider: 'Twitter' | 'Github' | 'Reddit' = 'Twitter',
+    reputation: string,
+) =>
     async (dispatch: ThunkDispatch<any, any, any>, getState: () => AppRootState): Promise<boolean> =>
 {
     dispatch(setUnlocking(true));
@@ -356,15 +358,18 @@ export const genSemaphore = (web2Provider: 'Twitter' | 'Github' | 'Reddit' = 'Tw
         const result: any = await dispatch(generateSemaphoreID(web2Provider, nonce));
         const commitment = await result.genIdentityCommitment();
 
-        const data = await findProof('', commitment.toString(16));
+        const data = await findProof(
+            `interrep_${web2Provider.toLowerCase()}_${reputation}`,
+            commitment.toString(16),
+        ).catch(() => undefined);
         const [protocol, groupType, groupName] = (data?.group || '').split('_');
 
         postWorkerMessage(setIdentity({
             type: 'interrep',
             address: account,
             nonce: nonce,
-            provider: groupType,
-            name: groupName,
+            provider: groupType || web2Provider.toLowerCase(),
+            name: groupName || reputation,
             identityPath: data ? {
                 path_elements: data?.siblings,
                 path_index: data?.siblings,

@@ -1,5 +1,7 @@
 import config from "./config";
 import {Identity} from "../serviceWorkers/identity";
+import {findProof} from "./merkle";
+import {MerkleProof} from "@zk-kit/protocols";
 
 type PathData = {
     path: {
@@ -40,14 +42,14 @@ export const checkPath = async (commitment: string): Promise<PathData|null> => {
     return null;
 }
 
-export const watchPath = async (commitment: string): Promise<PathData> => {
+export const watchPath = async (group: string, commitment: string): Promise<MerkleProof&{group: string}|null> => {
     let count = 0;
     return new Promise(async (resolve, reject) => {
         _watchTx();
 
         async function _watchTx() {
             count++;
-            const data = await checkPath(commitment);
+            const data = await findProof(group, commitment);
 
             if (data) {
                 resolve(data);
