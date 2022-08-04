@@ -16,6 +16,7 @@ import {useDispatch} from "react-redux";
 import {findProof} from "../../util/merkle";
 import {Strategy, ZkIdentity} from "@zk-kit/identity";
 import {Chat} from "../../util/zkchat";
+import Button from "../Button";
 
 export default function ChatContent(): ReactElement {
     const { chatId } = useParams<{chatId: string}>();
@@ -153,7 +154,20 @@ function ChatEditor(): ReactElement {
         setContent('');
     }, [content, selected, chat]);
 
+    const onClickSend = useCallback(async () => {
+        setSending(true);
+        setError('');
+        try {
+            await submitMessage();
+        } catch (e) {
+            setError(e.message);
+        } finally {
+            setSending(false);
+        }
+    }, [submitMessage]);
+
     const onEnter = useCallback(async (e: KeyboardEvent<HTMLTextAreaElement>) => {
+        if (window.innerWidth < 768) return;
         if (e.key === 'Enter' && !e.shiftKey) {
             e.preventDefault();
             setSending(true);
@@ -190,17 +204,36 @@ function ChatEditor(): ReactElement {
                         disabled={isSending}
                         autoFocus
                     />
+
                 </div>
-                <div className="relative flex flex-row items-center">
-                    <Avatar
-                        className={classNames("w-10 h-10 m-2", {
-                            'opacity-50': isSending,
-                        })}
-                        address={selected?.address}
-                        incognito={!!chat?.senderHash}
-                        group={zkGroup}
-                    />
-                    { isSending && <Icon className="chat-content__editor__loading-gif" url={SpinnerGIF} size={3}/>}
+                <div className="relative flex flex-row items-end">
+                    {
+                        content
+                            ? (
+                                <Icon
+                                    className={classNames("m-2 text-white justify-center rounded-full", {
+                                        'opacity-50': isSending,
+                                        'w-10 h-10': !isSending,
+                                        'bg-primary-color': !zkGroup,
+                                        'bg-gray-800': zkGroup,
+                                    })}
+                                    onClick={onClickSend}
+                                    fa={isSending ? undefined : "fas fa-paper-plane"}
+                                    url={isSending ? SpinnerGIF : undefined}
+                                    size={isSending ? 2.5 : undefined}
+                                />
+                            )
+                            : (
+                                <Avatar
+                                    className={classNames("w-10 h-10 m-2", {
+                                        'opacity-50': isSending,
+                                    })}
+                                    address={selected?.address}
+                                    incognito={!!chat?.senderHash}
+                                    group={zkGroup}
+                                />
+                            )
+                    }
                 </div>
             </div>
         </div>

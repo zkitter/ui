@@ -68,7 +68,6 @@ export default function Editor(props: Props): ReactElement {
     const [showingLinkModal, setShowingLinkModal] = useState(false);
     const [verified, setVerified] = useState(false);
     const [verifiedSession, setVerifiedSession] = useState('');
-    const selected = useSelectedLocalId();
     const meta = useMeta(messageId);
     const modOverride = usePostModeration(meta?.rootId);
     const commentDisabled = useCommentDisabled(meta?.rootId);
@@ -82,12 +81,12 @@ export default function Editor(props: Props): ReactElement {
             setVerifying(true);
             dispatch(setMirror(false));
 
-            if (!selected) return;
+            if (!selectedId) return;
 
             let session;
 
             try {
-                session = await getSession(selected);
+                session = await getSession(selectedId);
 
                 if (session) {
                     setVerifiedSession(session.username);
@@ -103,7 +102,7 @@ export default function Editor(props: Props): ReactElement {
 
             setVerifying(false);
         })();
-    }, [selected, user]);
+    }, [selectedId, user]);
 
     const onChange = useCallback((newEditorState: EditorState) => {
         if (readOnly) return;
@@ -216,7 +215,7 @@ export default function Editor(props: Props): ReactElement {
         )
     }
 
-    if (!disabled && !loggedIn) {
+    if (!disabled && !selectedId) {
         return (
             <div
                 className={classNames(
@@ -273,7 +272,7 @@ export default function Editor(props: Props): ReactElement {
                             readOnly={readOnly || disabled}
                         />
                         {
-                            selected?.type === 'gun' && !messageId && (
+                            selectedId?.type === 'gun' && !messageId && (
                                 <ModerationButton
                                     onChange={onModerationChange}
                                     currentType={draft.moderation || null}
@@ -325,7 +324,7 @@ export default function Editor(props: Props): ReactElement {
                         <div className="editor__submit-btn__wrapper">
                             <div className="editor__submit-btn__wrapper__text">
                                 {
-                                    !draft?.global && selected?.type === 'gun'
+                                    !draft?.global && selectedId?.type === 'gun'
                                         ? 'Post to my own feed'
                                         : 'Post to global feed'
                                 }

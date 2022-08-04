@@ -497,7 +497,10 @@ function UserMenu(props: {
                                         <UserMenuItem
                                             key={id.type === 'gun' ? id.publicKey : id.identityCommitment}
                                             identity={id}
-                                            openLogin={() => openLogin(id)}
+                                            openLogin={() => {
+                                                openLogin(id);
+                                                props.setOpened(false);
+                                            }}
                                         />
                                     );
                                 })
@@ -508,7 +511,7 @@ function UserMenu(props: {
             </div>
         </>
     )
-}
+};
 
 function CurrentUserItem(props: {
     onShowExportPrivateKey: () => void;

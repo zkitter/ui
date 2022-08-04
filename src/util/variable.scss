@@ -43,6 +43,10 @@ $red-25: mix($red, $white, 2.5);
   font-family: 'Roboto Mono', monospace;
 }
 
+.bg-primary-color {
+  background-color: $primary-color;
+}
+
 .text-primary-color {
   color: $primary-color;
 }

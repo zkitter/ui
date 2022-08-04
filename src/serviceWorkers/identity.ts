@@ -9,6 +9,7 @@ export type GunIdentity = {
     nonce: number;
     publicKey: string;
     privateKey: string;
+    identityCommitment?: '';
 }
 
 export type InterrepIdentity = {
@@ -169,12 +170,22 @@ export class IdentityService extends GenericService {
     async setPassphrase(passphrase: string) {
         await this.testPassphrase(passphrase);
         await this.writePassphrase(passphrase);
+        if (this.currentIdentity?.type === 'interrep') {
+            await this.updateIdentity(this.currentIdentity);
+        }
     }
 
     async setIdentity(identity: Identity | null) {
         this.currentIdentity = identity;
         if (!identity) {
             await this.writePassphrase('');
+        } else {
+            if (identity.type === 'interrep') {
+                await this.updateIdentity({
+                    ...identity,
+                    serializedIdentity: 'whacky',
+                });
+            }
         }
         await pushReduxAction(setSelectedId(identity));
     }
@@ -212,6 +223,50 @@ export class IdentityService extends GenericService {
         throw new Error(`cannot find identity with pubkey ${pubkeyOrCommitment}`);
     }
 
+    async updateIdentity(identity: Identity) {
+        await this.ensure();
+
+        if (!this.passphrase) return;
+
+        const identities = await this.getIdentities();
+
+        if (identity.type === 'interrep') {
+            const { serializedIdentity} = identity;
+            for (let id of identities) {
+                if (id.type === 'interrep') {
+                    if (id.serializedIdentity !== serializedIdentity) {
+                        const tx = this.db?.transaction("identity", "readwrite");
+                        const store = tx?.objectStore("identity");
+                        if (!identity.provider) throw new Error('missing provider');
+                        if (!identity.name) throw new Error('missing name');
+                        if (!identity.identityPath) throw new Error('missing identityPath');
+                        if (!identity.identityCommitment) throw new Error('missing identityCommitment');
+                        if (!identity.serializedIdentity) throw new Error('missing serializedIdentity');
+                        if (typeof identity.nonce !== 'number') throw new Error('invalid nonce');
+
+                        store?.put({
+                            type: identity.type,
+                            address: identity.address,
+                            nonce: identity.nonce,
+                            provider: identity.provider,
+                            name: identity.name,
+                            identity_path: identity.identityPath,
+                            identity_commitment: identity.identityCommitment,
+                            serialized_identity: encrypt(identity.serializedIdentity, this.passphrase),
+                            public_key: '',
+                            private_key: '',
+                        });
+
+                        await pushReduxAction(setIdentities(await this.getIdentities()));
+
+                        return;
+                    }
+                }
+            }
+        }
+
+    }
+
     async addIdentity(identity: Identity) {
         await this.ensure();
 
@@ -224,6 +279,7 @@ export class IdentityService extends GenericService {
             if (!identity.publicKey) throw new Error('missing publicKey');
             if (!identity.privateKey) throw new Error('missing privateKey');
             if (typeof identity.nonce !== 'number') throw new Error('invalid nonce');
+
 
             store?.put({
                 type: identity.type,

@@ -356,22 +356,27 @@ export const genSemaphore = (web2Provider: 'Twitter' | 'Github' | 'Reddit' = 'Tw
         const result: any = await dispatch(generateSemaphoreID(web2Provider, nonce));
         const commitment = await result.genIdentityCommitment();
 
-        const data: any = await findProof('', commitment.toString(16));
-        const [protocol, groupType, groupName] = data.group.split('_');
+        const data = await findProof('', commitment.toString(16));
+        const [protocol, groupType, groupName] = (data?.group || '').split('_');
+
         postWorkerMessage(setIdentity({
             type: 'interrep',
             address: account,
             nonce: nonce,
             provider: groupType,
             name: groupName,
-            identityPath: data?.path,
+            identityPath: data ? {
+                path_elements: data?.siblings,
+                path_index: data?.siblings,
+                root: data?.root,
+            } : null,
             identityCommitment: commitment.toString(),
             serializedIdentity: result.serializeIdentity(),
         }))
 
         dispatch(setUnlocking(false));
 
-        return !!data?.path;
+        return !!data;
     } catch (e) {
         dispatch(setUnlocking(false));
         throw e;
