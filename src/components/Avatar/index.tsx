@@ -8,10 +8,10 @@ import Web3 from "web3";
 import {getTwitterUser} from "../../util/twitter";
 import {fetchNameByAddress} from "../../util/web3";
 import {ellipsify} from "../../util/user";
-import TwitterBronze from "../../../static/icons/twitter_bronze.png";
-import TwitterSilver from "../../../static/icons/twitter_silver.png";
-import TwitterGold from "../../../static/icons/twitter_gold.png";
-import TwitterUnrated from "../../../static/icons/twitter_unrated.png";
+import TwitterBronze from "../../../static/icons/twitter_bronze.svg";
+import TwitterSilver from "../../../static/icons/twitter_silver.svg";
+import TwitterGold from "../../../static/icons/twitter_gold.svg";
+import TwitterUnrated from "../../../static/icons/twitter_unrated.svg";
 import "./avatar.scss";
 
 type Props = {
