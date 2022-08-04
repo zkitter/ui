@@ -57,7 +57,7 @@ export default function App(): ReactElement {
                 const keyPair = await generateECDHKeyPairFromhex(ecdhHex);
                 const zkIdentity = await generateZkIdentityFromHex(zkHex);
                 await sse.updateTopics([`ecdh:${keyPair.pub}`]);
-                zkchat.importIdentity({
+                await zkchat.importIdentity({
                     address: selected.address,
                     zk: zkIdentity,
                     ecdh: keyPair,
@@ -69,7 +69,7 @@ export default function App(): ReactElement {
                 const ecdhseed = await sha256(zkIdentity.getSecret().map(d => d.toString()).join());
                 const ecdhHex = await sha256(ecdhseed);
                 const keyPair = await generateECDHKeyPairFromhex(ecdhHex);
-                zkchat.importIdentity({
+                await zkchat.importIdentity({
                     address: selected?.identityCommitment,
                     zk: zkIdentity,
                     ecdh: keyPair,

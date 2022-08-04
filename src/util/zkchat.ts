@@ -7,7 +7,6 @@ import EventEmitter2, {ConstructorOptions} from "eventemitter2";
 import {decrypt, encrypt} from "./encrypt";
 import {base64ToArrayBuffer, generateECDHKeyPairFromhex, sha256} from "./crypto";
 import {safeJsonParse} from "./misc";
-import {InflatedChat} from "../ducks/chats";
 
 export enum ChatMessageType {
     DIRECT = 'DIRECT',
@@ -140,6 +139,10 @@ type createMessageBundleOptions = {
         x_share: string;
         group_id: string;
     };
+}
+
+type InflatedChat = Chat & {
+    messages: string[],
 }
 
 export const createMessageBundle = async (options: createMessageBundleOptions) => {
@@ -280,16 +283,41 @@ export class ZKChatClient extends EventEmitter2 {
         }
     }
 
-    private _save() {
+    private async _validateConvos(activeChats: {
+        [chatId: string]: InflatedChat;
+    }) {
+        const validChats: {
+            [chatId: string]: InflatedChat;
+        } = {};
+
+        for (const chatId in activeChats) {
+            const chat = activeChats[chatId];
+            if (chat.senderECDH === this.identity?.ecdh.pub) {
+                validChats[chatId] = chat;
+            } else if (chat.senderHash) {
+                const seedHash = signWithP256(this.identity!.ecdh.priv, chat.senderHash);
+                const keypair = await generateECDHKeyPairFromhex(seedHash);
+                const ecdh = keypair.pub;
+
+                if (ecdh === chat.senderECDH) {
+                    validChats[chatId] = chat;
+                }
+            }
+        }
+
+        return validChats;
+    }
+
+    private async _save() {
         this._ensureIdentity();
         const address = this.identity!.address;
         const rawData = JSON.stringify({
-            activeChats: this.activeChats,
+            activeChats: await this._validateConvos(this.activeChats),
         });
         localStorage.setItem(this.lsPrefix + address, rawData);
     }
 
-    private _load() {
+    private async _load() {
         this._ensureIdentity();
         const address = this.identity!.address;
         const rawData = localStorage.getItem(this.lsPrefix + address);
@@ -316,11 +344,15 @@ export class ZKChatClient extends EventEmitter2 {
                 };
                 return acc;
             }, {});
+
+        const validChats = await this._validateConvos(bucket.activeChats);
+
+        this.activeChats = validChats;
     }
 
-    importIdentity(identity: ZKChatIdentity) {
+    async importIdentity(identity: ZKChatIdentity) {
         this.identity = identity;
-        this._load();
+        await this._load();
     }
 
     createDM = async (receiver: string, receiverECDH: string, isAnon?: boolean): Promise<Chat> => {
@@ -341,7 +373,7 @@ export class ZKChatClient extends EventEmitter2 {
             chat.senderECDH = keypair.pub;
         }
 
-        this.appendActiveChats({
+        await this.appendActiveChats({
             ...chat,
             messages: [],
         });
@@ -349,7 +381,7 @@ export class ZKChatClient extends EventEmitter2 {
         return chat;
     }
 
-    appendActiveChats = (chat: InflatedChat) => {
+    appendActiveChats = async (chat: InflatedChat) => {
         const chatId = this.deriveChatId(chat);
 
         const exist = this.activeChats[chatId];
@@ -363,7 +395,7 @@ export class ZKChatClient extends EventEmitter2 {
             this.emit(ZKChatClient.EVENTS.CHAT_CREATED, chat);
         }
 
-        this._save();
+        await this._save();
     }
 
     insertMessage = (message: ChatMessage) => {
@@ -567,7 +599,7 @@ export class ZKChatClient extends EventEmitter2 {
                     messages: [],
                 };
 
-                this.appendActiveChats({
+                await this.appendActiveChats({
                     ...existing,
                     ...chat,
                     senderECDH: this.identity!.ecdh.pub,
