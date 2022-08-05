@@ -2,20 +2,12 @@ import React, {ReactElement, ReactNode, useCallback, useEffect, useState} from "
 import "./web3-btn.scss";
 import Button from "../Button";
 import {
-    setWeb3,
-    connectWeb3,
     useAccount,
     useWeb3Loading,
-    useGunKey,
-    useLoggedIn,
     useWeb3Unlocking,
     setGunPrivateKey,
-    loginGun,
-    genSemaphore,
     setSemaphoreID,
     setSemaphoreIDPath,
-    useGunNonce,
-    UserNotExistError, useWeb3Account, disconnectWeb3,
 } from "../../ducks/web3";
 import {useDispatch} from "react-redux";
 import classNames from "classnames";
@@ -23,14 +15,11 @@ import Avatar, {Username} from "../Avatar";
 import Icon from "../Icon";
 import Menuable, {ItemProps} from "../Menuable";
 import SpinnerGIF from "../../../static/icons/spinner.gif";
-import MetamaskSVG from "../../../static/icons/metamask-fox.svg";
-import ZKPRSVG from "../../../static/icons/zkpr-logo.svg";
 import gun from "../../util/gun";
 import {useHistory} from "react-router";
-import {ellipsify, getHandle, getName, loginUser} from "../../util/user";
+import {getHandle, loginUser} from "../../util/user";
 import {
     getZKGroupFromIdentity,
-    useHasIdConnected,
     useIdentities,
     useSelectedLocalId,
     useSelectedZKGroup,
@@ -39,25 +28,15 @@ import {
 import LoginModal from "../LoginModal";
 import {fetchNameByAddress} from "../../util/web3";
 import {useUser} from "../../ducks/users";
-import {selectIdentity, setIdentity} from "../../serviceWorkers/util";
+import {setIdentity} from "../../serviceWorkers/util";
 import {postWorkerMessage} from "../../util/sw";
-import {Identity, InterrepIdentity, ZKPRIdentity} from "../../serviceWorkers/identity";
+import {Identity, InterrepIdentity} from "../../serviceWorkers/identity";
 import QRScanner from "../QRScanner";
 import Modal from "../Modal";
 import ExportPrivateKeyModal from "../ExportPrivateKeyModal";
 import config from "../../util/config";
 import Nickname from "../Nickname";
-import {
-    connectZKPR,
-    disconnectZKPR,
-    maybeSetZKPRIdentity,
-    useIdCommitment,
-    useZKPR,
-    useZKPRLoading
-} from "../../ducks/zkpr";
-import {checkPath} from "../../util/interrep";
-import {generateECDHKeyPairFromhex, generateZkIdentityFromHex, sha256, sha512, signWithP256} from "../../util/crypto";
-import webcrypto from "../../util/web_cryptography";
+import {useThemeContext} from "../ThemeContext";
 
 type Props = {
     onConnect?: () => Promise<void>;
@@ -68,13 +47,10 @@ type Props = {
 
 export default function Web3Button(props: Props): ReactElement {
     const account = useAccount();
-    const web3Loading = useWeb3Loading();
     const identities = useIdentities();
-    const dispatch = useDispatch();
     const selectedLocalId = useSelectedLocalId();
     const [ensName, setEnsName] = useState('');
-    const zkpr = useZKPR();
-    const idCommitment = useIdCommitment();
+    const theme = useThemeContext();
 
     useEffect(() => {
         (async () => {
@@ -141,20 +117,25 @@ export default function Web3Button(props: Props): ReactElement {
         <div
             className={classNames(
                 "flex flex-row flex-nowrap items-center",
-                "rounded-xl bg-gray-100",
+                "rounded-xl",
                 props.className,
+                {
+                    'bg-gray-900': theme === 'dark',
+                    'bg-gray-100': theme !== 'dark',
+                }
             )}
         >
             <Web3ButtonLeft {...props} />
             <Button
                 className={classNames(
                     'text-black',
-                    'bg-white',
                     'font-inter',
                     'web3-button__content',
                     {
                         'text-gray-100 bg-gray-800': ['interrep', 'zkpr_interrep'].includes(id?.type),
                         'bg-gray-100 pl-0 pr-4': !selectedLocalId && !identities.length,
+                        'bg-black text-white': theme === 'dark',
+                        'bg-white': theme !== 'dark',
                     }
                 )}
                 onClick={props.onClick}
@@ -306,120 +287,6 @@ function UserMenuable(props: {
     );
 }
 
-function WalletHeader(props: {
-    setOpened: (opened: boolean) => void;
-}): ReactElement {
-    const account = useWeb3Account();
-    const idCommitment = useIdCommitment();
-    const selected = useSelectedLocalId();
-    const identities = useIdentities();
-    const user = useUser(account);
-    const dispatch = useDispatch();
-    const history = useHistory();
-
-    const gotoSignup = useCallback(async (e: any) => {
-        e.stopPropagation();
-        history.push('/signup');
-        props.setOpened(false);
-    }, []);
-
-    const gotoZKSignup = useCallback(async (e: any) => {
-        e.stopPropagation();
-
-        if (idCommitment) {
-            const id = await maybeSetZKPRIdentity(idCommitment);
-
-            if (id) {
-                return;
-            }
-        }
-
-        history.push('/signup');
-        props.setOpened(false);
-    }, [idCommitment]);
-
-    const disconnect = useCallback(() => {
-        dispatch(disconnectZKPR());
-        dispatch(disconnectWeb3());
-        const [id] = identities;
-        if (id) {
-            postWorkerMessage(selectIdentity(id.type === 'gun' ? id.publicKey : id.identityCommitment));
-        } else {
-            postWorkerMessage(setIdentity(null));
-        }
-    }, [identities]);
-
-    if (idCommitment) {
-        return (
-            <div
-                className="wallet-menu-header__container"
-                onClick={e => e.stopPropagation()}
-            >
-                <Icon fa="fas fa-user-secret" />
-                <div className="wallet-menu-header__title">
-                    <div>{ellipsify(idCommitment)}</div>
-                </div>
-                {
-                    selected?.type !== 'zkpr_interrep' && (
-                        <div className="wallet-menu-header__btn">
-                            <Button onClick={gotoZKSignup}>
-                                <Icon fa="fas fa-user-plus" />
-                            </Button>
-                        </div>
-                    )
-                }
-                <div className="wallet-menu-header__btn">
-                    <Button onClick={disconnect}>
-                        <Icon fa="fas fa-sign-out-alt" />
-                    </Button>
-                </div>
-            </div>
-        )
-    }
-
-    if (!user) {
-        return (
-            <div
-                className="wallet-menu-header__container"
-            >
-                <Icon fa="fas fa-wallet" />
-                <div className="wallet-menu-header__title">
-                    Not connected
-                </div>
-                <div className="wallet-menu-header__btn">
-                    <div className="wallet-menu-header__btn">
-                        <Button>
-                            <Icon fa="fas fa-plug" />
-                        </Button>
-                    </div>
-                </div>
-            </div>
-        )
-    }
-
-    return (
-        <div
-            className="wallet-menu-header__container"
-            onClick={e => e.stopPropagation()}
-        >
-            <Icon fa="fas fa-wallet" />
-            <div className="wallet-menu-header__title">
-                <Username address={account} />
-            </div>
-            <div className="wallet-menu-header__btn">
-                <Button onClick={gotoSignup}>
-                    <Icon fa="fas fa-user-plus" />
-                </Button>
-            </div>
-            <div className="wallet-menu-header__btn">
-                <Button onClick={disconnect}>
-                    <Icon fa="fas fa-sign-out-alt" />
-                </Button>
-            </div>
-        </div>
-    )
-}
-
 function UserMenu(props: {
     setOpened: (opened: boolean) => void;
 }): ReactElement {
@@ -436,6 +303,7 @@ function UserMenu(props: {
                 credentials: 'include',
             });
             await loginUser(id);
+            props.setOpened(false);
             return;
         }
         setShowingLogin(true);
@@ -497,9 +365,9 @@ function UserMenu(props: {
                                         <UserMenuItem
                                             key={id.type === 'gun' ? id.publicKey : id.identityCommitment}
                                             identity={id}
-                                            openLogin={() => {
-                                                openLogin(id);
-                                                props.setOpened(false);
+                                            openLogin={async () => {
+                                                await openLogin(id);
+                                                // props.setOpened(false);
                                             }}
                                         />
                                     );

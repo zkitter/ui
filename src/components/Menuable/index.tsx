@@ -67,14 +67,14 @@ export default function Menuable(props: MenuableProps): ReactElement {
         window.addEventListener('click', cb);
     }, [onClose]);
 
-    const goBack = useCallback((e) => {
+    const goBack = useCallback((e: any) => {
         e.stopPropagation();
         const newPath = [...path];
         newPath.pop();
         setPath(newPath);
     }, [path]);
 
-    const onItemClick = useCallback((e, item, i) => {
+    const onItemClick = useCallback((e: any, item, i) => {
         e.stopPropagation();
         if (item.disabled) return;
         if (item.children) {

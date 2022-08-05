@@ -147,7 +147,7 @@ export const submitSemaphorePost = (post: Post) => async (dispatch: Dispatch, ge
     const epoch = getEpoch();
     const externalNullifier = genExternalNullifier(epoch);
     const signal = messageId;
-    const rlnIdentifier = await sha256('zkchat');
+    const rlnIdentifier = await sha256('zkpost');
     const xShare = RLN.genSignalHash(signal);
     const witness = RLN.genWitness(
         identitySecretHash!,

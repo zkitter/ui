@@ -15,13 +15,12 @@ html {
   padding: 0;
 }
 
+.dark.app {
+  background-color: $dark-theme;
+}
+
 .app {
-  //background: radial-gradient(
-  //  141.86% 141.86% at 50% -28.96%,
-  //  rgba($primary-color, 0.25) 0%,
-  //  rgba($primary-color, 0) 100%
-  //);
-  //background-color: #f9f9f9;
+  background-color: $light-theme;
 
   &__content {
     margin: 0 auto;

@@ -1,4 +1,4 @@
-import React, {ReactElement, useCallback, useEffect, useState} from "react";
+import React, {ReactElement, useCallback, useContext, useEffect, useState} from "react";
 import Icon from "../Icon";
 import classNames from "classnames";
 import "./top-nav.scss"
@@ -16,23 +16,30 @@ import {getName} from "../../util/user";
 import {useSelectedLocalId} from "../../ducks/worker";
 import {fetchNameByAddress} from "../../util/web3";
 import Logo from "../../../static/icons/favicon.png";
+// import Logo from "../../../static/icons/zkitter_logo.svg";
 import Modal from "../Modal";
 import MetaPanel from "../MetaPanel";
+import {useThemeContext} from "../ThemeContext";
 
 export default function TopNav(): ReactElement {
     const account = useAccount();
     const loggedIn = useGunLoggedIn();
     const semaphoreId = useSemaphoreID();
+    const theme = useThemeContext();
 
     const showRegisterInterrepButton = !loggedIn && account && semaphoreId.commitment && !semaphoreId.identityPath;
 
     return (
         <div
             className={classNames(
-                'bg-white flex-shrink-0',
+                'flex-shrink-0',
                 'flex', 'flex-row', 'flex-nowrap', 'items-center',
-                'border-b border-gray-200',
-                'top-nav'
+                'border-b',
+                'top-nav',
+                {
+                    'border-gray-200': theme !== 'dark',
+                    'border-gray-800': theme === 'dark',
+                }
             )}
         >
             <div
@@ -64,7 +71,10 @@ export default function TopNav(): ReactElement {
             >
                 <NavIconRow />
                 <Web3Button
-                    className={classNames("rounded-xl top-nav__web3-btn border border-gray-200")}
+                    className={classNames("rounded-xl top-nav__web3-btn border", {
+                        'border-gray-200': theme !== 'dark',
+                        'border-gray-800': theme === 'dark',
+                    })}
                 />
             </div>
         </div>
@@ -76,6 +86,7 @@ function NavIconRow() {
     const account = useAccount();
     const selectedLocalId = useSelectedLocalId();
     const [ensName, setEnsName] = useState('');
+    const theme = useThemeContext();
 
     let address = '';
 
@@ -94,10 +105,13 @@ function NavIconRow() {
         <div
             className={classNames(
                 "flex flex-row flex-nowrap items-center flex-shrink-0",
-                "rounded-xl border border-gray-100",
+                "rounded-xl border",
                 "p-1 mx-4 overflow-hidden",
-                "bg-white",
                 'mobile-hidden',
+                {
+                    'border-gray-100': theme !== 'dark',
+                    'border-gray-800': theme === 'dark',
+                }
             )}
         >
             <TopNavIcon fa="fas fa-home" pathname="/home" disabled={!loggedIn} />
@@ -132,7 +146,6 @@ function DefaultHeaderGroup() {
             className={classNames(
                 "flex flex-row flex-nowrap items-center flex-shrink-0",
                 "p-1 mx-4 overflow-hidden",
-                "bg-white",
             )}
         >
             <Icon
@@ -167,7 +180,6 @@ function GlobalHeaderGroup() {
             className={classNames(
                 "flex flex-row flex-nowrap flex-grow items-center flex-shrink-0",
                 "p-1 mx-4 overflow-hidden",
-                "bg-white",
             )}
         >
             <Icon
@@ -181,6 +193,7 @@ function GlobalHeaderGroup() {
 
 function TopNavContextButton(): ReactElement {
     const [showing, showModal] = useState(false);
+
 
     return (
         <>
@@ -217,7 +230,7 @@ function SettingHeaderGroup() {
             className={classNames(
                 "flex flex-row flex-nowrap items-center flex-shrink-0",
                 "rounded-xl p-1 mx-4 overflow-hidden",
-                "bg-white profile-header-group",
+                "profile-header-group",
             )}
         >
             <Icon
@@ -252,7 +265,7 @@ function ChatHeaderGroup() {
             className={classNames(
                 "flex flex-row flex-nowrap items-center flex-shrink-0",
                 "rounded-xl p-1 mx-4 overflow-hidden",
-                "bg-white profile-header-group",
+                "profile-header-group",
             )}
         >
             <Icon
@@ -302,7 +315,7 @@ function UserProfileHeaderGroup() {
             className={classNames(
                 "flex flex-row flex-nowrap flex-grow items-center flex-shrink-0",
                 "rounded-xl p-1 mx-4 overflow-hidden",
-                "bg-white profile-header-group",
+                "profile-header-group",
             )}
         >
             <Icon
@@ -344,7 +357,7 @@ function TagHeaderGroup() {
             className={classNames(
                 "flex flex-row flex-grow flex-nowrap items-center flex-shrink-0",
                 "rounded-xl p-1 mx-4 overflow-hidden",
-                "bg-white tag-header-group",
+                "tag-header-group",
             )}
         >
             <Icon
@@ -379,7 +392,7 @@ function PostHeaderGroup() {
             className={classNames(
                 "flex flex-row flex-nowrap flex-grow items-center flex-shrink-0",
                 "rounded-xl p-1 mx-4 overflow-hidden",
-                "bg-white post-header-group",
+                "post-header-group",
             )}
         >
             <Icon

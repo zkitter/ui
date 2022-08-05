@@ -1,4 +1,4 @@
-import React, {ReactElement, useCallback, useEffect} from "react";
+import React, {ReactElement, useCallback, useContext, useEffect} from "react";
 import {Redirect, Route, RouteProps, Switch} from "react-router";
 import TopNav from "../../components/TopNav";
 import GlobalFeed from "../GlobalFeed";
@@ -23,10 +23,13 @@ import {zkchat} from "../../ducks/chats";
 import {generateECDHKeyPairFromhex, generateZkIdentityFromHex, sha256, signWithP256} from "../../util/crypto";
 import {Strategy, ZkIdentity} from "@zk-kit/identity";
 import sse from "../../util/sse";
+import ThemeContext from "../../components/ThemeContext";
+import classNames from "classnames";
 
 export default function App(): ReactElement {
     const dispatch = useDispatch();
     const selected = useSelectedLocalId();
+    const theme = useContext(ThemeContext);
 
     useEffect(() => {
         (async function onAppMount() {
@@ -92,7 +95,11 @@ export default function App(): ReactElement {
     }, []);
 
     return (
-        <div className="flex flex-col flex-nowrap w-screen h-screen overflow-hidden app">
+        <div
+            className={classNames("flex flex-col flex-nowrap w-screen h-screen overflow-hidden app", {
+                'dark': theme === 'dark',
+            })}
+        >
             <TopNav />
             <div className="flex flex-row flex-nowrap app__content">
                 <Switch>

@@ -7,6 +7,7 @@ import store from "./store/configureAppStore";
 import App from "./pages/App";
 import "./util/gun";
 import {createServiceWorker} from "./util/sw";
+import {ThemeProvider} from "./components/ThemeContext";
 
 (async () => {
     if ('serviceWorker' in navigator) {
@@ -16,7 +17,9 @@ import {createServiceWorker} from "./util/sw";
     ReactDOM.render(
         <Provider store={store}>
             <BrowserRouter>
-                <App />
+                <ThemeProvider value="light" >
+                    <App />
+                </ThemeProvider>
             </BrowserRouter>
         </Provider>,
         document.getElementById('root'),

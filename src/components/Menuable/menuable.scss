@@ -1,5 +1,13 @@
 @import "../../util/variable";
 
+.dark {
+  .menuable {
+    &__menu {
+      background-color: $black;
+      color: $white;
+    }
+  }
+}
 .menuable {
   position: relative;
 

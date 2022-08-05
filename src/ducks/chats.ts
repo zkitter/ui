@@ -1,4 +1,3 @@
-import {ZKPR} from "./zkpr";
 import {Chat, ChatMessage, ZKChatClient} from "../util/zkchat";
 import {Dispatch} from "redux";
 import store, {AppRootState} from "../store/configureAppStore";

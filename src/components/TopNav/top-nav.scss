@@ -143,3 +143,28 @@
     }
   }
 }
+
+.dark {
+  .top-nav {
+    &__icon {
+      color: $white;
+      &:hover {
+        color: $primary-color;
+      }
+
+      &--selected {
+        color: $primary-color;
+      }
+
+      &--disabled {
+        color: $gray-900;
+
+        &:hover,
+        &:active {
+          background: transparent;
+          color: $gray-900;
+        }
+      }
+    }
+  }
+}
