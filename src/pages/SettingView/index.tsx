@@ -9,6 +9,7 @@ import {fetchAddressByName, useUser} from "../../ducks/users";
 import Web3 from "web3";
 import {getHandle, getName} from "../../util/user";
 import SwitchButton from "../../components/SwitchButton";
+import {setTheme, useSetting} from "../../ducks/app";
 
 export default function SettingView(): ReactElement {
     return (
@@ -45,7 +46,7 @@ function Panel(): ReactElement {
     return (
         <div className="setting__panel">
             {/*<PanelItem label="Your Account" path="/settings/account" />*/}
-            <PanelItem label="Moderation" path="/settings/moderation" />
+            <PanelItem label="Display" path="/settings/display" />
             {/*<PanelItem label="Security" path="/settings/security" />*/}
             {/*<PanelItem label="Privacy" path="/settings/privacy" />*/}
         </div>
@@ -78,11 +79,11 @@ function Content(): ReactElement {
     return (
         <div className="setting__content">
             <Switch>
-                <Route path="/settings/moderation" component={ModerationSetting} />
+                <Route path="/settings/display" component={DisplaySetting} />
                 {
                     window.innerWidth > 768 && (
                         <Route path="/settings">
-                            <Redirect to="/settings/moderation" />
+                            <Redirect to="/settings/display" />
                         </Route>
                     )
                 }
@@ -96,20 +97,30 @@ export const shouldBlurImage = () => {
     const shouldSetBlurImage = localStorage.getItem(BLUR_IMAGE_KEY);
     return shouldSetBlurImage === null ? true : shouldSetBlurImage === '1';
 }
-function ModerationSetting(): ReactElement {
+
+function DisplaySetting(): ReactElement {
     const [blurImage, setBlurImage] = useState(shouldBlurImage());
+    const dispatch = useDispatch();
+    const setting = useSetting();
+
     const onBlurImageChange = useCallback((e: any) => {
         const checked = e.target.checked;
         localStorage.setItem(BLUR_IMAGE_KEY, checked ? '1' : '');
         setBlurImage(checked);
     }, [blurImage]);
+
+    const onThemeChange = useCallback((e: any) => {
+        const value = e.target.value;
+        dispatch(setTheme(value));
+    }, [setting.theme]);
+
     return (
         <>
             <div className="font-bold setting__content__title">
-                Moderation
+                Display
             </div>
             <div className="text-sm text-gray-500 setting__content__desc">
-                Manage moderation policy
+                Manage theme and image display settings
             </div>
             <SettingRow
                 fa="fas fa-eye"
@@ -120,6 +131,16 @@ function ModerationSetting(): ReactElement {
                     checked={blurImage}
                     onChange={onBlurImageChange}
                 />
+            </SettingRow>
+            <SettingRow
+                fa="fas fa-paint-brush"
+                title="Theme"
+                desc="Change theme"
+            >
+                <select onChange={onThemeChange} defaultValue={setting.theme}>
+                    <option value="light">Light Theme</option>
+                    <option value="dark">Dark Theme</option>
+                </select>
             </SettingRow>
         </>
     );

@@ -1,5 +1,3 @@
-
-
 import React, {ChangeEventHandler, ReactElement} from "react";
 import "./switch-button.scss";
 import classNames from "classnames";
