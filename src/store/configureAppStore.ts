@@ -1,6 +1,7 @@
 import {applyMiddleware, combineReducers, createStore} from "redux";
 import { save, load } from 'redux-localstorage-simple';
 import web3, {initialState as web3InitialState} from "../ducks/web3";
+import app from "../ducks/app";
 import posts from "../ducks/posts";
 import users from "../ducks/users";
 import drafts from "../ducks/drafts";
@@ -11,6 +12,7 @@ import zkpr from "../ducks/zkpr";
 import mods from "../ducks/mods";
 import chats from "../ducks/chats";
 const rootReducer = combineReducers({
+    app,
     web3,
     zkpr,
     posts,

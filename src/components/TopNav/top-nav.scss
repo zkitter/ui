@@ -157,12 +157,12 @@
       }
 
       &--disabled {
-        color: $gray-900;
+        color: $gray-700;
 
         &:hover,
         &:active {
           background: transparent;
-          color: $gray-900;
+          color: $gray-700;
         }
       }
     }

@@ -32,6 +32,12 @@
   }
 }
 
+.dark {
+  .post-button {
+    color: rgba($white, .5);
+  }
+}
+
 .post-button {
   color: rgba($black, .5);
   height: 2rem;
@@ -69,6 +75,27 @@
 }
 
 @media only screen and (max-width: 768px) {
+  .dark {
+    .post {
+      &:last-of-type {
+        border-bottom: 1px solid $gray-800;
+      }
+    }
+
+    .post + .post {
+      border-color: $gray-800;
+    }
+
+    .thread__content{
+      .thread > .post {
+        border-left: .25rem solid $gray-800;
+      }
+    }
+
+    .thread:last-of-type {
+      border-bottom: 1px solid $gray-800;
+    }
+  }
   .post {
     margin-bottom: 0;
     border: 0;

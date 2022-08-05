@@ -4,6 +4,7 @@ import './modal.scss';
 import Icon from "../Icon";
 import classNames from "classnames";
 import CancelSVG from "../../../static/icons/cancel.svg";
+import {useThemeContext} from "../ThemeContext";
 
 
 type Props = {
@@ -14,16 +15,19 @@ type Props = {
 
 export default function Modal(props: Props): ReactElement {
     const { className, onClose, children } = props;
+    const theme = useThemeContext();
 
     const modalRoot = document.querySelector('#modal-root');
 
     if (!modalRoot) return <></>;
 
+    // @ts-ignore
     return ReactDOM.createPortal(
         <div
             className={classNames(
                 'bg-black bg-opacity-80',
                 "modal__overlay",
+                theme,
             )}
             onClick={e => {
                 e.stopPropagation();
@@ -32,8 +36,11 @@ export default function Modal(props: Props): ReactElement {
         >
             <div
                 className={classNames(
-                    'bg-white',
                     `modal__wrapper`,
+                    {
+                        'bg-white': theme !== 'dark',
+                        'bg-dark': theme === 'dark',
+                    },
                     className,
                 )}
                 onClick={e => e.stopPropagation()}
@@ -51,8 +58,12 @@ type HeaderProps = {
 }
 
 export function ModalHeader(props: HeaderProps): ReactElement {
+    const theme = useThemeContext();
     return (
-        <div className="border-b modal__header">
+        <div className={classNames("border-b modal__header", {
+            'border-gray-100': theme !== 'dark',
+            'border-gray-800': theme === 'dark',
+        })}>
             <div className="modal__header__title">
                 {props.children}
             </div>
@@ -63,11 +74,15 @@ export function ModalHeader(props: HeaderProps): ReactElement {
                             className={classNames(
                                 "flex flex-row items-center justify-center",
                                 "p-2 rounded-full opacity-50",
-                                "hover:text-black hover:opacity-100",
+                                "hover:opacity-100",
+                                {
+                                    'text-black': theme !== 'dark',
+                                    'text-white': theme === 'dark',
+                                }
                             )}
                         >
                             <Icon
-                                url={CancelSVG}
+                                fa="fas fa-times"
                                 size={1}
                                 onClick={props.onClose}
                             />
@@ -98,8 +113,17 @@ type FooterProps = {
 }
 
 export function ModalFooter(props: FooterProps): ReactElement {
+    const theme = useThemeContext();
+
     return (
-        <div className={classNames("border-t modal__footer", props.className)}>
+        <div className={classNames(
+            "border-t modal__footer",
+            {
+                'border-gray-100': theme !== 'dark',
+                'border-gray-800': theme === 'dark',
+            },
+            props.className
+        )}>
             {props.children}
         </div>
     );

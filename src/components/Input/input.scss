@@ -1,11 +1,28 @@
 @import "../../util/variable";
 
+.dark {
+  .input-group {
+    background: $dark-theme;
+    &__label {
+      color: $gray-200;
+      background: $dark-theme;
+    }
+
+    input {
+      &::placeholder {
+        color: $gray-700;
+      }
+    }
+  }
+}
+
 .input-group {
   @extend %col-nowrap;
   transition: border-color 150ms ease-in-out;
 
   &__label {
     background: white;
+    color: $gray-800;
     display: inline-block;
     top: -.625rem;
     width: fit-content;

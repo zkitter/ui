@@ -17,6 +17,11 @@
   cursor: pointer;
 }
 
+.dark {
+  .slider {
+    background-color: $gray-800;
+  }
+}
 /* The slider */
 .slider {
   position: absolute;

@@ -30,6 +30,7 @@ import {useCommentDisabled, useMeta} from "../../ducks/posts";
 import Menuable from "../Menuable";
 import FileUploadModal from "../FileUploadModal";
 import LinkInputModal from "../LinkInputModal";
+import {useThemeContext} from "../ThemeContext";
 
 type Props = {
     messageId: string;
@@ -73,6 +74,11 @@ export default function Editor(props: Props): ReactElement {
     const commentDisabled = useCommentDisabled(meta?.rootId);
     const shouldDisplayWarning = !!modOverride?.unmoderated && commentDisabled;
     const canNonPostMessage = useCanNonPostMessage();
+    const theme = useThemeContext();
+    const bgColor = classNames({
+        'bg-white': theme !== 'dark',
+        'bg-dark': theme === 'dark'
+    });
 
     useEffect(() => {
         (async function() {
@@ -184,7 +190,7 @@ export default function Editor(props: Props): ReactElement {
                 className={classNames(
                     'flex flex-col flex-nowrap items-center',
                     'p-4',
-                    'bg-white',
+                    bgColor,
                     'rounded-xl',
                     props.className,
                 )}
@@ -200,12 +206,17 @@ export default function Editor(props: Props): ReactElement {
                 className={classNames(
                     'flex flex-col flex-nowrap items-center',
                     'p-4',
-                    'bg-white',
+                    bgColor,
                     'rounded-xl',
                     props.className,
                 )}
             >
-                <div className="mt-2 mb-4 text-gray-800">
+                <div
+                    className={classNames("mt-2 mb-4", {
+                        'text-gray-800': theme !== 'dark',
+                        'text-gray-200': theme === 'dark'
+                    })}
+                >
                     Join Interrep to make a post
                 </div>
                 <Button btnType="primary" onClick={() => history.push('/onboarding/interrep')}>
@@ -221,16 +232,28 @@ export default function Editor(props: Props): ReactElement {
                 className={classNames(
                     'flex flex-col flex-nowrap items-center',
                     'p-4',
-                    'bg-white',
+                    bgColor,
                     'rounded-xl',
                     props.className,
+                    {
+                        "border-gray-100": theme !== 'dark',
+                        "border-gray-800": theme === 'dark',
+                    }
                 )}
             >
-                <div className="mt-2 mb-4 text-gray-800">
+                <div
+                    className={classNames("mt-2 mb-4", {
+                        'text-gray-800': theme !== 'dark',
+                        'text-gray-200': theme === 'dark'
+                    })}
+                >
                     Connect to a wallet to make a post
                 </div>
                 <Web3Button
-                    className={classNames("rounded-xl border border-gray-100")}
+                    className={classNames("rounded-xl border", {
+                        "border-gray-100": theme !== 'dark',
+                        "border-gray-800": theme === 'dark',
+                    })}
                 />
             </div>
         )
@@ -241,7 +264,7 @@ export default function Editor(props: Props): ReactElement {
             className={classNames(
                 'flex flex-col flex-nowrap',
                 'pt-3 pb-2 px-4',
-                'bg-white',
+                bgColor,
                 'rounded-xl',
                 'text-lg',
                 'editor',
@@ -294,12 +317,20 @@ export default function Editor(props: Props): ReactElement {
                     </div>
                 </div>
             </div>
-            <div className="flex flex-row flex-nowrap border-t pt-2 ml-15">
+            <div
+                className={classNames("flex flex-row flex-nowrap border-t pt-2 ml-15", {
+                    'border-gray-100': theme !== 'dark',
+                    'border-gray-800': theme === 'dark',
+                })}
+            >
                 <div className="flex-grow pr-4 mr-4 flex flex-row flex-nowrap items-center">
                     <Icon
                         className={classNames(
                             "editor__button text-blue-300 w-8 h-8 relative",
-                            'hover:bg-blue-50 hover:text-blue-400',
+                            {
+                                'hover:bg-blue-50 hover:text-blue-400': theme !== 'dark',
+                                'hover:bg-blue-900 hover:text-blue-600': theme === 'dark',
+                            }
                         )}
                         fa="fas fa-image"
                         onClick={() => setShowingImageUploadModal(true)}
@@ -307,7 +338,10 @@ export default function Editor(props: Props): ReactElement {
                     <Icon
                         className={classNames(
                             "editor__button text-blue-300 w-8 h-8 relative",
-                            'hover:bg-blue-50 hover:text-blue-400',
+                            {
+                                'hover:bg-blue-50 hover:text-blue-400': theme !== 'dark',
+                                'hover:bg-blue-900 hover:text-blue-600': theme === 'dark',
+                            }
                         )}
                         fa="fas fa-link"
                         onClick={() => setShowingLinkModal(true)}

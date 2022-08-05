@@ -45,6 +45,10 @@ $red-25: mix($red, $white, 2.5);
   font-family: 'Roboto Mono', monospace;
 }
 
+.bg-dark {
+  background-color: $dark-theme;
+}
+
 .bg-primary-color {
   background-color: $primary-color;
 }
@@ -126,4 +130,18 @@ $red-25: mix($red, $white, 2.5);
   .mobile-only {
     display: none !important;
   }
+}
+
+.dark {
+  select {
+    border-color: $gray-800;
+  }
+}
+
+select {
+  padding: 0.5rem 1rem;
+  border-radius: 0.5rem;
+  cursor: pointer;
+  border: 1px solid $gray-100;
+  outline: none;
 }

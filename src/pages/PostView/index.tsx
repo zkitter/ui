@@ -20,6 +20,7 @@ import {Post as PostMessage, PostMessageSubType} from "../../util/message";
 import {useENSName, useLoggedIn} from "../../ducks/web3";
 import {useSelectedLocalId} from "../../ducks/worker";
 import {usePostModeration} from "../../ducks/mods";
+import {useThemeContext} from "../../components/ThemeContext";
 
 type Props = {
 
@@ -50,6 +51,7 @@ export default function PostView(props: Props): ReactElement {
     const meta = useMeta(messageId);
     const modOverride = usePostModeration(meta?.rootId);
     const [end, setEnd] = useState(false);
+    const theme = useThemeContext();
 
     useEffect(() => {
         (async function onPostViewMount() {
@@ -145,7 +147,13 @@ export default function PostView(props: Props): ReactElement {
             >
                 <div
                     ref={containerEl}
-                    className="rounded-xl overflow-visible border border-gray-200 post-view__container"
+                    className={classNames(
+                        "rounded-xl overflow-visible border post-view__container",
+                        {
+                            'border-gray-200': theme !== 'dark',
+                            'border-gray-800': theme === 'dark',
+                        },
+                    )}
                 >
                     <div ref={parentEl}>
                         <ParentThread
@@ -165,8 +173,17 @@ export default function PostView(props: Props): ReactElement {
                             return (
                                 <Thread
                                     key={messageId}
-                                    className="transition-colors cursor-pointer border-t border-gray-200 hover:bg-gray-50"
-                                    postClassName="rounded-xl"
+                                    className={classNames(
+                                        "transition-colors cursor-pointer border-t",
+                                        {
+                                            'border-gray-200': theme !== 'dark',
+                                            'border-gray-800': theme === 'dark',
+                                        }
+                                    )}
+                                    postClassName={classNames("rounded-xl", {
+                                        'hover:bg-gray-50': theme !== 'dark',
+                                        'hover:bg-gray-800': theme === 'dark',
+                                    })}
                                     messageId={messageId}
                                     clearObserver={clearObserver}
                                     onSuccessPost={onSuccessPost}
@@ -183,8 +200,12 @@ export default function PostView(props: Props): ReactElement {
                             <div
                                 className={classNames(
                                     "flex flex-row flex-nowrap items-center justify-center",
-                                    "p-4 bg-white text-blue-400 hover:text-blue-300 cursor-pointer hover:underline",
-                                    "border-t border-gray-200"
+                                    "p-4 text-blue-400 hover:text-blue-300 cursor-pointer hover:underline",
+                                    "border-t",
+                                    {
+                                        "border-gray-200 bg-white": theme !== 'dark',
+                                        "border-gray-800 bg-dark": theme === 'dark',
+                                    },
                                 )}
                                 onClick={showMore}
                             >

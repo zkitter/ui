@@ -8,6 +8,7 @@ import {useLoggedIn} from "../../ducks/web3";
 import {useHistory, useParams} from "react-router";
 import InfiniteScrollable from "../InfiniteScrollable";
 import {useSelectedLocalId} from "../../ducks/worker";
+import {useThemeContext} from "../ThemeContext";
 
 export default function TagFeed(): ReactElement {
     const {tagName} = useParams<{tagName: string}>();
@@ -20,6 +21,7 @@ export default function TagFeed(): ReactElement {
     const loggedIn = useLoggedIn();
     const tag = decodeURIComponent(tagName);
     const selected = useSelectedLocalId();
+    const theme = useThemeContext();
 
     useEffect(() => {
         (async function onTagFeedMount() {
@@ -75,8 +77,13 @@ export default function TagFeed(): ReactElement {
                     return (
                         <Post
                             key={messageId}
-                            // key={i}
-                            className="rounded-xl transition-colors mb-1 hover:border-gray-300 cursor-pointer border border-gray-200"
+                            className={classNames(
+                                "rounded-xl transition-colors mb-1 cursor-pointer border",
+                                {
+                                    "hover:border-gray-300 border-gray-200": theme !== 'dark',
+                                    "hover:border-gray-700 border-gray-800": theme === 'dark',
+                                },
+                            )}
                             messageId={messageId}
                             onClick={() => gotoPost(messageId)}
                         />

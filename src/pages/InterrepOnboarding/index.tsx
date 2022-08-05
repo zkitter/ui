@@ -209,7 +209,7 @@ function WelcomeView(props: { setViewType: (v: ViewType) => void}): ReactElement
 function ConnectView(props: { setViewType: (v: ViewType) => void}): ReactElement {
     const connectTwitter = useCallback(async () => {
         const resp = await fetch(
-            `${config.indexerAPI}/twitter?redirectUrl=${encodeURI(`${config.baseUrl}/signup/interep`)}`,
+            `${config.indexerAPI}/twitter?redirectUrl=${encodeURI(`${config.baseUrl}/signup/interep/`)}`,
             {
                 credentials: 'include',
             },

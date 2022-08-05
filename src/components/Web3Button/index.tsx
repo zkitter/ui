@@ -133,9 +133,10 @@ export default function Web3Button(props: Props): ReactElement {
                     'web3-button__content',
                     {
                         'text-gray-100 bg-gray-800': ['interrep', 'zkpr_interrep'].includes(id?.type),
-                        'bg-gray-100 pl-0 pr-4': !selectedLocalId && !identities.length,
+                        'bg-gray-100 pl-0 pr-4': !selectedLocalId && !identities.length && theme !== 'dark',
                         'bg-black text-white': theme === 'dark',
                         'bg-white': theme !== 'dark',
+                        'bg-gray-900 pl-0 pr-4': !id && theme === 'dark',
                     }
                 )}
                 onClick={props.onClick}

@@ -43,6 +43,34 @@
   }
 }
 
+.dark {
+  .web3-button {
+    &__unlock-menu {
+      border-color: $gray-800 !important;
+    }
+  }
+
+  .local-users-menu {
+    &:hover {
+      background-color: transparent;
+    }
+
+    &__selected-item {
+      border-color: $gray-800 !important;
+    }
+
+    &__item {
+      &:hover {
+        background-color: $gray-900 !important;
+      }
+    }
+
+    &__container {
+      border-color: $gray-800 !important;
+    }
+  }
+}
+
 .local-users-menu {
   padding: 0 !important;
 

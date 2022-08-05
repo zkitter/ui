@@ -1,5 +1,38 @@
 @import "../../util/variable.scss";
 
+.dark {
+  .chat-content {
+    background-color: $dark-theme;
+
+    &__header {
+      border-color: $gray-800 !important;
+    }
+
+    &__editor-wrapper {
+      border-color: $gray-800 !important;
+    }
+
+    &--anon {
+      background-color: darken($dark-theme, 7.5);
+      &__header,
+      &__editor-wrapper {
+        border-color: $gray-800 !important;
+      }
+    }
+  }
+
+  .chat-message {
+    background-color: $gray-800;
+
+    &--self {
+      background-color: darken($primary-color, 20);
+    }
+
+    &__time {
+      color: $gray-300;
+    }
+  }
+}
 .chat-content {
   @extend %col-nowrap;
   width: 100%;

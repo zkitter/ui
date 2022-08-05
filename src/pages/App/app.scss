@@ -19,6 +19,10 @@ html {
   background-color: $dark-theme;
 }
 
+//:root {
+//  color-scheme: dark;
+//}
+
 .app {
   background-color: $light-theme;
 
@@ -37,7 +41,7 @@ html {
     padding-bottom: 4rem;
 
     &::-webkit-scrollbar {
-      display: none;
+      display: none !important;
     }
 
     &__footer {

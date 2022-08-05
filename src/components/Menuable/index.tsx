@@ -10,6 +10,7 @@ import React, {
 import classNames from "classnames";
 import "./menuable.scss";
 import Icon from "../Icon";
+import {useThemeContext} from "../ThemeContext";
 
 type MenuableProps = {
     items: ItemProps[];
@@ -40,6 +41,7 @@ export default function Menuable(props: MenuableProps): ReactElement {
 
     const [isShowing, setShowing] = useState(!!props.opened);
     const [path, setPath] = useState<number[]>([]);
+    const theme = useThemeContext();
 
     useEffect(() => {
         if (typeof opened !== 'undefined') {
@@ -74,7 +76,7 @@ export default function Menuable(props: MenuableProps): ReactElement {
         setPath(newPath);
     }, [path]);
 
-    const onItemClick = useCallback((e: any, item, i) => {
+    const onItemClick = useCallback((e: any, item: ItemProps, i: number) => {
         e.stopPropagation();
         if (item.disabled) return;
         if (item.children) {
@@ -109,13 +111,24 @@ export default function Menuable(props: MenuableProps): ReactElement {
             {props.children}
             {
                 isShowing && (
-                    <div className={classNames("rounded-xl border menuable__menu", props.menuClassName)}>
+                    <div className={classNames(
+                        "rounded-xl border menuable__menu",
+                        {
+                            'border-gray-100': theme !== 'dark',
+                            'border-gray-800': theme === 'dark',
+                        },
+                        props.menuClassName
+                    )}>
                         {!!path.length && (
                             <div
                                 className={classNames(
                                     "text-sm whitespace-nowrap cursor-pointer",
                                     'flex flex-row flex-nowrap items-center',
-                                    "text-gray-500 hover:text-gray-800 hover:bg-gray-50 menuable__menu__item",
+                                    "menuable__menu__item",
+                                    {
+                                        'text-gray-500 hover:text-gray-800 hover:bg-gray-50 ': theme !== 'dark',
+                                        'text-gray-500 hover:text-gray-200 hover:bg-gray-900 ': theme === 'dark',
+                                    }
                                 )}
                                 onClick={goBack}
                             >
@@ -129,7 +142,13 @@ export default function Menuable(props: MenuableProps): ReactElement {
                                 className={classNames(
                                     "text-sm whitespace-nowrap",
                                     'flex flex-row flex-nowrap items-center',
-                                    "menuable__menu__item hover:bg-gray-50 ",
+                                    "menuable__menu__item",
+                                    {
+                                        'hover:bg-gray-50 ': !item.disabled && theme !== 'dark',
+                                        'hover:bg-gray-900 ': !item.disabled && theme === 'dark',
+                                        'text-gray-500 hover:text-gray-800': !item.component && (theme !== 'dark' && !item.disabled),
+                                        'text-gray-500 hover:text-gray-200': !item.component && (theme === 'dark' && !item.disabled),
+                                    },
                                     {
                                         'cursor-pointer': !item.disabled,
                                         'cursor-default': item.disabled,
@@ -147,7 +166,7 @@ export default function Menuable(props: MenuableProps): ReactElement {
                                                     className={classNames(
                                                         "menuable__menu__item__label flex-grow",
                                                         {
-                                                            'text-gray-500 hover:text-gray-800 hover:font-semibold': !item.disabled,
+                                                            'hover:font-semibold': !item.disabled,
                                                             'opacity-50': item.disabled,
                                                         },
                                                     )}

@@ -1,5 +1,15 @@
 @import "../../util/variable";
 
+.dark {
+  .textarea-group {
+    background: $dark-theme;
+    &__label {
+      color: $gray-200;
+      background: $dark-theme;
+    }
+  }
+}
+
 .textarea-group {
   @extend %col-nowrap;
 

@@ -11,6 +11,7 @@ import InfiniteScrollable from "../../components/InfiniteScrollable";
 import {Post as PostMessage} from "../../util/message";
 import LocalBackupNotification from "../../components/LocalBackupNotification";
 import {useSelectedLocalId} from "../../ducks/worker";
+import {useThemeContext} from "../../components/ThemeContext";
 
 export default function GlobalFeed(): ReactElement {
     const [limit, setLimit] = useState(20);
@@ -20,6 +21,7 @@ export default function GlobalFeed(): ReactElement {
     const loggedIn = useLoggedIn();
     const selected = useSelectedLocalId();
     const hasLocalBackup = useHasLocal();
+    const theme = useThemeContext();
 
     useEffect(() => {
         (async function onGlobalFeedMount() {
@@ -66,7 +68,13 @@ export default function GlobalFeed(): ReactElement {
                         <Post
                             key={messageId}
                             // key={i}
-                            className="rounded-xl transition-colors mb-1 hover:border-gray-300 cursor-pointer border border-gray-200"
+                            className={classNames(
+                                "rounded-xl transition-colors mb-1 cursor-pointer border",
+                                {
+                                    "hover:border-gray-300 border-gray-200": theme !== 'dark',
+                                    "hover:border-gray-700 border-gray-800": theme === 'dark',
+                                },
+                            )}
                             messageId={messageId}
                             onClick={() => gotoPost(messageId)}
                         />
@@ -84,6 +92,7 @@ function PostEditor(props: {
     const loggedIn = useLoggedIn();
     const submitting = useSubmitting();
     const draft = useDraft();
+    const theme = useThemeContext();
 
     const onPost = useCallback(async () => {
         const post: any = await dispatch(submitPost());
@@ -96,8 +105,9 @@ function PostEditor(props: {
     return (
         <Editor
             messageId=""
-            className={classNames("mb-1 transition-shadow border border-gray-200", {
-                'focus-within:border-gray-300': loggedIn,
+            className={classNames("mb-1 transition-shadow border", {
+                'focus-within:border-gray-300 border-gray-200': loggedIn && theme !== 'dark',
+                'focus-within:border-gray-700 border-gray-800': loggedIn && theme === 'dark',
             })}
             editorState={draft.editorState}
             onPost={onPost}

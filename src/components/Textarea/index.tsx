@@ -1,6 +1,7 @@
 import React, {TextareaHTMLAttributes, ReactElement, LegacyRef} from "react";
 import classNames from "classnames";
 import "./textarea.scss";
+import {useThemeContext} from "../ThemeContext";
 
 type Props = {
     ref?: LegacyRef<HTMLTextAreaElement>;
@@ -16,15 +17,18 @@ export default function Textarea(props: Props): ReactElement {
         ...textareaProps
     } = props;
 
+    const theme = useThemeContext();
+
     return (
         <div
             className={classNames(
-                'focus-within:border-gray-400 bg-white',
                 "rounded-lg textarea-group",
                 className,
                 {
-                    'bg-gray-100 text-gray-300': props.disabled,
-                    'bg-white': !props.disabled,
+                    'bg-gray-100 text-gray-300': props.disabled && theme !== 'dark',
+                    'bg-gray-900 text-gray-600': props.disabled && theme === 'dark',
+                    'focus-within:border-gray-400 ': !textareaProps.readOnly && theme !== 'dark',
+                    'focus-within:border-gray-600 border-gray-800': !textareaProps.readOnly && theme === 'dark',
                 }
             )}
         >

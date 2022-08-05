@@ -17,6 +17,7 @@ import Button from "../Button";
 import {getName} from "../../util/user";
 import {useUser} from "../../ducks/users";
 import sse from "../../util/sse";
+import {useThemeContext} from "../ThemeContext";
 
 export default function ChatMenu(): ReactElement {
     const selected = useSelectedLocalId();
@@ -217,6 +218,7 @@ function ChatMenuItem(props: {
     const params = useParams<{chatId: string}>();
     const history = useHistory();
     const [last] = useLastNMessages(props.chatId, 1);
+    const theme = useThemeContext();
 
     const isSelected = props.chatId === params.chatId;
 
@@ -296,9 +298,9 @@ function ChatMenuItem(props: {
                 {
                     !props.hideLastChat && (
                         <div
-                            className={classNames("text-sm truncate text-gray-800", {
-                                // 'text-gray-200': chat.type === 'DIRECT' && chat.senderHash,
-                                'text-gray-800': chat.type !== 'DIRECT' || !chat.senderHash,
+                            className={classNames("text-sm truncate", {
+                                'text-gray-800': theme !== 'dark',
+                                'text-gray-200': theme === 'dark',
                             })}
                         >
                             {last?.content}
@@ -309,10 +311,7 @@ function ChatMenuItem(props: {
             {
                 !props.hideLastChat && (
                     <div
-                        className={classNames("flex-grow-0 flex-shrink-0 mt-1 text-gray-500", {
-                            // 'text-gray-400': chat.type === 'DIRECT' && chat.senderHash,
-                            'text-gray-500': chat.type !== 'DIRECT' || !chat.senderHash,
-                        })}
+                        className={classNames("flex-grow-0 flex-shrink-0 mt-1 text-gray-500")}
                     >
                         {
                             last?.timestamp && (
