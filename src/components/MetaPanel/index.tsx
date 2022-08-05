@@ -83,7 +83,7 @@ function AppFooter(): ReactElement {
                 <Icon className="mr-2" fa="fab fa-github" />
                 <a
                     className="text-gray-500"
-                    href="https://github.com/autism-org"
+                    href="https://github.com/zkitter"
                     target="_blank"
                 >
                     Github
@@ -93,7 +93,7 @@ function AppFooter(): ReactElement {
                 <Icon className="mr-2" fa="fab fa-twitter" />
                 <a
                     className="text-gray-500"
-                    href="https://twitter.com/AutismDev"
+                    href="https://twitter.com/zkitterdev"
                     target="_blank"
                 >
                     Twitter
