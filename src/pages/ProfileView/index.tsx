@@ -324,7 +324,8 @@ function ProfileCard(): ReactElement {
         const accentColor = classNames({
             'bg-gray-50': theme !== 'dark',
             'bg-gray-900': theme === 'dark',
-        })
+        });
+
         return (
             <div
                 className={classNames(
@@ -342,7 +343,16 @@ function ProfileCard(): ReactElement {
                     className={`h-48 w-full object-cover flex-shrink-0 ${accentColor}`}
                 />
                 <div className="flex flex-row flew-nowrap flex-shrink-0 items-end pl-4 relative -mt-15">
-                    <div className={`h-32 w-32 object-cover rounded-full border-4 border-white ${accentColor}`} />
+                    <div
+                        className={classNames(
+                        `h-32 w-32 object-cover rounded-full border-4`,
+                            accentColor,
+                            {
+                                'border-white': theme !== 'dark',
+                                'border-gray-900': theme === 'dark',
+                            },
+                        )}
+                    />
                     <div className="flex flex-row flex-nowrap flex-grow justify-end mb-4 mx-4" />
                 </div>
                 <div className="px-4">
@@ -774,6 +784,7 @@ export function ProfileImageEditor(props: {
     const [showingFileModal, setShowingFileModal] = useState(false);
     const [url, setUrl] = useState('');
     const [loading, setLoading] = useState(false);
+    const theme = useThemeContext()
 
     const toggle = useCallback(() => {
         setShowingFileModal(!showingFileModal);
@@ -792,9 +803,13 @@ export function ProfileImageEditor(props: {
     return (
         <div
             className={classNames(
-                "h-32 w-32 -mt-15 ml-4 object-cover rounded-full border-4 border-white relative",
+                "h-32 w-32 -mt-15 ml-4 object-cover rounded-full border-4 relative",
                 "flex flex-col flex-nowrap items-center justify-center",
-                "justify-center items-center bg-gray-100",
+                "justify-center items-center",
+                {
+                    'bg-gray-200 border-white': theme !== 'dark',
+                    'bg-gray-800 border-gray-900': theme === 'dark',
+                }
             )}
         >
             {

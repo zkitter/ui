@@ -1,6 +1,7 @@
 import React, {InputHTMLAttributes, ReactElement, ReactNode} from "react";
 import classNames from "classnames";
 import "./input.scss";
+import {useThemeContext} from "../ThemeContext";
 
 type Props = {
     label?: string;
@@ -17,6 +18,8 @@ export default function Input(props: Props): ReactElement {
         ...inputProps
     } = props;
 
+    const theme = useThemeContext();
+
     return (
         <div
             className={classNames(
@@ -24,11 +27,12 @@ export default function Input(props: Props): ReactElement {
                 className,
                 {
                     'input-group--readOnly': inputProps.readOnly,
-                    'focus-within:border-gray-400 ': !inputProps.readOnly,
+                    'focus-within:border-gray-400 ': !inputProps.readOnly && theme !== 'dark',
+                    'focus-within:border-gray-600 border-gray-800': !inputProps.readOnly && theme === 'dark',
                 }
             )}
         >
-            { label && <div className="input-group__label text-gray-800">{label}</div> }
+            { label && <div className="input-group__label">{label}</div> }
             <div
                 className="w-full flex flex-row flex-nowrap items-center"
             >

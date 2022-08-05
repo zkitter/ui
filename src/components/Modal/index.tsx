@@ -27,6 +27,7 @@ export default function Modal(props: Props): ReactElement {
             className={classNames(
                 'bg-black bg-opacity-80',
                 "modal__overlay",
+                theme,
             )}
             onClick={e => {
                 e.stopPropagation();
@@ -73,11 +74,15 @@ export function ModalHeader(props: HeaderProps): ReactElement {
                             className={classNames(
                                 "flex flex-row items-center justify-center",
                                 "p-2 rounded-full opacity-50",
-                                "hover:text-black hover:opacity-100",
+                                "hover:opacity-100",
+                                {
+                                    'text-black': theme !== 'dark',
+                                    'text-white': theme === 'dark',
+                                }
                             )}
                         >
                             <Icon
-                                url={CancelSVG}
+                                fa="fas fa-times"
                                 size={1}
                                 onClick={props.onClose}
                             />
