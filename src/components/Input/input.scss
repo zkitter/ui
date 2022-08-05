@@ -7,6 +7,12 @@
       color: $gray-200;
       background: $dark-theme;
     }
+
+    input {
+      &::placeholder {
+        color: $gray-700;
+      }
+    }
   }
 }
 

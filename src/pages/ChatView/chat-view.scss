@@ -1,5 +1,11 @@
 @import "../../util/variable.scss";
 
+.dark {
+  .chat-view {
+    border-color: $gray-800;
+  }
+}
+
 .chat-view {
   @extend %row-nowrap;
   width: 100vw;

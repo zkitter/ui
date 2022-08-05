@@ -1,5 +1,27 @@
 @import "../../util/variable";
 
+.dark {
+  .setting {
+    &__panel {
+      border-color: $gray-800;
+
+      &__item {
+        @media only screen and (max-width: 768px) {
+          border-color: $gray-800;
+        }
+
+        &:hover {
+          background-color: $gray-800;
+        }
+
+        &:active {
+          background-color: $gray-700;
+        }
+      }
+    }
+  }
+}
+
 .setting {
   @extend %row-nowrap;
   max-width: 59.25rem;

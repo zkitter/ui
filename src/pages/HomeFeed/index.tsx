@@ -74,7 +74,11 @@ export default function HomeFeed(): ReactElement {
                     <div
                         className={classNames(
                             'flex flex-row flex-nowrap items-center justify-center',
-                            'py-6 px-4 border border-gray-200 rounded-xl text-sm text-gray-300',
+                            'py-6 px-4 border rounded-xl text-sm',
+                            {
+                                'border-gray-200 text-gray-300': theme !== 'dark',
+                                'border-gray-800 text-gray-700': theme === 'dark',
+                            }
                         )}
                     >
                         Nothing to see here yet

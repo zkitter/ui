@@ -11,6 +11,7 @@ import {useMeta, usePost} from "../../ducks/posts";
 import {ModerationMessageSubType, PostMessageSubType} from "../../util/message";
 import SwitchButton from "../SwitchButton";
 import {unmoderate, usePostModeration} from "../../ducks/mods";
+import {useThemeContext} from "../ThemeContext";
 
 export default function PostModerationPanel(): ReactElement {
     const [loading, setLoading] = useState(false);
@@ -19,9 +20,9 @@ export default function PostModerationPanel(): ReactElement {
     const messageId = [name, hash].join('/');
     const originPost = usePost(messageId);
     const meta = useMeta(originPost?.subtype === PostMessageSubType.Repost ? originPost.payload.reference : messageId);
-    const root = usePost(meta?.rootId || undefined);
     const threadmod = usePostModeration(meta?.rootId);
     const [unmoderated, setUnmoderated] = useState(false);
+    const theme = useThemeContext();
 
     useEffect(() => {
         (async function onPostModerationPanelMount() {
@@ -38,18 +39,32 @@ export default function PostModerationPanel(): ReactElement {
     return (
         <div
             className={classNames(
-                'flex flex-col flex-nowrap flex-grow border border-gray-200 rounded-xl mt-2',
-                'post-mod-panel',
+                'flex flex-col flex-nowrap flex-grow border rounded-xl mt-2',
+                'meta-group post-mod-panel',
+                {
+                    'border-gray-200': theme !== 'dark',
+                    'border-gray-800': theme === 'dark',
+                }
             )}
         >
-            <div className="px-4 py-2 font-bold text-lg border-b border-gray-200">
+            <div className={classNames("px-4 py-2 font-bold text-lg border-b", {
+                'border-gray-200': theme !== 'dark',
+                'border-gray-800': theme === 'dark',
+            })}>
                 Moderation
             </div>
             <div className="flex flex-col flex-nowrap py-1">
                 { loading && <Icon className="self-center my-4" url={SpinnerGIF} size={3} /> }
                 <div className="flex flex-row items-center justify-center px-4 py-2">
                     <Icon
-                        className="flex flex-row items-center justify-center flex-shrink-0 flex-grow-0 h-9 w-9 p-2 rounded-full border-2 border-black text-black"
+                        className={classNames(
+                            "flex flex-row items-center justify-center flex-shrink-0 flex-grow-0",
+                            "h-9 w-9 p-2 rounded-full border-2",
+                            {
+                                "border-black text-black": theme !== 'dark',
+                                "border-white text-white": theme === 'dark',
+                            }
+                        )}
                         fa={getFA(meta?.moderation)}
                         size={.875}
                     />
@@ -60,7 +75,16 @@ export default function PostModerationPanel(): ReactElement {
             </div>
             {
                 meta?.moderation && (
-                    <div className="flex flex-row items-center text-sm bg-gray-100 text-gray-500 px-4 py-2">
+                    <div
+                        className={classNames(
+                            "flex flex-row items-center text-sm",
+                            "px-4 py-2",
+                            {
+                                "bg-gray-100 text-gray-500": theme !== 'dark',
+                                "bg-gray-900 text-gray-500": theme === 'dark',
+                            }
+                        )}
+                    >
                         <div className="flex-grow flex-shrink w-0 mr-2">
                             You can switch off moderation for this post temporarily
                         </div>

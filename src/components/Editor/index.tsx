@@ -211,7 +211,12 @@ export default function Editor(props: Props): ReactElement {
                     props.className,
                 )}
             >
-                <div className="mt-2 mb-4 text-gray-800">
+                <div
+                    className={classNames("mt-2 mb-4", {
+                        'text-gray-800': theme !== 'dark',
+                        'text-gray-200': theme === 'dark'
+                    })}
+                >
                     Join Interrep to make a post
                 </div>
                 <Button btnType="primary" onClick={() => history.push('/onboarding/interrep')}>
@@ -230,13 +235,25 @@ export default function Editor(props: Props): ReactElement {
                     bgColor,
                     'rounded-xl',
                     props.className,
+                    {
+                        "border-gray-100": theme !== 'dark',
+                        "border-gray-800": theme === 'dark',
+                    }
                 )}
             >
-                <div className="mt-2 mb-4 text-gray-800">
+                <div
+                    className={classNames("mt-2 mb-4", {
+                        'text-gray-800': theme !== 'dark',
+                        'text-gray-200': theme === 'dark'
+                    })}
+                >
                     Connect to a wallet to make a post
                 </div>
                 <Web3Button
-                    className={classNames("rounded-xl border border-gray-100")}
+                    className={classNames("rounded-xl border", {
+                        "border-gray-100": theme !== 'dark',
+                        "border-gray-800": theme === 'dark',
+                    })}
                 />
             </div>
         )

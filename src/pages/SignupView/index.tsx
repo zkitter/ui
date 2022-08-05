@@ -32,6 +32,7 @@ import MetamaskSVG from "../../../static/icons/metamask-fox.svg";
 import ZKPRSVG from "../../../static/icons/zkpr-logo.svg";
 import SpinnerGIF from "../../../static/icons/spinner.gif";
 import Avatar, {Username} from "../../components/Avatar";
+import {useThemeContext} from "../../components/ThemeContext";
 
 export enum ViewType {
     welcome,
@@ -353,8 +354,7 @@ function CreateIdentityView(props: { setViewType: (v: ViewType) => void}): React
     const dispatch = useDispatch();
     const account = useWeb3Account();
     const user = useUser(account);
-    const history = useHistory();
-    const identities = useIdentities();
+    const theme = useThemeContext();
 
     const createIdentity = useCallback(async () => {
         try {
@@ -386,7 +386,10 @@ function CreateIdentityView(props: { setViewType: (v: ViewType) => void}): React
             <div className="my-4">
                 Once your click the button below, your wallet should prompt you to sign the following message:
             </div>
-            <div className="my-2 font-semibold text-sm p-2 bg-gray-50 rounded">
+            <div className={classNames("my-2 font-semibold text-sm p-2 rounded", {
+                'bg-gray-50': theme !== 'dark',
+                'bg-gray-900': theme === 'dark',
+            })}>
                 {`Sign this message to generate a GUN key pair with key nonce: ${nonce}`}
             </div>
             { errorMessage && <span className="text-red-500 text-sm my-2 text-center">{errorMessage}</span>}
@@ -412,6 +415,7 @@ function UpdateTxView(props: { setViewType: (v: ViewType) => void}): ReactElemen
     const pendingTx = usePendingCreateTx();
     const user = useUser(account);
     const selected = useSelectedLocalId();
+    const theme = useThemeContext();
 
     useEffect(() => {
         (async () => {
@@ -468,7 +472,10 @@ function UpdateTxView(props: { setViewType: (v: ViewType) => void}): ReactElemen
                 Once your click the button below, your wallet will prompt you to create a proof that your wallet owns the new identity by signing the following message:
             </div>
             {   !!hash && (
-                <div className="my-2 font-semibold text-sm p-2 bg-gray-50 rounded break-all">
+                <div className={classNames("my-2 font-semibold text-sm p-2 rounded break-all", {
+                    'bg-gray-50': theme !== 'dark',
+                    'bg-gray-900': theme === 'dark',
+                })}>
                     {hash}
                 </div>
             )}

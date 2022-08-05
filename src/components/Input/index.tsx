@@ -28,7 +28,8 @@ export default function Input(props: Props): ReactElement {
                 {
                     'input-group--readOnly': inputProps.readOnly,
                     'focus-within:border-gray-400 ': !inputProps.readOnly && theme !== 'dark',
-                    'focus-within:border-gray-600 border-gray-800': !inputProps.readOnly && theme === 'dark',
+                    'focus-within:border-gray-600': !inputProps.readOnly && theme === 'dark',
+                    'border-gray-800': theme === 'dark',
                 }
             )}
         >

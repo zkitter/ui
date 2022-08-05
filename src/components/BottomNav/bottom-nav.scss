@@ -1,11 +1,21 @@
 @import "../../util/variable";
 
+.dark {
+  .bottom-nav {
+    background-color: $dark-theme;
+
+    @media only screen and (max-width: 768px) {
+      border-color: $gray-800;
+    }
+  }
+}
+
 .bottom-nav {
   display: none;
   position: fixed;
   bottom: 0;
   width: 100%;
-  background-color: $white;
+  background-color: $light-theme;
   z-index: 900;
 
   @media only screen and (max-width: 768px) {

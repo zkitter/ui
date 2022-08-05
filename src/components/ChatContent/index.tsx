@@ -16,7 +16,6 @@ import {useDispatch} from "react-redux";
 import {findProof} from "../../util/merkle";
 import {Strategy, ZkIdentity} from "@zk-kit/identity";
 import {Chat} from "../../util/zkchat";
-import Button from "../Button";
 
 export default function ChatContent(): ReactElement {
     const { chatId } = useParams<{chatId: string}>();

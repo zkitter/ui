@@ -3,7 +3,6 @@ import classNames from "classnames";
 import "./setting.scss";
 import {Redirect, Route, Switch, useHistory, useLocation} from "react-router";
 import Icon from "../../components/Icon";
-import Checkbox from "../../components/Checkbox";
 import Avatar from "../../components/Avatar";
 import {useDispatch} from "react-redux";
 import {fetchAddressByName, useUser} from "../../ducks/users";
