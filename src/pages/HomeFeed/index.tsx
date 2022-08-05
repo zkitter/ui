@@ -14,6 +14,7 @@ import NotificationBox from "../../components/NotificationBox";
 import Button from "../../components/Button";
 import LocalBackupNotification from "../../components/LocalBackupNotification";
 import {useSelectedLocalId} from "../../ducks/worker";
+import {useThemeContext} from "../../components/ThemeContext";
 
 export default function HomeFeed(): ReactElement {
     const [limit, setLimit] = useState(20);
@@ -21,9 +22,8 @@ export default function HomeFeed(): ReactElement {
     const [order, setOrder] = useState<string[]>([]);
     const [fetching, setFetching] = useState(false);
     const dispatch = useDispatch();
-    const loggedIn = useLoggedIn();
-    const hasLocalBackup = useHasLocal();
     const selected = useSelectedLocalId();
+    const theme = useThemeContext();
 
     useEffect(() => {
         (async function onGlobalFeedMount() {
@@ -87,7 +87,13 @@ export default function HomeFeed(): ReactElement {
                         <Post
                             key={messageId}
                             // key={i}
-                            className="rounded-xl transition-colors mb-1 hover:border-gray-300 cursor-pointer border border-gray-200"
+                            className={classNames(
+                                "rounded-xl transition-colors mb-1 cursor-pointer border",
+                                {
+                                    "hover:border-gray-300 border-gray-200": theme !== 'dark',
+                                    "hover:border-gray-700 border-gray-800": theme === 'dark',
+                                },
+                            )}
                             messageId={messageId}
                             onClick={() => gotoPost(messageId)}
                         />
@@ -105,6 +111,7 @@ function PostEditor(props: {
     const loggedIn = useLoggedIn();
     const submitting = useSubmitting();
     const draft = useDraft();
+    const theme = useThemeContext();
 
     const onPost = useCallback(async () => {
         const post: any = await dispatch(submitPost());
@@ -117,8 +124,9 @@ function PostEditor(props: {
     return (
         <Editor
             messageId=""
-            className={classNames("mb-1 transition-shadow border border-gray-200 mobile-hidden", {
-                'focus-within:border-gray-400': loggedIn,
+            className={classNames("mb-1 transition-shadow border mobile-hidden", {
+                'focus-within:border-gray-300 border-gray-200': loggedIn && theme !== 'dark',
+                'focus-within:border-gray-700 border-gray-800': loggedIn && theme === 'dark',
             })}
             editorState={draft.editorState}
             onPost={onPost}

@@ -5,6 +5,7 @@ import classNames from "classnames";
 import Modal, {ModalContent, ModalFooter, ModalHeader} from "../Modal";
 import Button from "../Button";
 import {ModerationMessageSubType} from "../../util/message";
+import {useThemeContext} from "../ThemeContext";
 
 type Props = {
     className?: string;
@@ -21,6 +22,7 @@ export default function ModerationButton(props: Props): ReactElement {
 
     const [showingModal, showModal] = useState(false);
     const [replyType, setReplyType] = useState<ModerationMessageSubType|null>(currentType);
+    const theme = useThemeContext();
 
     useEffect(() => {
         if (onChange) onChange(replyType);
@@ -47,8 +49,11 @@ export default function ModerationButton(props: Props): ReactElement {
             )}
             <button
                 className={classNames(
-                    "flex flex-row items-center text-blue-400 font-bold",
-                    "hover:bg-blue-50",
+                    "flex flex-row items-center text-blue-300 font-bold",
+                    {
+                        'hover:bg-blue-50 hover:text-blue-400': theme !== 'dark',
+                        'hover:bg-blue-900 hover:text-blue-600': theme === 'dark',
+                    },
                     "moderation-btn",
                     className,
                 )}

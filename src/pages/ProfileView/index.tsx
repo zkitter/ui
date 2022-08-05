@@ -36,10 +36,10 @@ import Web3 from "web3";
 import {getHandle, getName} from "../../util/user";
 import config from "../../util/config";
 import {verifyTweet} from "../../util/twitter";
-import {ViewType} from "../ConnectTwitterView";
 import {useSelectedLocalId} from "../../ducks/worker";
 import FileUploadModal from "../../components/FileUploadModal";
 import SpinnerGIF from "../../../static/icons/spinner.gif";
+import {useThemeContext} from "../../components/ThemeContext";
 
 let t: any = null;
 
@@ -51,12 +51,10 @@ export default function ProfileView(): ReactElement {
     const [order, setOrder] = useState<string[]>([]);
     const history = useHistory();
     const loc = useLocation();
-    const loggedIn = useLoggedIn();
     const selected = useSelectedLocalId();
     const subpath = loc.pathname.split('/')[2];
-    const user = useUser(name);
     const [username, setUsername] = useState('');
-
+    const theme = useThemeContext();
     const dispatch = useDispatch();
 
     useEffect(() => {
@@ -129,8 +127,12 @@ export default function ProfileView(): ReactElement {
             <div
                 className={classNames(
                     'flex flex-row flex-nowrap items-center justify-center',
-                    'border border-gray-200 rounded-xl mb-1',
+                    'border rounded-xl mb-1',
                     'profile-menu',
+                    {
+                        'border-gray-200': theme !== 'dark',
+                        'border-gray-800': theme === 'dark',
+                    }
                 )}
             >
                 <ProfileMenuButton
@@ -191,6 +193,7 @@ function PostList(props: { list: string[]; fetching: boolean }): ReactElement {
     const [username, setUsername] = useState('');
     const user = useUser(username);
     const dispatch = useDispatch();
+    const theme = useThemeContext();
 
     useEffect(() => {
         (async () => {
@@ -208,7 +211,11 @@ function PostList(props: { list: string[]; fetching: boolean }): ReactElement {
             <div
                 className={classNames(
                     'flex flex-row flex-nowrap items-center justify-center',
-                    'py-6 px-4 border border-gray-200 rounded-xl text-sm text-gray-300',
+                    'py-6 px-4 border rounded-xl text-sm',
+                    {
+                        'border-gray-200 text-gray-300': theme !== 'dark',
+                        'border-gray-800 text-gray-700': theme === 'dark',
+                    }
                 )}
             >
                 User is blocked
@@ -221,7 +228,11 @@ function PostList(props: { list: string[]; fetching: boolean }): ReactElement {
             <div
                 className={classNames(
                     'flex flex-row flex-nowrap items-center justify-center',
-                    'py-6 px-4 border border-gray-200 rounded-xl text-sm text-gray-300',
+                    'py-6 px-4 border rounded-xl text-sm',
+                    {
+                        'border-gray-200 text-gray-300': theme !== 'dark',
+                        'border-gray-800 text-gray-700': theme === 'dark',
+                    }
                 )}
             >
                 Nothing to see here yet
@@ -236,7 +247,13 @@ function PostList(props: { list: string[]; fetching: boolean }): ReactElement {
                     return (
                         <Post
                             key={messageId}
-                            className="rounded-xl transition-colors mb-1 hover:border-gray-300 cursor-pointer border border-gray-200"
+                            className={classNames(
+                                "rounded-xl transition-colors mb-1 cursor-pointer border",
+                                {
+                                    "hover:border-gray-300 border-gray-200": theme !== 'dark',
+                                    "hover:border-gray-700 border-gray-800": theme === 'dark',
+                                },
+                            )}
                             messageId={messageId}
                             onClick={() => gotoPost(messageId)}
                         />
@@ -260,6 +277,7 @@ function ProfileCard(): ReactElement {
     const history = useHistory();
     const twitterHandle = useConnectedTwitter(username);
     const [verifiedTwitter, setVerifiedTwitter] = useState(false);
+    const theme = useThemeContext();
 
     useEffect(() => {
         (async () => {
@@ -303,34 +321,42 @@ function ProfileCard(): ReactElement {
     }, [user?.meta?.followed]);
 
     if (!user) {
+        const accentColor = classNames({
+            'bg-gray-50': theme !== 'dark',
+            'bg-gray-900': theme === 'dark',
+        })
         return (
             <div
                 className={classNames(
                     "flex flex-col flex-nowrap",
-                    "rounded-xl border border-gray-200",
-                    "overflow-hidden bg-white mb-1",
+                    "rounded-xl border",
+                    "overflow-hidden mb-1",
                     'profile-card',
+                    {
+                        'border-gray-200': theme !== 'dark',
+                        'border-gray-800': theme == 'dark',
+                    }
                 )}
             >
                 <div
-                    className="h-48 w-full object-cover flex-shrink-0 bg-gray-50"
+                    className={`h-48 w-full object-cover flex-shrink-0 ${accentColor}`}
                 />
                 <div className="flex flex-row flew-nowrap flex-shrink-0 items-end pl-4 relative -mt-15">
-                    <div className="h-32 w-32 object-cover rounded-full border-4 border-white bg-gray-50" />
+                    <div className={`h-32 w-32 object-cover rounded-full border-4 border-white ${accentColor}`} />
                     <div className="flex flex-row flex-nowrap flex-grow justify-end mb-4 mx-4" />
                 </div>
                 <div className="px-4">
-                    <div className="font-bold text-lg w-36 h-6 bg-gray-50" />
-                    <div className="text-sm text-gray-500 w-36 h-6 bg-gray-50 mt-1" />
+                    <div className={`font-bold text-lg w-36 h-6 ${accentColor}`} />
+                    <div className={`text-sm text-gray-500 w-36 h-6 ${accentColor} mt-1`} />
                 </div>
-                <div className="mx-4 my-3 text-light w-60 h-6 bg-gray-50" />
+                <div className={`mx-4 my-3 text-light w-60 h-6 ${accentColor}`} />
                 <div className="px-4" />
                 <div className="p-4 flex flex-row flex-nowrap item-center text-light">
                     <div className="flex flex-row flex-nowrap item-center">
-                        <div className="font-semibold w-36 h-6 bg-gray-50" />
+                        <div className={`font-semibold w-36 h-6 ${accentColor}`} />
                     </div>
                     <div className="flex flex-row flex-nowrap item-center ml-4">
-                        <div className="font-semibold w-36 h-6 bg-gray-50" />
+                        <div className={`font-semibold w-36 h-6 ${accentColor}`} />
                     </div>
                 </div>
             </div>
@@ -369,15 +395,26 @@ function ProfileCard(): ReactElement {
         <div
             className={classNames(
                 "flex flex-col flex-nowrap",
-                "rounded-xl border border-gray-200",
-                "overflow-hidden bg-white mb-1",
+                "rounded-xl border",
+                "overflow-hidden mb-1",
                 'profile-card',
+                {
+                    'border-gray-200': theme !== 'dark',
+                    'border-gray-800': theme == 'dark',
+                }
             )}
         >
             { showingEditor && <ProfileEditor onClose={() => showProfileEditor(false)} /> }
             {
                 !user.coverImage || user.meta?.blocked
-                    ? <div className="h-48 w-full object-cover flex-shrink-0 bg-gray-200" />
+                    ? (
+                        <div
+                            className={classNames("h-48 w-full object-cover flex-shrink-0", {
+                                'bg-gray-200': theme !== 'dark',
+                                'bg-gray-800': theme === 'dark',
+                            })}
+                        />
+                    )
                     : (
                         <img
                             className="h-48 w-full object-cover flex-shrink-0"
@@ -388,10 +425,20 @@ function ProfileCard(): ReactElement {
             <div className="flex flex-row flew-nowrap flex-shrink-0 items-end pl-4 relative -mt-15">
                 {
                     user.meta?.blocked
-                        ? <div className="h-32 w-32 object-cover rounded-full border-4 border-white bg-gray-200" />
+                        ? (
+                            <div
+                                className={classNames("h-32 w-32 object-cover rounded-full border-4", {
+                                    'bg-gray-200 border-white': theme !== 'dark',
+                                    'bg-gray-800 border-gray-900': theme === 'dark',
+                                })}
+                            />
+                        )
                         : (
                             <Avatar
-                                className="h-32 w-32 rounded-full border-4 border-white bg-gray-100"
+                                className={classNames("h-32 w-32 rounded-full border-4", {
+                                    'bg-gray-100 border-white': theme !== 'dark',
+                                    'bg-gray-900 border-gray-900': theme === 'dark',
+                                })}
                                 address={user.address}
                             />
                         )

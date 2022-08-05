@@ -45,6 +45,10 @@ $red-25: mix($red, $white, 2.5);
   font-family: 'Roboto Mono', monospace;
 }
 
+.bg-dark {
+  background-color: $dark-theme;
+}
+
 .bg-primary-color {
   background-color: $primary-color;
 }

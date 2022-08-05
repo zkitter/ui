@@ -5,6 +5,7 @@ import {Post as PostMessage, PostMessageSubType} from "../../util/message";
 import classNames from "classnames";
 import {useDispatch} from "react-redux";
 import {useLoggedIn} from "../../ducks/web3";
+import {useThemeContext} from "../ThemeContext";
 
 type Props = {
     level?: number;
@@ -25,6 +26,7 @@ export default function ParentThread(props: Props): ReactElement {
     const gotoPost = useGoToPost();
     const dispatch = useDispatch();
     const loggedIn = useLoggedIn();
+    const theme = useThemeContext();
 
     useEffect(() => {
         (async function onPostViewMount() {
@@ -45,7 +47,14 @@ export default function ParentThread(props: Props): ReactElement {
             />
             <Post
                 messageId={parent}
-                className={classNames("cursor-pointer hover:bg-gray-50 parent-post", props.className)}
+                className={classNames(
+                    "cursor-pointer hover:bg-gray-50 parent-post",
+                    {
+                        'hover:bg-gray-50 ': theme !== 'dark',
+                        'hover:bg-gray-900 ': theme === 'dark',
+                    },
+                    props.className,
+                )}
                 onClick={() => gotoPost(parent)}
                 onSuccessPost={props.onSuccessPost}
                 isParent

@@ -1,5 +1,19 @@
 @import "../../util/variable";
 
+
+.dark {
+  .checkbox {
+    &__wrapper {
+      input[type=checkbox]:checked + div {
+        border: 1px solid $gray-400;
+      }
+
+      input[type=checkbox]:checked + div:before {
+        background-color: $gray-200;
+      }
+    }
+  }
+}
 .checkbox {
   &__wrapper {
     position: relative;

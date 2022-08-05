@@ -32,6 +32,16 @@ export default function App(): ReactElement {
     const theme = useContext(ThemeContext);
 
     useEffect(() => {
+        const style = document.createElement('style');
+        style.innerText = `
+            :root {
+                color-scheme: ${theme};
+            }
+        `
+        document.head.appendChild(style);
+    }, [theme]);
+
+    useEffect(() => {
         (async function onAppMount() {
 
             const id: any = await dispatch(syncWorker());
@@ -98,6 +108,7 @@ export default function App(): ReactElement {
         <div
             className={classNames("flex flex-col flex-nowrap w-screen h-screen overflow-hidden app", {
                 'dark': theme === 'dark',
+                'light': theme !== 'light',
             })}
         >
             <TopNav />

@@ -6,6 +6,7 @@ import classNames from "classnames";
 import Post from "../Post";
 import {parseMessageId, Post as PostMessage} from "../../util/message";
 import {usePostModeration} from "../../ducks/mods";
+import {useThemeContext} from "../ThemeContext";
 
 type Props = {
     level?: number;
@@ -23,11 +24,11 @@ export default function Thread(props: Props): ReactElement {
     const [limit, setLimit] = useState(20);
     const [offset, setOffset] = useState(0);
     const [order, setOrder] = useState<string[]>([]);
-    const history = useHistory();
     const dispatch = useDispatch();
     const meta = useMeta(messageId);
     const modOverride = usePostModeration(meta?.rootId);
     const [end, setEnd] = useState(false);
+    const theme = useThemeContext();
 
     const fetchMore = useCallback(async (reset = false) => {
         let messageIds: any;
@@ -68,7 +69,7 @@ export default function Thread(props: Props): ReactElement {
           className={classNames('thread', props.className)}
       >
           <Post
-              className={classNames("hover:bg-gray-50 mb-0.5", props.postClassName)}
+              className={classNames("mb-0.5", props.postClassName)}
               messageId={messageId}
               onClick={props.onClick}
               onSuccessPost={props.onSuccessPost}
@@ -76,20 +77,23 @@ export default function Thread(props: Props): ReactElement {
           <div
               className={classNames(
                   'pl-4',
-                  'bg-white',
                   'thread__content',
               )}
           >
               {
                   order.map(messageId => {
                       return (
-                          <div key={messageId} className="pt-1 bg-white">
+                          <div key={messageId} className="pt-1">
                               <Thread
                                   key={messageId}
                                   level={level + 1}
                                   postClassName={classNames(
                                       "transition-colors cursor-pointer",
-                                      "border-l-4 bg-gray-50 mr-1 hover:border-gray-300",
+                                      "border-l-4 mr-1",
+                                      {
+                                          "hover:border-gray-300 border-gray-200 bg-gray-50 ": theme !== 'dark',
+                                          "hover:border-gray-700 border-gray-800 bg-gray-900": theme === 'dark',
+                                      },
                                   )}
                                   messageId={messageId}
                                   onClick={e => {
@@ -108,8 +112,12 @@ export default function Thread(props: Props): ReactElement {
                       <div
                           className={classNames(
                               "flex flex-row flex-nowrap items-center justify-center",
-                              "p-4 bg-white text-blue-400 hover:text-blue-300 cursor-pointer hover:underline",
-                              "border-t border-gray-100"
+                              "p-4 text-blue-400 hover:text-blue-300 cursor-pointer hover:underline",
+                              "border-t",
+                              {
+                                  "border-gray-200 bg-white": theme !== 'dark',
+                                  "border-gray-800 bg-dark": theme === 'dark',
+                              },
                           )}
                           onClick={showMore}
                       >

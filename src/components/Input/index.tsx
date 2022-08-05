@@ -20,7 +20,6 @@ export default function Input(props: Props): ReactElement {
     return (
         <div
             className={classNames(
-                'bg-white',
                 "rounded-lg input-group",
                 className,
                 {

@@ -51,6 +51,7 @@ import {useSelectedLocalId, useWorkerUnlocked} from "../../ducks/worker";
 import {Identity} from "../../serviceWorkers/identity";
 import {usePostModeration} from "../../ducks/mods";
 import copy from 'copy-to-clipboard';
+import {useThemeContext} from "../ThemeContext";
 
 type Props = {
     messageId: string;
@@ -165,6 +166,7 @@ export function ExpandedPost(props: Props & {
     const parentUser = useUser(parentCreator);
     const meta = useMeta(props.messageId);
     const zkGroup = useZKGroupFromPost(props.messageId);
+    const theme = useThemeContext();
 
     const gotoUserProfile = useCallback((e: any) => {
         if (!user || !post?.creator) return;
@@ -181,7 +183,6 @@ export function ExpandedPost(props: Props & {
             className={classNames(
                 'flex flex-col flex-nowrap',
                 'py-3 px-4',
-                'bg-white',
                 'post',
                 props.className,
             )}
@@ -273,7 +274,10 @@ export function ExpandedPost(props: Props & {
                 </div>
                 <PostFooter
                     messageId={messageId}
-                    className="mt-2 pt-3 border-t border-gray-200 w-full"
+                    className={classNames("mt-2 pt-3 border-t w-full", {
+                        'border-gray-200': theme !== 'dark',
+                        'border-gray-800': theme === 'dark',
+                    })}
                     onSuccessPost={props.onSuccessPost}
                     large
                 />
@@ -324,7 +328,6 @@ export function RegularPost(props: Props & {
             className={classNames(
                 'flex flex-col flex-nowrap',
                 'py-3 px-4',
-                'bg-white',
                 'post',
                 props.className,
             )}
@@ -348,7 +351,7 @@ export function RegularPost(props: Props & {
             <div className="flex flex-row flex-nowrap">
                 <div>
                     <Avatar
-                        className="mr-3 w-12 h-12 border"
+                        className="mr-3 w-12 h-12"
                         address={user?.username}
                         incognito={post.creator === ''}
                         group={zkGroup}
@@ -502,6 +505,7 @@ function PostFooter(props: {
     const [showReply, setShowReply] = useState(false);
     const modOverride = usePostModeration(meta?.rootId);
     const commentDisabled = useCommentDisabled(meta?.rootId);
+    const theme = useThemeContext();
 
     const onLike = useCallback(async () => {
         const mod: any = await dispatch(submitModeration(messageId, ModerationMessageSubType.Like));
@@ -551,7 +555,10 @@ function PostFooter(props: {
                 />
             )}
             <PostButton
-                iconClassName="hover:bg-blue-50 hover:text-blue-400"
+                iconClassName={classNames("", {
+                    'hover:bg-blue-50 hover:text-blue-400': theme !== 'dark',
+                    'hover:bg-blue-900 hover:text-blue-600': theme === 'dark',
+                })}
                 fa={getCommentIconFA(meta?.moderation)}
                 disabled={(!modOverride?.unmoderated && commentDisabled) || isTweet}
                 count={meta.replyCount}
@@ -564,8 +571,9 @@ function PostFooter(props: {
                 })}
                 iconClassName={classNames(
                     {
-                        "hover:bg-green-50 hover:text-green-400": loggedIn,
                         "text-green-400": meta.reposted,
+                        'hover:bg-green-50 hover:text-green-400': loggedIn && theme !== 'dark',
+                        'hover:bg-green-900 hover:text-green-600': loggedIn && theme === 'dark',
                     },
                 )}
                 fa="fas fa-retweet"
@@ -580,8 +588,9 @@ function PostFooter(props: {
                 })}
                 iconClassName={classNames(
                     {
-                        "hover:bg-red-50 hover:text-red-400": loggedIn,
                         "text-red-400": meta.liked,
+                        'hover:bg-red-50 hover:text-red-400': loggedIn && theme !== 'dark',
+                        'hover:bg-red-900 hover:text-red-600': loggedIn && theme === 'dark',
                     },
                 )}
                 fa={classNames({
@@ -658,11 +667,11 @@ function PostMenu(props: Props & {
     const meta = useMeta(props.messageId);
     const user = useUser(post?.creator);
     const dispatch = useDispatch();
-    const account = useAccount();
     const unlocked = useWorkerUnlocked();
     const selected = useSelectedLocalId();
     const isCurrentUser = selected?.type === 'gun' ? user?.username === selected.address : false;
     const [opened, setOpened] = useState(false);
+    const theme = useThemeContext();
 
     const onBlock = useCallback(() => {
         if (!user) return;
@@ -805,7 +814,10 @@ function PostMenu(props: Props & {
             onOpen={() => setOpened(true)}
         >
             <Icon
-                className="text-gray-400 hover:text-gray-800"
+                className={classNames({
+                    "text-gray-400 hover:text-gray-800": theme !== 'dark',
+                    "text-gray-600 hover:text-gray-200": theme === 'dark',
+                })}
                 fa="fas fa-ellipsis-h"
             />
         </Menuable>
@@ -814,36 +826,55 @@ function PostMenu(props: Props & {
 }
 
 export function LoadingPost(props: Props): ReactElement {
+    const theme = useThemeContext();
+
+    const bgColor = classNames({
+        'bg-white': theme !== 'dark',
+        'bg-dark': theme === 'dark',
+    });
+
+    const accentColor = classNames({
+        'bg-gray-50': theme !== 'dark',
+        'bg-gray-900': theme === 'dark',
+    });
+
     if (props.expand) {
         return (
             <div
                 className={classNames(
                     'flex flex-col flex-nowrap',
                     'py-3 px-4',
-                    'bg-white',
+                    bgColor,
                     'post',
                     props.className,
                 )}
             >
                 <div className="flex flex-row flex-nowrap flex-grow-0 flex-shrink-0">
-                    <div className="mr-3 w-12 h-12 flex-shrink-0 rounded-full bg-gray-50"/>
+                    <div className={`mr-3 w-12 h-12 flex-shrink-0 rounded-full ${accentColor}`}/>
                     <div className="flex flex-col flex-nowrap items-start text-light w-full">
-                        <div className="font-bold text-base mr-1 w-24 h-6 bg-gray-50"/>
-                        <div className="text-gray-400 mr-1 mt-0.5 w-24 h-6 bg-gray-50"/>
+                        <div className={`font-bold text-base mr-1 w-24 h-6 ${accentColor}`}/>
+                        <div className={`text-gray-400 mr-1 mt-0.5 w-24 h-6 ${accentColor}`}/>
                     </div>
                     <div className="flex flex-row flex-nowrap flex-grow flex-shrink justify-end">
                     </div>
                 </div>
                 <div className="flex flex-col flex-nowrap items-start flex-grow flex-shrink">
-                    <div className="mt-4 mb-2 text-xl w-24 h-6 bg-gray-50"/>
+                    <div className={`mt-4 mb-2 text-xl w-24 h-6 ${accentColor}`}/>
                     <div className="flex flex-row flex-nowrap items-center text-light w-full">
-                        <div className="text-gray-500 my-2w-24 h-6 bg-gray-50"/>
+                        <div className={`text-gray-500 my-2w-24 h-6 ${accentColor}`}/>
                     </div>
                     <div
-                        className="flex flex-row flex-nowrap items-center mt-2 pt-3 border-t border-gray-100 w-full post__footer">
-                        <div className="bg-gray-50 w-12 h-6 mr-8"/>
-                        <div className="bg-gray-50 w-12 h-6 mr-8"/>
-                        <div className="bg-gray-50 w-12 h-6 mr-8"/>
+                        className={classNames(
+                            "flex flex-row flex-nowrap items-center mt-2 pt-3 border-t",
+                            "w-full post__footer",
+                            {
+                                'border-gray-100': theme !== 'dark',
+                                'border-gray-900': theme === 'dark',
+                            }
+                        )}>
+                        <div className={`${accentColor} w-12 h-6 mr-8`}/>
+                        <div className={`${accentColor} w-12 h-6 mr-8`}/>
+                        <div className={`${accentColor} w-12 h-6 mr-8`}/>
                     </div>
                 </div>
             </div>
@@ -855,25 +886,25 @@ export function LoadingPost(props: Props): ReactElement {
             className={classNames(
                 'flex flex-row flex-nowrap',
                 'py-3 px-4',
-                'bg-white',
+                bgColor,
                 'post',
                 props.className,
             )}
         >
-            <div className="mr-3 w-12 h-12 rounded-full bg-gray-50"/>
+            <div className={`mr-3 w-12 h-12 rounded-full ${accentColor}`}/>
             <div className="flex flex-col flex-nowrap items-start flex-grow flex-shrink">
                 <div className="flex flex-row flex-nowrap items-center text-light w-full">
-                    <div className="font-bold text-base mr-1 w-24 h-6 bg-gray-50"/>
-                    <div className="text-gray-400 mr-1 w-24 h-6 bg-gray-50"/>
-                    <div className="text-gray-400 w-24 h-6 bg-gray-50"/>
+                    <div className={`font-bold text-base mr-1 w-24 h-6 ${accentColor}`}/>
+                    <div className={`text-gray-400 mr-1 w-24 h-6 ${accentColor}`}/>
+                    <div className={`text-gray-400 w-24 h-6 ${accentColor}`}/>
                     <div className="flex flex-row flex-nowrap flex-grow flex-shrink justify-end">
                     </div>
                 </div>
-                <div className="text-light mt-1 mb-2 w-80 h-6 bg-gray-50"/>
+                <div className={`text-light mt-1 mb-2 w-80 h-6 ${accentColor}`}/>
                 <div className="flex flex-row flex-nowrap items-center post__footer">
-                    <div className="bg-gray-50 w-8 h-4 mr-8 ml-1"/>
-                    <div className="bg-gray-50 w-8 h-4 mr-8"/>
-                    <div className="bg-gray-50 w-8 h-4 mr-8"/>
+                    <div className={`${accentColor} w-8 h-4 mr-8 ml-1`}/>
+                    <div className={`${accentColor} w-8 h-4 mr-8`}/>
+                    <div className={`${accentColor} w-8 h-4 mr-8`}/>
                 </div>
             </div>
         </div>

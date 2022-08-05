@@ -1,5 +1,19 @@
 @import "../../util/variable";
 
+.dark {
+  .public-DraftEditorPlaceholder-root {
+    color: $gray-700;
+  }
+
+  .editor {
+    &__post-menu {
+      &:hover {
+        background-color: transparent;
+      }
+    }
+  }
+}
+
 .public-DraftEditorPlaceholder-root {
   position: relative;
   z-index: 100;
@@ -150,5 +164,11 @@ div.public-DraftEditor-content {
         bottom: 2.75rem;
       }
     }
+  }
+}
+
+.dark {
+  .editor {
+
   }
 }
