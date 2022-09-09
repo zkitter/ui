@@ -17,7 +17,7 @@ import {ThemeProvider} from "./components/ThemeContext";
     ReactDOM.render(
         <Provider store={store}>
             <BrowserRouter>
-                <ThemeProvider value="dark" >
+                <ThemeProvider>
                     <App />
                 </ThemeProvider>
             </BrowserRouter>

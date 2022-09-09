@@ -8,6 +8,7 @@ let json: {
     interrepAPI?: string;
     baseUrl?: string;
     gunPeers?: string[];
+    appLogo?: string;
 } = {};
 
 try {
@@ -22,6 +23,7 @@ try {
 
 const web3HttpProvider = json.web3HttpProvider || process.env.WEB3_HTTP_PROVIDER;
 const ensResolver = json.ensResolver || process.env.ENS_RESOLVER;
+const appLogo = json.appLogo || process.env.APP_LOGO;
 const arbitrumHttpProvider = json.arbitrumHttpProvider || process.env.ARB_HTTP_PROVIDER;
 const arbitrumRegistrar = json.arbitrumRegistrar || process.env.ARB_REGISTRAR;
 const arbitrumExplorer = json.arbitrumExplorer || process.env.ARB_EXPLORER;
@@ -64,6 +66,7 @@ const config = {
     arbitrumRegistrar,
     arbitrumExplorer,
     baseUrl,
+    appLogo,
 };
 
 export default config;

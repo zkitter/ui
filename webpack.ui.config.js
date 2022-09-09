@@ -20,6 +20,8 @@ const envPlugin = new webpack.EnvironmentPlugin({
     'ARB_REGISTRAR': '',
     'ARB_EXPLORER': '',
     'GUN_PEERS': [],
+    'APP_TITLE': '',
+    'APP_LOGO': '',
 });
 
 const rules = [
@@ -127,10 +129,17 @@ module.exports = [
                     from: "./static/manifest.json",
                     to: __dirname + '/build/manifest.json',
                 },
+                {
+                    from: process.env.APP_LOGO,
+                    to: __dirname + '/build/applogo.svg',
+                },
             ]),
             new HtmlWebpackPlugin({
-                template: `./static/index.html`,
+                template: './static/index.template.ejs',
                 filename: `index.html`,
+                title: process.env.APP_TITLE,
+                favicon: process.env.FAVICON,
+                inject: true,
             }),
         ],
         devServer: {
