@@ -15,19 +15,14 @@ import Web3 from "web3";
 import {getName} from "../../util/user";
 import {useSelectedLocalId} from "../../ducks/worker";
 import {fetchNameByAddress} from "../../util/web3";
-import Logo from "../../../static/icons/favicon.png";
-// import Logo from "../../../static/icons/zkitter_logo.svg";
+// import Logo from "../../../static/icons/applogo.svg";
 import Modal from "../Modal";
 import MetaPanel from "../MetaPanel";
 import {useThemeContext} from "../ThemeContext";
+import config from "../../util/config";
 
 export default function TopNav(): ReactElement {
-    const account = useAccount();
-    const loggedIn = useGunLoggedIn();
-    const semaphoreId = useSemaphoreID();
     const theme = useThemeContext();
-
-    const showRegisterInterrepButton = !loggedIn && account && semaphoreId.commitment && !semaphoreId.identityPath;
 
     return (
         <div
@@ -149,7 +144,7 @@ function DefaultHeaderGroup() {
             )}
         >
             <Icon
-                url={Logo}
+                url="/applogo.svg"
                 size={2}
             />
         </div>
@@ -183,7 +178,7 @@ function GlobalHeaderGroup() {
             )}
         >
             <Icon
-                url={Logo}
+                url="/applogo.svg"
                 size={2}
             />
             <TopNavContextButton />

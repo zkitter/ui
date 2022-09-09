@@ -1,5 +1,5 @@
 import React, {ReactElement, useCallback, useContext, useEffect} from "react";
-import {Redirect, Route, RouteProps, Switch} from "react-router";
+import {Redirect, Route, RouteProps, Switch, useHistory} from "react-router";
 import TopNav from "../../components/TopNav";
 import GlobalFeed from "../GlobalFeed";
 import "./app.scss";
