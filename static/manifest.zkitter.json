@@ -1,0 +1,14 @@
+{
+  "name": "Zkitter - Anonymous Social Network",
+  "short_name": "Zkitter",
+  "lang": "en-US",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "white",
+  "theme_color": "white",
+  "icons": [{
+    "src": "/favicon.png",
+    "sizes": "160x160",
+    "type": "image/png"
+  }]
+}

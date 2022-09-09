@@ -180,7 +180,7 @@ function VerifyView(props: {
     const history = useHistory();
     const user = useUser(selected?.address);
     const existingUser = useUser(existing)
-    const status = `I am verifying my account on #autism\nhttps://auti.sm/${account}/`;
+    const status = `I am verifying my account on #zkitter\nhttps://zkitter.com/${account}/`;
 
     useEffect(() => {
         (async () => {

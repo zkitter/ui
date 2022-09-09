@@ -73,7 +73,7 @@ function AppFooter(): ReactElement {
                 <Icon className="mr-2" fa="fas fa-book" />
                 <a
                     className="text-gray-500"
-                    href="https://docs.auti.sm"
+                    href="https://docs.zkitter.com"
                     target="_blank"
                 >
                     Docs

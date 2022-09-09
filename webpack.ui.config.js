@@ -122,11 +122,11 @@ module.exports = [
             }),
             new CopyPlugin([
                 {
-                    from: "./static/icons/favicon.png",
+                    from: process.env.FAVICON,
                     to: __dirname + '/build/favicon.png',
                 },
                 {
-                    from: "./static/manifest.json",
+                    from: process.env.MANIFEST,
                     to: __dirname + '/build/manifest.json',
                 },
                 {
@@ -138,7 +138,6 @@ module.exports = [
                 template: './static/index.template.ejs',
                 filename: `index.html`,
                 title: process.env.APP_TITLE,
-                favicon: process.env.FAVICON,
                 inject: true,
             }),
         ],
