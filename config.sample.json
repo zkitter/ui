@@ -1,5 +1,11 @@
 {
   "web3HttpProvider": "https://mainnet.infura.io/v3/<project-id>",
-  "ensResolver": "",
-  "indexerAPI": "http://localhost:3000"
+  "arbitrumHttpProvider": "https://rinkeby.arbitrum.io/rpc",
+  "arbitrumRegistrar": "0x4e3f9c0374816C80B1f1c8D2D49b3cD68460330b",
+  "arbitrumExplorer": "https://arbiscan.io/",
+  "ensResolver": "0x4976fb03C32e5B8cfe2b6cCB31c09Ba78EBaBa41",
+  "indexerAPI": "http://localhost:3000",
+  "interrepAPI": "https://kovan.interrep.link/api",
+  "baseUrl": "http://127.0.0.1:8080",
+  "gunPeers": []
 }
