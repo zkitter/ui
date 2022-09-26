@@ -98,6 +98,9 @@
     "webpack-dev-server": "^3.9.0",
     "webpack-node-externals": "^1.7.2"
   },
+  "engines": {
+    "node": "<15"
+  },
   "author": "0xTsukino",
   "license": "ISC"
 }
