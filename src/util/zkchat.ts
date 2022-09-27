@@ -1,5 +1,5 @@
 import EC from "elliptic";
-import {genExternalNullifier, RLNFullProof, RLN, MerkleProof} from "@zk-kit/protocols";
+import {genExternalNullifier, RLNFullProof, RLN, MerkleProof, Semaphore, SemaphoreFullProof} from "@zk-kit/protocols";
 import crypto from "crypto";
 import {ZkIdentity} from "@zk-kit/identity";
 import config from "./config";
@@ -7,6 +7,8 @@ import EventEmitter2, {ConstructorOptions} from "eventemitter2";
 import {decrypt, encrypt} from "./encrypt";
 import {base64ToArrayBuffer, generateECDHKeyPairFromhex, sha256} from "./crypto";
 import {safeJsonParse} from "./misc";
+import {Identity} from "@semaphore-protocol/identity";
+import {findProof} from "./merkle";
 
 export enum ChatMessageType {
     DIRECT = 'DIRECT',
@@ -27,6 +29,9 @@ export type DirectChatMessage = {
         epoch: string;
         x_share: string;
         group_id?: string;
+    };
+    semaphore?: SemaphoreFullProof & {
+        group_id: string;
     };
     receiver: {
         address?: string;
@@ -52,6 +57,9 @@ export type PublicRoomChatMessage = {
     rln?: RLNFullProof & {
         epoch: string;
         x_share: string;
+        group_id: string;
+    };
+    semaphore?: SemaphoreFullProof & {
         group_id: string;
     };
     receiver: {
@@ -117,6 +125,9 @@ type createMessageBundleOptions = {
         x_share: string;
         group_id: string;
     };
+    semaphore?: SemaphoreFullProof & {
+        group_id: string;
+    };
 } | {
     type: 'PUBLIC_ROOM',
     sender: {
@@ -154,6 +165,7 @@ export const createMessageBundle = async (options: createMessageBundleOptions) =
             sender: options.sender,
             receiver: options.receiver,
             rln: options.rln,
+            semaphore: options.semaphore,
             ciphertext: options.ciphertext || '',
         };
         const messageId = await deriveMessageId(chat);
@@ -210,7 +222,7 @@ export const getEpoch = (): string => {
 type ZKChatIdentity = {
     address: string;
     ecdh: { pub: string, priv: string };
-    zk: ZkIdentity;
+    zk: ZkIdentity | Identity;
 }
 
 export class ZKChatClient extends EventEmitter2 {
@@ -655,27 +667,68 @@ export class ZKChatClient extends EventEmitter2 {
         });
 
         if (chat.senderHash) {
-            const epoch = getEpoch();
-            const externalNullifier = genExternalNullifier(epoch);
-            const signal = bundle!.messageId;
-            const rlnIdentifier = await sha256('zkchat');
-            const xShare = RLN.genSignalHash(signal);
-            const witness = RLN.genWitness(
-                identitySecretHash!,
-                merkleProof!,
-                externalNullifier,
-                signal,
-                BigInt('0x' + rlnIdentifier),
-            );
-            const proof = await RLN.genProof(
-                witness,
-                `${config.indexerAPI}/circuits/rln/wasm`,
-                `${config.indexerAPI}/circuits/rln/zkey`,
-            );
-            bundle!.rln = {
-                ...proof,
-                x_share: xShare.toString(),
-                epoch,
+            const zkIdentity = this.identity!.zk;
+            // @ts-ignore
+            if (typeof zkIdentity.getSecretHash === 'function') {
+                const epoch = getEpoch();
+                const externalNullifier = genExternalNullifier(epoch);
+                const signal = bundle!.messageId;
+                const rlnIdentifier = await sha256('zkchat');
+                const xShare = RLN.genSignalHash(signal);
+                const witness = RLN.genWitness(
+                    identitySecretHash!,
+                    merkleProof!,
+                    externalNullifier,
+                    signal,
+                    BigInt('0x' + rlnIdentifier),
+                );
+                const proof = await RLN.genProof(
+                    witness,
+                    `${config.indexerAPI}/circuits/rln/wasm`,
+                    `${config.indexerAPI}/circuits/rln/zkey`,
+                );
+                bundle!.rln = {
+                    ...proof,
+                    x_share: xShare.toString(),
+                    epoch,
+                }
+            } else {
+                const identityTrapdoor = zkIdentity.getTrapdoor();
+                const identityNullifier = zkIdentity.getNullifier();
+                // @ts-ignore
+                const identityCommitment = zkIdentity.generateCommitment();
+                const merkleProof: MerkleProof | null = await findProof(
+                    `semaphore_taz_members`,
+                    BigInt(identityCommitment).toString(16),
+                );
+                const identityPathElements = merkleProof!.siblings;
+                const identityPathIndex = merkleProof!.pathIndices;
+                const root = merkleProof!.root;
+                const externalNullifier = genExternalNullifier('ZKCHAT');
+                const signal = bundle!.messageId;
+
+                const witness = Semaphore.genWitness(
+                    identityTrapdoor,
+                    identityNullifier,
+                    {
+                        root: root,
+                        leaf: BigInt(identityCommitment),
+                        pathIndices: identityPathIndex,
+                        siblings: identityPathElements,
+                    },
+                    externalNullifier,
+                    signal.slice(0, 31),
+                );
+                const proof = await Semaphore.genProof(
+                    witness,
+                    `${config.indexerAPI}/circuits/semaphore/wasm`,
+                    `${config.indexerAPI}/circuits/semaphore/zkey`,
+                );
+
+                bundle!.semaphore = {
+                    ...proof,
+                    group_id: 'semaphore_taz_members',
+                };
             }
         }
 

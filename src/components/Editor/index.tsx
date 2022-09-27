@@ -13,7 +13,6 @@ import Web3Button from "../Web3Button";
 import Button from "../Button";
 import {DraftEditor} from "../DraftEditor";
 import Icon from "../Icon";
-import Input from "../Input";
 import drafts, {setDraft, setGloabl, setMirror, setModeration, useDraft, useMirror} from "../../ducks/drafts";
 import {useDispatch} from "react-redux";
 import URLPreview from "../URLPreview";
@@ -276,7 +275,7 @@ export default function Editor(props: Props): ReactElement {
                     className="w-12 h-12 mr-3"
                     address={address}
                     group={selectedZKGroup}
-                    incognito={['interrep', 'zkpr_interrep'].includes(selectedId?.type as string)}
+                    incognito={['interrep', 'zkpr_interrep', 'taz'].includes(selectedId?.type as string)}
                 />
                 <div className="flex flex-row flex-nowrap w-full h-full">
                     <div className="flex flex-col flex-nowrap w-full h-full editor__wrapper">
@@ -382,7 +381,7 @@ export default function Editor(props: Props): ReactElement {
                                                             </Checkbox>
                                                         </div>
                                                         {
-                                                            !['interrep', 'zkpr_interrep'].includes(selectedId?.type as string) && (
+                                                            !['interrep', 'zkpr_interrep', 'taz'].includes(selectedId?.type as string) && (
                                                                 <div className="flex flex-row">
                                                                     <Checkbox
                                                                         className="mr-4 text-gray-500"

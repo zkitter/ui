@@ -1,5 +1,5 @@
-import React, {ReactElement, useCallback, useContext, useEffect} from "react";
-import {Redirect, Route, RouteProps, Switch, useHistory} from "react-router";
+import React, {ReactElement, useCallback, useContext, useEffect, useState} from "react";
+import {Redirect, Route, RouteProps, Switch, useHistory, useLocation} from "react-router";
 import TopNav from "../../components/TopNav";
 import GlobalFeed from "../GlobalFeed";
 import "./app.scss";
@@ -25,11 +25,26 @@ import {Strategy, ZkIdentity} from "@zk-kit/identity";
 import sse from "../../util/sse";
 import ThemeContext from "../../components/ThemeContext";
 import classNames from "classnames";
+import {Identity} from "@semaphore-protocol/identity";
+import TazModal from "../../components/TazModal";
 
 export default function App(): ReactElement {
     const dispatch = useDispatch();
     const selected = useSelectedLocalId();
     const theme = useContext(ThemeContext);
+    const loc = useLocation();
+    const history = useHistory();
+    const [tazIdentity, setTazIdentity] = useState<string[]>(null);
+    const [showingTazModal, showTazModal] = useState(false);
+
+    useEffect(() => {
+        if (loc.pathname === '/taz/') {
+            const [nullifer, trapdoor] = loc.hash.slice(1).split('_');
+            history.push('/');
+            setTazIdentity([nullifer, trapdoor]);
+            showTazModal(true);
+        }
+    }, [loc]);
 
     useEffect(() => {
         const style = document.createElement('style');
@@ -88,6 +103,18 @@ export default function App(): ReactElement {
                     ecdh: keyPair,
                 });
             })();
+        } else if (selected?.type === 'taz') {
+            (async () => {
+                const zkIdentity = new Identity(selected.serializedIdentity);
+                const ecdhseed = await sha256(selected.serializedIdentity);
+                const ecdhHex = await sha256(ecdhseed);
+                const keyPair = await generateECDHKeyPairFromhex(ecdhHex);
+                await zkchat.importIdentity({
+                    address: selected?.identityCommitment,
+                    zk: zkIdentity,
+                    ecdh: keyPair,
+                });
+            })();
         }
     }, [selected])
 
@@ -111,6 +138,12 @@ export default function App(): ReactElement {
                 'light': theme !== 'light',
             })}
         >
+            { showingTazModal && (
+                <TazModal
+                    tazIdentity={tazIdentity}
+                    onClose={() => showTazModal(false)}
+                />
+            )}
             <TopNav />
             <div className="flex flex-row flex-nowrap app__content">
                 <Switch>
@@ -150,6 +183,9 @@ export default function App(): ReactElement {
                     </Route>
                     <Route path="/chat">
                         <ChatView />
+                    </Route>
+                    <Route path="/taz">
+                        <GlobalFeed />
                     </Route>
                     <Route path="/:name">
                         <ProfileView />

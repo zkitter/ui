@@ -21,6 +21,7 @@ const GROUP_TO_NICKNAME: {
     [group: string]: string;
 } = {
     'zksocial_all': 'Anonymous',
+    'semaphore_taz_members': 'A TAZ Member',
     'interrep_twitter_unrated': 'A Twitter user',
     'interrep_twitter_bronze': 'A Twitter user with 500+ followers',
     'interrep_twitter_silver': 'A Twitter user with 2k+ followers',

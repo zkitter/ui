@@ -1,14 +1,18 @@
-import React, {MouseEventHandler, ReactElement, ReactNode, useCallback, useEffect, useState} from "react";
+import React, {ChangeEvent, MouseEventHandler, ReactElement, ReactNode, useCallback, useEffect, useState,} from "react";
 import "./signup.scss"
 import Button from "../../components/Button";
 import {
     connectWeb3,
-    createRecordTx, disconnectWeb3,
-    loginGun, setJoinedTx,
+    createRecordTx,
+    disconnectWeb3,
+    loginGun,
+    setJoinedTx,
     updateIdentity,
     useAccount,
     useGunNonce,
-    usePendingCreateTx, useWeb3Account, useWeb3Loading
+    usePendingCreateTx,
+    useWeb3Account,
+    useWeb3Loading
 } from "../../ducks/web3";
 import {useDispatch} from "react-redux";
 import config from "../../util/config";
@@ -30,9 +34,16 @@ import {connectZKPR, disconnectZKPR, useIdCommitment, useZKPR, useZKPRLoading} f
 
 import MetamaskSVG from "../../../static/icons/metamask-fox.svg";
 import ZKPRSVG from "../../../static/icons/zkpr-logo.svg";
+import TazLogo from "../../../static/icons/taz-logo.png";
 import SpinnerGIF from "../../../static/icons/spinner.gif";
 import Avatar, {Username} from "../../components/Avatar";
 import {useThemeContext} from "../../components/ThemeContext";
+import QrReader from "react-qr-reader";
+import {safeJsonParse} from "../../util/misc";
+import {Decoder} from "@nuintun/qrcode";
+import {Strategy, ZkIdentity} from "@zk-kit/identity";
+import {Identity} from "@semaphore-protocol/identity";
+import {findProof} from "../../util/merkle";
 
 export enum ViewType {
     welcome,
@@ -43,6 +54,7 @@ export enum ViewType {
     setupProfile,
     localBackup,
     done,
+    scanQrCode,
 }
 
 type Props = {
@@ -74,6 +86,9 @@ export default function SignupView(props: Props): ReactElement {
             break;
         case ViewType.localBackup:
             content = <LocalBackupView setViewType={setViewType} isOnboarding />;
+            break;
+        case ViewType.scanQrCode:
+            content = <QRScannerView setViewType={setViewType} />;
             break;
         case ViewType.done:
             content = <DoneView setViewType={setViewType} />;
@@ -314,17 +329,25 @@ function ChooseWalletView(props: { setViewType: (v: ViewType) => void}): ReactEl
                 >
                     ZKPR
                 </WalletOption>
+                <WalletOption
+                    iconUrl={TazLogo}
+                    onClick={() => props.setViewType(ViewType.scanQrCode)}
+                    selected={walletOption === 'taz'}
+                >
+                    Temporary Anonymous Zone
+                </WalletOption>
             </div>
         </div>
     );
 }
 
 function WalletOption(props: {
-    iconUrl: string;
+    iconUrl?: string;
+    fa?: string;
     children: ReactNode;
     onClick: MouseEventHandler;
-    selected: boolean;
-    loading: boolean;
+    selected?: boolean;
+    loading?: boolean;
 }): ReactElement {
     return (
         <div
@@ -336,8 +359,11 @@ function WalletOption(props: {
         >
             <Icon
                 url={props.iconUrl}
-                size={2}
-                className="m-2"
+                fa={props.fa}
+                size={props.iconUrl ? 2 : 1.5}
+                className={classNames("m-2", {
+                    'w-8 h-8 flex flex-row align-center justify-center': props.fa,
+                })}
             />
             <div className="ml-2">
                 { props.loading && <Icon url={SpinnerGIF} size={3} /> }
@@ -764,7 +790,101 @@ function LocalBackupView(props: {
     )
 }
 
+function QRScannerView(props: {
+    setViewType: (v: ViewType) => void,
+}): ReactElement {
+    const history = useHistory();
+    const [errorMessage, setError] = useState('');
 
+    const validate = useCallback(async (data: string) => {
+        const secrets = safeJsonParse(data);
+        if (secrets && secrets.length === 2) {
+            const zkIdentity = new Identity(data);
+            const idCommitmentBigInt = zkIdentity.generateCommitment();
+            const pathData = await findProof('semaphore_taz_members', idCommitmentBigInt.toString(16));
+            if (pathData) {
+                await postWorkerMessage(setIdentity({
+                    type: 'taz',
+                    identityCommitment: idCommitmentBigInt.toString(),
+                    serializedIdentity: data,
+                    identityPath: {
+                        path_index: pathData.pathIndices,
+                        path_elements: pathData.siblings,
+                        root: pathData.root,
+                    },
+                }));
+                props.setViewType(ViewType.localBackup);
+            } else {
+                setError(`Cannot find ${idCommitmentBigInt.toString()} in TAZ Group`);
+            }
+        } else {
+            setError('Invalid QR Code');
+        }
+    }, []);
+
+    const onScan = useCallback(async (data: string | null) => {
+        if (data) {
+            await validate(data);
+        }
+    }, []);
+
+    const onUpload = useCallback((event: ChangeEvent<HTMLInputElement>) => {
+        const files = event.target.files;
+
+        if (files) {
+            const file = files[0];
+            const qr = new Decoder();
+            const reader = new FileReader();
+
+            reader.onloadend = async () => {
+                if (typeof reader.result === 'string') {
+                    const result = await qr.scan(reader.result);
+                    if (result.data) {
+                        await validate(result.data);
+                    } else {
+                        setError('Invalid QR Code');
+                    }
+                }
+            }
+            reader.readAsDataURL(file);
+        }
+    }, []);
+
+    const onError = useCallback((data: string | null) => {
+        if (data) {
+            setError(data);
+        }
+    }, []);
+
+    return (
+        <div className="flex flex-col flex-nowrap flex-grow my-4 mx-8 signup__content signup__welcome">
+            <div className="flex flex-row items-center justify-center my-4">
+                <div className="text-xl mr-2">📷</div>
+                <div className="text-xl font-semibold">Scan QR Code</div>
+            </div>
+            <div className="my-4">
+                If you are already part of a group from <a href="https://taz.appliedzkp.org" target="_blank">TAZ</a>, you can import the identity to Zkitter using QR code.
+            </div>
+            { errorMessage && <span className="text-red-500 text-sm my-2 text-center">{errorMessage}</span>}
+            <QrReader
+                onScan={onScan}
+                onError={onError}
+                delay={300}
+                style={{ width: '100%' }}
+            />
+            <div className="flex-grow flex flex-row mt-8 flex-nowrap items-center justify-center">
+                <Button btnType="primary" className="relative overflow-hidden">
+                    <input
+                        className="absolute top-0 left-0 h-full w-full opacity-0"
+                        onChange={onUpload}
+                        type="file"
+                    />
+                    Upload QR Code
+                </Button>
+            </div>
+        </div>
+    )
+}
 
 function DoneView(props: { setViewType: (v: ViewType) => void}): ReactElement {
     const history = useHistory();
