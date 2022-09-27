@@ -137,7 +137,7 @@ module.exports = [
             new HtmlWebpackPlugin({
                 template: './static/index.template.ejs',
                 filename: `index.html`,
-                title: process.env.APP_TITLE,
+                title: process.env.APP_TITLE || 'Zkitter',
                 inject: true,
             }),
         ],

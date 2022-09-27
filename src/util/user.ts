@@ -47,7 +47,7 @@ export async function loginUser(id: Identity | null) {
         await checkChat();
     }
 
-    if (id?.type === 'interrep') {
+    if (id?.type === 'interrep' || id?.type === 'taz') {
         await postWorkerMessage(selectIdentity(id.identityCommitment));
     }
 

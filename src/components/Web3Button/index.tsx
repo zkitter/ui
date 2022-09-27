@@ -62,7 +62,7 @@ export default function Web3Button(props: Props): ReactElement {
             } else {
                 let id = selectedLocalId || identities[0];
 
-                if (id?.type !== 'zkpr_interrep') {
+                if (id?.type !== 'zkpr_interrep' && id?.type !== 'taz') {
                     setEnsName('');
                     const ens = await fetchNameByAddress(id.address);
                     setEnsName(ens);
@@ -89,6 +89,15 @@ export default function Web3Button(props: Props): ReactElement {
                 <>
                     <div>Incognito</div>
                     <Avatar className="ml-2" incognito />
+                </>
+            )
+        }
+
+        if (id.type ===  'taz') {
+            btnContent = (
+                <>
+                    <div>TAZ Member</div>
+                    <Avatar className="ml-2 w-6 h-6" group="semaphore_taz_members" incognito />
                 </>
             )
         }
@@ -132,7 +141,7 @@ export default function Web3Button(props: Props): ReactElement {
                     'font-inter',
                     'web3-button__content',
                     {
-                        'text-gray-100 bg-gray-800': ['interrep', 'zkpr_interrep'].includes(id?.type),
+                        'text-gray-100 bg-gray-800': ['interrep', 'zkpr_interrep', 'taz'].includes(id?.type),
                         'bg-gray-100 pl-0 pr-4': !selectedLocalId && !identities.length && theme !== 'dark',
                         'bg-black text-white': theme === 'dark',
                         'bg-white': theme !== 'dark',
@@ -150,6 +159,7 @@ export default function Web3Button(props: Props): ReactElement {
 function Web3ButtonLeft(props: Props): ReactElement {
     const selectedLocalId = useSelectedLocalId();
     const [opened, setOpened] = useState(false);
+    const group = useSelectedZKGroup();
 
     if (selectedLocalId) {
         return (
@@ -169,7 +179,8 @@ function Web3ButtonLeft(props: Props): ReactElement {
                         "w-8 h-8 mx-1.5 mobile-only"
                     )}
                     address={selectedLocalId?.type === 'gun' ? selectedLocalId.address : ''}
-                    incognito={['zkpr_interrep', 'interrep'].includes(selectedLocalId?.type)}
+                    incognito={['zkpr_interrep', 'interrep', 'taz'].includes(selectedLocalId?.type)}
+                    group={group}
                 />
             </UserMenuable>
         );
@@ -391,11 +402,19 @@ function CurrentUserItem(props: {
     const group = useSelectedZKGroup();
     const history = useHistory();
 
-    if (!selectedLocalId || !selectedUser) return <></>;
+    const gotoProfile = useCallback(() => {
+        if (!selectedUser) return;
+        const { ens, name, address } = selectedUser;
+        history.push(`/${ens || address}`);
+        props.closePopup();
+    }, [selectedUser]);
 
-    const { ens, name, address } = selectedUser;
+    if (!selectedLocalId) return <></>;
+
 
     const isInterep = ['interrep', 'zkpr_interrep'].includes(selectedLocalId.type);
+    const isTaz = ['taz'].includes(selectedLocalId.type);
+
 
     return (
         <div
@@ -406,25 +425,28 @@ function CurrentUserItem(props: {
             <Avatar
                 className="w-20 h-20 mb-2"
                 address={selectedUser?.address}
-                incognito={isInterep}
+                incognito={isInterep || isTaz}
                 group={group}
             />
-            <Button
-                className="my-2"
-                btnType="secondary"
-                onClick={() => {
-                    history.push(`/${ens || address}`);
-                    props.closePopup();
-                }}
-                small
-            >
-                View Profile
-            </Button>
+
+            {
+                !isTaz && !isInterep && (
+                    <Button
+                        className="my-2"
+                        btnType="secondary"
+                        onClick={gotoProfile}
+                        small
+                    >
+                        View Profile
+                    </Button>
+                )
+            }
+
             <div className="flex flex-col flex-nowrap items-center w-full">
                 <div className="text-base font-bold w-full truncate text-center">
                     <Nickname
                         className="justify-center"
-                        address={isInterep ? '' : selectedUser?.address}
+                        address={(isInterep || isTaz) ? '' : selectedUser?.address}
                         group={group}
                     />
                 </div>
@@ -432,7 +454,9 @@ function CurrentUserItem(props: {
                     {
                         selectedLocalId.type === 'zkpr_interrep'
                             ? <div className="text-xs py-1 px-2 rounded bg-gray-200 text-gray-600">EXTERNAL</div>
-                            : `@${getHandle(selectedUser)}`
+                            : selectedLocalId.type === 'gun'
+                                ? `@${getHandle(selectedUser)}`
+                                : ''
                     }
 
                 </div>
@@ -450,6 +474,7 @@ function UserMenuItem(props: {
     const group = getZKGroupFromIdentity(identity);
 
     const isInterep = identity.type === 'interrep' || identity.type === 'zkpr_interrep';
+    const isTaz = identity.type === 'taz';
 
     return (
         <div
@@ -463,13 +488,13 @@ function UserMenuItem(props: {
             <Avatar
                 className="w-9 h-9 mr-2"
                 address={user?.username}
-                incognito={isInterep}
+                incognito={isInterep || isTaz}
                 group={group}
             />
             <div className="flex flex-col flex-nowrap w-0 flex-grow">
                 <div className="text-sm font-bold truncate">
                     <Nickname
-                        address={isInterep ? '' : user?.address}
+                        address={(isInterep || isTaz) ? '' : user?.address}
                         group={group}
                         interepProvider={isInterep ? (identity as InterrepIdentity).provider : ''}
                         interepGroup={isInterep ? (identity as InterrepIdentity).name : ''}
@@ -477,9 +502,9 @@ function UserMenuItem(props: {
                 </div>
                 <div className="text-xs text-gray-400">
                     {
-                        identity.type === 'interrep'
+                        identity.type === 'interrep' || identity.type === 'gun'
                             ? `@${getHandle(user)}`
-                            : `@${getHandle(user)}`
+                            : ``
                     }
                 </div>
             </div>

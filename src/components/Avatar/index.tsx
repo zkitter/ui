@@ -12,6 +12,7 @@ import TwitterBronze from "../../../static/icons/twitter_bronze.svg";
 import TwitterSilver from "../../../static/icons/twitter_silver.svg";
 import TwitterGold from "../../../static/icons/twitter_gold.svg";
 import TwitterUnrated from "../../../static/icons/twitter_unrated.svg";
+import TAZLogo from "../../../static/icons/taz-logo.svg";
 import "./avatar.scss";
 
 type Props = {
@@ -36,6 +37,7 @@ const GROUP_TO_PFP: {
   'interrep_twitter_bronze': TwitterBronze,
   'interrep_twitter_silver': TwitterSilver,
   'interrep_twitter_gold': TwitterGold,
+  'semaphore_taz_members': TAZLogo,
 };
 
 export function Username(props: { address?: string }): ReactElement {
