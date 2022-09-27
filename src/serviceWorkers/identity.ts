@@ -41,10 +41,23 @@ export type ZKPRIdentity = {
     address?: undefined;
 }
 
+export type TazIdentity = {
+    type: 'taz',
+    identityPath: {
+        path_elements: string[];
+        path_index: number[];
+        root: string;
+    } | null;
+    identityCommitment: string;
+    address?: undefined;
+    serializedIdentity: string;
+}
+
 export type Identity =
     | GunIdentity
     | ZKPRIdentity
-    | InterrepIdentity;
+    | InterrepIdentity
+    | TazIdentity;
 
 const STORAGE_KEY = 'identity_ls_2';
 const PASSPHRASE = 'pid';
@@ -166,6 +179,24 @@ export class IdentityService extends GenericService {
             };
         }
 
+        if (id.type === 'taz') {
+            let serializeidentity = this.passphrase
+                ? decrypt(id.serializedIdentity, this.passphrase)
+                : '';
+
+            const idJson = safeJsonParse(serializeidentity);
+
+            if (Array.isArray(idJson) && idJson.length === 2) {
+                const [idNullifierHex, idTrapdoorhex] = idJson;
+                serializeidentity = JSON.stringify([idNullifierHex, idTrapdoorhex]);
+            }
+
+            return {
+                ...id,
+                serializedIdentity: serializeidentity,
+            };
+        }
+
         return id;
     }
 
@@ -221,7 +252,7 @@ export class IdentityService extends GenericService {
                 }
             }
 
-            if (['interrep'].includes(id.type)) {
+            if (['interrep', 'taz'].includes(id.type)) {
                 // @ts-ignore
                 if (id.identityCommitment === pubkeyOrCommitment) {
                     this.currentIdentity = this.wrapIdentity(id);
@@ -320,6 +351,25 @@ export class IdentityService extends GenericService {
                 nonce: identity.nonce,
                 provider: identity.provider,
                 name: identity.name,
+                identity_path: identity.identityPath,
+                identity_commitment: identity.identityCommitment,
+                serialized_identity: encrypt(identity.serializedIdentity, this.passphrase),
+                public_key: '',
+                private_key: '',
+            });
+        }
+
+        if (identity.type === 'taz') {
+            if (!identity.identityPath) throw new Error('missing identityPath');
+            if (!identity.identityCommitment) throw new Error('missing identityCommitment');
+            if (!identity.serializedIdentity) throw new Error('missing serializedIdentity');
+
+            store?.put({
+                type: identity.type,
+                address: identity.address,
+                nonce: '',
+                provider: '',
+                name: '',
                 identity_path: identity.identityPath,
                 identity_commitment: identity.identityCommitment,
                 serialized_identity: encrypt(identity.serializedIdentity, this.passphrase),

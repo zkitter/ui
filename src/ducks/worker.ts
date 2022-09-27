@@ -114,8 +114,12 @@ export const useSelectedLocalId = () => {
 }
 
 export const getZKGroupFromIdentity = (id: Identity) => {
-    if (id?.type !== 'interrep' && id?.type !== 'zkpr_interrep') {
+    if (id?.type !== 'interrep' && id?.type !== 'zkpr_interrep' && id?.type !== 'taz') {
         return null;
+    }
+
+    if (id?.type === 'taz') {
+        return 'semaphore_taz_members';
     }
 
     return `interrep_${id.provider.toLowerCase()}_${id.name.toLowerCase()}`;
@@ -126,6 +130,8 @@ export const useSelectedZKGroup = () => {
         const {
             worker: { selected },
         } = state;
+
+        if (selected?.type === 'taz') return 'semaphore_taz_members';
 
         if (selected?.type !== 'interrep' && selected?.type !== 'zkpr_interrep') {
             return null;

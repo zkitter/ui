@@ -122,22 +122,22 @@ module.exports = [
             }),
             new CopyPlugin([
                 {
-                    from: process.env.FAVICON,
+                    from: process.env.FAVICON || './static/icons/favicon.zkitter.png',
                     to: __dirname + '/build/favicon.png',
                 },
                 {
-                    from: process.env.MANIFEST,
+                    from: process.env.MANIFEST || './static/manifest.zkitter.json',
                     to: __dirname + '/build/manifest.json',
                 },
                 {
-                    from: process.env.APP_LOGO,
+                    from: process.env.APP_LOGO || './static/icons/zkitter_logo.svg',
                     to: __dirname + '/build/applogo.svg',
                 },
             ]),
             new HtmlWebpackPlugin({
                 template: './static/index.template.ejs',
                 filename: `index.html`,
-                title: process.env.APP_TITLE,
+                title: process.env.APP_TITLE || 'Zkitter',
                 inject: true,
             }),
         ],
