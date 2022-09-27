@@ -468,7 +468,6 @@ export const useZKGroupFromPost = (messageId?: string)  => {
     return useSelector((state: AppRootState): string | undefined => {
         if (!messageId) return;
         const post = state.posts.meta[messageId];
-        console.log(post);
         if (!post) return undefined;
 
         return post.interepProvider === 'taz'

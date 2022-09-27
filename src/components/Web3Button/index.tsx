@@ -141,7 +141,7 @@ export default function Web3Button(props: Props): ReactElement {
                     'font-inter',
                     'web3-button__content',
                     {
-                        'text-gray-100 bg-gray-800': ['interrep', 'zkpr_interrep'].includes(id?.type),
+                        'text-gray-100 bg-gray-800': ['interrep', 'zkpr_interrep', 'taz'].includes(id?.type),
                         'bg-gray-100 pl-0 pr-4': !selectedLocalId && !identities.length && theme !== 'dark',
                         'bg-black text-white': theme === 'dark',
                         'bg-white': theme !== 'dark',
@@ -159,6 +159,7 @@ export default function Web3Button(props: Props): ReactElement {
 function Web3ButtonLeft(props: Props): ReactElement {
     const selectedLocalId = useSelectedLocalId();
     const [opened, setOpened] = useState(false);
+    const group = useSelectedZKGroup();
 
     if (selectedLocalId) {
         return (
@@ -178,7 +179,8 @@ function Web3ButtonLeft(props: Props): ReactElement {
                         "w-8 h-8 mx-1.5 mobile-only"
                     )}
                     address={selectedLocalId?.type === 'gun' ? selectedLocalId.address : ''}
-                    incognito={['zkpr_interrep', 'interrep'].includes(selectedLocalId?.type)}
+                    incognito={['zkpr_interrep', 'interrep', 'taz'].includes(selectedLocalId?.type)}
+                    group={group}
                 />
             </UserMenuable>
         );

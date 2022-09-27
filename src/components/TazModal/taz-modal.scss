@@ -1,0 +1,11 @@
+@import "../../util/variable";
+
+.taz-modal {
+  &__hero {
+    width: 100%;
+    height: 8rem;
+    background-size: cover;
+    background-repeat: no-repeat;
+    background-position: center;
+  }
+}
