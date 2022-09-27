@@ -25,6 +25,7 @@ import {Strategy, ZkIdentity} from "@zk-kit/identity";
 import sse from "../../util/sse";
 import ThemeContext from "../../components/ThemeContext";
 import classNames from "classnames";
+import {Identity} from "@semaphore-protocol/identity";
 
 export default function App(): ReactElement {
     const dispatch = useDispatch();
@@ -80,6 +81,18 @@ export default function App(): ReactElement {
             (async () => {
                 const zkIdentity = new ZkIdentity(Strategy.SERIALIZED, selected.serializedIdentity);
                 const ecdhseed = await sha256(zkIdentity.getSecret().map(d => d.toString()).join());
+                const ecdhHex = await sha256(ecdhseed);
+                const keyPair = await generateECDHKeyPairFromhex(ecdhHex);
+                await zkchat.importIdentity({
+                    address: selected?.identityCommitment,
+                    zk: zkIdentity,
+                    ecdh: keyPair,
+                });
+            })();
+        } else if (selected?.type === 'taz') {
+            (async () => {
+                const zkIdentity = new Identity(selected.serializedIdentity);
+                const ecdhseed = await sha256(selected.serializedIdentity);
                 const ecdhHex = await sha256(ecdhseed);
                 const keyPair = await generateECDHKeyPairFromhex(ecdhHex);
                 await zkchat.importIdentity({

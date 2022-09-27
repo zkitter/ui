@@ -468,7 +468,12 @@ export const useZKGroupFromPost = (messageId?: string)  => {
     return useSelector((state: AppRootState): string | undefined => {
         if (!messageId) return;
         const post = state.posts.meta[messageId];
-        return post && `interrep_${post.interepProvider}_${post.interepGroup}`;
+        console.log(post);
+        if (!post) return undefined;
+
+        return post.interepProvider === 'taz'
+            ? 'semaphore_taz_members'
+            : `interrep_${post.interepProvider}_${post.interepGroup}`;
     }, deepEqual);
 }
 

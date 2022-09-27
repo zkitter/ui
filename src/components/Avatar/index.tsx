@@ -12,7 +12,7 @@ import TwitterBronze from "../../../static/icons/twitter_bronze.svg";
 import TwitterSilver from "../../../static/icons/twitter_silver.svg";
 import TwitterGold from "../../../static/icons/twitter_gold.svg";
 import TwitterUnrated from "../../../static/icons/twitter_unrated.svg";
-import TAZLogo from "../../../static/icons/taz-logo.png";
+import TAZLogo from "../../../static/icons/taz-logo.svg";
 import "./avatar.scss";
 
 type Props = {

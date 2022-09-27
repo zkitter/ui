@@ -16,6 +16,7 @@ import {useDispatch} from "react-redux";
 import {findProof} from "../../util/merkle";
 import {Strategy, ZkIdentity} from "@zk-kit/identity";
 import {Chat} from "../../util/zkchat";
+import {Identity} from "@semaphore-protocol/identity";
 
 export default function ChatContent(): ReactElement {
     const { chatId } = useParams<{chatId: string}>();
@@ -137,6 +138,14 @@ function ChatEditor(): ReactElement {
                 BigInt(identityCommitment).toString(16),
             );
             identitySecretHash = zkIdentity.getSecretHash();
+        } else if (selected?.type === 'taz') {
+            const {type, identityCommitment, serializedIdentity} = selected;
+            const group = `semaphore_taz_members`;
+            const zkIdentity = new Identity(serializedIdentity);
+            merkleProof = await findProof(
+                group,
+                BigInt(identityCommitment).toString(16),
+            );
         }
 
         const json = await zkchat.sendDirectMessage(

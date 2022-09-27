@@ -36,7 +36,7 @@ export default function ChatMenu(): ReactElement {
             setTimeout(() => {
                 dispatch(fetchChats(selecteduser.ecdh));
             }, 500);
-        } else if (selected?.type === 'interrep') {
+        } else if (selected?.type === 'interrep' || selected?.type === 'taz') {
             setTimeout(() => {
                 dispatch(fetchChats(selected.identityCommitment));
             }, 500);
@@ -236,7 +236,7 @@ function ChatMenuItem(props: {
             history.push(`/chat/${zkchat.deriveChatId(chat)}`);
         } else {
             if (!r_user) return;
-            if (selected?.type === 'interrep') {
+            if (['interrep', 'taz'].includes(selected?.type as string)) {
                 const newChat = await zkchat.createDM(r_user.address, r_user.ecdh, true);
                 const chatId = zkchat.deriveChatId(newChat);
                 props.setCreating(false);

@@ -27,6 +27,7 @@ import {setBlockedPost} from "./posts";
 import {findProof} from "../util/merkle";
 import {sha256} from "../util/crypto";
 import {getEpoch} from "../util/zkchat";
+import {Identity} from "@semaphore-protocol/identity";
 
 const { draftToMarkdown } = require('markdown-draft-js');
 
@@ -111,7 +112,7 @@ export const emptyDraft = (reference?: string): Action<Draft> => ({
     },
 })
 
-export const submitSemaphorePost = (post: Post) => async (dispatch: Dispatch, getState: () => AppRootState) => {
+export const submitInterepPost = (post: Post) => async (dispatch: Dispatch, getState: () => AppRootState) => {
     const state = getState();
     const {
         selected,
@@ -170,6 +171,88 @@ export const submitSemaphorePost = (post: Post) => async (dispatch: Dispatch, ge
             publicSignals: JSON.stringify(publicSignals),
             x_share: xShare.toString(),
             epoch,
+        };
+
+        // @ts-ignore
+        await gun.get('message')
+            .get(messageId)
+            // @ts-ignore
+            .put(semaphorePost);
+
+        dispatch({
+            type: ActionTypes.SET_SUBMITTING,
+            payload: false,
+        });
+
+        dispatch(emptyDraft(post.payload.reference));
+    } catch (e) {
+        dispatch({
+            type: ActionTypes.SET_SUBMITTING,
+            payload: false,
+        });
+        throw e;
+    }
+
+}
+
+export const submitTazPost = (post: Post) => async (dispatch: Dispatch, getState: () => AppRootState) => {
+    const state = getState();
+    const {
+        selected,
+    } = state.worker;
+
+    if (selected?.type !== 'taz') throw new Error('Not in incognito mode');
+
+    const zkIdentity = new Identity(selected.serializedIdentity);
+    const identityTrapdoor = zkIdentity.getTrapdoor();
+    const identityNullifier = zkIdentity.getNullifier();
+    const identityCommitment = selected.identityCommitment;
+    const merkleProof: MerkleProof | null = await findProof(
+        `semaphore_taz_members`,
+        BigInt(identityCommitment).toString(16),
+    );
+
+    const identityPathElements = merkleProof!.siblings;
+    const identityPathIndex = merkleProof!.pathIndices;
+    const root = merkleProof!.root;
+
+    if (!identityCommitment || !identityPathElements || !identityPathIndex || !identityTrapdoor || !identityNullifier) {
+        return null;
+    }
+
+    const {
+        messageId,
+        hash,
+        ...json
+    } = post.toJSON();
+
+    const externalNullifier = genExternalNullifier('POST');
+
+    const witness = Semaphore.genWitness(
+        identityTrapdoor,
+        identityNullifier,
+        {
+            root: root,
+            leaf: BigInt(identityCommitment),
+            pathIndices: identityPathIndex,
+            siblings: identityPathElements,
+        },
+        externalNullifier,
+        hash.slice(0, 31),
+    );
+    const {proof, publicSignals} = await Semaphore.genProof(
+        witness,
+        `${config.indexerAPI}/circuits/semaphore/wasm`,
+        `${config.indexerAPI}/circuits/semaphore/zkey`,
+    );
+
+    try {
+        // @ts-ignore
+        const semaphorePost: any = {
+            ...json,
+            group: 'semaphore_taz_members',
+            proof: JSON.stringify(proof),
+            publicSignals: JSON.stringify(publicSignals),
         };
 
         // @ts-ignore
@@ -340,10 +423,13 @@ export const submitPost = (reference = '') => async (dispatch: ThunkDispatch<any
         });
 
         if (selected?.type === 'interrep') {
-            await dispatch(submitSemaphorePost(post));
+            await dispatch(submitInterepPost(post));
             return post;
         } else if (selected?.type === 'zkpr_interrep') {
             await dispatch(submitZKPRPost(post));
+            return post;
+        } else if (selected?.type === 'taz') {
+            await dispatch(submitTazPost(post));
             return post;
         }
 
