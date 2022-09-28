@@ -40,6 +40,7 @@ import {useSelectedLocalId} from "../../ducks/worker";
 import FileUploadModal from "../../components/FileUploadModal";
 import SpinnerGIF from "../../../static/icons/spinner.gif";
 import {useThemeContext} from "../../components/ThemeContext";
+import Checkbox from "../../components/Checkbox";
 
 let t: any = null;
 
@@ -585,6 +586,7 @@ function ProfileEditor(props: ProfileEditorProps): ReactElement {
     const [name, setName] = useState('');
     const [bio, setBio] = useState('');
     const [website, setWebsite] = useState('');
+    const [group, setGroup] = useState(false);
     const account = useAccount();
     const user = useUser(account);
     const dispatch = useDispatch();
@@ -596,6 +598,7 @@ function ProfileEditor(props: ProfileEditorProps): ReactElement {
         website: user?.website,
         coverImage: user?.coverImage,
         profileImage: user?.profileImage,
+        group: user?.group,
     },
     {
         name: name || account,
@@ -603,6 +606,7 @@ function ProfileEditor(props: ProfileEditorProps): ReactElement {
         website,
         coverImage: coverImageUrl,
         profileImage: profileImageUrl,
+        group: group,
     });
 
     useEffect(() => {
@@ -612,6 +616,7 @@ function ProfileEditor(props: ProfileEditorProps): ReactElement {
         setWebsite(user.website);
         setCoverImageUrl(user.coverImage);
         setProfileImageUrl(user.profileImage);
+        setGroup(user.group);
     }, [user])
 
     const onSaveProfile = useCallback(async () => {
@@ -635,6 +640,10 @@ function ProfileEditor(props: ProfileEditorProps): ReactElement {
             await dispatch(submitProfile(ProfileMessageSubType.Bio, bio));
         }
 
+        if (group !== user?.group) {
+            await dispatch(submitProfile(ProfileMessageSubType.Group, group ? '1' : ''));
+        }
+
         if (!user) return;
 
         dispatch(setUser({
@@ -644,6 +653,7 @@ function ProfileEditor(props: ProfileEditorProps): ReactElement {
             profileImage: profileImageUrl,
             website: website,
             bio: bio,
+            group: group,
         }))
     }, [
         coverImageUrl,
@@ -652,6 +662,7 @@ function ProfileEditor(props: ProfileEditorProps): ReactElement {
         bio,
         website,
         user,
+        group,
     ]);
 
     return (
@@ -669,10 +680,24 @@ function ProfileEditor(props: ProfileEditorProps): ReactElement {
                     url={coverImageUrl}
                     onUrlChange={setCoverImageUrl}
                 />
-                <ProfileImageEditor
-                    url={profileImageUrl}
-                    onUrlChange={setProfileImageUrl}
-                />
+                <div className="flex flex-nowrap items-end">
+                    <ProfileImageEditor
+                        url={profileImageUrl}
+                        onUrlChange={setProfileImageUrl}
+                    />
+                    <div className="flex flex-row text-sm font-semibold mr-4 flex-grow justify-end items-center">
+                        <Checkbox
+                            type="checkbox"
+                            onChange={e => setGroup(e.target.checked)}
+                            checked={group}
+                        />
+                        <div className="ml-2">
+                            This is a group profile
+                        </div>
+                    </div>
+
+                </div>
+
                 <Input
                     className="border relative mx-4 mt-4 mb-8"
                     label="Name"

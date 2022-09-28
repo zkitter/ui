@@ -307,6 +307,8 @@ export class Moderation extends Message {
 export enum ConnectionMessageSubType {
     Follow = 'FOLLOW',
     Block = 'BLOCK',
+    MemberInvite = 'MEMBER_INVITE',
+    MemberAccept = 'MEMBER_ACCEPT',
     Default = '',
 }
 
@@ -367,6 +369,10 @@ export class Connection extends Message {
                 return ConnectionMessageSubType.Follow;
             case 'BLOCK':
                 return ConnectionMessageSubType.Block;
+            case 'MEMBER_INVITE':
+                return ConnectionMessageSubType.MemberInvite;
+            case 'MEMBER_ACCEPT':
+                return ConnectionMessageSubType.MemberAccept;
             default:
                 return ConnectionMessageSubType.Default;
         }
@@ -415,6 +421,7 @@ export enum ProfileMessageSubType {
     CoverImage = 'COVER_IMAGE',
     Website = 'WEBSITE',
     TwitterVerification = 'TWT_VERIFICATION',
+    Group = 'GROUP',
     Custom = 'CUSTOM',
 }
 
@@ -485,6 +492,8 @@ export class Profile extends Message {
                 return ProfileMessageSubType.Bio;
             case 'WEBSITE':
                 return ProfileMessageSubType.Website;
+            case 'GROUP':
+                return ProfileMessageSubType.Group;
             case 'CUSTOM':
                 return ProfileMessageSubType.Custom;
             default:

@@ -36,6 +36,7 @@ export type User = {
     twitterVerification: string;
     bio: string;
     website: string;
+    group: boolean;
     ecdh: string;
     idcommitment: string;
     joinedAt: number;
@@ -228,6 +229,7 @@ const processUserPayload = (user: any) => (dispatch: Dispatch) => {
         bio: user.bio || '',
         profileImage: user.profileImage || '',
         coverImage: user.coverImage || '',
+        group: !!user.group,
         twitterVerification: user.twitterVerification || '',
         website: user.website || '',
         ecdh: user.ecdh || '',
@@ -294,6 +296,7 @@ export const useUser = (address = ''): User | null => {
                 joinedAt: 0,
                 joinedTx: '',
                 type: '',
+                group: false,
                 meta: {
                     followerCount: 0,
                     followingCount: 0,
@@ -420,6 +423,7 @@ function reduceSetUser(state: State, action: Action<User>): State {
                 joinedAt: action.payload.joinedAt,
                 joinedTx: action.payload.joinedTx,
                 type: action.payload.type,
+                group: action.payload.group,
                 meta: {
                     followerCount: action.payload.meta?.followerCount || 0,
                     followingCount: action.payload.meta?.followingCount || 0,
