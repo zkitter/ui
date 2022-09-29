@@ -14,6 +14,7 @@ import moment from "moment/moment";
 import PostFooter from "./PostFooter";
 import {Props} from "./types";
 import PostMenu from "./PostMenu";
+import PostLikes from "./PostLikes";
 
 export default function ExpandedPost(props: Props & {
     onDeletePost: () => void;
@@ -138,6 +139,13 @@ export default function ExpandedPost(props: Props & {
                         {moment(post.createdAt).format('lll')}
                     </div>
                 </div>
+                <PostLikes
+                    className={classNames("mt-2 pt-3 border-t w-full", {
+                            'border-gray-200': theme !== 'dark',
+                            'border-gray-800': theme === 'dark',
+                    })}
+                    likes={1}
+                />
                 <PostFooter
                     messageId={messageId}
                     className={classNames("mt-2 pt-3 border-t w-full", {
