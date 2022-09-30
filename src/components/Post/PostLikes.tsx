@@ -1,48 +1,36 @@
 import classNames from "classnames";
 import React, {ReactElement, useState} from "react";
 import Modal, {ModalContent, ModalHeader} from "../Modal";
+import {UserRow} from "../DiscoverUserPanel";
 
-
-function Liker(props: {idx:number,  liker: any}): ReactElement {
-    return (
-        <li key={props.idx}>item</li>
-    )
-}
-
-function LikersModal(props: {className: string, onClose: ()=> void, likers: any[]}): ReactElement {
-    const {className, onClose, likers} = props
+function LikersModal(props: { onClose: ()=> void, likers: string[]}): ReactElement {
+    const { onClose, likers } = props
     return <Modal
-        className={classNames(className)}
+        className={classNames('w-148')}
         onClose={onClose}
     >
         <ModalHeader>Liked By</ModalHeader>
         <ModalContent>
-            <ul>
-                <li>item1</li>
-                <li>item2</li>
-                <li>item3</li>
-            </ul>
+            {likers.map(ens => <UserRow key={ens} name={ens} />)}
         </ModalContent>
     </Modal>;
 }
 
-export default function PostLikes(props: { className: string, likes: number }): ReactElement {
-    const {className, likes} = props
+export default function PostLikes(props: { className: string, likers: string[] }): ReactElement {
+    const {className, likers} = props
     const [showingLikersModal, setShowLikersModal] = useState(false);
+    const numLikes = likers.length
 
     return (
         <>
             <div className="flex flex-row flex-nowrap items-center text-light w-full">
                 <div className={classNames(className)}>
                     <div className="hover:underline" onClick={() => setShowLikersModal(true)}>
-                        <strong>{likes}{' '}</strong>like
+                        <strong>{numLikes}{' '}</strong>like
                     </div>
                 </div>
             </div>
-            {showingLikersModal && (<LikersModal
-                onClose={() => setShowLikersModal(false)} className={''}
-                likers={[]}
-            />)}
+            {showingLikersModal && <LikersModal onClose={() => setShowLikersModal(false)} likers={likers}/>}
         </>
     )
 }

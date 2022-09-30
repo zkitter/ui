@@ -144,7 +144,7 @@ export default function ExpandedPost(props: Props & {
                             'border-gray-200': theme !== 'dark',
                             'border-gray-800': theme === 'dark',
                     })}
-                    likes={1}
+                    likers={['r1oga.eth', 'yagamilight.eth']} // TODO
                 />
                 <PostFooter
                     messageId={messageId}
