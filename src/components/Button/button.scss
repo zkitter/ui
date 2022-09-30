@@ -1,7 +1,6 @@
-@import "../../util/variable";
+@import '../../util/variable';
 
 .button {
-
   &:disabled {
     opacity: 50%;
   }
@@ -34,7 +33,7 @@
 
     &:hover {
       color: lighten($primary-color, 10);
-      border-color: lighten($primary-color, 10);;
+      border-color: lighten($primary-color, 10);
     }
 
     &:active {
@@ -52,8 +51,8 @@
   }
 
   &--small {
-    padding: .25rem .5rem !important;
-    font-size: .75rem !important;
+    padding: 0.25rem 0.5rem !important;
+    font-size: 0.75rem !important;
     height: auto !important;
   }
 }

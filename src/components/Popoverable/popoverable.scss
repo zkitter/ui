@@ -1,4 +1,4 @@
-@import "../../util/variable";
+@import '../../util/variable';
 
 .popoverable {
   position: relative;
@@ -11,12 +11,12 @@
     left: 0;
     right: 0;
     width: fit-content;
-    background-color: rgba($black, .8);
-    color: rgba($white, .9);
+    background-color: rgba($black, 0.8);
+    color: rgba($white, 0.9);
     white-space: nowrap;
-    font-size: .75rem;
-    padding: 0 .5rem;
-    border-radius: .125rem;
+    font-size: 0.75rem;
+    padding: 0 0.5rem;
+    border-radius: 0.125rem;
     font-weight: 400;
     transition: opacity 200ms ease-in-out;
     transition-delay: 500ms;

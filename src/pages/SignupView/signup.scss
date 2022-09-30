@@ -1,4 +1,4 @@
-@import "../../util/variable";
+@import '../../util/variable';
 
 .dark {
   .signup {
@@ -86,11 +86,11 @@
     align-items: center;
     flex: 1 1 auto;
     border: 2px solid $gray-100;
-    border-radius: .5rem;
+    border-radius: 0.5rem;
     padding: 1rem;
     cursor: pointer;
     transition: 100ms ease-in-out;
-    margin: 0 .5rem;
+    margin: 0 0.5rem;
     height: 12rem;
     width: 0;
 
@@ -112,11 +112,11 @@
       font-weight: 700;
       line-height: 1.3125;
       color: $gray-200;
-      margin-bottom: .5rem;
+      margin-bottom: 0.5rem;
     }
 
     &__desc {
-      font-size: .875rem;
+      font-size: 0.875rem;
       text-align: center;
       color: $gray-200;
     }
@@ -189,7 +189,7 @@
   }
 
   &__wallet-option + &__wallet-option {
-    margin-top: .5rem;
+    margin-top: 0.5rem;
   }
 
   &__wallet-panel {
