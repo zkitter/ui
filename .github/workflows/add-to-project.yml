@@ -1,9 +1,8 @@
-name: Add opened issues to project board
+name: Add Opened Issue to Project
 
 on:
   issues:
-    types:
-      - opened
+    types: [opened]
 
 jobs:
   add-to-project:
