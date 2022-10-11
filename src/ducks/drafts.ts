@@ -25,7 +25,7 @@ import {updateStatus} from "../util/twitter";
 import {checkPath} from "../util/interrep";
 import {setBlockedPost} from "./posts";
 import {findProof} from "../util/merkle";
-import {sha256} from "../util/crypto";
+import {generateZkIdentityFromHex, sha256, signWithP256} from "../util/crypto";
 import {getEpoch} from "../util/zkchat";
 import {Identity} from "@semaphore-protocol/identity";
 
@@ -192,7 +192,92 @@ export const submitInterepPost = (post: Post) => async (dispatch: Dispatch, getS
         });
         throw e;
     }
+}
 
+export const submitCustomGroupPost = (post: Post) => async (dispatch: Dispatch, getState: () => AppRootState) => {
+    const state = getState();
+    const {
+        selected,
+        postingGroup,
+    } = state.worker;
+
+    if (!postingGroup) throw new Error('Not in incognito mode');
+
+    if (selected?.type !== 'gun') throw new Error('User is not logged in');
+    const zkseed = await signWithP256(selected!.privateKey, 'signing for zk identity - 0');
+    const zkHex = await sha256(zkseed);
+    const zkIdentity = await generateZkIdentityFromHex(zkHex);
+    const identityTrapdoor = zkIdentity.getTrapdoor();
+    const identityNullifier = zkIdentity.getNullifier();
+    const identityCommitment = zkIdentity.genIdentityCommitment().toString(16);
+    const identitySecretHash = zkIdentity.getSecretHash();
+    const merkleProof: MerkleProof | null = await findProof(
+        postingGroup,
+        identityCommitment,
+    );
+
+    const identityPathElements = merkleProof!.siblings;
+    const identityPathIndex = merkleProof!.pathIndices;
+    const root = merkleProof!.root;
+
+    if (!identityCommitment || !identityPathElements || !identityPathIndex || !identityTrapdoor || !identityNullifier) {
+        return null;
+    }
+
+    const {
+        messageId,
+        hash,
+        ...json
+    } = post.toJSON();
+
+    const epoch = getEpoch();
+    const externalNullifier = genExternalNullifier(epoch);
+    const signal = messageId;
+    const rlnIdentifier = await sha256('zkpost');
+    const xShare = RLN.genSignalHash(signal);
+    const witness = RLN.genWitness(
+        identitySecretHash!,
+        merkleProof!,
+        externalNullifier,
+        signal,
+        BigInt('0x' + rlnIdentifier),
+    );
+    const {proof, publicSignals} = await RLN.genProof(
+        witness,
+        `${config.indexerAPI}/circuits/rln/wasm`,
+        `${config.indexerAPI}/circuits/rln/zkey`,
+    );
+
+    try {
+        // @ts-ignore
+        const semaphorePost: any = {
+            ...json,
+            proof: JSON.stringify(proof),
+            publicSignals: JSON.stringify(publicSignals),
+            group: postingGroup,
+            x_share: xShare.toString(),
+            epoch,
+        };
+
+        // @ts-ignore
+        await gun.get('message')
+            .get(messageId)
+            // @ts-ignore
+            .put(semaphorePost);
+
+        dispatch({
+            type: ActionTypes.SET_SUBMITTING,
+            payload: false,
+        });
+
+        dispatch(emptyDraft(post.payload.reference));
+    } catch (e) {
+        dispatch({
+            type: ActionTypes.SET_SUBMITTING,
+            payload: false,
+        });
+        throw e;
+    }
 }
 
 export const submitTazPost = (post: Post) => async (dispatch: Dispatch, getState: () => AppRootState) => {
@@ -364,12 +449,10 @@ export const submitPost = (reference = '') => async (dispatch: ThunkDispatch<any
     const { drafts, web3, worker, posts } = getState();
     const draft = drafts.map[reference];
     const shouldMirror = drafts.mirror;
-    const {
-        semaphore,
-    } = web3;
 
     const {
         selected,
+        postingGroup,
     } = worker;
 
     const account = selected?.address;
@@ -413,7 +496,9 @@ export const submitPost = (reference = '') => async (dispatch: ThunkDispatch<any
         const post = new Post({
             type: MessageType.Post,
             subtype: subtype,
-            creator: selected?.type === 'interrep' ? '' : account,
+            creator: (['interrep', 'zkpr_interrep', 'taz'].includes(selected!.type) || !!postingGroup)
+                ? ''
+                : account,
             payload: {
                 topic: tweetUrl,
                 content: markdown,
@@ -430,6 +515,9 @@ export const submitPost = (reference = '') => async (dispatch: ThunkDispatch<any
             return post;
         } else if (selected?.type === 'taz') {
             await dispatch(submitTazPost(post));
+            return post;
+        } else if (postingGroup) {
+            await dispatch(submitCustomGroupPost(post));
             return post;
         }
 

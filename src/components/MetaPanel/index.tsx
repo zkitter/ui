@@ -5,6 +5,7 @@ import DiscoverTagPanel from "../DiscoverTagPanel";
 import PostModerationPanel from "../PostModerationPanel";
 import Icon from "../Icon";
 import classNames from "classnames";
+import GroupMembersPanel from "../GroupMembersPanel";
 
 export default function MetaPanel(props: {
     className?: string;
@@ -34,7 +35,7 @@ export default function MetaPanel(props: {
             <Route path="/signup" />
             <Route path="/chat" />
             <Route path="/:name">
-                <DefaultMetaPanels className={props.className} />
+                <ProfileMetaPanels className={props.className} />
             </Route>
         </Switch>
     )
@@ -46,6 +47,19 @@ function DefaultMetaPanels(props: {
 }): ReactElement {
     return (
         <div className={classNames("app__meta-content", props.className)}>
+            <DiscoverUserPanel key="discover-user" />
+            <DiscoverTagPanel key="discover-tag" />
+            <AppFooter />
+        </div>
+    );
+}
+
+function ProfileMetaPanels(props: {
+    className?: string;
+}): ReactElement {
+    return (
+        <div className={classNames("app__meta-content", props.className)}>
+            <GroupMembersPanel />
             <DiscoverUserPanel key="discover-user" />
             <DiscoverTagPanel key="discover-tag" />
             <AppFooter />
