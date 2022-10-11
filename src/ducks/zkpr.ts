@@ -7,7 +7,7 @@ import {Identity} from "../serviceWorkers/identity";
 import {postWorkerMessage} from "../util/sw";
 import {selectIdentity, setIdentity} from "../serviceWorkers/util";
 import {Dispatch} from "redux";
-import {SemaphoreFullProof, SemaphoreSolidityProof, MerkleProof} from "@zk-kit/protocols";
+import {SemaphoreFullProof, SemaphoreSolidityProof, MerkleProof, RLNFullProof} from "@zk-kit/protocols";
 
 enum ActionTypes {
     SET_LOADING = 'zkpr/setLoading',
@@ -254,6 +254,30 @@ export class ZKPR {
             circuitFilePath,
             zkeyFilePath,
             merkleProofArtifactsOrStorageAddress,
+            merkleProof,
+        );
+    }
+
+    async rlnProof(
+        externalNullifier: string,
+        signal: string,
+        circuitFilePath: string,
+        zkeyFilePath: string,
+        merkleProofArtifactsOrStorageAddress: string | {
+            leaves: string[];
+            depth: number;
+            leavesPerNode: number;
+        },
+        rlnIdentifier: string,
+        merkleProof?: MerkleProof,
+    ): Promise<RLNFullProof> {
+        return this.client.rlnProof(
+            externalNullifier,
+            signal,
+            circuitFilePath,
+            zkeyFilePath,
+            merkleProofArtifactsOrStorageAddress,
+            rlnIdentifier,
             merkleProof,
         );
     }
