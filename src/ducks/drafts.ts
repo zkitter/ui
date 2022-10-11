@@ -287,10 +287,14 @@ export const submitZKPRPost = (post: Post) => async (dispatch: Dispatch, getStat
     if (selected?.type !== 'zkpr_interrep') throw new Error('Not in incognito mode');
 
     const identityCommitment = selected.identityCommitment;
-    const data: any = await checkPath(identityCommitment);
-    const identityPathElements = data.path.path_elements;
-    const identityPathIndex = data.path.path_index;
-    const root = data.path.root;
+    const merkleProof: MerkleProof | null = await findProof(
+        '',
+        BigInt(identityCommitment).toString(16),
+    );
+
+    const identityPathElements = merkleProof!.siblings;
+    const identityPathIndex = merkleProof!.pathIndices;
+    const root = merkleProof!.root;
 
     if (!identityCommitment || !identityPathElements || !identityPathIndex || !zkpr) {
         return null;
