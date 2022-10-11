@@ -78,7 +78,7 @@ export default function Web3Button(props: Props): ReactElement {
         if (id.type === 'zkpr_interrep') {
             btnContent = (
                 <>
-                    <div>Connected to ZKPR</div>
+                    <div>Connected to Crypt Keeper</div>
                     <Avatar className="ml-2" incognito />
                 </>
             )

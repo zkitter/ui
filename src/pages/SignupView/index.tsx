@@ -327,7 +327,7 @@ function ChooseWalletView(props: { setViewType: (v: ViewType) => void}): ReactEl
                     selected={walletOption === 'zkpr'}
                     loading={zkprLoading}
                 >
-                    ZKPR
+                    Crypt Keeper
                 </WalletOption>
                 <WalletOption
                     iconUrl={TazLogo}
