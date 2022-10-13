@@ -210,7 +210,7 @@ export const useZKPR = () => {
 
 export const useIdCommitment = () => {
     return useSelector((state: AppRootState) => {
-        return state.zkpr.idCommitment;
+        return BigInt(state.zkpr.idCommitment).toString(16);
     }, deepEqual);
 }
 
