@@ -208,7 +208,7 @@ export function ExpandedPost(props: Props & {
                         />
                     </div>
                     <div className="text-gray-400 mr-1" onClick={gotoUserProfile}>
-                        {getHandle(groupUser || user)}
+                        {getHandle(protocol === 'custom' ? groupUser : user)}
                     </div>
                 </div>
                 <div className="flex flex-row flex-nowrap flex-grow flex-shrink justify-end">
@@ -400,7 +400,7 @@ export function RegularPost(props: Props & {
                         {
                             post.type !== MessageType._TWEET && (
                                 <div className="post__creator-username text-gray-400 mr-1" onClick={gotoUserProfile}>
-                                    {getHandle(groupUser || user)}
+                                    {getHandle(protocol === 'custom' ? groupUser : user)}
                                 </div>
                             )
                         }
