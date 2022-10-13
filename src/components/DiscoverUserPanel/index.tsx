@@ -1,4 +1,4 @@
-import React, {ReactElement, useEffect, useState} from "react";
+import React, {ReactElement, useCallback, useEffect, useState} from "react";
 import classNames from "classnames";
 import {useDispatch} from "react-redux";
 import {fetchAddressByName, fetchUsers, useUser} from "../../ducks/users";
@@ -10,6 +10,7 @@ import {useHistory} from "react-router";
 import {getName, getHandle} from "../../util/user";
 import Web3 from "web3";
 import {useThemeContext} from "../ThemeContext";
+import Nickname from "../Nickname";
 
 export default function DiscoverUserPanel(): ReactElement {
     const [users, setUsers] = useState<string[]>([]);
@@ -53,7 +54,7 @@ export default function DiscoverUserPanel(): ReactElement {
     )
 }
 
-function UserRow(props: {name: string}): ReactElement {
+export function UserRow(props: {name?: string; group?: string; onClick?: () => void}): ReactElement {
     const history = useHistory();
     const [username, setUsername] = useState('');
 
@@ -63,6 +64,8 @@ function UserRow(props: {name: string}): ReactElement {
 
     useEffect(() => {
         (async () => {
+            if (!props.name) return;
+
             if (!Web3.utils.isAddress(props.name)) {
                 const address: any = await dispatch(fetchAddressByName(props.name));
                 setUsername(address);
@@ -72,7 +75,13 @@ function UserRow(props: {name: string}): ReactElement {
         })();
     }, [props.name]);
 
-    if (!user) return <></>;
+    const onClick = useCallback(() => {
+        if (user) {
+            history.push(`/${user.ens || user.address}/`)
+        }
+    }, [user, props.group]);
+
+    if (!user && !props.group) return <></>;
 
     return (
         <div
@@ -84,16 +93,26 @@ function UserRow(props: {name: string}): ReactElement {
                     "hover:bg-gray-800": theme === 'dark',
                 }
             )}
-            onClick={() => history.push(`/${user.ens || user.address}/`)}
+            onClick={props.onClick || onClick}
         >
-            <Avatar address={user.address} className="w-10 h-10 mr-3" />
+            <Avatar
+                address={user?.address}
+                group={props.group}
+                className="w-10 h-10 mr-3"
+                incognito={!!props.group}
+            />
             <div className="flex flex-col flex-nowrap justify-center">
-                <div className="font-bold text-md hover:underline">
-                    {getName(user, 8, 6)}
-                </div>
-                <div className="text-sm text-gray-500">
-                    @{getHandle(user, 8, 6)}
-                </div>
+                { props.group && <Nickname group={props.group} className="font-semibold text-sm" /> }
+                { user && (
+                    <>
+                        <div className="font-bold text-md hover:underline">
+                            {getName(user, 8, 6)}
+                        </div>
+                        <div className="text-sm text-gray-500">
+                            @{getHandle(user, 8, 6)}
+                        </div>
+                    </>
+                )}
             </div>
         </div>
     )

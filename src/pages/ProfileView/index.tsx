@@ -1,6 +1,6 @@
-import React, {ReactElement, useCallback, useEffect, useState, MouseEvent, MouseEventHandler} from "react";
+import React, {MouseEventHandler, ReactElement, useCallback, useEffect, useState} from "react";
 import classNames from "classnames";
-import {fetchLikedBy, fetchPost, fetchPosts, fetchRepliedBy, useGoToPost} from "../../ducks/posts";
+import {fetchLikedBy, fetchPosts, fetchRepliedBy, useGoToPost} from "../../ducks/posts";
 import {useDispatch} from "react-redux";
 import {Route, Switch, useHistory, useLocation, useParams} from "react-router";
 import "./profile-view.scss";
@@ -9,18 +9,14 @@ import Button from "../../components/Button";
 import Icon from "../../components/Icon";
 import {
     fetchAddressByName,
-    getUser,
+    getUser, setAcceptanceSent,
     setBlocked,
     setFollowed,
     setUser,
     useConnectedTwitter,
     useUser
 } from "../../ducks/users";
-import {
-    useAccount,
-    useCanNonPostMessage,
-    useLoggedIn,
-} from "../../ducks/web3";
+import {useAccount, useCanNonPostMessage,} from "../../ducks/web3";
 import moment from "moment";
 import Modal, {ModalContent, ModalFooter, ModalHeader} from "../../components/Modal";
 import Input from "../../components/Input";
@@ -40,6 +36,8 @@ import {useSelectedLocalId} from "../../ducks/worker";
 import FileUploadModal from "../../components/FileUploadModal";
 import SpinnerGIF from "../../../static/icons/spinner.gif";
 import {useThemeContext} from "../../components/ThemeContext";
+import Checkbox from "../../components/Checkbox";
+import MemberInviteModal from "../../components/MemberInviteModal";
 
 let t: any = null;
 
@@ -195,6 +193,17 @@ function PostList(props: { list: string[]; fetching: boolean }): ReactElement {
     const dispatch = useDispatch();
     const theme = useThemeContext();
 
+    const acceptInvitation = useCallback(async () => {
+        try {
+            const conn: any = await dispatch(submitConnection(username, ConnectionMessageSubType.MemberAccept));
+            const { messageId } = await conn.toJSON();
+            dispatch(setAcceptanceSent(username, messageId))
+        } catch (e) {
+            console.error(e);
+        }
+
+    }, [username]);
+
     useEffect(() => {
         (async () => {
             if (!Web3.utils.isAddress(name)) {
@@ -240,8 +249,21 @@ function PostList(props: { list: string[]; fetching: boolean }): ReactElement {
         )
     }
 
+    const hasPendingInvite = user?.group && user?.meta?.inviteReceived && !user?.meta?.acceptanceSent;
+
     return (
         <>
+            { hasPendingInvite && (
+                <div className="profile-view__invite">
+                    <div className="font-semibold mb-2">{`You are invited to join ${getName(user)}`}</div>
+                    <Button
+                        btnType="primary"
+                        onClick={acceptInvitation}
+                    >
+                        Accept Invitation
+                    </Button>
+                </div>
+            )}
             {
                 props.list.map(messageId => {
                     return (
@@ -270,9 +292,10 @@ function ProfileCard(): ReactElement {
     const [username, setUsername] = useState('');
     const user = useUser(username);
     const canNonPostMessage = useCanNonPostMessage();
-    const account = useAccount();
-    const isCurrentUser = username === account;
+    const selected = useSelectedLocalId();
+    const isCurrentUser = username === selected?.address;
     const [showingEditor, showProfileEditor] = useState(false);
+    const [showingInviteModal, showInviteModal] = useState(false);
     const dispatch = useDispatch();
     const history = useHistory();
     const twitterHandle = useConnectedTwitter(username);
@@ -383,6 +406,15 @@ function ProfileCard(): ReactElement {
         },
     ]
 
+    if (user.group) {
+        currentUserMenuItems.push({
+            label: `Invite Members`,
+            iconFA: 'fas fa-user-plus',
+            iconClassName: 'text-gray-400',
+            onClick: () => showInviteModal(true),
+        });
+    }
+
     if (!twitterHandle) {
         currentUserMenuItems.push({
             label: `Connect Twitter`,
@@ -415,6 +447,7 @@ function ProfileCard(): ReactElement {
             )}
         >
             { showingEditor && <ProfileEditor onClose={() => showProfileEditor(false)} /> }
+            { showingInviteModal && <MemberInviteModal onClose={() => showInviteModal(false)} /> }
             {
                 !user.coverImage || user.meta?.blocked
                     ? (
@@ -445,11 +478,12 @@ function ProfileCard(): ReactElement {
                         )
                         : (
                             <Avatar
-                                className={classNames("h-32 w-32 rounded-full border-4", {
+                                className={classNames("h-32 w-32 border-4", {
                                     'bg-gray-100 border-white': theme !== 'dark',
                                     'bg-gray-900 border-gray-900': theme === 'dark',
                                 })}
                                 address={user.address}
+                                group={user.group ? user.address : undefined}
                             />
                         )
                 }
@@ -522,6 +556,18 @@ function ProfileCard(): ReactElement {
             </div>
             <div className="px-4 flex flex-row flex-nowrap profile-view__datas">
                 {
+                    !!user.group && (
+                        <div
+                            className="profile-view__data-group flex flex-row flex-nowrap items-center text-light text-gray-500"
+                        >
+                            <Icon fa="fas fa-users"/>
+                            <div className="ml-2 profile-view__data-group__value">
+                                Group Profile
+                            </div>
+                        </div>
+                    )
+                }
+                {
                     !!user.joinedAt && (
                         <div
                             className="profile-view__data-group flex flex-row flex-nowrap items-center text-light text-gray-500 cursor-pointer hover:underline"
@@ -562,6 +608,14 @@ function ProfileCard(): ReactElement {
                 }
             </div>
             <div className="p-4 flex flex-row flex-nowrap item-center text-light">
+                {
+                    !!user.group && (
+                        <div className="flex flex-row flex-nowrap item-center mr-4">
+                            <div className="font-semibold">{0}</div>
+                            <div className="ml-2 text-gray-500">Members</div>
+                        </div>
+                    )
+                }
                 <div className="flex flex-row flex-nowrap item-center">
                     <div className="font-semibold">{user.meta?.followingCount}</div>
                     <div className="ml-2 text-gray-500">Following</div>
@@ -585,6 +639,7 @@ function ProfileEditor(props: ProfileEditorProps): ReactElement {
     const [name, setName] = useState('');
     const [bio, setBio] = useState('');
     const [website, setWebsite] = useState('');
+    const [group, setGroup] = useState(false);
     const account = useAccount();
     const user = useUser(account);
     const dispatch = useDispatch();
@@ -596,6 +651,7 @@ function ProfileEditor(props: ProfileEditorProps): ReactElement {
         website: user?.website,
         coverImage: user?.coverImage,
         profileImage: user?.profileImage,
+        group: user?.group,
     },
     {
         name: name || account,
@@ -603,6 +659,7 @@ function ProfileEditor(props: ProfileEditorProps): ReactElement {
         website,
         coverImage: coverImageUrl,
         profileImage: profileImageUrl,
+        group: group,
     });
 
     useEffect(() => {
@@ -612,6 +669,7 @@ function ProfileEditor(props: ProfileEditorProps): ReactElement {
         setWebsite(user.website);
         setCoverImageUrl(user.coverImage);
         setProfileImageUrl(user.profileImage);
+        setGroup(user.group);
     }, [user])
 
     const onSaveProfile = useCallback(async () => {
@@ -635,6 +693,10 @@ function ProfileEditor(props: ProfileEditorProps): ReactElement {
             await dispatch(submitProfile(ProfileMessageSubType.Bio, bio));
         }
 
+        if (group !== user?.group) {
+            await dispatch(submitProfile(ProfileMessageSubType.Group, group ? '1' : ''));
+        }
+
         if (!user) return;
 
         dispatch(setUser({
@@ -644,6 +706,7 @@ function ProfileEditor(props: ProfileEditorProps): ReactElement {
             profileImage: profileImageUrl,
             website: website,
             bio: bio,
+            group: group,
         }))
     }, [
         coverImageUrl,
@@ -652,6 +715,7 @@ function ProfileEditor(props: ProfileEditorProps): ReactElement {
         bio,
         website,
         user,
+        group,
     ]);
 
     return (
@@ -669,10 +733,24 @@ function ProfileEditor(props: ProfileEditorProps): ReactElement {
                     url={coverImageUrl}
                     onUrlChange={setCoverImageUrl}
                 />
-                <ProfileImageEditor
-                    url={profileImageUrl}
-                    onUrlChange={setProfileImageUrl}
-                />
+                <div className="flex flex-nowrap items-end">
+                    <ProfileImageEditor
+                        url={profileImageUrl}
+                        onUrlChange={setProfileImageUrl}
+                    />
+                    <div className="flex flex-row text-sm font-semibold mr-4 flex-grow justify-end items-center">
+                        <Checkbox
+                            type="checkbox"
+                            onChange={e => setGroup(e.target.checked)}
+                            checked={group}
+                        />
+                        <div className="ml-2">
+                            This is a group profile
+                        </div>
+                    </div>
+
+                </div>
+
                 <Input
                     className="border relative mx-4 mt-4 mb-8"
                     label="Name"

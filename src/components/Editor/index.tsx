@@ -18,7 +18,7 @@ import {useDispatch} from "react-redux";
 import URLPreview from "../URLPreview";
 import SpinnerGif from "../../../static/icons/spinner.gif";
 import {useUser} from "../../ducks/users";
-import {useSelectedLocalId, useSelectedZKGroup} from "../../ducks/worker";
+import {setPostingGroup, usePostingGroup, useSelectedLocalId, useSelectedZKGroup} from "../../ducks/worker";
 import {useHistory} from "react-router";
 import Checkbox from "../Checkbox";
 import {getSession, verifyTweet} from "../../util/twitter";
@@ -30,6 +30,7 @@ import Menuable from "../Menuable";
 import FileUploadModal from "../FileUploadModal";
 import LinkInputModal from "../LinkInputModal";
 import {useThemeContext} from "../ThemeContext";
+import CustomGroupSelectModal from "../CustomGroupSelectModal";
 
 type Props = {
     messageId: string;
@@ -52,7 +53,7 @@ export default function Editor(props: Props): ReactElement {
 
     const address = useAccount();
     const user = useUser(address);
-    const loggedIn = useLoggedIn();
+    const incognitoGroup = usePostingGroup();
     const draft = useDraft(messageId);
     const dispatch = useDispatch();
     const gun = useGunKey();
@@ -61,11 +62,11 @@ export default function Editor(props: Props): ReactElement {
     const isEmpty = !editorState.getCurrentContent().hasText() && !draft.attachment;
     const mirror = useMirror();
     const selectedZKGroup = useSelectedZKGroup();
-
     const [errorMessage, setErrorMessage] = useState('');
     const [verifying, setVerifying] = useState(true);
     const [showingImageUploadModal, setShowingImageUploadModal] = useState(false);
     const [showingLinkModal, setShowingLinkModal] = useState(false);
+    const [showingCustomGroupsModal, setShowingCustomGroupsModal] = useState(false);
     const [verified, setVerified] = useState(false);
     const [verifiedSession, setVerifiedSession] = useState('');
     const meta = useMeta(messageId);
@@ -139,6 +140,11 @@ export default function Editor(props: Props): ReactElement {
             dispatch(setMirror(checked));
         }
     }, [verified, verifiedSession]);
+
+    const onChangeGroup = useCallback((groupId: string) => {
+        dispatch(setPostingGroup(groupId));
+        setShowingCustomGroupsModal(false);
+    }, [incognitoGroup]);
 
     const onAddLink = useCallback((url: string) => {
         if (readOnly) return;
@@ -274,8 +280,11 @@ export default function Editor(props: Props): ReactElement {
                 <Avatar
                     className="w-12 h-12 mr-3"
                     address={address}
-                    group={selectedZKGroup}
-                    incognito={['interrep', 'zkpr_interrep', 'taz'].includes(selectedId?.type as string)}
+                    group={selectedZKGroup || incognitoGroup}
+                    incognito={
+                        ['interrep', 'zkpr_interrep', 'taz'].includes(selectedId?.type as string)
+                        || !!incognitoGroup
+                    }
                 />
                 <div className="flex flex-row flex-nowrap w-full h-full">
                     <div className="flex flex-col flex-nowrap w-full h-full editor__wrapper">
@@ -294,7 +303,7 @@ export default function Editor(props: Props): ReactElement {
                             readOnly={readOnly || disabled}
                         />
                         {
-                            selectedId?.type === 'gun' && !messageId && (
+                            selectedId?.type === 'gun' && !messageId && !incognitoGroup && (
                                 <ModerationButton
                                     onChange={onModerationChange}
                                     currentType={draft.moderation || null}
@@ -323,6 +332,21 @@ export default function Editor(props: Props): ReactElement {
                 })}
             >
                 <div className="flex-grow pr-4 mr-4 flex flex-row flex-nowrap items-center">
+                    {
+                        selectedId?.type === 'gun' && (
+                            <Icon
+                                className={classNames(
+                                    "editor__button text-blue-300 w-8 h-8 relative",
+                                    {
+                                        'hover:bg-blue-50 hover:text-blue-400': theme !== 'dark',
+                                        'hover:bg-blue-900 hover:text-blue-600': theme === 'dark',
+                                    }
+                                )}
+                                fa="fas fa-user-secret"
+                                onClick={() => setShowingCustomGroupsModal(true)}
+                            />
+                        )
+                    }
                     <Icon
                         className={classNames(
                             "editor__button text-blue-300 w-8 h-8 relative",
@@ -357,13 +381,13 @@ export default function Editor(props: Props): ReactElement {
                         <div className="editor__submit-btn__wrapper">
                             <div className="editor__submit-btn__wrapper__text">
                                 {
-                                    !draft?.global && selectedId?.type === 'gun'
+                                    !draft?.global && selectedId?.type === 'gun' && !incognitoGroup
                                         ? 'Post to my own feed'
                                         : 'Post to global feed'
                                 }
                             </div>
                             {
-                                canNonPostMessage && (
+                                (canNonPostMessage && !incognitoGroup) && (
                                     <Menuable
                                         items={[
                                             {
@@ -407,6 +431,14 @@ export default function Editor(props: Props): ReactElement {
                     </Button>
                 </div>
             </div>
+            {
+                showingCustomGroupsModal && (
+                    <CustomGroupSelectModal
+                        onChange={onChangeGroup}
+                        onClose={() => setShowingCustomGroupsModal(false)}
+                    />
+                )
+            }
             {
                 showingImageUploadModal && (
                     <FileUploadModal

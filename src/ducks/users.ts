@@ -16,6 +16,7 @@ enum ActionTypes {
     SET_USER_ADDRESS = 'users/setUserAddress',
     SET_ECDH = 'users/setECDH',
     SET_ID_COMMITMENT = 'users/setIdCommitment',
+    SET_ACCEPTANCE_SENT = 'users/setAcceptanceSent',
 }
 
 type Action<payload> = {
@@ -36,6 +37,7 @@ export type User = {
     twitterVerification: string;
     bio: string;
     website: string;
+    group: boolean;
     ecdh: string;
     idcommitment: string;
     joinedAt: number;
@@ -49,6 +51,10 @@ export type User = {
         postingCount: number;
         followed: string | null;
         blocked: string | null;
+        inviteSent: string | null;
+        acceptanceReceived: string | null;
+        inviteReceived: string | null;
+        acceptanceSent: string | null;
     };
 }
 
@@ -190,6 +196,11 @@ export const searchUsers = (query: string) => async (dispatch: Dispatch, getStat
     return json.payload;
 }
 
+export const setAcceptanceSent = (address: string, acceptanceSent: string | null): Action<{ address: string; acceptanceSent: string | null }> => ({
+    type: ActionTypes.SET_ACCEPTANCE_SENT,
+    payload: {address, acceptanceSent},
+});
+
 export const setFollowed = (address: string, followed: string | null): Action<{ address: string; followed: string | null }> => ({
     type: ActionTypes.SET_FOLLOWED,
     payload: {address, followed},
@@ -228,6 +239,7 @@ const processUserPayload = (user: any) => (dispatch: Dispatch) => {
         bio: user.bio || '',
         profileImage: user.profileImage || '',
         coverImage: user.coverImage || '',
+        group: !!user.group,
         twitterVerification: user.twitterVerification || '',
         website: user.website || '',
         ecdh: user.ecdh || '',
@@ -243,6 +255,10 @@ const processUserPayload = (user: any) => (dispatch: Dispatch) => {
             postingCount: user.meta?.postingCount || 0,
             followed: user.meta?.followed || null,
             blocked: user.meta?.blocked || null,
+            inviteSent: user.meta?.inviteSent || null,
+            acceptanceReceived: user.meta?.acceptanceReceived || null,
+            inviteReceived: user.meta?.inviteReceived || null,
+            acceptanceSent: user.meta?.acceptanceSent || null,
         },
     };
 
@@ -294,6 +310,7 @@ export const useUser = (address = ''): User | null => {
                 joinedAt: 0,
                 joinedTx: '',
                 type: '',
+                group: false,
                 meta: {
                     followerCount: 0,
                     followingCount: 0,
@@ -302,6 +319,10 @@ export const useUser = (address = ''): User | null => {
                     postingCount: 0,
                     followed: null,
                     blocked: null,
+                    inviteSent: null,
+                    acceptanceReceived: null,
+                    inviteReceived: null,
+                    acceptanceSent: null,
                 },
             }
         }
@@ -318,6 +339,20 @@ export default function users(state = initialState, action: Action<any>): State 
             return {
                 map: {},
             };
+        case ActionTypes.SET_ACCEPTANCE_SENT:
+            return {
+                ...state,
+                map: {
+                    ...state.map,
+                    [action.payload.address]: {
+                        ...state.map[action.payload.address],
+                        meta: {
+                            ...state.map[action.payload.address]?.meta,
+                            acceptanceSent: action.payload.acceptanceSent,
+                        },
+                    },
+                },
+            }
         case ActionTypes.SET_FOLLOWED:
             return {
                 ...state,
@@ -420,6 +455,7 @@ function reduceSetUser(state: State, action: Action<User>): State {
                 joinedAt: action.payload.joinedAt,
                 joinedTx: action.payload.joinedTx,
                 type: action.payload.type,
+                group: action.payload.group,
                 meta: {
                     followerCount: action.payload.meta?.followerCount || 0,
                     followingCount: action.payload.meta?.followingCount || 0,
@@ -428,6 +464,10 @@ function reduceSetUser(state: State, action: Action<User>): State {
                     postingCount: action.payload.meta?.postingCount || 0,
                     followed: action.payload.meta?.followed || null,
                     blocked: action.payload.meta?.blocked || null,
+                    inviteSent: action.payload.meta?.inviteSent || null,
+                    acceptanceReceived: action.payload.meta?.acceptanceReceived || null,
+                    inviteReceived: action.payload.meta?.inviteReceived || null,
+                    acceptanceSent: action.payload.meta?.acceptanceSent || null,
                 },
             },
         },

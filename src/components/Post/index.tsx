@@ -167,6 +167,8 @@ export function ExpandedPost(props: Props & {
     const meta = useMeta(props.messageId);
     const zkGroup = useZKGroupFromPost(props.messageId);
     const theme = useThemeContext();
+    const [protocol, groupName] = zkGroup?.split('_') || [];
+    const groupUser = useUser(groupName);
 
     const gotoUserProfile = useCallback((e: any) => {
         if (!user || !post?.creator) return;
@@ -206,7 +208,7 @@ export function ExpandedPost(props: Props & {
                         />
                     </div>
                     <div className="text-gray-400 mr-1" onClick={gotoUserProfile}>
-                        {getHandle(user)}
+                        {getHandle(groupUser || user)}
                     </div>
                 </div>
                 <div className="flex flex-row flex-nowrap flex-grow flex-shrink justify-end">
@@ -306,6 +308,8 @@ export function RegularPost(props: Props & {
     const postJson = post?.toJSON();
     const meta = useMeta(postJson?.messageId);
     const zkGroup = useZKGroupFromPost(postJson?.messageId);
+    const [protocol, groupName] = zkGroup?.split('_') || [];
+    const groupUser = useUser(groupName);
 
     const [parentCreator, parentHash] = post?.payload.reference.split('/') || [];
     const parentUser = useUser(parentCreator);
@@ -396,7 +400,7 @@ export function RegularPost(props: Props & {
                         {
                             post.type !== MessageType._TWEET && (
                                 <div className="post__creator-username text-gray-400 mr-1" onClick={gotoUserProfile}>
-                                    {getHandle(user)}
+                                    {getHandle(groupUser || user)}
                                 </div>
                             )
                         }

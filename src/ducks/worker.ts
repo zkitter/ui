@@ -10,6 +10,7 @@ export enum ActionType {
     SET_SELECTED_ID = 'worker/setSelectedId',
     SET_IDENTITIES = 'worker/setIdentities',
     SET_UNLOCKED = 'worker/setUnlocked',
+    SET_POSTING_GROUP = 'worker/setPostingGroup',
 }
 
 export type Action<payload> = {
@@ -23,12 +24,14 @@ export type State = {
     unlocked: boolean;
     selected: Identity | null;
     identities: Identity[];
+    postingGroup: string;
 }
 
 const initialState: State = {
     unlocked: false,
     selected: null,
     identities: [],
+    postingGroup: '',
 };
 
 export const syncWorker = () => async (dispatch: Dispatch) => {
@@ -64,6 +67,10 @@ export const setSelectedId = (id: Identity | null): Action<Identity | null> => (
     payload: id,
 });
 
+export const setPostingGroup = (id: string): Action<string> => ({
+    type: ActionType.SET_POSTING_GROUP,
+    payload: id,
+});
 
 export default function worker(state = initialState, action: Action<any>): State {
     switch (action.type) {
@@ -76,11 +83,17 @@ export default function worker(state = initialState, action: Action<any>): State
             return {
                 ...state,
                 selected: action.payload,
+                postingGroup: '',
             };
         case ActionType.SET_UNLOCKED:
             return {
                 ...state,
                 unlocked: action.payload,
+            };
+        case ActionType.SET_POSTING_GROUP:
+            return {
+                ...state,
+                postingGroup: action.payload,
             };
         default:
             return state;
@@ -96,6 +109,12 @@ export const useIdentities = () => {
 export const useWorkerUnlocked = () => {
     return useSelector((state: AppRootState) => {
         return state.worker.unlocked;
+    }, deepEqual);
+}
+
+export const usePostingGroup = () => {
+    return useSelector((state: AppRootState) => {
+        return state.worker.postingGroup;
     }, deepEqual);
 }
 
