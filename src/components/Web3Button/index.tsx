@@ -51,6 +51,7 @@ export default function Web3Button(props: Props): ReactElement {
     const selectedLocalId = useSelectedLocalId();
     const [ensName, setEnsName] = useState('');
     const theme = useThemeContext();
+    const history = useHistory();
 
     useEffect(() => {
         (async () => {
@@ -73,6 +74,14 @@ export default function Web3Button(props: Props): ReactElement {
 
     let btnContent;
     let id = selectedLocalId || identities[0];
+
+    const onClick = useCallback(() => {
+        if (!id) {
+            history.push('/signup');
+        } else {
+            props.onClick && props.onClick();
+        }
+    }, [id, props.onClick]);
 
     if (id) {
         if (id.type === 'zkpr_interrep') {
@@ -148,7 +157,7 @@ export default function Web3Button(props: Props): ReactElement {
                         'bg-gray-900 pl-0 pr-4': !id && theme === 'dark',
                     }
                 )}
-                onClick={props.onClick}
+                onClick={onClick}
             >
                 {btnContent}
             </Button>
