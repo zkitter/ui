@@ -74,10 +74,17 @@ export default function Avatar(props: Props): ReactElement {
     const [twitterProfileUrl, setTwitterProfileUrl] = useState('');
 
     const dispatch = useDispatch();
+    const [protocol, groupName] = group?.split('_') || [];
+
     const user = useUser(username);
 
     useEffect(() => {
         (async () => {
+            if (groupName) {
+                setUsername(groupName);
+                return;
+            }
+
             if (name && !Web3.utils.isAddress(name)) {
                 const addr: any = await dispatch(fetchAddressByName(name));
                 setUsername(addr);
@@ -85,7 +92,7 @@ export default function Avatar(props: Props): ReactElement {
                 setUsername(address);
             }
         })();
-    }, [name, address]);
+    }, [name, address, groupName]);
 
     useEffect(() => {
         if (username) {
@@ -119,7 +126,7 @@ export default function Avatar(props: Props): ReactElement {
         )
     }
 
-    if (incognito) {
+    if (incognito && protocol !== 'custom') {
         const url = group ? GROUP_TO_PFP[group] : undefined;
         return (
             <Icon

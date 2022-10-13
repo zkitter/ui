@@ -34,7 +34,7 @@ export default function App(): ReactElement {
     const theme = useContext(ThemeContext);
     const loc = useLocation();
     const history = useHistory();
-    const [tazIdentity, setTazIdentity] = useState<string[]>(null);
+    const [tazIdentity, setTazIdentity] = useState<string[]|null>(null);
     const [showingTazModal, showTazModal] = useState(false);
 
     useEffect(() => {

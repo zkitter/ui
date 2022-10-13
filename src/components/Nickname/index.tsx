@@ -1,4 +1,4 @@
-import React, {ReactElement, useEffect} from "react";
+import React, {ReactElement, useEffect, useState} from "react";
 import {getUser, useUser} from "../../ducks/users";
 import {useDispatch} from "react-redux";
 import {getName} from "../../util/user";
@@ -30,18 +30,39 @@ const GROUP_TO_NICKNAME: {
 
 export default function Nickname(props: Props): ReactElement {
     const { address, interepProvider, interepGroup, className = '', group } = props;
-    const user = useUser(address);
+    const [username, setUsername] = useState('');
+    const user = useUser(username);
     const dispatch = useDispatch();
 
     const badges = [];
+    const [protocol, groupName] = props.group?.split('_') || [];
 
     useEffect(() => {
         if (!user && address) {
             dispatch(getUser(address));
+        } else if (!user && protocol === 'custom') {
+            dispatch(getUser(groupName));
         }
-    }, [user, address]);
+    }, [user, address, groupName, protocol]);
+
+    useEffect(() => {
+        if (protocol === 'custom') {
+            setUsername(groupName);
+        } else if (address) {
+            setUsername(address);
+        }
+    }, [address, groupName, protocol]);
+
 
     if (user) {
+        return (
+            <div className={`flex flex-row flex-nowrap items-center ${className}`}>
+                {getName(user)}
+            </div>
+        )
+    }
+
+    if (protocol === 'custom') {
         return (
             <div className={`flex flex-row flex-nowrap items-center ${className}`}>
                 {getName(user)}

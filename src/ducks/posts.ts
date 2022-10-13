@@ -17,6 +17,7 @@ import {Dispatch} from "redux";
 import {useHistory} from "react-router";
 import {useCallback} from "react";
 import {Identity} from "../serviceWorkers/identity";
+import Web3 from "web3";
 
 enum ActionTypes {
     SET_POSTS = 'posts/setPosts',
@@ -470,9 +471,15 @@ export const useZKGroupFromPost = (messageId?: string)  => {
         const post = state.posts.meta[messageId];
         if (!post) return undefined;
 
+        if (!post.interepProvider) return undefined;
+
+        if (Web3.utils.isAddress(post.interepProvider)) return 'custom_' + post.interepProvider;
+
         return post.interepProvider === 'taz'
             ? 'semaphore_taz_members'
-            : `interrep_${post.interepProvider}_${post.interepGroup}`;
+            : post.interepProvider
+                ? `interrep_${post.interepProvider}_${post.interepGroup}`
+                : undefined;
     }, deepEqual);
 }
 
