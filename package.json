@@ -9,7 +9,9 @@
     "dev": "NODE_ENV=development concurrently --kill-others-on-fail npm:dev-ui",
     "build": "NODE_ENV=production npm run build-ui",
     "test": "NODE_ENV=test jest --coverage=false",
-    "test:coverage": "NODE_ENV=test jest --coverage"
+    "test:coverage": "NODE_ENV=test jest --coverage",
+    "format:check": "prettier --check 'src'",
+    "format:write": "prettier --write 'src'"
   },
   "dependencies": {
     "@draft-js-plugins/editor": "^4.1.0",
@@ -87,6 +89,7 @@
     "jest": "^27.5.1",
     "node-loader": "^0.6.0",
     "node-sass": "^4.13.0",
+    "prettier": "^2.7.1",
     "process": "^0.11.10",
     "sass-loader": "^8.0.0",
     "sinon": "^13.0.1",
