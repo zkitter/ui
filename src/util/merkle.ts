@@ -13,8 +13,10 @@ export type ValidGroups = 'zksocial_all'
 export const findProof = async (
     group: string,
     idCommitment: string,
+    proofType?: 'semaphore' | 'rln',
 ): Promise<MerkleProof & {group: string}|null> => {
-    const resp = await fetch(`${config.indexerAPI}/v1/proofs/${idCommitment}?group=${group}`);
+    const proofTypeParam = proofType ? `&proofType=${proofType}` : ''
+    const resp = await fetch(`${config.indexerAPI}/v1/proofs/${idCommitment}?group=${group}${proofTypeParam}`);
     const { payload, error } = await resp.json();
     const { data } = payload;
 
