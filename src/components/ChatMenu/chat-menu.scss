@@ -1,5 +1,4 @@
-@import "../../util/variable.scss";
-
+@import '../../util/variable.scss';
 
 .dark {
   .chat-menu {
@@ -49,15 +48,15 @@
   }
 
   &__item {
-    margin: .25rem .5rem;
-    padding: .5rem;
-    border-radius: .5rem;
+    margin: 0.25rem 0.5rem;
+    padding: 0.5rem;
+    border-radius: 0.5rem;
     cursor: pointer;
     transition: background-color 150ms ease-in-out;
     align-items: center;
 
     &:hover {
-      background-color: rgba($gray-100, .7);
+      background-color: rgba($gray-100, 0.7);
     }
 
     &:active,
@@ -83,7 +82,7 @@
   &__header {
     @extend %col-nowrap;
     align-items: center;
-    margin: .5rem;
+    margin: 0.5rem;
 
     &__r {
       @extend %row-nowrap;

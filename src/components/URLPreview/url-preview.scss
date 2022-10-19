@@ -1,4 +1,4 @@
-@import "../../util/variable";
+@import '../../util/variable';
 
 .dark {
   .url-preview {
@@ -73,14 +73,14 @@
 
   &__link-content {
     @extend %col-nowrap;
-    padding: .75rem 1rem;
-    font-size: .9375rem;
+    padding: 0.75rem 1rem;
+    font-size: 0.9375rem;
     line-height: 1.35rem;
   }
 
   &__link-title {
     font-weight: 600;
-    margin-bottom: .25rem;
+    margin-bottom: 0.25rem;
     text-overflow: ellipsis;
     overflow: hidden;
     max-height: 2.7rem;

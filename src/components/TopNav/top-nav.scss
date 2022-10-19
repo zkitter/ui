@@ -1,12 +1,11 @@
-@import "../../util/variable";
+@import '../../util/variable';
 
 .top-nav {
   &__icon {
     height: 2rem;
     width: 2rem;
-    border-radius: .5rem;
-    transition: background-color 100ms ease-in-out,
-      color 100ms ease-in-out;
+    border-radius: 0.5rem;
+    transition: background-color 100ms ease-in-out, color 100ms ease-in-out;
 
     &:hover {
       //background: rgba($primary-color, .15);
@@ -30,18 +29,17 @@
   }
 
   &__icon + &__icon {
-    margin-left: .25rem;
+    margin-left: 0.25rem;
   }
 
   &__back-icon {
     height: 2.5rem;
     width: 2.5rem;
     border-radius: 50%;
-    transition: background-color 100ms ease-in-out,
-    color 100ms ease-in-out;
+    transition: background-color 100ms ease-in-out, color 100ms ease-in-out;
 
     &:hover {
-      background: rgba($primary-color, .15);
+      background: rgba($primary-color, 0.15);
       color: $primary-color;
     }
   }
@@ -50,13 +48,12 @@
     .web3-button__unlock-menu {
       width: 16rem;
       position: fixed !important;
-      margin-top: .5rem !important;
+      margin-top: 0.5rem !important;
       top: 58px !important;
       right: 16px !important;
       left: auto !important;
       padding-top: 0 !important;
     }
-
   }
 }
 
@@ -88,7 +85,7 @@
     .top-nav {
       &__back-icon {
         i {
-          font-size: .75rem !important;
+          font-size: 0.75rem !important;
         }
       }
 
@@ -105,14 +102,14 @@
     .top-nav {
       &__back-icon {
         i {
-          font-size: .75rem !important;
+          font-size: 0.75rem !important;
         }
       }
     }
 
     &__title-group {
-      padding-top: .25rem;
-      padding-bottom: .25rem;
+      padding-top: 0.25rem;
+      padding-bottom: 0.25rem;
     }
 
     &__title {
@@ -121,7 +118,7 @@
     }
 
     &__subtitle {
-      font-size: .75rem;
+      font-size: 0.75rem;
     }
   }
 
@@ -132,7 +129,7 @@
     .top-nav {
       &__back-icon {
         i {
-          font-size: .75rem !important;
+          font-size: 0.75rem !important;
         }
       }
     }

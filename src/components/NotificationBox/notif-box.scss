@@ -1,10 +1,10 @@
-@import "../../util/variable";
+@import '../../util/variable';
 
 .notif-box {
-  background-color: rgba($primary-color, .1);
-  border: 1px solid rgba($primary-color, .5);
+  background-color: rgba($primary-color, 0.1);
+  border: 1px solid rgba($primary-color, 0.5);
   color: darken($primary-color, 10);
-  border-radius: .75rem;
-  font-size: .875rem;
-  padding: .75rem 1rem;
+  border-radius: 0.75rem;
+  font-size: 0.875rem;
+  padding: 0.75rem 1rem;
 }

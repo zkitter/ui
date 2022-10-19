@@ -1,16 +1,16 @@
-@import "../../util/variable";
+@import '../../util/variable';
 
 .profile-view {
   width: 36.25rem;
   overflow-y: auto;
 
   &::-webkit-scrollbar {
-    width: 0;  /* Remove scrollbar space */
-    background: transparent;  /* Optional: just make scrollbar invisible */
+    width: 0; /* Remove scrollbar space */
+    background: transparent; /* Optional: just make scrollbar invisible */
   }
 
   &__data-group {
-    margin: .25rem 1rem .25rem 0;
+    margin: 0.25rem 1rem 0.25rem 0;
   }
 
   &__menu {
@@ -35,7 +35,7 @@
     flex-flow: column nowrap;
     align-items: center;
     justify-content: center;
-    background-color: rgba($primary-color, .1);
+    background-color: rgba($primary-color, 0.1);
     border: 1px solid $primary-color;
     border-radius: 1rem;
     margin-bottom: 0.25rem;
