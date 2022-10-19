@@ -8,6 +8,8 @@ import {ZKPR} from "../ducks/zkpr";
 import {getEpoch} from "./zkchat";
 import {sha256} from "./crypto";
 import {findProof} from "./merkle";
+import {Identity} from "@semaphore-protocol/identity";
+import {SerializedIdentity} from "@zk-kit/identity/src/types/index";
 
 export const generateRLNProof = (
     signalString: string,
@@ -25,6 +27,20 @@ export const generateRLNProof = (
                 signalString,
                 new ZkIdentity(Strategy.SERIALIZED, selected.serializedIdentity),
                 `interrep_${selected.provider.toLowerCase()}_${selected.name}`,
+            );
+        case "taz":
+            const zkIdentity = new Identity(selected.serializedIdentity);
+            const identityTrapdoor = zkIdentity.getTrapdoor();
+            const identityNullifier = zkIdentity.getNullifier();
+            const data: SerializedIdentity = {
+                identityTrapdoor: identityTrapdoor.toString(16),
+                identityNullifier: identityNullifier.toString(16),
+                secret: [identityNullifier, identityTrapdoor].map((item) => item.toString(16))
+            };
+            return generateRLNProofFromLocalIdentity(
+                signalString,
+                new ZkIdentity(Strategy.SERIALIZED, JSON.stringify(data)),
+                `semaphore_taz_members`,
             );
         // case "zkpr_interrep":
         //     return generateSemaphoreProofFromZKPR(
@@ -85,6 +101,7 @@ export const generateRLNProofFromLocalIdentity = async (
     const merkleProof: MerkleProof | null = await findProof(
         group,
         BigInt(identityCommitment).toString(16),
+        'rln',
     );
     const identityPathElements = merkleProof!.siblings;
     const identityPathIndex = merkleProof!.pathIndices;
