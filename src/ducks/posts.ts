@@ -241,6 +241,34 @@ export const fetchLikersByPost = async (
   return !likers.length ? null : likers;
 };
 
+export const fetchUserFollowers = async (
+  user: string,
+  limit = 10,
+  offset = 0
+): Promise<string[] | null> => {
+  const resp = await fetch(
+    `${config.indexerAPI}/v1/${user}/followers?limit=${limit}&offset=${offset}`,
+    { method: 'GET' }
+  );
+
+  const { payload: users } = await resp.json();
+  return !users.length ? null : users;
+};
+
+export const fetchUserFollowings = async (
+  user: string,
+  limit = 10,
+  offset = 0
+): Promise<string[] | null> => {
+  const resp = await fetch(
+    `${config.indexerAPI}/v1/${user}/followings?limit=${limit}&offset=${offset}`,
+    { method: 'GET' }
+  );
+
+  const { payload: followings } = await resp.json();
+  return !followings.length ? null : followings;
+};
+
 export const fetchRepliedBy =
   (creator: string, limit = 10, offset = 0) =>
   async (dispatch: ThunkDispatch<any, any, any>, getState: () => AppRootState) => {

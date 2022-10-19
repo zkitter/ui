@@ -118,15 +118,15 @@ export default function ExpandedPost(
           <div className="text-gray-500 my-2">{moment(post.createdAt).format('lll')}</div>
         </div>
 
-        {likers && (
-          <PostLikes
-            className={classNames('mt-2 pt-3 border-t w-full', {
-              'border-gray-200': theme !== 'dark',
-              'border-gray-800': theme === 'dark',
-            })}
-            likers={likers}
-          />
-        )}
+        <PostLikes
+          className={classNames('mt-2 pt-3 border-t w-full', {
+            'border-gray-200': theme !== 'dark',
+            'border-gray-800': theme === 'dark',
+          })}
+          item={Item.Like}
+          id={messageId}
+        />
+
         <PostFooter
           messageId={messageId}
           className={classNames('mt-2 pt-3 border-t w-full cursor-pointer', {
