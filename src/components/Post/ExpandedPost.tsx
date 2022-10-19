@@ -13,7 +13,7 @@ import { useThemeContext } from '../ThemeContext';
 import Avatar from '../Avatar';
 import Nickname from '../Nickname';
 import PostFooter from './PostFooter';
-import PostLikes from './PostLikes';
+import PostLikes, { Item } from '../UsersCountModal';
 import PostMenu from './PostMenu';
 import URLPreview from '../URLPreview';
 import { Props } from './types';
