@@ -1,10 +1,10 @@
 import classNames from 'classnames';
 import moment from 'moment/moment';
-import React, { ReactElement, useCallback } from 'react';
+import React, { ReactElement, useCallback, useEffect, useState } from 'react';
 import { useHistory } from 'react-router';
 
 import { convertMarkdownToDraft, DraftEditor } from '../DraftEditor';
-import { useMeta, usePost, useZKGroupFromPost } from '../../ducks/posts';
+import { fetchLikersByPost, useMeta, usePost, useZKGroupFromPost } from '../../ducks/posts';
 import { useUser } from '../../ducks/users';
 import { PostMessageSubType } from '../../util/message';
 import { getHandle, getUsername } from '../../util/user';
@@ -13,6 +13,7 @@ import { useThemeContext } from '../ThemeContext';
 import Avatar from '../Avatar';
 import Nickname from '../Nickname';
 import PostFooter from './PostFooter';
+import PostLikes from './PostLikes';
 import PostMenu from './PostMenu';
 import URLPreview from '../URLPreview';
 import { Props } from './types';
@@ -36,6 +37,11 @@ export default function ExpandedPost(
   const meta = useMeta(props.messageId);
   const zkGroup = useZKGroupFromPost(props.messageId);
   const theme = useThemeContext();
+  const [likers, setLikers] = useState<string[] | null>(null);
+
+  useEffect(() => {
+    fetchLikersByPost(messageId).then(likers => setLikers(likers));
+  }, []);
 
   const gotoUserProfile = useCallback(
     (e: any) => {
@@ -111,9 +117,19 @@ export default function ExpandedPost(
         <div className="flex flex-row flex-nowrap items-center text-light w-full">
           <div className="text-gray-500 my-2">{moment(post.createdAt).format('lll')}</div>
         </div>
+
+        {likers && (
+          <PostLikes
+            className={classNames('mt-2 pt-3 border-t w-full', {
+              'border-gray-200': theme !== 'dark',
+              'border-gray-800': theme === 'dark',
+            })}
+            likers={likers}
+          />
+        )}
         <PostFooter
           messageId={messageId}
-          className={classNames('mt-2 pt-3 border-t w-full', {
+          className={classNames('mt-2 pt-3 border-t w-full cursor-pointer', {
             'border-gray-200': theme !== 'dark',
             'border-gray-800': theme === 'dark',
           })}
