@@ -1,4 +1,4 @@
-@import "../../util/variable.scss";
+@import '../../util/variable.scss';
 
 .wt-viewer {
   &__files {
@@ -9,7 +9,7 @@
 
   &__file {
     @extend %row-nowrap;
-    padding: .5rem 1rem;
+    padding: 0.5rem 1rem;
     cursor: pointer;
 
     .icon {
@@ -48,7 +48,7 @@
 
   &__viewer {
     @extend %row-nowrap;
-    align-items: center;;
+    align-items: center;
     justify-content: center;
     background-color: black;
 

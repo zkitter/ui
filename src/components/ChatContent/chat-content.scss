@@ -1,4 +1,4 @@
-@import "../../util/variable.scss";
+@import '../../util/variable.scss';
 
 .dark {
   .chat-content {
@@ -74,8 +74,8 @@
 
         &__loading-gif {
           position: absolute;
-          top: .25rem;
-          left: .25rem;
+          top: 0.25rem;
+          left: 0.25rem;
         }
       }
     }
@@ -107,7 +107,6 @@
   &__editor {
     flex: 1 1 auto;
     textarea {
-
     }
   }
 }
@@ -118,7 +117,7 @@
   border-radius: 1.25rem;
   background-color: $gray-100;
   max-width: 50%;
-  margin: .25rem 1rem;
+  margin: 0.25rem 1rem;
   //border-bottom-left-radius: 0;
 
   &--self {
@@ -147,6 +146,5 @@
   }
 
   &__time {
-
   }
 }

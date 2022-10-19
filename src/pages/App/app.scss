@@ -1,12 +1,13 @@
-@import "../../util/variable";
+@import '../../util/variable';
 
 html {
   font-size: 16px;
-  -webkit-tap-highlight-color:  rgba(255, 255, 255, 0);
+  -webkit-tap-highlight-color: rgba(255, 255, 255, 0);
 }
 
-#root, body {
-  font-family: "Open Sans", sans-serif;
+#root,
+body {
+  font-family: 'Open Sans', sans-serif;
   cursor: default;
   width: 100vw;
   height: 100vh;
@@ -62,7 +63,7 @@ ul {
 
 li {
   margin-left: 2rem;
-  padding-left: .5rem;
+  padding-left: 0.5rem;
 }
 
 a {

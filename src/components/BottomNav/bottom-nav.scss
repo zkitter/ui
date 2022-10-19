@@ -1,4 +1,4 @@
-@import "../../util/variable";
+@import '../../util/variable';
 
 .dark {
   .bottom-nav {
@@ -25,15 +25,14 @@
     border-top: 1px solid $gray-100;
     align-items: center;
     flex: 0 0 auto;
-    padding: .5rem;
+    padding: 0.5rem;
   }
 
   &__icon {
     flex: 1 0 auto;
     height: 2rem;
     width: 2rem;
-    transition: background-color 100ms ease-in-out,
-    color 100ms ease-in-out;
+    transition: background-color 100ms ease-in-out, color 100ms ease-in-out;
 
     &:hover {
       color: $primary-color;
@@ -64,7 +63,7 @@
       &__unlock-menu {
         bottom: 3.5rem;
         top: auto !important;
-        right: .25rem;
+        right: 0.25rem;
         position: fixed;
         left: auto !important;
       }
@@ -77,12 +76,11 @@
         .menuable__menu {
           bottom: 3.5rem;
           top: auto !important;
-          right: .25rem;
+          right: 0.25rem;
           position: fixed;
           left: auto !important;
         }
       }
     }
   }
-
 }
