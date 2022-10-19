@@ -375,6 +375,7 @@ export const submitZKPRPost = (post: Post) => async (dispatch: Dispatch, getStat
     const merkleProof: MerkleProof | null = await findProof(
         '',
         BigInt(identityCommitment).toString(16),
+        'semaphore',
     );
 
     const identityPathElements = merkleProof!.siblings;
@@ -392,16 +393,15 @@ export const submitZKPRPost = (post: Post) => async (dispatch: Dispatch, getStat
     } = post.toJSON();
 
     const externalNullifier = genExternalNullifier('POST');
-    const wasmFilePath = `${config.indexerAPI}/circuits/rln/wasm`;
-    const finalZkeyPath = `${config.indexerAPI}/circuits/rln/zkey`;
+    const wasmFilePath = `${config.indexerAPI}/dev/semaphore_wasm`;
+    const finalZkeyPath = `${config.indexerAPI}/dev/semaphore_final_zkey`;
 
-    const {proof, publicSignals} = await zkpr.rlnProof(
+    const { fullProof } = await zkpr.semaphoreProof(
         externalNullifier,
         hash,
         wasmFilePath,
         finalZkeyPath,
         '',
-        await sha256('zkpost'),
         {
             root: root.toString(),
             leaf: identityCommitment,
@@ -410,10 +410,10 @@ export const submitZKPRPost = (post: Post) => async (dispatch: Dispatch, getStat
         }
     )
 
-    // const {
-    //     proof,
-    //     publicSignals,
-    // } = fullProof;
+    const {
+        proof,
+        publicSignals,
+    } = fullProof;
 
     try {
         // @ts-ignore
