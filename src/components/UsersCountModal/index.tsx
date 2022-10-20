@@ -32,12 +32,6 @@ export enum Item {
   Following = 'Following',
 }
 
-const fetch = {
-  [Item.Like]: fetchLikersByPost,
-  [Item.Follower]: fetchUserFollowers,
-  [Item.Following]: fetchUserFollowings,
-};
-
 const useItem = (item: Item, id: string) => {
   if (item === Item.Like) return { fetch: fetchLikersByPost, count: useMeta(id).likeCount };
   if (item === Item.Follower)
@@ -69,10 +63,8 @@ export default function UsersCountModal(props: {
 
   const [users, setUsers] = useState<string[] | null>(null);
 
-  // hack?
+  // hacky?
   const { fetch, count } = useItem(item, id);
-
-  // console.log('debug', { count, item, followerCount: useUser(id)?.meta.followerCount });
 
   const many = count && count > 1 && item !== Item.Following;
   const text = `${item}${many ? 's' : ''}`;
@@ -100,7 +92,7 @@ export default function UsersCountModal(props: {
         </div>
       </div>
       {showingList && users && (
-        <UsersList onClose={() => setShowList(false)} users={users} title={title} />
+        <UsersList onClose={() => setShowList(false)} users={users!} title={title} />
       )}
     </>
   ) : item !== Item.Like ? (
