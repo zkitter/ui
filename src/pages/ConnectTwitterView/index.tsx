@@ -309,7 +309,7 @@ function VerifyView(props: {
         <div className="text-xl font-semibold">Make a verification tweet</div>
       </div>
       <div className="my-4 text-center">
-        {`Associate your Austism profile with ${twitterAuth?.username} by making a tweet!`}
+        {`Associate your ${process.env.APP_TITLE} profile with ${twitterAuth?.username} by making a tweet!`}
       </div>
       <div className="my-4">
         <div className="border rounded-xl m-4 p-4 flex flex-row flex-nowrap">

@@ -20,7 +20,7 @@ const envPlugin = new webpack.EnvironmentPlugin({
   ARB_REGISTRAR: '',
   ARB_EXPLORER: '',
   GUN_PEERS: [],
-  APP_TITLE: '',
+  APP_TITLE: 'Zkitter',
   APP_LOGO: '',
 });
 
