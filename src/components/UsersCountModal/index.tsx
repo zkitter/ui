@@ -1,7 +1,12 @@
 import classNames from 'classnames';
 import React, { ReactElement, useEffect, useState } from 'react';
 
-import { fetchLikersByPost, fetchUserFollowers, fetchUserFollowings } from '../../ducks/posts';
+import {
+  fetchLikersByPost,
+  fetchUserFollowers,
+  fetchUserFollowings,
+  useMeta,
+} from '../../ducks/posts';
 
 import Modal, { ModalContent, ModalHeader } from '../Modal';
 import { UserRow } from '../DiscoverUserPanel';
@@ -53,23 +58,25 @@ export default function UsersCountModal(props: {
   const { className, item, id } = props;
   const [showingList, setShowList] = useState(false);
 
-  const [users, setItems] = useState<string[] | null>(null);
-  const count = users?.length;
+  const [users, setUsers] = useState<string[] | null>(null);
+
+  // hack? useMeta to rerender the like counter when user clicks on like
+  const count = item === Item.Like ? useMeta(id).likeCount : users?.length;
+
   const many = count && count > 1 && item !== Item.Following;
   const text = `${item}${many ? 's' : ''}`;
   const title = item === Item.Like ? 'Liked By' : text;
 
   useEffect(() => {
     setShowList(false);
-
-    fetch[item](id).then(users => setItems(users));
+    fetch[item](id).then(users => setUsers(users));
   }, [id]);
 
   /*
     if 0 likes show nothing
     if 0 follow-er/ing, show "0 Follow-er/ing"
    */
-  return users ? (
+  return !!count && users ? (
     <>
       <div className="flex flex-row flex-nowrap items-center text-light">
         <div className={classNames(className)}>
