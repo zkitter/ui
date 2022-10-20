@@ -10,6 +10,7 @@ import {
 
 import Modal, { ModalContent, ModalHeader } from '../Modal';
 import { UserRow } from '../DiscoverUserPanel';
+import { useUser } from '../../ducks/users';
 
 function UsersList(props: { onClose: () => void; users: string[]; title: string }): ReactElement {
   const { onClose, title, users } = props;
@@ -37,6 +38,14 @@ const fetch = {
   [Item.Following]: fetchUserFollowings,
 };
 
+const useItem = (item: Item, id: string) => {
+  if (item === Item.Like) return { fetch: fetchLikersByPost, count: useMeta(id).likeCount };
+  if (item === Item.Follower)
+    return { fetch: fetchUserFollowers, count: useUser(id)?.meta.followerCount };
+
+  return { fetch: fetchUserFollowings, count: useUser(id)?.meta.followingCount };
+};
+
 function MaybePlural(props: { users: string[]; text: Item }): ReactElement {
   const { users, text } = props;
   const count = users.length;
@@ -60,8 +69,10 @@ export default function UsersCountModal(props: {
 
   const [users, setUsers] = useState<string[] | null>(null);
 
-  // hack? useMeta to rerender the like counter when user clicks on like
-  const count = item === Item.Like ? useMeta(id).likeCount : users?.length;
+  // hack?
+  const { fetch, count } = useItem(item, id);
+
+  // console.log('debug', { count, item, followerCount: useUser(id)?.meta.followerCount });
 
   const many = count && count > 1 && item !== Item.Following;
   const text = `${item}${many ? 's' : ''}`;
@@ -69,7 +80,7 @@ export default function UsersCountModal(props: {
 
   useEffect(() => {
     setShowList(false);
-    fetch[item](id).then(users => setUsers(users));
+    fetch(id).then(users => setUsers(users));
   }, [id]);
 
   /*
