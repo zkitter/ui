@@ -6,22 +6,21 @@ module.exports = {
   collectCoverageFrom: ['src/**/*.{ts,tsx}'],
   coverageDirectory: 'coverage',
   testPathIgnorePatterns: [
-      '/node_modules/',
-      '/build/',
-      '/build-test/',
-      '/static/',
-      '/src/util/message.ts',
-      '/src/util/svc.ts',
+    '/node_modules/',
+    '/build/',
+    '/build-test/',
+    '/static/',
+    '/src/util/message.ts',
+    '/src/util/svc.ts',
   ],
   roots: ['<rootDir>/src'],
   verbose: true,
   moduleNameMapper: {
-    "\\.(jpg|jpeg|png|gif|eot|otf|webp|svg|ttf|woff|woff2|mp4|webm|wav|mp3|m4a|aac|oga)$": "<rootDir>/__mocks__/fileMock.js",
-    "\\.(css|less|scss)$": "<rootDir>/__mocks__/styleMock.js",
+    '\\.(jpg|jpeg|png|gif|eot|otf|webp|svg|ttf|woff|woff2|mp4|webm|wav|mp3|m4a|aac|oga)$':
+      '<rootDir>/__mocks__/fileMock.js',
+    '\\.(css|less|scss)$': '<rootDir>/__mocks__/styleMock.js',
   },
-  "setupFiles": [
-    "fake-indexeddb/auto"
-  ],
+  setupFiles: ['fake-indexeddb/auto'],
   testEnvironmentOptions: {
     html: `
       <!DOCTYPE html>
@@ -51,6 +50,6 @@ module.exports = {
   coverageThreshold: {
     global: {
       lines: 50,
-    }
-  }
+    },
+  },
 };
