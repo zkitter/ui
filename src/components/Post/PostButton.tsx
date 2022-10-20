@@ -42,16 +42,18 @@ export default function PostButton(props: PostButtonProps): ReactElement {
         fa={props.fa}
         size={props.large ? 1.25 : 1}
       />
-      <span
-        className={classNames(
-          'ml-1',
-          {
-            'text-lg': props.large,
-          },
-          props.textClassName
-        )}>
-        {props.count}
-      </span>
+      {!!props.count && (
+        <span
+          className={classNames(
+            'ml-1',
+            {
+              'text-lg': props.large,
+            },
+            props.textClassName
+          )}>
+          {props.count}
+        </span>
+      )}
     </button>
   );
 }
