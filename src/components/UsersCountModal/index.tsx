@@ -72,8 +72,9 @@ export default function UsersCountModal(props: {
 
   useEffect(() => {
     setShowList(false);
+    console.log('debug fetching');
     fetch(id).then(users => setUsers(users));
-  }, [id]);
+  }, [id, count]);
 
   /*
     if 0 likes show nothing
