@@ -76,7 +76,7 @@ export default function UsersCountModal(props: {
     if 0 likes show nothing
     if 0 follow-er/ing, show "0 Follow-er/ing"
    */
-  return !!count && users ? (
+  return !!count ? (
     <>
       <div className="flex flex-row flex-nowrap items-center text-light">
         <div className={classNames(className)}>
@@ -88,7 +88,9 @@ export default function UsersCountModal(props: {
           </div>
         </div>
       </div>
-      {showingList && <UsersList onClose={() => setShowList(false)} users={users} title={title} />}
+      {showingList && users && (
+        <UsersList onClose={() => setShowList(false)} users={users} title={title} />
+      )}
     </>
   ) : item !== Item.Like ? (
     <>
