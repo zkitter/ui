@@ -65,7 +65,6 @@ export default function UsersCountModal(props: {
     fetch[item](id).then(users => setItems(users));
   }, [id]);
 
-  console.log('debug', { showingList });
   /*
     if 0 likes show nothing
     if 0 follow-er/ing, show "0 Follow-er/ing"
