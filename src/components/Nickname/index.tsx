@@ -1,154 +1,138 @@
-import React, {ReactElement, useEffect, useState} from "react";
-import {getUser, useUser} from "../../ducks/users";
-import {useDispatch} from "react-redux";
-import {getName} from "../../util/user";
-import Icon from "../Icon";
-import TwitterPaper from "../../../static/icons/twitter-paper.png";
-import TwitterBronze from "../../../static/icons/twitter-bronze.png";
-import TwitterSilver from "../../../static/icons/twitter-silver.png";
-import TwitterGold from "../../../static/icons/twitter-gold.png";
-import Popoverable from "../Popoverable";
+import React, { ReactElement, useEffect, useState } from 'react';
+import { getUser, useUser } from '../../ducks/users';
+import { useDispatch } from 'react-redux';
+import { getName } from '../../util/user';
+import Icon from '../Icon';
+import TwitterPaper from '../../../static/icons/twitter-paper.png';
+import TwitterBronze from '../../../static/icons/twitter-bronze.png';
+import TwitterSilver from '../../../static/icons/twitter-silver.png';
+import TwitterGold from '../../../static/icons/twitter-gold.png';
+import Popoverable from '../Popoverable';
 
 type Props = {
-    className?: string;
-    address?: string;
-    interepProvider?: string;
-    interepGroup?: string;
-    group?: string | null;
+  className?: string;
+  address?: string;
+  interepProvider?: string;
+  interepGroup?: string;
+  group?: string | null;
 };
 
 const GROUP_TO_NICKNAME: {
-    [group: string]: string;
+  [group: string]: string;
 } = {
-    'zksocial_all': 'Anonymous',
-    'semaphore_taz_members': 'A TAZ Member',
-    'interrep_twitter_unrated': 'A Twitter user',
-    'interrep_twitter_bronze': 'A Twitter user with 500+ followers',
-    'interrep_twitter_silver': 'A Twitter user with 2k+ followers',
-    'interrep_twitter_gold': 'A Twitter user with 7k+ followers',
-}
+  zksocial_all: 'Anonymous',
+  semaphore_taz_members: 'A TAZ Member',
+  interrep_twitter_unrated: 'A Twitter user',
+  interrep_twitter_bronze: 'A Twitter user with 500+ followers',
+  interrep_twitter_silver: 'A Twitter user with 2k+ followers',
+  interrep_twitter_gold: 'A Twitter user with 7k+ followers',
+};
 
 export default function Nickname(props: Props): ReactElement {
-    const { address, interepProvider, interepGroup, className = '', group } = props;
-    const [username, setUsername] = useState('');
-    const user = useUser(username);
-    const dispatch = useDispatch();
+  const { address, interepProvider, interepGroup, className = '', group } = props;
+  const [username, setUsername] = useState('');
+  const user = useUser(username);
+  const dispatch = useDispatch();
 
-    const badges = [];
-    const [protocol, groupName] = props.group?.split('_') || [];
+  const badges = [];
+  const [protocol, groupName] = props.group?.split('_') || [];
 
-    useEffect(() => {
-        if (!user && address) {
-            dispatch(getUser(address));
-        } else if (!user && protocol === 'custom') {
-            dispatch(getUser(groupName));
-        }
-    }, [user, address, groupName, protocol]);
-
-    useEffect(() => {
-        if (protocol === 'custom') {
-            setUsername(groupName);
-        } else if (address) {
-            setUsername(address);
-        }
-    }, [address, groupName, protocol]);
-
-
-    if (user) {
-        return (
-            <div className={`flex flex-row flex-nowrap items-center ${className}`}>
-                {getName(user)}
-            </div>
-        )
+  useEffect(() => {
+    if (!user && address) {
+      dispatch(getUser(address));
+    } else if (!user && protocol === 'custom') {
+      dispatch(getUser(groupName));
     }
+  }, [user, address, groupName, protocol]);
 
+  useEffect(() => {
     if (protocol === 'custom') {
-        return (
-            <div className={`flex flex-row flex-nowrap items-center ${className}`}>
-                {getName(user)}
-            </div>
-        )
+      setUsername(groupName);
+    } else if (address) {
+      setUsername(address);
     }
+  }, [address, groupName, protocol]);
 
-    if (group) {
-        return (
-            <div className={`flex flex-row flex-nowrap items-center text-sm ${className}`}>
-                {GROUP_TO_NICKNAME[group] || 'Anonymous'}
-            </div>
-        )
-    }
+  if (user) {
+    return (
+      <div className={`flex flex-row flex-nowrap items-center ${className}`}>{getName(user)}</div>
+    );
+  }
 
-    if (interepProvider && interepGroup) {
-        if (/twitter/i.test(interepProvider)) {
-            if (/unrated/i.test(interepGroup)) {
-                badges.push(
-                    <Badge
-                        key={interepProvider + '_' + interepGroup}
-                        label="<500 Twitter followers"
-                        url={TwitterPaper}
-                    />
-                );
-            }
+  if (protocol === 'custom') {
+    return (
+      <div className={`flex flex-row flex-nowrap items-center ${className}`}>{getName(user)}</div>
+    );
+  }
 
-            if (/bronze/i.test(interepGroup)) {
-                badges.push(
-                    <Badge
-                        key={interepProvider + '_' + interepGroup}
-                        label="500+ Twitter followers"
-                        url={TwitterBronze}
-                    />
-                );
-            }
+  if (group) {
+    return (
+      <div className={`flex flex-row flex-nowrap items-center text-sm ${className}`}>
+        {GROUP_TO_NICKNAME[group] || 'Anonymous'}
+      </div>
+    );
+  }
 
-            if (/silver/i.test(interepGroup)) {
-                badges.push(
-                    <Badge
-                        key={interepProvider + '_' + interepGroup}
-                        label="2000+ Twitter followers"
-                        url={TwitterSilver}
-                    />
-                );
-            }
+  if (interepProvider && interepGroup) {
+    if (/twitter/i.test(interepProvider)) {
+      if (/unrated/i.test(interepGroup)) {
+        badges.push(
+          <Badge
+            key={interepProvider + '_' + interepGroup}
+            label="<500 Twitter followers"
+            url={TwitterPaper}
+          />
+        );
+      }
 
-            if (/gold/i.test(interepGroup)) {
-                badges.push(
-                    <Badge
-                        key={interepProvider + '_' + interepGroup}
-                        label="7000+ Twitter followers"
-                        url={TwitterGold}
-                    />
-                );
-            }
-        }
+      if (/bronze/i.test(interepGroup)) {
+        badges.push(
+          <Badge
+            key={interepProvider + '_' + interepGroup}
+            label="500+ Twitter followers"
+            url={TwitterBronze}
+          />
+        );
+      }
 
-        return (
-            <div className={`flex flex-row flex-nowrap items-center text-sm ${className}`}>
-                Anonymous
-                <div className="flex flex-row flex-nowrap items-center ml-2">
-                    { badges }
-                </div>
-            </div>
-        )
+      if (/silver/i.test(interepGroup)) {
+        badges.push(
+          <Badge
+            key={interepProvider + '_' + interepGroup}
+            label="2000+ Twitter followers"
+            url={TwitterSilver}
+          />
+        );
+      }
+
+      if (/gold/i.test(interepGroup)) {
+        badges.push(
+          <Badge
+            key={interepProvider + '_' + interepGroup}
+            label="7000+ Twitter followers"
+            url={TwitterGold}
+          />
+        );
+      }
     }
 
     return (
-        <div
-            className={`flex flex-row flex-nowrap items-center text-sm ${className}`}
-        >
-            Anonymous
-        </div>
+      <div className={`flex flex-row flex-nowrap items-center text-sm ${className}`}>
+        Anonymous
+        <div className="flex flex-row flex-nowrap items-center ml-2">{badges}</div>
+      </div>
     );
+  }
+
+  return (
+    <div className={`flex flex-row flex-nowrap items-center text-sm ${className}`}>Anonymous</div>
+  );
 }
 
 function Badge(props: { url: string; label: string }): ReactElement {
-    return (
-        <Popoverable label={props.label}>
-            <Icon
-                className="shadow rounded-full"
-                url={props.url}
-                size={1}
-            />
-        </Popoverable>
-
-    )
+  return (
+    <Popoverable label={props.label}>
+      <Icon className="shadow rounded-full" url={props.url} size={1} />
+    </Popoverable>
+  );
 }

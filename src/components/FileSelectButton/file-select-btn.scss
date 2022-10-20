@@ -1,4 +1,4 @@
-@import "../../util/variable.scss";
+@import '../../util/variable.scss';
 
 .file-select-btn {
   @extend %col-nowrap;
@@ -6,7 +6,7 @@
   justify-content: center;
   position: relative;
 
-  input[type=file] {
+  input[type='file'] {
     position: absolute;
     top: 0;
     left: 0;

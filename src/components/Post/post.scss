@@ -1,12 +1,11 @@
-@import "../../util/variable";
+@import '../../util/variable';
 
 .post {
   position: relative;
-  transition: border-color 150ms ease-in,
-  background-color 150ms ease-in-out;
+  transition: border-color 150ms ease-in, background-color 150ms ease-in-out;
 
   &__footer {
-    margin-left: -.3125rem;
+    margin-left: -0.3125rem;
   }
 
   &__parent-line {
@@ -34,14 +33,14 @@
 
 .dark {
   .post-button {
-    color: rgba($white, .5);
+    color: rgba($white, 0.5);
   }
 }
 
 .post-button {
-  color: rgba($black, .5);
+  color: rgba($black, 0.5);
   height: 2rem;
-  font-size: .9375rem;
+  font-size: 0.9375rem;
 
   .icon {
     @extend %row-nowrap;
@@ -86,9 +85,9 @@
       border-color: $gray-800;
     }
 
-    .thread__content{
+    .thread__content {
       .thread > .post {
-        border-left: .25rem solid $gray-800;
+        border-left: 0.25rem solid $gray-800;
       }
     }
 
@@ -129,10 +128,9 @@
     border-top: 1px solid $gray-100;
   }
 
-
-  .thread__content{
+  .thread__content {
     .thread > .post {
-      border-left: .25rem solid $gray-100;
+      border-left: 0.25rem solid $gray-100;
 
       &:hover {
         border-color: $gray-400;

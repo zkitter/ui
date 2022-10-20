@@ -1,4 +1,4 @@
-@import "../../util/variable";
+@import '../../util/variable';
 
 .dark {
   .input-group {
@@ -24,16 +24,16 @@
     background: white;
     color: $gray-800;
     display: inline-block;
-    top: -.625rem;
+    top: -0.625rem;
     width: fit-content;
     font-size: 12px;
-    padding: 0 .25rem 0 .1875rem;
-    margin-left: .625rem;
+    padding: 0 0.25rem 0 0.1875rem;
+    margin-left: 0.625rem;
     position: absolute;
   }
 
   input {
-    padding: .5rem .75rem;
+    padding: 0.5rem 0.75rem;
     outline: none;
 
     &::placeholder {
@@ -43,6 +43,6 @@
 
   .error-message {
     text-align: center;
-    padding-top: .25rem;
+    padding-top: 0.25rem;
   }
 }

@@ -1,49 +1,49 @@
-import {WorkerAction} from "../serviceWorkers/util";
+import { WorkerAction } from '../serviceWorkers/util';
 
 let nonce = 0;
-const promises: {[nonce: number]: any} = {};
+const promises: { [nonce: number]: any } = {};
 
 export async function createServiceWorker() {
-    return new Promise((resolve) => {
-        window.addEventListener('load', async function() {
-            await navigator.serviceWorker.register('/serviceWorker.js');
+  return new Promise(resolve => {
+    window.addEventListener('load', async function () {
+      await navigator.serviceWorker.register('/serviceWorker.js');
 
-            navigator.serviceWorker.addEventListener('message', event => {
-                const data = event.data;
+      navigator.serviceWorker.addEventListener('message', event => {
+        const data = event.data;
 
-                if (!data) return;
+        if (!data) return;
 
-                if (data.target === 'rpc') {
-                    const response = data.response;
-                    const promise = promises[response.nonce];
+        if (data.target === 'rpc') {
+          const response = data.response;
+          const promise = promises[response.nonce];
 
-                    if (!promise) return;
+          if (!promise) return;
 
-                    if (response.error) {
-                        promise.reject(new Error(response.payload));
-                    } else {
-                        promise.resolve(response.payload);
-                    }
+          if (response.error) {
+            promise.reject(new Error(response.payload));
+          } else {
+            promise.resolve(response.payload);
+          }
 
-                    delete promises[response.nonce];
-                }
-            });
+          delete promises[response.nonce];
+        }
+      });
 
-            resolve();
-        });
-    })
+      resolve();
+    });
+  });
 }
 
 export async function postWorkerMessage<data>(workerAction: WorkerAction<any>): Promise<data> {
-    return new Promise((resolve, reject) => {
-        navigator.serviceWorker.controller?.postMessage({
-            ...workerAction,
-            target: 'autism-web',
-            nonce: nonce,
-        });
-
-        promises[nonce] = { resolve, reject };
-
-        nonce++;
+  return new Promise((resolve, reject) => {
+    navigator.serviceWorker.controller?.postMessage({
+      ...workerAction,
+      target: 'autism-web',
+      nonce: nonce,
     });
+
+    promises[nonce] = { resolve, reject };
+
+    nonce++;
+  });
 }

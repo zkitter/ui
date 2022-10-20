@@ -1,59 +1,59 @@
-import {applyMiddleware, combineReducers, createStore} from "redux";
+import { applyMiddleware, combineReducers, createStore } from 'redux';
 import { save, load } from 'redux-localstorage-simple';
-import web3, {initialState as web3InitialState} from "../ducks/web3";
-import app from "../ducks/app";
-import posts from "../ducks/posts";
-import users from "../ducks/users";
-import drafts from "../ducks/drafts";
-import thunk from "redux-thunk";
-import {createLogger} from "redux-logger";
-import worker from "../ducks/worker";
-import zkpr from "../ducks/zkpr";
-import mods from "../ducks/mods";
-import chats from "../ducks/chats";
+import web3, { initialState as web3InitialState } from '../ducks/web3';
+import app from '../ducks/app';
+import posts from '../ducks/posts';
+import users from '../ducks/users';
+import drafts from '../ducks/drafts';
+import thunk from 'redux-thunk';
+import { createLogger } from 'redux-logger';
+import worker from '../ducks/worker';
+import zkpr from '../ducks/zkpr';
+import mods from '../ducks/mods';
+import chats from '../ducks/chats';
 const rootReducer = combineReducers({
-    app,
-    web3,
-    zkpr,
-    posts,
-    users,
-    drafts,
-    worker,
-    mods,
-    chats,
+  app,
+  web3,
+  zkpr,
+  posts,
+  users,
+  drafts,
+  worker,
+  mods,
+  chats,
 });
 
 export type AppRootState = ReturnType<typeof rootReducer>;
 
-const createStoreWithMiddleware = process.env.NODE_ENV === 'development'
+const createStoreWithMiddleware =
+  process.env.NODE_ENV === 'development'
     ? applyMiddleware(
         thunk,
         createLogger({
-            collapsed: true,
+          collapsed: true,
         }),
         save({
-            states: ['web3.pending.createRecordTx'],
+          states: ['web3.pending.createRecordTx'],
         })
-    )(createStore)
+      )(createStore)
     : applyMiddleware(
         thunk,
         save({
-            states: ['web3.pending.createRecordTx'],
+          states: ['web3.pending.createRecordTx'],
         })
-    )(createStore);
-
+      )(createStore);
 
 function configureAppStore() {
-    return createStoreWithMiddleware(
-        rootReducer,
-        load({
-            states: ['web3.pending.createRecordTx'],
-            preloadedState: {
-                web3: web3InitialState,
-            },
-            disableWarnings: true,
-        }),
-    );
+  return createStoreWithMiddleware(
+    rootReducer,
+    load({
+      states: ['web3.pending.createRecordTx'],
+      preloadedState: {
+        web3: web3InitialState,
+      },
+      disableWarnings: true,
+    })
+  );
 }
 
 const store = configureAppStore();

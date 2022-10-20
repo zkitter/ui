@@ -1,42 +1,43 @@
-import config from "./config";
-import {MerkleProof} from "@zk-kit/protocols";
+import config from './config';
+import { MerkleProof } from '@zk-kit/protocols';
 
 type PathData = {
-    path_elements: string[] | string[][];
-    path_index: number[];
-    root: string;
+  path_elements: string[] | string[][];
+  path_index: number[];
+  root: string;
 };
 
-export type ValidGroups = 'zksocial_all'
-    | 'interep_twitter_unrated';
+export type ValidGroups = 'zksocial_all' | 'interep_twitter_unrated';
 
 export const findProof = async (
-    group: string,
-    idCommitment: string,
-    proofType?: 'semaphore' | 'rln',
-): Promise<MerkleProof & {group: string}|null> => {
-    const proofTypeParam = proofType ? `&proofType=${proofType}` : ''
-    const resp = await fetch(`${config.indexerAPI}/v1/proofs/${idCommitment}?group=${group}${proofTypeParam}`);
-    const { payload, error } = await resp.json();
-    const { data } = payload;
+  group: string,
+  idCommitment: string,
+  proofType?: 'semaphore' | 'rln'
+): Promise<(MerkleProof & { group: string }) | null> => {
+  const proofTypeParam = proofType ? `&proofType=${proofType}` : '';
+  const resp = await fetch(
+    `${config.indexerAPI}/v1/proofs/${idCommitment}?group=${group}${proofTypeParam}`
+  );
+  const { payload, error } = await resp.json();
+  const { data } = payload;
 
-    let path = null;
+  let path = null;
 
-    if (error) {
-        throw new Error(payload);
-    }
+  if (error) {
+    throw new Error(payload);
+  }
 
-    if (!error && data) {
-        path = {
-            siblings: data.siblings,
-            pathIndices: data.pathIndices,
-            root: data.root,
-            leaf: data.leaf,
-            group: data.group,
-        };
+  if (!error && data) {
+    path = {
+      siblings: data.siblings,
+      pathIndices: data.pathIndices,
+      root: data.root,
+      leaf: data.leaf,
+      group: data.group,
+    };
 
-        return path;
-    }
+    return path;
+  }
 
-    return null;
-}
+  return null;
+};

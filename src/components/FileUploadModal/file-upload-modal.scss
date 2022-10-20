@@ -1,4 +1,4 @@
-@import "../../util/variable.scss";
+@import '../../util/variable.scss';
 
 .dark {
   .file-upload-modal {
@@ -14,7 +14,7 @@
     @extend %col-nowrap;
     align-items: center;
     justify-content: center;
-    border-radius: .5rem;
+    border-radius: 0.5rem;
     border: 2px dashed $gray-200;
     background-color: $gray-100;
     padding: 4rem;

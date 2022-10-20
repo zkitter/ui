@@ -1,64 +1,67 @@
-import {useSelector} from "react-redux";
-import {AppRootState} from "../store/configureAppStore";
-import deepEqual from "fast-deep-equal";
+import { useSelector } from 'react-redux';
+import { AppRootState } from '../store/configureAppStore';
+import deepEqual from 'fast-deep-equal';
 
 enum ActionTypes {
-    UNMODERATE = 'mods/unmoderate',
+  UNMODERATE = 'mods/unmoderate',
 }
 
 type Action<payload> = {
-    type: ActionTypes;
-    payload?: payload;
-    meta?: any;
-    error?: boolean;
-}
-
-type ModSetting = {
-    unmoderated: boolean;
-}
-
-type State = {
-    posts: {
-        [messageId: string]: ModSetting;
-    };
-}
-
-const initialState: State = {
-    posts: {},
+  type: ActionTypes;
+  payload?: payload;
+  meta?: any;
+  error?: boolean;
 };
 
-export const unmoderate = (messageId: string, unmoderated: boolean): Action<{
-    messageId: string;
-    unmoderated: boolean;
+type ModSetting = {
+  unmoderated: boolean;
+};
+
+type State = {
+  posts: {
+    [messageId: string]: ModSetting;
+  };
+};
+
+const initialState: State = {
+  posts: {},
+};
+
+export const unmoderate = (
+  messageId: string,
+  unmoderated: boolean
+): Action<{
+  messageId: string;
+  unmoderated: boolean;
 }> => ({
-    type: ActionTypes.UNMODERATE,
-    payload: {
-        messageId,
-        unmoderated,
-    },
+  type: ActionTypes.UNMODERATE,
+  payload: {
+    messageId,
+    unmoderated,
+  },
 });
 
 export default function mods(state = initialState, action: Action<any>): State {
-    switch (action.type) {
-        case ActionTypes.UNMODERATE:
-            return {
-                ...state,
-                posts: {
-                    ...state.posts,
-                    [action.payload.messageId]: {
-                        ...state.posts[action.payload.messageId],
-                        unmoderated: action.payload.unmoderated,
-                    }
-                }
-            }
-        default:
-            return state;
-    }
+  switch (action.type) {
+    case ActionTypes.UNMODERATE:
+      return {
+        ...state,
+        posts: {
+          ...state.posts,
+          [action.payload.messageId]: {
+            ...state.posts[action.payload.messageId],
+            unmoderated: action.payload.unmoderated,
+          },
+        },
+      };
+    default:
+      return state;
+  }
 }
 
 export const usePostModeration = (messageId?: string | null): ModSetting | null => {
-    return useSelector((state: AppRootState) => {
-        if (!messageId) return null;
-        return state.mods.posts[messageId] || null;
-    }, deepEqual);
-}
+  return useSelector((state: AppRootState) => {
+    if (!messageId) return null;
+    return state.mods.posts[messageId] || null;
+  }, deepEqual);
+};
