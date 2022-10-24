@@ -1,5 +1,5 @@
 import classNames from 'classnames';
-import React, { ReactElement, useEffect, useState } from 'react';
+import React, { ReactElement, useCallback, useEffect, useState } from 'react';
 
 import {
   fetchLikersByPost,
@@ -72,9 +72,16 @@ export default function UsersCountModal(props: {
 
   useEffect(() => {
     setShowList(false);
-    console.log('debug fetching');
-    fetch(id).then(users => setUsers(users));
   }, [id, count]);
+
+  const onClick = useCallback(
+    (e: any) => {
+      e.preventDefault();
+      fetch(id).then(users => setUsers(users));
+      setShowList(true);
+    },
+    [id]
+  );
 
   /*
     if 0 likes show nothing
@@ -84,7 +91,7 @@ export default function UsersCountModal(props: {
     <>
       <div className="flex flex-row flex-nowrap items-center text-light">
         <div className={classNames(className)}>
-          <div className="hover:underline cursor-pointer" onClick={() => setShowList(true)}>
+          <div className="hover:underline cursor-pointer" onClick={onClick}>
             <div className="flex flex-row flex-nowrap item-center">
               <div className="font-semibold">{count}</div>
               <div className="ml-2 text-gray-500">{`${text}${many ? 's' : ''}`}</div>
