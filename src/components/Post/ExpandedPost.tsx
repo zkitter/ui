@@ -13,7 +13,7 @@ import { useThemeContext } from '../ThemeContext';
 import Avatar from '../Avatar';
 import Nickname from '../Nickname';
 import PostFooter from './PostFooter';
-import PostLikes, { Item } from '../UsersCountModal';
+import UsersCountModal, { Item } from '../UsersCountModal';
 import PostMenu from './PostMenu';
 import URLPreview from '../URLPreview';
 import { Props } from './types';
@@ -113,14 +113,25 @@ export default function ExpandedPost(
           <div className="text-gray-500 my-2">{moment(post.createdAt).format('lll')}</div>
         </div>
 
-        <PostLikes
-          className={classNames('mt-2 pt-3 border-t w-full', {
-            'border-gray-200': theme !== 'dark',
-            'border-gray-800': theme === 'dark',
-          })}
-          item={Item.Like}
-          id={messageId}
-        />
+        <div className="flex flex-row flex-no-wrap item-center text-light w-full">
+          <UsersCountModal
+            className={classNames('mt-2 pt-3 mx-2 w-full', {
+              'border-gray-200': theme !== 'dark',
+              'border-gray-800': theme === 'dark',
+            })}
+            item={Item.Like}
+            id={messageId}
+          />
+
+          <UsersCountModal
+            className={classNames('mt-2 pt-3 w-full', {
+              'border-gray-200': theme !== 'dark',
+              'border-gray-800': theme === 'dark',
+            })}
+            item={Item.Retweet}
+            id={messageId}
+          />
+        </div>
 
         <PostFooter
           messageId={messageId}
