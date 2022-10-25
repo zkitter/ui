@@ -37,11 +37,6 @@ export default function ExpandedPost(
   const meta = useMeta(props.messageId);
   const zkGroup = useZKGroupFromPost(props.messageId);
   const theme = useThemeContext();
-  const [likers, setLikers] = useState<string[] | null>(null);
-
-  useEffect(() => {
-    fetchLikersByPost(messageId).then(likers => setLikers(likers));
-  }, []);
 
   const gotoUserProfile = useCallback(
     (e: any) => {
