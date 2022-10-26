@@ -39,6 +39,7 @@ import SpinnerGIF from '../../../static/icons/spinner.gif';
 import { useThemeContext } from '../../components/ThemeContext';
 import Checkbox from '../../components/Checkbox';
 import MemberInviteModal from '../../components/MemberInviteModal';
+import UserCountModal, { Item } from '../../components/UsersCountModal';
 
 let t: any = null;
 
@@ -552,14 +553,16 @@ function ProfileCard(): ReactElement {
             <div className="ml-2 text-gray-500">Members</div>
           </div>
         )}
-        <div className="flex flex-row flex-nowrap item-center">
-          <div className="font-semibold">{user.meta?.followingCount}</div>
-          <div className="ml-2 text-gray-500">Following</div>
-        </div>
-        <div className="flex flex-row flex-nowrap item-center ml-4">
-          <div className="font-semibold">{user.meta?.followerCount}</div>
-          <div className="ml-2 text-gray-500">Followers</div>
-        </div>
+        <UserCountModal
+          className="flex flex-row flex-nowrap item-center ml-4 w-full"
+          item={Item.Following}
+          id={user.address}
+        />
+        <UserCountModal
+          className="flex flex-row flex-nowrap item-center ml-4 w-full"
+          item={Item.Follower}
+          id={user.address}
+        />
       </div>
     </div>
   );

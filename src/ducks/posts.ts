@@ -16,8 +16,6 @@ import config from '../util/config';
 import { Dispatch } from 'redux';
 import { useHistory } from 'react-router';
 import { useCallback } from 'react';
-import { Identity } from '../serviceWorkers/identity';
-import Web3 from 'web3';
 
 enum ActionTypes {
   SET_POSTS = 'posts/setPosts',
@@ -107,10 +105,7 @@ export const fetchMeta =
 
 export const fetchPost =
   (messageId: string) =>
-  async (
-    dispatch: ThunkDispatch<any, any, any>,
-    getState: () => AppRootState
-  ): Promise<PostMessageOption | null> => {
+  async (dispatch: ThunkDispatch<any, any, any>): Promise<PostMessageOption | null> => {
     const { creator, hash } = parseMessageId(messageId);
     const user: any = await dispatch(getUser(creator));
 
@@ -230,6 +225,50 @@ export const fetchLikedBy =
     return json.payload.map((post: any) => post.messageId);
   };
 
+export const fetchLikersByPost = async (
+  messageId: string,
+  limit = 10,
+  offset = 0
+): Promise<string[] | null> => {
+  const { creator, hash } = parseMessageId(messageId);
+
+  const resp = await fetch(
+    `${config.indexerAPI}/v1/post/${creator}%2F${hash}/likes?limit=${limit}&offset=${offset}`,
+    { method: 'GET' }
+  );
+
+  const { payload: likers } = await resp.json();
+  return !likers.length ? null : likers;
+};
+
+export const fetchUserFollowers = async (
+  user: string,
+  limit = 10,
+  offset = 0
+): Promise<string[] | null> => {
+  const resp = await fetch(
+    `${config.indexerAPI}/v1/${user}/followers?limit=${limit}&offset=${offset}`,
+    { method: 'GET' }
+  );
+
+  const { payload: users } = await resp.json();
+  return !users.length ? null : users;
+};
+
+export const fetchUserFollowings = async (
+  user: string,
+  limit = 10,
+  offset = 0
+): Promise<string[] | null> => {
+  const resp = await fetch(
+    `${config.indexerAPI}/v1/${user}/followings?limit=${limit}&offset=${offset}`,
+    { method: 'GET' }
+  );
+
+  const { payload: followings } = await resp.json();
+  return !followings.length ? null : followings;
+};
+
 export const fetchRepliedBy =
   (creator: string, limit = 10, offset = 0) =>
   async (dispatch: ThunkDispatch<any, any, any>, getState: () => AppRootState) => {
@@ -344,8 +383,6 @@ export const fetchTagFeed =
     const json = await resp.json();
 
     for (const post of json.payload) {
-      const [creator, hash] = post.messageId.split('/');
-
       dispatch({
         type: ActionTypes.SET_META,
         payload: {
@@ -402,7 +439,7 @@ export const fetchReplies =
     const json = await resp.json();
 
     for (const post of json.payload) {
-      const [creator, hash] = post.messageId.split('/');
+      const [creator] = post.messageId.split('/');
       const p = new Post({
         ...post,
         createdAt: new Date(Number(post.createdAt)),
@@ -467,15 +504,9 @@ export const useZKGroupFromPost = (messageId?: string) => {
     const post = state.posts.meta[messageId];
     if (!post) return undefined;
 
-    if (!post.interepProvider) return undefined;
-
-    if (Web3.utils.isAddress(post.interepProvider)) return 'custom_' + post.interepProvider;
-
     return post.interepProvider === 'taz'
       ? 'semaphore_taz_members'
-      : post.interepProvider
-      ? `interrep_${post.interepProvider}_${post.interepGroup}`
-      : undefined;
+      : `interrep_${post.interepProvider}_${post.interepGroup}`;
   }, deepEqual);
 };
 
@@ -484,7 +515,6 @@ export const useCommentDisabled = (messageId?: string | null) => {
     const {
       posts: { meta },
       worker: { selected },
-      mods: { posts },
     } = state;
 
     if (!messageId) return false;

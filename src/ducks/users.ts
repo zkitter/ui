@@ -320,8 +320,6 @@ export const useUser = (address = ''): User | null => {
 
     const user = state.users.map[address];
 
-    const val: User = user;
-
     if (!user) {
       return {
         username: address,
@@ -391,6 +389,9 @@ export default function users(state = initialState, action: Action<any>): State 
             meta: {
               ...state.map[action.payload.address]?.meta,
               followed: action.payload.followed,
+              followerCount:
+                state.map[action.payload.address]?.meta.followerCount +
+                (action.payload.followed ? 1 : -1),
             },
           },
         },
