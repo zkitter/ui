@@ -43,11 +43,18 @@ export default function RegularPost(
 
   const gotoUserProfile = useCallback(
     (e: any) => {
-      if (!user || post?.type === MessageType._TWEET) return;
       e.stopPropagation();
+      const [protocol, groupAddress] = zkGroup?.split('_') || [];
+
+      if (protocol === 'custom') {
+          history.push(`/${groupAddress}/`);
+      }
+
+      if (!user || post?.type === MessageType._TWEET) return;
+
       history.push(`/${user?.ens || user?.username}/`);
     },
-    [user, post?.type]
+    [user, post?.type, zkGroup]
   );
 
   if (!post) return <></>;
