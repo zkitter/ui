@@ -46,7 +46,7 @@ export default function TopNav(): ReactElement {
           <Route path="/onboarding/interrep" component={DefaultHeaderGroup} />
           <Route path="/connect/twitter" component={DefaultHeaderGroup} />
           <Route path="/signup" component={DefaultHeaderGroup} />
-          <Route path="/notification" component={DefaultHeaderGroup} />
+          <Route path="/notifications" component={DefaultHeaderGroup} />
           <Route path="/chat/:chatId?" component={ChatHeaderGroup} />
           <Route path="/settings" component={SettingHeaderGroup} />
           <Route path="/:name" component={UserProfileHeaderGroup} />
@@ -74,6 +74,19 @@ function NavIconRow() {
   const selectedLocalId = useSelectedLocalId();
   const [ensName, setEnsName] = useState('');
   const theme = useThemeContext();
+  const selected = useSelectedLocalId();
+  const [counter, setCounter] = useState(0);
+
+    useEffect(() => {
+        (async function() {
+            if (selected?.type === 'gun') {
+                const resp = await fetch(`${config.indexerAPI}/v1/${selected.address}/notifications`);
+                const json = await resp.json();
+                console.log(json);
+                setCounter(json.payload.length || 0);
+            }
+        })();
+    }, [selected]);
 
   let address = '';
 
@@ -103,6 +116,7 @@ function NavIconRow() {
       <TopNavIcon fa="fas fa-home" pathname="/home" disabled={!loggedIn} />
       <TopNavIcon fa="fas fa-envelope" pathname={`/chat`} disabled={!selectedLocalId} />
       <TopNavIcon fa="fas fa-globe-asia" pathname="/explore" />
+      <NotificationIcon fa="fas fa-bell" pathname="/notifications" counter={counter} />
       {/*<TopNavIcon fa="fas fa-bell" pathname="/notifications" />*/}
     </div>
   );
@@ -384,4 +398,41 @@ function TopNavIcon(props: TopNavIconProps): ReactElement {
       size={1.125}
     />
   );
+}
+
+function NotificationIcon(props: TopNavIconProps & {
+    counter: number;
+}): ReactElement {
+    const history = useHistory();
+    const { pathname } = useLocation();
+
+    return (
+        <Icon
+            className={classNames(
+                'flex',
+                'flex-row',
+                'items-center',
+                'justify-center',
+                'relative',
+                'top-nav__icon',
+                {
+                    'top-nav__icon--selected': pathname === props.pathname,
+                    'top-nav__icon--disabled': props.disabled,
+                }
+            )}
+            onClick={
+                pathname !== props.pathname && !props.disabled
+                    ? () => history.push(props.pathname)
+                    : undefined
+            }
+            fa={props.fa}
+            size={1.125}
+        >
+            { props.counter > 0 && (
+                <div className="bg-red-500 text-white rounded-full text-xs absolute top-0 right-0">
+                    {props.counter}
+                </div>
+            )}
+        </Icon>
+    );
 }

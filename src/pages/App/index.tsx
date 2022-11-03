@@ -32,6 +32,7 @@ import ThemeContext from '../../components/ThemeContext';
 import classNames from 'classnames';
 import { Identity } from '@semaphore-protocol/identity';
 import TazModal from '../../components/TazModal';
+import NotificationView from "../NotificationView";
 
 export default function App(): ReactElement {
   const dispatch = useDispatch();
@@ -167,7 +168,9 @@ export default function App(): ReactElement {
           <AuthRoute path="/home">
             <HomeFeed />
           </AuthRoute>
-          <Route path="/notifications" />
+          <Route path="/notifications">
+            <NotificationView />
+          </Route>
           <Route path="/create-local-backup">
             <SignupView viewType={ViewType.localBackup} />
           </Route>
