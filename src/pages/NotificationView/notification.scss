@@ -1,0 +1,13 @@
+@import "../../util/variable";
+
+.notifications {
+  width: 36rem;
+}
+
+.notification-row {
+  padding: 1rem 2rem;
+}
+
+.notification-row + .notification-row {
+  border-top: 1px solid $gray-800;
+}
