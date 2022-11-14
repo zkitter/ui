@@ -1,18 +1,16 @@
 import './top-nav.scss';
 import classNames from 'classnames';
-import React, { ReactElement, useCallback, useContext, useEffect, useState } from 'react';
+import React, { ReactElement, useCallback, useEffect, useState } from 'react';
 import { useDispatch } from 'react-redux';
 import { Route, Switch, useHistory, useLocation, useParams } from 'react-router';
 import Web3 from 'web3';
 import { fetchAddressByName, useUser } from '@ducks/users';
-import { useAccount, useGunLoggedIn, useSemaphoreID } from '@ducks/web3';
+import { useAccount, useGunLoggedIn } from '@ducks/web3';
 import { useSelectedLocalId } from '@ducks/worker';
-import config from '~/config';
 import { getName } from '~/user';
 import { fetchNameByAddress } from '~/web3';
 import Icon from '../Icon';
 import MetaPanel from '../MetaPanel';
-// import Logo from "../../../static/icons/applogo.svg";
 import Modal from '../Modal';
 import { useThemeContext } from '../ThemeContext';
 import Web3Button from '../Web3Button';
@@ -72,7 +70,7 @@ function NavIconRow() {
   const loggedIn = useGunLoggedIn();
   const account = useAccount();
   const selectedLocalId = useSelectedLocalId();
-  const [ensName, setEnsName] = useState('');
+  const [, setEnsName] = useState('');
   const theme = useThemeContext();
 
   let address = '';
@@ -112,7 +110,7 @@ function DefaultHeaderGroup() {
   const loggedIn = useGunLoggedIn();
   const account = useAccount();
   const selectedLocalId = useSelectedLocalId();
-  const [ensName, setEnsName] = useState('');
+  const [, setEnsName] = useState('');
 
   let address = '';
 
@@ -142,7 +140,7 @@ function GlobalHeaderGroup() {
   const loggedIn = useGunLoggedIn();
   const account = useAccount();
   const selectedLocalId = useSelectedLocalId();
-  const [ensName, setEnsName] = useState('');
+  const [, setEnsName] = useState('');
 
   let address = '';
 

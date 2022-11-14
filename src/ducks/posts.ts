@@ -5,6 +5,7 @@ import { useHistory } from 'react-router';
 import { Dispatch } from 'redux';
 import { ThunkDispatch } from 'redux-thunk';
 
+import { fetchMessage } from '~/gun';
 import {
   MessageType,
   ModerationMessageSubType,
@@ -16,7 +17,6 @@ import {
 import { AppRootState } from '../store/configureAppStore';
 import config from '../util/config';
 import { getUser } from './users';
-import { fetchMessage } from '~/gun';
 
 enum ActionTypes {
   SET_POSTS = 'posts/setPosts',

@@ -2,7 +2,6 @@ import './connect-twitter.scss';
 import React, { ReactElement, useCallback, useEffect, useState } from 'react';
 import { useDispatch } from 'react-redux';
 import { useHistory } from 'react-router';
-import SpinnerGif from '../../../static/icons/spinner.gif';
 import Button from '@components/Button';
 import Icon from '@components/Icon';
 import { submitProfile } from '@ducks/drafts';
@@ -14,6 +13,7 @@ import { signWithP256 } from '~/crypto';
 import { ProfileMessageSubType } from '~/message';
 import { verifyTweet } from '~/twitter';
 import { getHandle } from '~/user';
+import SpinnerGif from '../../../static/icons/spinner.gif';
 import TwitterLogo from '../../../static/icons/twitter.svg';
 
 export enum ViewType {

@@ -2,10 +2,7 @@ import './draft-js-editor.scss';
 import DraftJSPluginEditor, { PluginEditorProps } from '@draft-js-plugins/editor';
 import createHashtagPlugin from '@draft-js-plugins/hashtag';
 import createLinkifyPlugin from '@draft-js-plugins/linkify';
-import createMentionPlugin, {
-  defaultSuggestionsFilter,
-  MentionData,
-} from '@draft-js-plugins/mention';
+import createMentionPlugin, { MentionData } from '@draft-js-plugins/mention';
 import classNames from 'classnames';
 
 import {
@@ -13,11 +10,9 @@ import {
   ContentBlock,
   ContentState,
   convertFromRaw,
-  convertToRaw,
   DefaultDraftBlockRenderMap,
   EditorState,
 } from 'draft-js';
-import debounce from 'lodash.debounce';
 import React, { ReactElement, useCallback, useEffect, useMemo, useState } from 'react';
 import { useDispatch } from 'react-redux';
 import { useHistory } from 'react-router';
@@ -241,19 +236,11 @@ const mentionRegExp =
   ']';
 const HASHTAG_REGEX = /\#[\w\u0590-\u05ff]+/g;
 const MENTION_REGEX = new RegExp(`\@${mentionRegExp}+`, 'g');
-function findHashtagEntities(
-  contentBlock: ContentBlock,
-  callback: any,
-  contentState: ContentState
-) {
+function findHashtagEntities(contentBlock: ContentBlock, callback: any) {
   findWithRegex(HASHTAG_REGEX, contentBlock, callback);
 }
 
-function findMentionEntities(
-  contentBlock: ContentBlock,
-  callback: any,
-  contentState: ContentState
-) {
+function findMentionEntities(contentBlock: ContentBlock, callback: any) {
   findWithRegex(MENTION_REGEX, contentBlock, callback);
 }
 

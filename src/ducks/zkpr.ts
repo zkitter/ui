@@ -9,11 +9,11 @@ import { useSelector } from 'react-redux';
 import { Dispatch } from 'redux';
 import { ThunkDispatch } from 'redux-thunk';
 
+import { checkPath } from '~/interrep';
+import { postWorkerMessage } from '~/sw';
 import { Identity } from '../serviceWorkers/identity';
 import { selectIdentity, setIdentity } from '../serviceWorkers/util';
 import { AppRootState } from '../store/configureAppStore';
-import { postWorkerMessage } from '~/sw';
-import { checkPath } from '~/interrep';
 
 enum ActionTypes {
   SET_LOADING = 'zkpr/setLoading',

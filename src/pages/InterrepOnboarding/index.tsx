@@ -2,7 +2,6 @@ import './interrep-onboarding.scss';
 import React, { ReactElement, useCallback, useEffect, useState } from 'react';
 import { useDispatch } from 'react-redux';
 import { useHistory } from 'react-router';
-import SpinnerGif from '../../../static/icons/spinner.gif';
 import Avatar, { Username } from '@components/Avatar';
 import Button from '@components/Button';
 import Icon from '@components/Icon';
@@ -14,6 +13,7 @@ import config from '~/config';
 import { watchPath } from '~/interrep';
 import { findProof } from '~/merkle';
 import { postWorkerMessage } from '~/sw';
+import SpinnerGif from '../../../static/icons/spinner.gif';
 import { setIdentity } from '../../serviceWorkers/util';
 
 export enum ViewType {
@@ -379,7 +379,7 @@ function JoinGroupView(props: {
         // props.setViewType(ViewType.done);
         history.push('/create-local-backup');
 
-        const [protocol, groupType, groupName] = (data?.group || '').split('_');
+        const [, groupType, groupName] = (data?.group || '').split('_');
         if (zkpr) {
           await postWorkerMessage(
             setIdentity({

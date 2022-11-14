@@ -10,14 +10,12 @@ import React, {
   useState,
 } from 'react';
 import { useDispatch } from 'react-redux';
-import config from '~/config';
 import { ipfsUploadOne } from '~/upload';
 import Button from '../Button';
 import FileSelectButton from '../FileSelectButton';
 import Icon from '../Icon';
 import Input from '../Input';
 import Modal, { ModalContent, ModalFooter, ModalHeader } from '../Modal';
-import URLPreview from '../URLPreview';
 
 type Props = {
   className?: string;
@@ -223,7 +221,7 @@ const validateLink = (link: string): boolean => {
 };
 
 const validateImage = async (link: string): Promise<boolean> => {
-  return new Promise((resolve, reject) => {
+  return new Promise(resolve => {
     const img = new Image();
     img.onload = () => resolve(true);
     img.onerror = () => resolve(false);

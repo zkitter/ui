@@ -12,7 +12,7 @@ export default function BottomNav(): ReactElement {
   const loggedIn = useGunLoggedIn();
   const account = useAccount();
   const selectedLocalId = useSelectedLocalId();
-  const [ensName, setEnsName] = useState('');
+  const [, setEnsName] = useState('');
 
   let address = '';
 

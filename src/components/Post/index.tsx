@@ -1,5 +1,5 @@
-import '~/variable.scss';
 import './post.scss';
+import '~/variable.scss';
 
 import React, { MouseEventHandler, ReactElement, useCallback, useEffect, useState } from 'react';
 import { useDispatch } from 'react-redux';

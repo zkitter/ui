@@ -4,7 +4,6 @@ import { safeJsonParse } from '~/misc';
 import { GenericService } from '~/svc';
 import { pushReduxAction } from './util';
 
-
 export type GunIdentity = {
   type: 'gun';
   address: string;

@@ -2,8 +2,8 @@ import './tag-feed.scss';
 import classNames from 'classnames';
 import React, { ReactElement, useCallback, useEffect, useState } from 'react';
 import { useDispatch } from 'react-redux';
-import { useHistory, useParams } from 'react-router';
-import { fetchHomeFeed, fetchTagFeed, useGoToPost } from '@ducks/posts';
+import { useParams } from 'react-router';
+import { fetchTagFeed, useGoToPost } from '@ducks/posts';
 import { useLoggedIn } from '@ducks/web3';
 import { useSelectedLocalId } from '@ducks/worker';
 import InfiniteScrollable from '../InfiniteScrollable';
@@ -12,12 +12,11 @@ import { useThemeContext } from '../ThemeContext';
 
 export default function TagFeed(): ReactElement {
   const { tagName } = useParams<{ tagName: string }>();
-  const [limit, setLimit] = useState(20);
+  const [limit] = useState(20);
   const [offset, setOffset] = useState(0);
   const [order, setOrder] = useState<string[]>([]);
   const [fetching, setFetching] = useState(false);
   const dispatch = useDispatch();
-  const history = useHistory();
   const loggedIn = useLoggedIn();
   const tag = decodeURIComponent(tagName);
   const selected = useSelectedLocalId();
@@ -68,7 +67,7 @@ export default function TagFeed(): ReactElement {
           Nothing to see here yet
         </div>
       )}
-      {order.map((messageId, i) => {
+      {order.map(messageId => {
         return (
           <Post
             key={messageId}

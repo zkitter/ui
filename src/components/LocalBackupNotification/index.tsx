@@ -2,6 +2,7 @@ import React, { ReactElement, useCallback, useState } from 'react';
 import { useHistory } from 'react-router';
 import { useHasLocal, useLoggedIn } from '@ducks/web3';
 import { useSelectedLocalId } from '@ducks/worker';
+import { postWorkerMessage } from '~/sw';
 import { Identity } from '../../serviceWorkers/identity';
 import {
   addIdentity,
@@ -9,7 +10,6 @@ import {
   getIdentityStatus,
   selectIdentity,
 } from '../../serviceWorkers/util';
-import { postWorkerMessage } from '~/sw';
 import Button from '../Button';
 import LoginModal from '../LoginModal';
 import NotificationBox from '../NotificationBox';

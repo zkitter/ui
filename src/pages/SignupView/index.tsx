@@ -15,7 +15,6 @@ import React, {
 import QrReader from 'react-qr-reader';
 import { useDispatch } from 'react-redux';
 import { useHistory } from 'react-router';
-import MetamaskSVG from '../../../static/icons/metamask-fox.svg';
 import Avatar, { Username } from '@components/Avatar';
 import Button from '@components/Button';
 import Icon from '@components/Icon';
@@ -45,10 +44,11 @@ import { findProof } from '~/merkle';
 import { ProfileMessageSubType } from '~/message';
 import { safeJsonParse } from '~/misc';
 import { postWorkerMessage } from '~/sw';
+import { addIdentity, setIdentity, setPassphrase } from 'src/serviceWorkers/util';
+import MetamaskSVG from '../../../static/icons/metamask-fox.svg';
 import SpinnerGIF from '../../../static/icons/spinner.gif';
 import TazLogo from '../../../static/icons/taz-logo.png';
 import ZKPRSVG from '../../../static/icons/zkpr-logo.svg';
-import { addIdentity, setIdentity, setPassphrase } from '../../serviceWorkers/util';
 import { CoverImageEditor, ProfileImageEditor } from '../ProfileView';
 
 export enum ViewType {
@@ -109,8 +109,6 @@ export default function SignupView(props: Props): ReactElement {
 }
 
 function WelcomeView(props: { setViewType: (v: ViewType) => void }): ReactElement {
-  const account = useWeb3Account();
-
   // useEffect(() => {
   //     if (user?.joinedTx) {
   //         history.push('/');

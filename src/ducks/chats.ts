@@ -2,10 +2,10 @@ import deepEqual from 'fast-deep-equal';
 import { useSelector } from 'react-redux';
 import { Dispatch } from 'redux';
 
+import { Chat, ChatMessage, ZKChatClient } from '~/zkchat';
 import store, { AppRootState } from '../store/configureAppStore';
 import config from '../util/config';
 import sse from '../util/sse';
-import { Chat, ChatMessage, ZKChatClient } from '~/zkchat';
 
 const EVENTS = ZKChatClient.EVENTS;
 

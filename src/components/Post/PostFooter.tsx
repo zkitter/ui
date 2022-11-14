@@ -105,7 +105,6 @@ export default function PostFooter(props: {
   const meta = useMeta(messageId);
   const post = usePost(messageId);
   const loggedIn = useLoggedIn();
-  const selected = useSelectedLocalId();
   const canNonPostMessage = useCanNonPostMessage();
   const dispatch = useDispatch();
   const [showReply, setShowReply] = useState(false);

@@ -6,7 +6,6 @@ import { ThunkDispatch } from 'redux-thunk';
 import Web3 from 'web3';
 import Web3Modal from 'web3modal';
 
-import { setIdentity } from '../serviceWorkers/util';
 import { getIdentityHash } from '~/arb3';
 import config from '~/config';
 import { generateGunKeyPairFromHex } from '~/crypto';
@@ -14,6 +13,7 @@ import gun, { authenticateGun } from '~/gun';
 import { findProof } from '~/merkle';
 import { postWorkerMessage } from '~/sw';
 import { defaultWeb3, fetchNameByAddress } from '~/web3';
+import { setIdentity } from '../serviceWorkers/util';
 import { AppRootState } from '../store/configureAppStore';
 
 import { getUser } from './users';

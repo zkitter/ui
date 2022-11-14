@@ -6,7 +6,6 @@ import React, { MouseEventHandler, ReactElement, useCallback, useEffect, useStat
 import { useDispatch } from 'react-redux';
 import { Route, Switch, useHistory, useLocation, useParams } from 'react-router';
 import Web3 from 'web3';
-import EtherScanSVG from '../../../static/icons/etherscan-logo-gray-500.svg';
 import Avatar from '@components/Avatar';
 import Button from '@components/Button';
 import Checkbox from '@components/Checkbox';
@@ -39,6 +38,7 @@ import config from '~/config';
 import { ConnectionMessageSubType, ProfileMessageSubType } from '~/message';
 import { verifyTweet } from '~/twitter';
 import { getHandle, getName } from '~/user';
+import EtherScanSVG from '../../../static/icons/etherscan-logo-gray-500.svg';
 import SpinnerGIF from '../../../static/icons/spinner.gif';
 
 let t: any = null;

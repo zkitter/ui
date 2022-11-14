@@ -1,28 +1,14 @@
 import './editor.scss';
 import classNames from 'classnames';
-import { convertFromRaw, DraftHandleValue, EditorState, RichUtils } from 'draft-js';
+import { DraftHandleValue, EditorState, RichUtils } from 'draft-js';
 import React, { ReactElement, useCallback, useEffect, useState } from 'react';
 import { useDispatch } from 'react-redux';
 import { useHistory } from 'react-router';
-import drafts, {
-  setDraft,
-  setGloabl,
-  setMirror,
-  setModeration,
-  useDraft,
-  useMirror,
-} from '@ducks/drafts';
+import { setDraft, setGloabl, setMirror, setModeration, useDraft, useMirror } from '@ducks/drafts';
 import { usePostModeration } from '@ducks/mods';
 import { useCommentDisabled, useMeta } from '@ducks/posts';
 import { useUser } from '@ducks/users';
-import {
-  useAccount,
-  useCanNonPostMessage,
-  useENSName,
-  useGunKey,
-  useLoggedIn,
-  useSemaphoreID,
-} from '@ducks/web3';
+import { useAccount, useCanNonPostMessage, useGunKey } from '@ducks/web3';
 import {
   setPostingGroup,
   usePostingGroup,

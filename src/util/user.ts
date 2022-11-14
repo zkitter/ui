@@ -1,4 +1,3 @@
-
 import { submitProfile } from '@ducks/drafts';
 import { getUser, resetUser, User } from '@ducks/users';
 import { Identity } from '../serviceWorkers/identity';

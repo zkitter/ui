@@ -74,7 +74,9 @@ export function getImageUrl(user: User | null): string {
       } else {
         imageUrl = avatar.href;
       }
-    } catch (e) {}
+    } catch (e) {
+      // swallow
+    }
   }
 
   return imageUrl;

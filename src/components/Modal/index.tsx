@@ -2,7 +2,6 @@ import './modal.scss';
 import classNames from 'classnames';
 import React, { MouseEventHandler, ReactElement, ReactNode, ReactNodeArray } from 'react';
 import ReactDOM from 'react-dom';
-import CancelSVG from '../../../static/icons/cancel.svg';
 import Icon from '../Icon';
 import { useThemeContext } from '../ThemeContext';
 

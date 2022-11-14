@@ -1,4 +1,3 @@
-import crypto from 'crypto';
 import { Identity } from '@semaphore-protocol/identity';
 import { ZkIdentity } from '@zk-kit/identity';
 import {
@@ -9,6 +8,7 @@ import {
   Semaphore,
   SemaphoreFullProof,
 } from '@zk-kit/protocols';
+import crypto from 'crypto';
 import EC from 'elliptic';
 import EventEmitter2, { ConstructorOptions } from 'eventemitter2';
 

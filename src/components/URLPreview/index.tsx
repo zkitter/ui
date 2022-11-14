@@ -1,9 +1,9 @@
 import './url-preview.scss';
 import classNames from 'classnames';
 import React, { ReactElement, useCallback, useEffect, useState } from 'react';
+import config from '~/config';
 import SpinnerGif from '../../../static/icons/spinner.gif';
 import { shouldBlurImage } from '../../pages/SettingView';
-import config from '~/config';
 import Icon from '../Icon';
 import WebTorrentViewer from '../WebTorrentViewer';
 
@@ -212,7 +212,7 @@ export default function URLPreview(props: Props): ReactElement {
 }
 
 function testImage(url: string) {
-  return new Promise(function (resolve, reject) {
+  return new Promise(function (resolve) {
     const timer = setTimeout(function () {
       // reset .src to invalid URL so it stops previous
       // loading, but doesn't trigger new load

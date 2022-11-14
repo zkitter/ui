@@ -1,7 +1,6 @@
 import React, { ReactElement } from 'react';
 import QRCode from 'react-qr-code';
 import { useSelectedLocalId } from '@ducks/worker';
-import { Identity } from '../../serviceWorkers/identity';
 import Modal, { ModalContent, ModalHeader } from '../Modal';
 
 type Props = {

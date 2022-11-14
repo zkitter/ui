@@ -1,10 +1,9 @@
 import classNames from 'classnames';
 import React, { MouseEventHandler, ReactElement, useCallback, useEffect, useState } from 'react';
 import { useDispatch } from 'react-redux';
-import { useHistory, useParams } from 'react-router';
 import { usePostModeration } from '@ducks/mods';
-import { fetchPost, fetchReplies, useGoToPost, useMeta } from '@ducks/posts';
-import { parseMessageId, Post as PostMessage } from '~/message';
+import { fetchReplies, useGoToPost, useMeta } from '@ducks/posts';
+import { Post as PostMessage } from '~/message';
 import Post from '../Post';
 import { useThemeContext } from '../ThemeContext';
 
@@ -21,7 +20,7 @@ type Props = {
 
 export default function Thread(props: Props): ReactElement {
   const { messageId, level = 0 } = props;
-  const [limit, setLimit] = useState(20);
+  const [limit] = useState(20);
   const [offset, setOffset] = useState(0);
   const [order, setOrder] = useState<string[]>([]);
   const dispatch = useDispatch();

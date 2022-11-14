@@ -1,7 +1,7 @@
 import React, { ReactElement, useCallback, useEffect, useState } from 'react';
 import { useCanNonPostMessage, useLoggedIn } from '@ducks/web3';
-import SpinnerGif from '../../../static/icons/spinner.gif';
 import config from '~/config';
+import SpinnerGif from '../../../static/icons/spinner.gif';
 import Button from '../Button';
 import Icon from '../Icon';
 

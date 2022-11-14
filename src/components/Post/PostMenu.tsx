@@ -114,7 +114,9 @@ export default function PostMenu(
           iconClassName: 'text-gray-400',
         });
       }
-    } catch (e) {}
+    } catch (e) {
+      // swallow
+    }
   }
 
   if (!isCurrentUser) {

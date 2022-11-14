@@ -1,27 +1,14 @@
 import './chat-content.scss';
-import { Identity } from '@semaphore-protocol/identity';
 import { Strategy, ZkIdentity } from '@zk-kit/identity';
 import classNames from 'classnames';
 import React, { KeyboardEvent, ReactElement, useCallback, useEffect, useState } from 'react';
-import { useDispatch } from 'react-redux';
 import { useParams } from 'react-router';
+import { useChatId, useChatMessage, useMessagesByChatId, zkchat } from '@ducks/chats';
 import { useSelectedLocalId, useSelectedZKGroup } from '@ducks/worker';
-import SpinnerGIF from '../../../static/icons/spinner.gif';
-import chats, {
-  InflatedChat,
-  useChatId,
-  useChatMessage,
-  useMessagesByChatId,
-  zkchat,
-} from '@ducks/chats';
-import {
-  generateECDHKeyPairFromhex,
-  generateZkIdentityFromHex,
-  sha256,
-  signWithP256,
-} from '~/crypto';
+import { generateZkIdentityFromHex, sha256, signWithP256 } from '~/crypto';
 import { findProof } from '~/merkle';
 import { Chat } from '~/zkchat';
+import SpinnerGIF from '../../../static/icons/spinner.gif';
 import Avatar, { Username } from '../Avatar';
 import { FromNow } from '../ChatMenu';
 import Icon from '../Icon';
@@ -107,7 +94,6 @@ function ChatEditor(): ReactElement {
   const chat = useChatId(chatId);
   const [error, setError] = useState('');
   const [isSending, setSending] = useState(false);
-  const dispatch = useDispatch();
   const zkGroup = useSelectedZKGroup();
 
   useEffect(() => {
@@ -123,7 +109,7 @@ function ChatEditor(): ReactElement {
     if (selected?.type === 'gun') {
       signature = signWithP256(selected.privateKey, selected.address) + '.' + selected.address;
       if (chat.senderHash) {
-        const zkseed = await signWithP256(selected.privateKey, 'signing for zk identity - 0');
+        const zkseed = signWithP256(selected.privateKey, 'signing for zk identity - 0');
         const zkHex = await sha256(zkseed);
         const zkIdentity = await generateZkIdentityFromHex(zkHex);
         merkleProof = await findProof(
@@ -139,13 +125,11 @@ function ChatEditor(): ReactElement {
       merkleProof = await findProof(group, BigInt(identityCommitment).toString(16));
       identitySecretHash = zkIdentity.getSecretHash();
     } else if (selected?.type === 'taz') {
-      const { type, identityCommitment, serializedIdentity } = selected;
+      const { identityCommitment } = selected;
       const group = `semaphore_taz_members`;
-      const zkIdentity = new Identity(serializedIdentity);
       merkleProof = await findProof(group, BigInt(identityCommitment).toString(16));
     }
-
-    const json = await zkchat.sendDirectMessage(
+    await zkchat.sendDirectMessage(
       chat,
       content,
       {

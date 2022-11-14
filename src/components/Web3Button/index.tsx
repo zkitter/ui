@@ -3,7 +3,6 @@ import classNames from 'classnames';
 import React, { ReactElement, ReactNode, useCallback, useEffect, useState } from 'react';
 import { useDispatch } from 'react-redux';
 import { useHistory } from 'react-router';
-import SpinnerGIF from '../../../static/icons/spinner.gif';
 import { useUser } from '@ducks/users';
 import {
   setGunPrivateKey,
@@ -19,13 +18,14 @@ import {
   useSelectedZKGroup,
   useWorkerUnlocked,
 } from '@ducks/worker';
-import { Identity, InterrepIdentity } from '../../serviceWorkers/identity';
-import { setIdentity } from '../../serviceWorkers/util';
 import config from '~/config';
 import gun from '~/gun';
 import { postWorkerMessage } from '~/sw';
 import { getHandle, loginUser } from '~/user';
 import { fetchNameByAddress } from '~/web3';
+import SpinnerGIF from '../../../static/icons/spinner.gif';
+import { Identity, InterrepIdentity } from '../../serviceWorkers/identity';
+import { setIdentity } from '../../serviceWorkers/util';
 import Avatar, { Username } from '../Avatar';
 import Button from '../Button';
 import ExportPrivateKeyModal from '../ExportPrivateKeyModal';

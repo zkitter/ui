@@ -1,9 +1,9 @@
 import classNames from 'classnames';
 import moment from 'moment/moment';
-import React, { ReactElement, useCallback, useEffect, useState } from 'react';
+import React, { ReactElement, useCallback } from 'react';
 import { useHistory } from 'react-router';
 
-import { fetchLikersByPost, useMeta, usePost, useZKGroupFromPost } from '@ducks/posts';
+import { useMeta, usePost, useZKGroupFromPost } from '@ducks/posts';
 import { useUser } from '@ducks/users';
 import { PostMessageSubType } from '~/message';
 import { getHandle, getUsername } from '~/user';

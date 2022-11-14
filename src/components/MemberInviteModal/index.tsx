@@ -2,13 +2,12 @@ import './member-invite-modal.scss';
 import classNames from 'classnames';
 import React, { ChangeEvent, ReactElement, useCallback, useEffect, useState } from 'react';
 import { useDispatch } from 'react-redux';
-import { useHistory } from 'react-router';
 import Web3 from 'web3';
-import SpinnerGIF from '../../../static/icons/spinner.gif';
 import { submitConnection } from '@ducks/drafts';
 import { fetchAddressByName, searchUsers, useUser } from '@ducks/users';
 import { ConnectionMessageSubType } from '~/message';
 import { getHandle, getName } from '~/user';
+import SpinnerGIF from '../../../static/icons/spinner.gif';
 import Avatar from '../Avatar';
 import Button from '../Button';
 import Icon from '../Icon';
@@ -26,7 +25,7 @@ export default function MemberInviteModal(props: Props): ReactElement {
   const [submitting, setSubmitting] = useState(false);
   const [results, setResults] = useState<string[]>([]);
   const [users, setUsers] = useState<{ [address: string]: string }>({});
-  const [errorMessage, setErrorMessage] = useState('');
+  const [errorMessage] = useState('');
   const dispatch = useDispatch();
 
   const onInputChange = useCallback((e: ChangeEvent<HTMLInputElement>) => {
@@ -118,7 +117,6 @@ function UserRow(props: {
   toggleInvite: () => void;
   selected: boolean;
 }): ReactElement {
-  const history = useHistory();
   const [username, setUsername] = useState('');
 
   const dispatch = useDispatch();

@@ -3,18 +3,18 @@ import classNames from 'classnames';
 import React, { ReactElement, useCallback, useEffect, useState } from 'react';
 import { useDispatch } from 'react-redux';
 import { useHistory, useParams } from 'react-router';
-import SpinnerGIF from '../../../static/icons/spinner.gif';
 import { unmoderate, usePostModeration } from '@ducks/mods';
 import { useMeta, usePost } from '@ducks/posts';
 import { useUser } from '@ducks/users';
 import { ModerationMessageSubType, PostMessageSubType } from '~/message';
 import { getHandle, getUsername } from '~/user';
+import SpinnerGIF from '../../../static/icons/spinner.gif';
 import Icon from '../Icon';
 import SwitchButton from '../SwitchButton';
 import { useThemeContext } from '../ThemeContext';
 
 export default function PostModerationPanel(): ReactElement {
-  const [loading, setLoading] = useState(false);
+  const [loading] = useState(false);
   const { name, hash } = useParams<{ name?: string; hash: string }>();
   const dispatch = useDispatch();
   const messageId = [name, hash].join('/');

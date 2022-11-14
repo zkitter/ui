@@ -1,7 +1,6 @@
-
+import { AppService } from '~/svc';
 import { Identity, IdentityService } from './identity';
 import { ServiceWorkerActionType, WorkerAction, WorkerResponse } from './util';
-import { AppService } from '~/svc';
 
 const global: ServiceWorkerGlobalScope = self as any;
 

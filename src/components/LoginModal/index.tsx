@@ -1,7 +1,7 @@
 import './login-modal.scss';
 import React, { ReactElement, useCallback, useState } from 'react';
-import { setPassphrase } from '../../serviceWorkers/util';
 import { postWorkerMessage } from '~/sw';
+import { setPassphrase } from '../../serviceWorkers/util';
 import Button from '../Button';
 import Input from '../Input';
 import Modal, { ModalContent, ModalFooter, ModalHeader } from '../Modal';
