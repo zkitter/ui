@@ -1,20 +1,20 @@
-import React, { ReactElement, ReactNode, useCallback, useEffect, useState } from 'react';
 import './interrep-onboarding.scss';
-import { useHistory } from 'react-router';
-import Button from '../../components/Button';
-import { useSelectedLocalId } from '../../ducks/worker';
-import Icon from '../../components/Icon';
-import SpinnerGif from '../../../static/icons/spinner.gif';
-import config from '../../util/config';
-import Input from '../../components/Input';
-import { checkPath, watchPath } from '../../util/interrep';
-import { postWorkerMessage } from '../../util/sw';
-import { setIdentity } from '../../serviceWorkers/util';
-import { disconnectWeb3, genSemaphore, useWeb3Account, useWeb3Unlocking } from '../../ducks/web3';
+import React, { ReactElement, useCallback, useEffect, useState } from 'react';
 import { useDispatch } from 'react-redux';
-import { createZKPRIdentity, disconnectZKPR, useIdCommitment, useZKPR } from '../../ducks/zkpr';
-import Avatar, { Username } from '../../components/Avatar';
-import { findProof } from '../../util/merkle';
+import { useHistory } from 'react-router';
+import SpinnerGif from '../../../static/icons/spinner.gif';
+import Avatar, { Username } from '@components/Avatar';
+import Button from '@components/Button';
+import Icon from '@components/Icon';
+import Input from '@components/Input';
+import { disconnectWeb3, genSemaphore, useWeb3Account, useWeb3Unlocking } from '@ducks/web3';
+import { useSelectedLocalId } from '@ducks/worker';
+import { createZKPRIdentity, disconnectZKPR, useIdCommitment, useZKPR } from '@ducks/zkpr';
+import config from '~/config';
+import { watchPath } from '~/interrep';
+import { findProof } from '~/merkle';
+import { postWorkerMessage } from '~/sw';
+import { setIdentity } from '../../serviceWorkers/util';
 
 export enum ViewType {
   welcome,
@@ -290,7 +290,7 @@ function JoinGroupView(props: {
 
       if (!data) return;
 
-      const [protocol, groupType, groupName] = data.group.split('_');
+      const [, groupType, groupName] = data.group.split('_');
 
       if (zkpr) {
         await postWorkerMessage(

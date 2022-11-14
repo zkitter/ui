@@ -1,5 +1,5 @@
+import { Strategy, ZkIdentity } from '@zk-kit/identity';
 import EC from 'elliptic';
-import { ZkIdentity, Strategy } from '@zk-kit/identity';
 
 export const hexToUintArray = (hex: string): Uint8Array => {
   const a = [];
@@ -50,7 +50,7 @@ export function base64ToArrayBuffer(base64: string): ArrayBuffer {
 export const arrayBufToBase64UrlEncode = (buf: ArrayBuffer) => {
   let binary = '';
   const bytes = new Uint8Array(buf);
-  for (var i = 0; i < bytes.byteLength; i++) {
+  for (let i = 0; i < bytes.byteLength; i++) {
     binary += String.fromCharCode(bytes[i]);
   }
   return window.btoa(binary).replace(/\//g, '_').replace(/=/g, '').replace(/\+/g, '-');

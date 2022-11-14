@@ -1,20 +1,20 @@
-import React, { ReactElement, ReactNode, useCallback, useEffect, useState } from 'react';
 import './connect-twitter.scss';
-import Button from '../../components/Button';
-import { useSelectedLocalId } from '../../ducks/worker';
-import Icon from '../../components/Icon';
-import SpinnerGif from '../../../static/icons/spinner.gif';
-import config from '../../util/config';
-import TwitterLogo from '../../../static/icons/twitter.svg';
-import { useAccount } from '../../ducks/web3';
-import { setUser, useConnectedTwitter, useUser } from '../../ducks/users';
+import React, { ReactElement, useCallback, useEffect, useState } from 'react';
 import { useDispatch } from 'react-redux';
-import { submitProfile } from '../../ducks/drafts';
-import { ProfileMessageSubType } from '../../util/message';
 import { useHistory } from 'react-router';
-import { verifyTweet } from '../../util/twitter';
-import { getHandle } from '../../util/user';
-import { signWithP256 } from '../../util/crypto';
+import SpinnerGif from '../../../static/icons/spinner.gif';
+import Button from '@components/Button';
+import Icon from '@components/Icon';
+import { submitProfile } from '@ducks/drafts';
+import { setUser, useConnectedTwitter, useUser } from '@ducks/users';
+import { useAccount } from '@ducks/web3';
+import { useSelectedLocalId } from '@ducks/worker';
+import config from '~/config';
+import { signWithP256 } from '~/crypto';
+import { ProfileMessageSubType } from '~/message';
+import { verifyTweet } from '~/twitter';
+import { getHandle } from '~/user';
+import TwitterLogo from '../../../static/icons/twitter.svg';
 
 export enum ViewType {
   welcome,
@@ -241,7 +241,7 @@ function VerifyView(props: {
       }
 
       if (!json?.error && json?.payload) {
-        const [twitterHandle, _, tweetId] = json.payload
+        const [twitterHandle, , tweetId] = json.payload
           .replace('https://twitter.com/', '')
           .split('/');
         await dispatch(

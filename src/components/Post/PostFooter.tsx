@@ -3,11 +3,14 @@ import React, { ReactElement, useCallback, useState } from 'react';
 import { useDispatch } from 'react-redux';
 
 import {
-  MessageType,
-  ModerationMessageSubType,
-  Post as PostMessage,
-  PostMessageSubType,
-} from '../../util/message';
+  removeMessage,
+  submitModeration,
+  submitPost,
+  submitRepost,
+  useDraft,
+  useSubmitting,
+} from '@ducks/drafts';
+import { usePostModeration } from '@ducks/mods';
 import {
   decrementLike,
   decrementRepost,
@@ -19,24 +22,21 @@ import {
   useCommentDisabled,
   useMeta,
   usePost,
-} from '../../ducks/posts';
-import { useCanNonPostMessage, useLoggedIn } from '../../ducks/web3';
-import { useSelectedLocalId } from '../../ducks/worker';
-import { usePostModeration } from '../../ducks/mods';
-import { useThemeContext } from '../ThemeContext';
+} from '@ducks/posts';
+import { useUser } from '@ducks/users';
+import { useCanNonPostMessage, useLoggedIn } from '@ducks/web3';
+import { useSelectedLocalId } from '@ducks/worker';
 import {
-  removeMessage,
-  submitModeration,
-  submitPost,
-  submitRepost,
-  useDraft,
-  useSubmitting,
-} from '../../ducks/drafts';
-import { useUser } from '../../ducks/users';
-import { getHandle } from '../../util/user';
-
+  MessageType,
+  ModerationMessageSubType,
+  Post as PostMessage,
+  PostMessageSubType,
+} from '~/message';
+import { getHandle } from '~/user';
 import Editor from '../Editor';
+
 import Modal, { ModalContent, ModalHeader } from '../Modal';
+import { useThemeContext } from '../ThemeContext';
 import PostButton from './PostButton';
 
 type ReplyEditorModalProps = {

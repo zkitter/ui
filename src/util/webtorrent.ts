@@ -1,5 +1,5 @@
-import WebTorrent, { Torrent } from 'webtorrent';
 import magnet from 'magnet-uri';
+import WebTorrent, { Torrent } from 'webtorrent';
 
 let cachedClient: WebTorrent.Instance | null = null;
 
@@ -26,7 +26,7 @@ export function getInfoHashFromMagnet(url = ''): string {
 }
 
 export async function addMagnetURL(url = ''): Promise<Torrent> {
-  return new Promise((resolve, reject) => {
+  return new Promise(resolve => {
     const client = getWebtorrentClient();
     client.add(url, torrent => {
       resolve(torrent);

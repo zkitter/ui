@@ -1,33 +1,33 @@
 import './chat-content.scss';
-import React, { ReactElement, useState, KeyboardEvent, useCallback, useEffect } from 'react';
+import { Identity } from '@semaphore-protocol/identity';
+import { Strategy, ZkIdentity } from '@zk-kit/identity';
 import classNames from 'classnames';
+import React, { KeyboardEvent, ReactElement, useCallback, useEffect, useState } from 'react';
+import { useDispatch } from 'react-redux';
 import { useParams } from 'react-router';
-import InfiniteScrollable from '../InfiniteScrollable';
-import { useSelectedLocalId, useSelectedZKGroup } from '../../ducks/worker';
-import Nickname from '../Nickname';
-import Avatar, { Username } from '../Avatar';
-import Textarea from '../Textarea';
-import {
-  generateECDHKeyPairFromhex,
-  generateZkIdentityFromHex,
-  sha256,
-  signWithP256,
-} from '../../util/crypto';
-import { FromNow } from '../ChatMenu';
+import { useSelectedLocalId, useSelectedZKGroup } from '@ducks/worker';
+import SpinnerGIF from '../../../static/icons/spinner.gif';
 import chats, {
   InflatedChat,
   useChatId,
   useChatMessage,
   useMessagesByChatId,
   zkchat,
-} from '../../ducks/chats';
+} from '@ducks/chats';
+import {
+  generateECDHKeyPairFromhex,
+  generateZkIdentityFromHex,
+  sha256,
+  signWithP256,
+} from '~/crypto';
+import { findProof } from '~/merkle';
+import { Chat } from '~/zkchat';
+import Avatar, { Username } from '../Avatar';
+import { FromNow } from '../ChatMenu';
 import Icon from '../Icon';
-import SpinnerGIF from '../../../static/icons/spinner.gif';
-import { useDispatch } from 'react-redux';
-import { findProof } from '../../util/merkle';
-import { Strategy, ZkIdentity } from '@zk-kit/identity';
-import { Chat } from '../../util/zkchat';
-import { Identity } from '@semaphore-protocol/identity';
+import InfiniteScrollable from '../InfiniteScrollable';
+import Nickname from '../Nickname';
+import Textarea from '../Textarea';
 
 export default function ChatContent(): ReactElement {
   const { chatId } = useParams<{ chatId: string }>();

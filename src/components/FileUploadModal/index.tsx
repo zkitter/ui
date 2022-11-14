@@ -1,23 +1,23 @@
+import './file-upload-modal.scss';
+import classNames from 'classnames';
 import React, {
-  KeyboardEvent,
   ChangeEvent,
+  KeyboardEvent,
   ReactElement,
   useCallback,
   useEffect,
   useRef,
   useState,
 } from 'react';
-import Modal, { ModalContent, ModalFooter, ModalHeader } from '../Modal';
-import Button from '../Button';
-import Icon from '../Icon';
-import classNames from 'classnames';
-import './file-upload-modal.scss';
-import FileSelectButton from '../FileSelectButton';
-import Input from '../Input';
-import config from '../../util/config';
-import URLPreview from '../URLPreview';
 import { useDispatch } from 'react-redux';
-import { ipfsUploadOne } from '../../util/upload';
+import config from '~/config';
+import { ipfsUploadOne } from '~/upload';
+import Button from '../Button';
+import FileSelectButton from '../FileSelectButton';
+import Icon from '../Icon';
+import Input from '../Input';
+import Modal, { ModalContent, ModalFooter, ModalHeader } from '../Modal';
+import URLPreview from '../URLPreview';
 
 type Props = {
   className?: string;

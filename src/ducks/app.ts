@@ -1,6 +1,7 @@
-import { useSelector } from 'react-redux';
-import { AppRootState } from '../store/configureAppStore';
 import deepEqual from 'fast-deep-equal';
+import { useSelector } from 'react-redux';
+
+import { AppRootState } from '../store/configureAppStore';
 
 const THEME_LS_KEY = 'theme';
 
@@ -20,7 +21,7 @@ type State = {
 };
 
 const getTheme = () => {
-  let theme = localStorage.getItem(THEME_LS_KEY);
+  const theme = localStorage.getItem(THEME_LS_KEY);
   if (theme === 'dark' || theme === 'light') return theme;
   if (window.matchMedia('(prefers-color-scheme: dark)')) return 'dark';
   return 'light';
@@ -38,6 +39,14 @@ export const setTheme = (theme: 'dark' | 'light') => {
   };
 };
 
+export const useSetting = () => {
+  return useSelector((state: AppRootState) => {
+    return {
+      theme: state.app.theme,
+    };
+  }, deepEqual);
+};
+
 export default function app(state = initialState, action: Action<any>): State {
   switch (action.type) {
     case ActionTypes.SET_THEME:
@@ -49,11 +58,3 @@ export default function app(state = initialState, action: Action<any>): State {
       return state;
   }
 }
-
-export const useSetting = () => {
-  return useSelector((state: AppRootState) => {
-    return {
-      theme: state.app.theme,
-    };
-  }, deepEqual);
-};

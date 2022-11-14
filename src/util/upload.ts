@@ -1,8 +1,10 @@
+import { ThunkDispatch } from 'redux-thunk';
+
 import { AppRootState } from '../store/configureAppStore';
+
 import config from './config';
 import { signWithP256 } from './crypto';
 import { generateRLNProof } from './zk';
-import { ThunkDispatch } from 'redux-thunk';
 
 export const ipfsUploadOne =
   (file: File) => async (dispatch: ThunkDispatch<any, any, any>, getState: () => AppRootState) => {

@@ -44,7 +44,7 @@ export class WebCryptography {
    * Generates a RSA key pair with a modulus of RSA_MODULUS_LENGTH
    */
   public async generateKeyPair(): Promise<{ publicKey: string; privateKey: string }> {
-    let keyPair = await window.crypto.subtle.generateKey(
+    const keyPair = await window.crypto.subtle.generateKey(
       {
         name: 'RSA-OAEP',
         modulusLength: WebCryptography.RSA_MODULUS_LENGTH,
@@ -77,7 +77,7 @@ export class WebCryptography {
    * Generate an ECDH key pair used for deriving a shared secret.
    */
   public async generateECDHKeyPair(): Promise<{ publicKey: string; privateKey: string }> {
-    let keyPair = await window.crypto.subtle.generateKey(
+    const keyPair = await window.crypto.subtle.generateKey(
       {
         name: 'ECDH',
         namedCurve: WebCryptography.ECDH_CURVE,
@@ -270,9 +270,9 @@ export class WebCryptography {
    * Converts a string to an array buffer.
    */
   public str2ab(str: string) {
-    var buf = new ArrayBuffer(str.length);
-    var bufView = new Uint8Array(buf);
-    for (var i = 0, strLen = str.length; i < strLen; i++) {
+    const buf = new ArrayBuffer(str.length);
+    const bufView = new Uint8Array(buf);
+    for (let i = 0, strLen = str.length; i < strLen; i++) {
       bufView[i] = str.charCodeAt(i);
     }
     return buf;

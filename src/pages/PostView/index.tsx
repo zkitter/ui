@@ -1,27 +1,17 @@
-import React, { ReactElement, useCallback, useEffect, useRef, useState } from 'react';
-import { useHistory, useLocation, useParams } from 'react-router';
-import {
-  fetchHomeFeed,
-  fetchMeta,
-  fetchPost,
-  fetchPosts,
-  fetchReplies,
-  setPost,
-  useGoToPost,
-  useMeta,
-  usePost,
-} from '../../ducks/posts';
-import Post from '../../components/Post';
-import classNames from 'classnames';
 import './post-view.scss';
+import classNames from 'classnames';
+import React, { ReactElement, useCallback, useEffect, useRef, useState } from 'react';
 import { useDispatch } from 'react-redux';
-import Thread from '../../components/Thread';
-import ParentThread from '../../components/ParentThread';
-import { Post as PostMessage, PostMessageSubType } from '../../util/message';
-import { useENSName, useLoggedIn } from '../../ducks/web3';
-import { useSelectedLocalId } from '../../ducks/worker';
-import { usePostModeration } from '../../ducks/mods';
-import { useThemeContext } from '../../components/ThemeContext';
+import { useParams } from 'react-router';
+import ParentThread from '@components/ParentThread';
+import Post from '@components/Post';
+import { useThemeContext } from '@components/ThemeContext';
+import Thread from '@components/Thread';
+import { usePostModeration } from '@ducks/mods';
+import { fetchMeta, fetchReplies, setPost, useGoToPost, useMeta, usePost } from '@ducks/posts';
+import { useENSName } from '@ducks/web3';
+import { useSelectedLocalId } from '@ducks/worker';
+import { Post as PostMessage, PostMessageSubType } from '~/message';
 
 type Props = {};
 
@@ -31,12 +21,10 @@ export default function PostView(props: Props): ReactElement {
   const { name, hash } = useParams<{ name?: string; hash: string }>();
   const reference = name ? name + '/' + hash : hash;
 
-  const [limit, setLimit] = useState(20);
+  const [limit] = useState(20);
   const [offset, setOffset] = useState(0);
   const [order, setOrder] = useState<string[]>([]);
   const dispatch = useDispatch();
-  const history = useHistory();
-  const loggedIn = useLoggedIn();
   const ensName = useENSName();
   const parentEl = useRef<HTMLDivElement>(null);
   const containerEl = useRef<HTMLDivElement>(null);
@@ -156,7 +144,7 @@ export default function PostView(props: Props): ReactElement {
             />
           </div>
           <Post className="rounded-xl" messageId={messageId} onSuccessPost={onSuccessPost} expand />
-          {order.map((messageId, index) => {
+          {order.map(messageId => {
             return (
               <Thread
                 key={messageId}

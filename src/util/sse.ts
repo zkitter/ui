@@ -1,7 +1,7 @@
+import EventEmitter2 from 'eventemitter2';
+import { zkchat } from '@ducks/chats';
 import config from './config';
 import { safeJsonParse } from './misc';
-import EventEmitter2 from 'eventemitter2';
-import { zkchat } from '../ducks/chats';
 
 class SSE extends EventEmitter2 {
   eventSource?: EventSource;
@@ -30,24 +30,24 @@ class SSE extends EventEmitter2 {
 
   handleMessage = async (event: MessageEvent) => {
     const data = safeJsonParse(event.data);
+    const topics = Object.entries(zkchat.activeChats).map(([, chat]) => {
+      if (chat.type === 'DIRECT') {
+        if (chat.senderHash && chat.senderECDH) {
+          return `ecdh:${chat.senderECDH}`;
+        } else {
+          return `ecdh:${chat.senderECDH}`;
+        }
+      } else {
+        return '';
+      }
+    });
+
     switch (data.type) {
       case 'INIT':
         this.clientId = data.clientId;
         this.waitForConnection();
 
-        const topics = Object.entries(zkchat.activeChats).map(([chatId, chat]) => {
-          if (chat.type === 'DIRECT') {
-            if (chat.senderHash && chat.senderECDH) {
-              return `ecdh:${chat.senderECDH}`;
-            } else {
-              return `ecdh:${chat.senderECDH}`;
-            }
-          } else {
-            return '';
-          }
-        });
-
-        this.updateTopics(topics);
+        await this.updateTopics(topics);
 
         for (const chatId in zkchat.activeChats) {
           const chat = zkchat.activeChats[chatId];
@@ -96,8 +96,7 @@ class SSE extends EventEmitter2 {
         topics,
       }),
     });
-    const json = await resp.json();
-    return json;
+    return await resp.json();
   };
 }
 

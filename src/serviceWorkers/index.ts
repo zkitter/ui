@@ -1,8 +1,7 @@
-// @ts-ignore
 
-import { AppService } from '../util/svc';
-import { IdentityService, Identity } from './identity';
+import { Identity, IdentityService } from './identity';
 import { ServiceWorkerActionType, WorkerAction, WorkerResponse } from './util';
+import { AppService } from '~/svc';
 
 const global: ServiceWorkerGlobalScope = self as any;
 
@@ -33,7 +32,6 @@ async function getApp(): Promise<AppService> {
 }
 
 const cacheName = 'autism-pwa-v3';
-const filesToCache = ['/index.html', '/app.js'];
 
 global.addEventListener('install', e => {
   e.waitUntil(
@@ -105,10 +103,7 @@ global.addEventListener('message', async e => {
 });
 
 const handlers = {
-  [ServiceWorkerActionType.GET_IDENTITIES]: async (
-    app: AppService,
-    action: WorkerAction<string>
-  ) => {
+  [ServiceWorkerActionType.GET_IDENTITIES]: async (app: AppService) => {
     return app.exec('identity', 'getIdentities');
   },
 
@@ -148,10 +143,7 @@ const handlers = {
     return app.exec('identity', 'setPassphrase', action.payload);
   },
 
-  [ServiceWorkerActionType.GET_IDENTITY_STATUS]: async (
-    app: AppService,
-    action: WorkerAction<string>
-  ) => {
+  [ServiceWorkerActionType.GET_IDENTITY_STATUS]: async (app: AppService) => {
     return app.exec('identity', 'getStatus');
   },
 };

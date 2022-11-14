@@ -1,6 +1,6 @@
-import React, { InputHTMLAttributes, ReactElement, ReactNode } from 'react';
-import classNames from 'classnames';
 import './input.scss';
+import classNames from 'classnames';
+import React, { InputHTMLAttributes, ReactElement, ReactNode } from 'react';
 import { useThemeContext } from '../ThemeContext';
 
 type Props = {

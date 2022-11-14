@@ -1,18 +1,13 @@
-import React, { ReactElement, useCallback, useEffect, useRef, useState } from 'react';
+import './wt-viewer.scss';
 import classNames from 'classnames';
-import {
-  addMagnetURL,
-  getInfoHashFromMagnet,
-  getWebtorrentClient,
-  removeMagnetURL,
-} from '../../util/webtorrent';
-import Icon from '../Icon';
-import SpinnerGif from '../../../static/icons/spinner.gif';
-import { Torrent, TorrentFile } from 'webtorrent';
 import mime from 'mime-types';
 import prettyBytes from 'pretty-bytes';
+import React, { ReactElement, useCallback, useEffect, useRef, useState } from 'react';
+import { Torrent, TorrentFile } from 'webtorrent';
+import SpinnerGif from '../../../static/icons/spinner.gif';
 import WTIcon from '../../../static/icons/webtorrent-small.png';
-import './wt-viewer.scss';
+import { addMagnetURL, getInfoHashFromMagnet, getWebtorrentClient } from '~/webtorrent';
+import Icon from '../Icon';
 
 type Props = {
   className?: string;
@@ -27,7 +22,7 @@ export default function WebTorrentViewer(props: Props): ReactElement {
   const [currentTorrent, setTorrent] = useState<Torrent | null>(null);
   const [isDownloading, setDownloading] = useState(false);
   const [isSeeding, setSeeding] = useState(false);
-  const [progress, setProgress] = useState(0);
+  const [, setProgress] = useState(0);
 
   const onFileClick = useCallback(
     async (fileIndex: number) => {
@@ -39,8 +34,6 @@ export default function WebTorrentViewer(props: Props): ReactElement {
 
       const type = mime.lookup(file.name) || '';
       const isImage = /image/.test(type);
-      const isVideo = /video/.test(type);
-      const isAudio = /audio/.test(type);
 
       const onFileReady = () => {
         setLoading(true);
@@ -220,7 +213,7 @@ export default function WebTorrentViewer(props: Props): ReactElement {
             fa={isDownloading || isSeeding ? 'fas fa-stop' : undefined}
             url={isDownloading || isSeeding ? undefined : WTIcon}
             size={isDownloading || isSeeding ? 0.75 : 1.25}
-            onClick={async e => {
+            onClick={async () => {
               const client = getWebtorrentClient();
               const torrent = client.get(getInfoHashFromMagnet(props.url));
               if (torrent) {

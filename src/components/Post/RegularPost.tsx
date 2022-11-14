@@ -3,18 +3,18 @@ import moment from 'moment/moment';
 import React, { ReactElement, useCallback } from 'react';
 import { useHistory } from 'react-router';
 
-import { useMeta, usePost, useZKGroupFromPost } from '../../ducks/posts';
-import { MessageType, PostMessageSubType } from '../../util/message';
-import { convertMarkdownToDraft, DraftEditor } from '../DraftEditor';
-import { useUser } from '../../ducks/users';
-import { getHandle, getUsername } from '../../util/user';
-
+import { useMeta, usePost, useZKGroupFromPost } from '@ducks/posts';
+import { useUser } from '@ducks/users';
+import { MessageType, PostMessageSubType } from '~/message';
+import { getHandle, getUsername } from '~/user';
 import Avatar from '../Avatar';
+
+import { convertMarkdownToDraft, DraftEditor } from '../DraftEditor';
 import Icon from '../Icon';
 import Nickname from '../Nickname';
-import PostMenu from './PostMenu';
 import URLPreview from '../URLPreview';
 import PostFooter from './PostFooter';
+import PostMenu from './PostMenu';
 
 import { Props } from './types';
 
@@ -31,8 +31,8 @@ export default function RegularPost(
       ? originalPost.payload.reference
       : props.messageId;
   const post = originalPost?.subtype === PostMessageSubType.Repost ? referencedPost : originalPost;
-  let user = useUser(post?.creator);
-  let op = useUser(originalPost?.creator);
+  const user = useUser(post?.creator);
+  const op = useUser(originalPost?.creator);
   const history = useHistory();
   const postJson = post?.toJSON();
   const meta = useMeta(postJson?.messageId);

@@ -1,7 +1,9 @@
-import config from './config';
-import { Identity } from '../serviceWorkers/identity';
-import { findProof } from './merkle';
 import { MerkleProof } from '@zk-kit/protocols';
+
+import { Identity } from '../serviceWorkers/identity';
+
+import config from './config';
+import { findProof } from './merkle';
 
 type PathData = {
   path: {

@@ -1,9 +1,9 @@
-import { Dispatch } from 'redux';
+import Web3 from 'web3';
+
+import { ensResolverABI } from './abi';
+import config from './config';
 
 const { default: ENS, getEnsAddress } = require('@ensdomains/ensjs');
-import Web3 from 'web3';
-import config from './config';
-import { ensResolverABI } from './abi';
 
 const httpProvider = new Web3.providers.HttpProvider(config.web3HttpProvider);
 
@@ -20,7 +20,7 @@ export const fetchNameByAddress = async (address: string) => {
     return cachedName[address];
   }
 
-  const { name } = await defaultENS.getName(address);
+  const { name } = await defaultENS.getName();
 
   if (name) {
     cachedName[address] = name || null;

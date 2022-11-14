@@ -1,6 +1,6 @@
-import React, { ReactElement, ReactNode, ReactNodeArray } from 'react';
-import classNames from 'classnames';
 import './notif-box.scss';
+import classNames from 'classnames';
+import React, { ReactElement, ReactNode, ReactNodeArray } from 'react';
 
 type Props = {
   type?: 'warning' | 'info' | 'error';

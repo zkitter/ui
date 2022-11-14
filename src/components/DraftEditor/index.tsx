@@ -1,4 +1,13 @@
-import React, { ReactElement, useCallback, useEffect, useMemo, useState } from 'react';
+import './draft-js-editor.scss';
+import DraftJSPluginEditor, { PluginEditorProps } from '@draft-js-plugins/editor';
+import createHashtagPlugin from '@draft-js-plugins/hashtag';
+import createLinkifyPlugin from '@draft-js-plugins/linkify';
+import createMentionPlugin, {
+  defaultSuggestionsFilter,
+  MentionData,
+} from '@draft-js-plugins/mention';
+import classNames from 'classnames';
+
 import {
   CompositeDecorator,
   ContentBlock,
@@ -8,25 +17,18 @@ import {
   DefaultDraftBlockRenderMap,
   EditorState,
 } from 'draft-js';
-import DraftJSPluginEditor, { PluginEditorProps } from '@draft-js-plugins/editor';
-import createLinkifyPlugin from '@draft-js-plugins/linkify';
-import createHashtagPlugin from '@draft-js-plugins/hashtag';
-import createMentionPlugin, {
-  defaultSuggestionsFilter,
-  MentionData,
-} from '@draft-js-plugins/mention';
-const TableUtils = require('draft-js-table');
-const { linkify } = require('remarkable/linkify');
-const { markdownToDraft } = require('markdown-draft-js');
-import './draft-js-editor.scss';
-import { useHistory } from 'react-router';
-import { useDispatch } from 'react-redux';
-import { fetchAddressByName, getUser, searchUsers, useUser } from '../../ducks/users';
-import Avatar from '../Avatar';
-import classNames from 'classnames';
 import debounce from 'lodash.debounce';
-import { getHandle, getName, getUsername } from '../../util/user';
+import React, { ReactElement, useCallback, useEffect, useMemo, useState } from 'react';
+import { useDispatch } from 'react-redux';
+import { useHistory } from 'react-router';
 import Web3 from 'web3';
+import { fetchAddressByName, getUser, searchUsers, useUser } from '@ducks/users';
+import { getHandle, getName, getUsername } from '~/user';
+import Avatar from '../Avatar';
+
+const { markdownToDraft } = require('markdown-draft-js');
+const { linkify } = require('remarkable/linkify');
+const TableUtils = require('draft-js-table');
 
 let searchNonce = 0;
 let searchTimeout: any = null;
@@ -72,7 +74,7 @@ export function DraftEditor(props: PluginEditorProps): ReactElement {
       if (oldNonce !== searchNonce) return;
       const suggestions = [];
 
-      for (let r of result) {
+      for (const r of result) {
         suggestions.push({
           name: '@' + (r.ens || r.address),
           address: r.address,

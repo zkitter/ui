@@ -1,10 +1,10 @@
-import React, { ReactElement, useCallback, useEffect, useState } from 'react';
 import './url-preview.scss';
-import Icon from '../Icon';
 import classNames from 'classnames';
-import config from '../../util/config';
-import { shouldBlurImage } from '../../pages/SettingView';
+import React, { ReactElement, useCallback, useEffect, useState } from 'react';
 import SpinnerGif from '../../../static/icons/spinner.gif';
+import { shouldBlurImage } from '../../pages/SettingView';
+import config from '~/config';
+import Icon from '../Icon';
 import WebTorrentViewer from '../WebTorrentViewer';
 
 type Props = {

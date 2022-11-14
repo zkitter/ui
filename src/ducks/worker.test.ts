@@ -1,6 +1,6 @@
-import { store, ducks, postWorkMessageStub } from '../util/testUtils';
 import { Identity } from '../serviceWorkers/identity';
 import { ServiceWorkerActionType } from '../serviceWorkers/util';
+import { ducks, postWorkMessageStub, store } from '../util/testUtils';
 
 const {
   worker: { syncWorker },

@@ -1,6 +1,7 @@
-import { ducks, fetchReset, fetchStub, store } from '../util/testUtils';
 import { createEditorStateWithText } from '@draft-js-plugins/editor';
 import { ZkIdentity } from '@zk-kit/identity';
+
+import { ducks, fetchReset, fetchStub, store } from '../util/testUtils';
 
 const {
   setMirror,

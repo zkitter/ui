@@ -1,3 +1,5 @@
+import classNames from 'classnames';
+import debounce from 'lodash.debounce';
 import React, {
   BaseHTMLAttributes,
   ReactElement,
@@ -6,8 +8,6 @@ import React, {
   useRef,
   useState,
 } from 'react';
-import classNames from 'classnames';
-import debounce from 'lodash.debounce';
 
 type Props = {
   className?: string;

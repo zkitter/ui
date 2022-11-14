@@ -1,10 +1,17 @@
-import { useSelector } from 'react-redux';
-import { genExternalNullifier, MerkleProof, RLN, Semaphore } from '@zk-kit/protocols';
+import { Identity } from '@semaphore-protocol/identity';
 import { Strategy, ZkIdentity } from '@zk-kit/identity';
-import { AppRootState } from '../store/configureAppStore';
-import deepEqual from 'fast-deep-equal';
+import { genExternalNullifier, MerkleProof, RLN, Semaphore } from '@zk-kit/protocols';
 import { convertToRaw, EditorState } from 'draft-js';
+import deepEqual from 'fast-deep-equal';
+import { useSelector } from 'react-redux';
 import { Dispatch } from 'redux';
+import { ThunkDispatch } from 'redux-thunk';
+
+import { markdownConvertOptions } from '@components/DraftEditor';
+import config from '~/config';
+import { generateZkIdentityFromHex, sha256, signWithP256 } from '~/crypto';
+import gun from '~/gun';
+import { findProof } from '~/merkle';
 import {
   Connection,
   ConnectionMessageSubType,
@@ -15,19 +22,13 @@ import {
   PostMessageSubType,
   Profile,
   ProfileMessageSubType,
-} from '../util/message';
-import gun from '../util/gun';
-import { ThunkDispatch } from 'redux-thunk';
-import { markdownConvertOptions } from '../components/DraftEditor';
-import config from '../util/config';
-import { setBlocked, setFollowed } from './users';
-import { updateStatus } from '../util/twitter';
-import { checkPath } from '../util/interrep';
+} from '~/message';
+import { updateStatus } from '~/twitter';
+import { getEpoch } from '~/zkchat';
+import { AppRootState } from '../store/configureAppStore';
+
 import { setBlockedPost } from './posts';
-import { findProof } from '../util/merkle';
-import { generateZkIdentityFromHex, sha256, signWithP256 } from '../util/crypto';
-import { getEpoch } from '../util/zkchat';
-import { Identity } from '@semaphore-protocol/identity';
+import { setBlocked, setFollowed } from './users';
 
 const { draftToMarkdown } = require('markdown-draft-js');
 
@@ -138,7 +139,6 @@ export const submitInterepPost =
 
     const identityPathElements = merkleProof!.siblings;
     const identityPathIndex = merkleProof!.pathIndices;
-    const root = merkleProof!.root;
 
     if (
       !identityCommitment ||
@@ -150,7 +150,7 @@ export const submitInterepPost =
       return null;
     }
 
-    const { messageId, hash, ...json } = post.toJSON();
+    const { messageId, ...json } = post.toJSON();
 
     const epoch = getEpoch();
     const externalNullifier = genExternalNullifier(epoch);
@@ -210,7 +210,7 @@ export const submitCustomGroupPost =
     if (!postingGroup) throw new Error('Not in incognito mode');
 
     if (selected?.type !== 'gun') throw new Error('User is not logged in');
-    const zkseed = await signWithP256(selected!.privateKey, 'signing for zk identity - 0');
+    const zkseed = signWithP256(selected!.privateKey, 'signing for zk identity - 0');
     const zkHex = await sha256(zkseed);
     const zkIdentity = await generateZkIdentityFromHex(zkHex);
     const identityTrapdoor = zkIdentity.getTrapdoor();
@@ -221,7 +221,6 @@ export const submitCustomGroupPost =
 
     const identityPathElements = merkleProof!.siblings;
     const identityPathIndex = merkleProof!.pathIndices;
-    const root = merkleProof!.root;
 
     if (
       !identityCommitment ||
@@ -233,7 +232,7 @@ export const submitCustomGroupPost =
       return null;
     }
 
-    const { messageId, hash, ...json } = post.toJSON();
+    const { messageId, ...json } = post.toJSON();
 
     const epoch = getEpoch();
     const externalNullifier = genExternalNullifier(epoch);
@@ -452,7 +451,7 @@ export const submitPost =
       payload: true,
     });
 
-    const { drafts, web3, worker, posts } = getState();
+    const { drafts, worker, posts } = getState();
     const draft = drafts.map[reference];
     const shouldMirror = drafts.mirror;
 
@@ -484,7 +483,7 @@ export const submitPost =
             referencePost?.subtype
           )
         ) {
-          const [tweetUsername, _, tweetId] = referencePost?.payload.topic
+          const [tweetUsername, , tweetId] = referencePost?.payload.topic
             .replace('https://twitter.com/', '')
             .split('/');
           replyToTweetId = tweetId;
@@ -530,7 +529,7 @@ export const submitPost =
       // @ts-ignore
       if (!gun.user().is) if (!gun.user().is) throw new Error('not logged in');
 
-      const { messageId, hash, ...json } = await post.toJSON();
+      const { messageId, ...json } = await post.toJSON();
 
       // @ts-ignore
       await gun
@@ -573,7 +572,7 @@ export const submitRepost =
       payload: true,
     });
 
-    const { web3, worker } = getState();
+    const { worker } = getState();
 
     const { selected } = worker;
 
@@ -592,7 +591,7 @@ export const submitRepost =
         },
       });
 
-      const { messageId, hash, ...json } = await post.toJSON();
+      const { messageId, ...json } = await post.toJSON();
 
       // @ts-ignore
       await gun
@@ -627,7 +626,7 @@ export const submitModeration =
       payload: true,
     });
 
-    const { web3, worker } = getState();
+    const { worker } = getState();
 
     const { selected } = worker;
 
@@ -646,7 +645,7 @@ export const submitModeration =
         },
       });
 
-      const { messageId, hash, ...json } = await moderation.toJSON();
+      const { messageId, ...json } = await moderation.toJSON();
 
       // @ts-ignore
       await gun
@@ -678,7 +677,7 @@ export const submitModeration =
 export const submitConnection =
   (name: string, subtype: ConnectionMessageSubType) =>
   async (dispatch: Dispatch, getState: () => AppRootState) => {
-    const { web3, worker } = getState();
+    const { worker } = getState();
 
     const { selected } = worker;
 
@@ -703,7 +702,7 @@ export const submitConnection =
         },
       });
 
-      const { messageId, hash, ...json } = await connection.toJSON();
+      const { messageId, ...json } = await connection.toJSON();
 
       // @ts-ignore
       await gunUser
@@ -741,7 +740,7 @@ export const submitProfile =
       payload: true,
     });
 
-    const { web3, worker } = getState();
+    const { worker } = getState();
 
     const { selected } = worker;
 
@@ -761,7 +760,7 @@ export const submitProfile =
         },
       });
 
-      const { messageId, hash, ...json } = await post.toJSON();
+      const { messageId, ...json } = await post.toJSON();
 
       // @ts-ignore
       await gun
@@ -786,7 +785,7 @@ export const submitProfile =
     }
   };
 
-export const removeMessage = (messageId: string) => async (dispatch: Dispatch) => {
+export const removeMessage = (messageId: string) => async () => {
   // @ts-ignore
   if (!gun.user().is) throw new Error('not logged in');
 

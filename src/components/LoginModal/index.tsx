@@ -1,10 +1,10 @@
-import React, { ReactElement, useCallback, useState } from 'react';
-import Modal, { ModalContent, ModalFooter, ModalHeader } from '../Modal';
-import Input from '../Input';
-import Button from '../Button';
-import { postWorkerMessage } from '../../util/sw';
-import { setPassphrase } from '../../serviceWorkers/util';
 import './login-modal.scss';
+import React, { ReactElement, useCallback, useState } from 'react';
+import { setPassphrase } from '../../serviceWorkers/util';
+import { postWorkerMessage } from '~/sw';
+import Button from '../Button';
+import Input from '../Input';
+import Modal, { ModalContent, ModalFooter, ModalHeader } from '../Modal';
 
 type Props = {
   onClose: () => void;

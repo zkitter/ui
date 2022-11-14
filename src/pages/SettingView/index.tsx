@@ -1,37 +1,14 @@
-import React, { ReactElement, ReactNode, useCallback, useEffect, useState } from 'react';
-import classNames from 'classnames';
 import './setting.scss';
-import { Redirect, Route, Switch, useHistory, useLocation } from 'react-router';
-import Icon from '../../components/Icon';
-import Avatar from '../../components/Avatar';
+import classNames from 'classnames';
+import React, { ReactElement, ReactNode, useCallback, useState } from 'react';
 import { useDispatch } from 'react-redux';
-import { fetchAddressByName, useUser } from '../../ducks/users';
-import Web3 from 'web3';
-import { getHandle, getName } from '../../util/user';
-import SwitchButton from '../../components/SwitchButton';
-import { setTheme, useSetting } from '../../ducks/app';
+import { Redirect, Route, Switch, useHistory, useLocation } from 'react-router';
 
-export default function SettingView(): ReactElement {
-  return (
-    <div className={classNames('setting')}>
-      {window.innerWidth > 768 ? (
-        <>
-          <Panel />
-          <Content />
-        </>
-      ) : (
-        <Switch>
-          <Route path="/settings/:settingSubpage">
-            <Content />
-          </Route>
-          <Route path="/settings">
-            <Panel />
-          </Route>
-        </Switch>
-      )}
-    </div>
-  );
-}
+import Icon from '@components/Icon';
+import SwitchButton from '@components/SwitchButton';
+import { setTheme, useSetting } from '@ducks/app';
+
+export const BLUR_IMAGE_KEY = 'shouldSetBlurImage';
 
 function Panel(): ReactElement {
   return (
@@ -74,11 +51,31 @@ function Content(): ReactElement {
   );
 }
 
-export const BLUR_IMAGE_KEY = 'shouldSetBlurImage';
 export const shouldBlurImage = () => {
   const shouldSetBlurImage = localStorage.getItem(BLUR_IMAGE_KEY);
   return shouldSetBlurImage === null ? true : shouldSetBlurImage === '1';
 };
+export default function SettingView(): ReactElement {
+  return (
+    <div className={classNames('setting')}>
+      {window.innerWidth > 768 ? (
+        <>
+          <Panel />
+          <Content />
+        </>
+      ) : (
+        <Switch>
+          <Route path="/settings/:settingSubpage">
+            <Content />
+          </Route>
+          <Route path="/settings">
+            <Panel />
+          </Route>
+        </Switch>
+      )}
+    </div>
+  );
+}
 
 function DisplaySetting(): ReactElement {
   const [blurImage, setBlurImage] = useState(shouldBlurImage());
@@ -118,39 +115,6 @@ function DisplaySetting(): ReactElement {
         </select>
       </SettingRow>
     </>
-  );
-}
-
-function UserRow(props: { name: string }): ReactElement {
-  const history = useHistory();
-  const [username, setUsername] = useState('');
-
-  const dispatch = useDispatch();
-  const user = useUser(username);
-
-  useEffect(() => {
-    (async () => {
-      if (!Web3.utils.isAddress(props.name)) {
-        const address: any = await dispatch(fetchAddressByName(props.name));
-        setUsername(address);
-      } else {
-        setUsername(props.name);
-      }
-    })();
-  }, [props.name]);
-
-  if (!user) return <></>;
-
-  return (
-    <div
-      className="flex flex-row flex-nowrap px-3 py-2 cursor-pointer hover:bg-gray-50 items-center"
-      onClick={() => history.push(`/${user.ens || user.address}/`)}>
-      <Avatar address={user.address} className="w-10 h-10 mr-3" />
-      <div className="flex flex-col flex-nowrap justify-center">
-        <div className="font-bold text-light hover:underline">{getName(user, 8, 6)}</div>
-        <div className="text-xs text-gray-500">@{getHandle(user, 8, 6)}</div>
-      </div>
-    </div>
   );
 }
 

@@ -1,6 +1,6 @@
-import React, { MouseEventHandler, ReactElement, ReactNode } from 'react';
-import classNames from 'classnames';
 import './icon.scss';
+import classNames from 'classnames';
+import React, { MouseEventHandler, ReactElement, ReactNode } from 'react';
 
 type Props = {
   url?: string;

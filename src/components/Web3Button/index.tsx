@@ -1,41 +1,40 @@
-import React, { ReactElement, ReactNode, useCallback, useEffect, useState } from 'react';
 import './web3-btn.scss';
-import Button from '../Button';
+import classNames from 'classnames';
+import React, { ReactElement, ReactNode, useCallback, useEffect, useState } from 'react';
+import { useDispatch } from 'react-redux';
+import { useHistory } from 'react-router';
+import SpinnerGIF from '../../../static/icons/spinner.gif';
+import { useUser } from '@ducks/users';
 import {
-  useAccount,
-  useWeb3Loading,
-  useWeb3Unlocking,
   setGunPrivateKey,
   setSemaphoreID,
   setSemaphoreIDPath,
-} from '../../ducks/web3';
-import { useDispatch } from 'react-redux';
-import classNames from 'classnames';
-import Avatar, { Username } from '../Avatar';
-import Icon from '../Icon';
-import Menuable, { ItemProps } from '../Menuable';
-import SpinnerGIF from '../../../static/icons/spinner.gif';
-import gun from '../../util/gun';
-import { useHistory } from 'react-router';
-import { getHandle, loginUser } from '../../util/user';
+  useAccount,
+  useWeb3Unlocking,
+} from '@ducks/web3';
 import {
   getZKGroupFromIdentity,
   useIdentities,
   useSelectedLocalId,
   useSelectedZKGroup,
   useWorkerUnlocked,
-} from '../../ducks/worker';
-import LoginModal from '../LoginModal';
-import { fetchNameByAddress } from '../../util/web3';
-import { useUser } from '../../ducks/users';
-import { setIdentity } from '../../serviceWorkers/util';
-import { postWorkerMessage } from '../../util/sw';
+} from '@ducks/worker';
 import { Identity, InterrepIdentity } from '../../serviceWorkers/identity';
-import QRScanner from '../QRScanner';
-import Modal from '../Modal';
+import { setIdentity } from '../../serviceWorkers/util';
+import config from '~/config';
+import gun from '~/gun';
+import { postWorkerMessage } from '~/sw';
+import { getHandle, loginUser } from '~/user';
+import { fetchNameByAddress } from '~/web3';
+import Avatar, { Username } from '../Avatar';
+import Button from '../Button';
 import ExportPrivateKeyModal from '../ExportPrivateKeyModal';
-import config from '../../util/config';
+import Icon from '../Icon';
+import LoginModal from '../LoginModal';
+import Menuable, { ItemProps } from '../Menuable';
+import Modal from '../Modal';
 import Nickname from '../Nickname';
+import QRScanner from '../QRScanner';
 import { useThemeContext } from '../ThemeContext';
 
 type Props = {
@@ -49,7 +48,7 @@ export default function Web3Button(props: Props): ReactElement {
   const account = useAccount();
   const identities = useIdentities();
   const selectedLocalId = useSelectedLocalId();
-  const [ensName, setEnsName] = useState('');
+  const [, setEnsName] = useState('');
   const theme = useThemeContext();
   const history = useHistory();
 
@@ -61,7 +60,7 @@ export default function Web3Button(props: Props): ReactElement {
         const ens = await fetchNameByAddress(account);
         setEnsName(ens);
       } else {
-        let id = selectedLocalId || identities[0];
+        const id = selectedLocalId || identities[0];
 
         if (id?.type !== 'zkpr_interrep' && id?.type !== 'taz') {
           setEnsName('');
@@ -73,7 +72,7 @@ export default function Web3Button(props: Props): ReactElement {
   }, [account, identities, selectedLocalId]);
 
   let btnContent;
-  let id = selectedLocalId || identities[0];
+  const id = selectedLocalId || identities[0];
 
   const onClick = useCallback(() => {
     if (!id) {
@@ -209,22 +208,22 @@ function UserMenuable(props: {
       gun.user().leave();
     }
 
-    await dispatch(
+    dispatch(
       setSemaphoreID({
         commitment: null,
         identityNullifier: null,
         identityTrapdoor: null,
       })
     );
-    await dispatch(setGunPrivateKey(''));
-    await dispatch(setSemaphoreIDPath(null));
+    dispatch(setGunPrivateKey(''));
+    dispatch(setSemaphoreIDPath(null));
     await postWorkerMessage(setIdentity(null));
     await fetch(`${config.indexerAPI}/oauth/reset`, {
       credentials: 'include',
     });
   }, []);
 
-  let items: ItemProps[] = [];
+  const items: ItemProps[] = [];
 
   if (selectedLocalId || identities.length) {
     items.push({
@@ -387,7 +386,7 @@ function CurrentUserItem(props: {
 
   const gotoProfile = useCallback(() => {
     if (!selectedUser) return;
-    const { ens, name, address } = selectedUser;
+    const { ens, address } = selectedUser;
     history.push(`/${ens || address}`);
     props.closePopup();
   }, [selectedUser]);

@@ -1,8 +1,8 @@
-import React, { ButtonHTMLAttributes, ReactElement } from 'react';
-import classNames from 'classnames';
 import './button.scss';
-import Icon from '../Icon';
+import classNames from 'classnames';
+import React, { ButtonHTMLAttributes, ReactElement } from 'react';
 import SpinnerGif from '../../../static/icons/spinner.gif';
+import Icon from '../Icon';
 
 type Props = {
   className?: string;

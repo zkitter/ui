@@ -1,6 +1,7 @@
-import { useSelector } from 'react-redux';
-import { AppRootState } from '../store/configureAppStore';
 import deepEqual from 'fast-deep-equal';
+import { useSelector } from 'react-redux';
+
+import { AppRootState } from '../store/configureAppStore';
 
 enum ActionTypes {
   UNMODERATE = 'mods/unmoderate',
@@ -41,6 +42,13 @@ export const unmoderate = (
   },
 });
 
+export const usePostModeration = (messageId?: string | null): ModSetting | null => {
+  return useSelector((state: AppRootState) => {
+    if (!messageId) return null;
+    return state.mods.posts[messageId] || null;
+  }, deepEqual);
+};
+
 export default function mods(state = initialState, action: Action<any>): State {
   switch (action.type) {
     case ActionTypes.UNMODERATE:
@@ -58,10 +66,3 @@ export default function mods(state = initialState, action: Action<any>): State {
       return state;
   }
 }
-
-export const usePostModeration = (messageId?: string | null): ModSetting | null => {
-  return useSelector((state: AppRootState) => {
-    if (!messageId) return null;
-    return state.mods.posts[messageId] || null;
-  }, deepEqual);
-};

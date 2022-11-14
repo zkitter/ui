@@ -1,37 +1,37 @@
-import React, { ReactElement, useCallback, useContext, useEffect, useState } from 'react';
-import { Redirect, Route, RouteProps, Switch, useHistory, useLocation } from 'react-router';
-import TopNav from '../../components/TopNav';
-import GlobalFeed from '../GlobalFeed';
 import './app.scss';
-import { connectWeb3, useGunLoggedIn, web3Modal } from '../../ducks/web3';
+import { Identity } from '@semaphore-protocol/identity';
+import { Strategy, ZkIdentity } from '@zk-kit/identity';
+import classNames from 'classnames';
+import React, { ReactElement, useContext, useEffect, useState } from 'react';
 import { useDispatch } from 'react-redux';
-import PostView from '../PostView';
-import ProfileView from '../ProfileView';
-import HomeFeed from '../HomeFeed';
-import TagFeed from '../../components/TagFeed';
-import SignupView, { ViewType } from '../SignupView';
-import { syncWorker, useSelectedLocalId } from '../../ducks/worker';
-import BottomNav from '../../components/BottomNav';
-import InterrepOnboarding from '../InterrepOnboarding';
-import ConnectTwitterView from '../ConnectTwitterView';
-import { loginUser } from '../../util/user';
-import { connectZKPR } from '../../ducks/zkpr';
-import SettingView from '../SettingView';
-import MetaPanel from '../../components/MetaPanel';
-import ChatView from '../ChatView';
-import { zkchat } from '../../ducks/chats';
+import { Redirect, Route, RouteProps, Switch, useHistory, useLocation } from 'react-router';
+import BottomNav from '@components/BottomNav';
+import MetaPanel from '@components/MetaPanel';
+import TagFeed from '@components/TagFeed';
+import TazModal from '@components/TazModal';
+import ThemeContext from '@components/ThemeContext';
+import TopNav from '@components/TopNav';
+import { zkchat } from '@ducks/chats';
+import { connectWeb3, useGunLoggedIn, web3Modal } from '@ducks/web3';
+import { syncWorker, useSelectedLocalId } from '@ducks/worker';
+import { connectZKPR } from '@ducks/zkpr';
 import {
   generateECDHKeyPairFromhex,
   generateZkIdentityFromHex,
   sha256,
   signWithP256,
-} from '../../util/crypto';
-import { Strategy, ZkIdentity } from '@zk-kit/identity';
-import sse from '../../util/sse';
-import ThemeContext from '../../components/ThemeContext';
-import classNames from 'classnames';
-import { Identity } from '@semaphore-protocol/identity';
-import TazModal from '../../components/TazModal';
+} from '~/crypto';
+import sse from '~/sse';
+import { loginUser } from '~/user';
+import ChatView from '../ChatView';
+import ConnectTwitterView from '../ConnectTwitterView';
+import GlobalFeed from '../GlobalFeed';
+import HomeFeed from '../HomeFeed';
+import InterrepOnboarding from '../InterrepOnboarding';
+import PostView from '../PostView';
+import ProfileView from '../ProfileView';
+import SettingView from '../SettingView';
+import SignupView, { ViewType } from '../SignupView';
 
 export default function App(): ReactElement {
   const dispatch = useDispatch();
@@ -82,8 +82,8 @@ export default function App(): ReactElement {
   useEffect(() => {
     if (selected?.type === 'gun') {
       (async () => {
-        const ecdhseed = await signWithP256(selected.privateKey, 'signing for ecdh - 0');
-        const zkseed = await signWithP256(selected.privateKey, 'signing for zk identity - 0');
+        const ecdhseed = signWithP256(selected.privateKey, 'signing for ecdh - 0');
+        const zkseed = signWithP256(selected.privateKey, 'signing for zk identity - 0');
         const ecdhHex = await sha256(ecdhseed);
         const zkHex = await sha256(zkseed);
         const keyPair = await generateECDHKeyPairFromhex(ecdhHex);

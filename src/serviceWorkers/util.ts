@@ -1,5 +1,6 @@
-import { Identity } from './identity';
 import { Action } from 'redux';
+
+import { Identity } from './identity';
 
 export enum ServiceWorkerActionType {
   ADD_IDENTITY = 'serviceWorker/identity/addIdentity',
@@ -67,7 +68,7 @@ export const getIdentityStatus = (): WorkerAction<any> => ({
 export async function pushReduxAction(action: Action) {
   const global: ServiceWorkerGlobalScope = self as any;
   const clients = await global.clients.matchAll();
-  for (let client of clients) {
+  for (const client of clients) {
     client.postMessage({
       target: 'redux',
       action: action,

@@ -1,13 +1,13 @@
-import React, { ReactElement, useCallback, useEffect, useState } from 'react';
-import classNames from 'classnames';
-import Post from '../Post';
-import { useDispatch } from 'react-redux';
-import { fetchHomeFeed, fetchTagFeed, useGoToPost } from '../../ducks/posts';
 import './tag-feed.scss';
-import { useLoggedIn } from '../../ducks/web3';
+import classNames from 'classnames';
+import React, { ReactElement, useCallback, useEffect, useState } from 'react';
+import { useDispatch } from 'react-redux';
 import { useHistory, useParams } from 'react-router';
+import { fetchHomeFeed, fetchTagFeed, useGoToPost } from '@ducks/posts';
+import { useLoggedIn } from '@ducks/web3';
+import { useSelectedLocalId } from '@ducks/worker';
 import InfiniteScrollable from '../InfiniteScrollable';
-import { useSelectedLocalId } from '../../ducks/worker';
+import Post from '../Post';
 import { useThemeContext } from '../ThemeContext';
 
 export default function TagFeed(): ReactElement {

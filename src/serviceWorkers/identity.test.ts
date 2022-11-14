@@ -1,6 +1,8 @@
-import { pushReduxActionStub } from '../util/testUtils';
-import { IdentityService } from './identity';
 import { ZkIdentity } from '@zk-kit/identity';
+
+import { pushReduxActionStub } from '../util/testUtils';
+
+import { IdentityService } from './identity';
 
 describe('Identity Service', () => {
   const identity = new IdentityService();

@@ -1,21 +1,21 @@
-import React, { ReactElement, useCallback, useContext, useEffect, useState } from 'react';
-import Icon from '../Icon';
-import classNames from 'classnames';
 import './top-nav.scss';
-import { Route, Switch, useHistory, useLocation, useParams } from 'react-router';
-import Web3Button from '../Web3Button';
-import { useAccount, useGunLoggedIn, useSemaphoreID } from '../../ducks/web3';
+import classNames from 'classnames';
+import React, { ReactElement, useCallback, useContext, useEffect, useState } from 'react';
 import { useDispatch } from 'react-redux';
-import { fetchAddressByName, useUser } from '../../ducks/users';
+import { Route, Switch, useHistory, useLocation, useParams } from 'react-router';
 import Web3 from 'web3';
-import { getName } from '../../util/user';
-import { useSelectedLocalId } from '../../ducks/worker';
-import { fetchNameByAddress } from '../../util/web3';
+import { fetchAddressByName, useUser } from '@ducks/users';
+import { useAccount, useGunLoggedIn, useSemaphoreID } from '@ducks/web3';
+import { useSelectedLocalId } from '@ducks/worker';
+import config from '~/config';
+import { getName } from '~/user';
+import { fetchNameByAddress } from '~/web3';
+import Icon from '../Icon';
+import MetaPanel from '../MetaPanel';
 // import Logo from "../../../static/icons/applogo.svg";
 import Modal from '../Modal';
-import MetaPanel from '../MetaPanel';
 import { useThemeContext } from '../ThemeContext';
-import config from '../../util/config';
+import Web3Button from '../Web3Button';
 
 export default function TopNav(): ReactElement {
   const theme = useThemeContext();

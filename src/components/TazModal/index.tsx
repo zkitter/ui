@@ -1,14 +1,14 @@
-import React, { ReactElement, useEffect, useState } from 'react';
-import Modal, { ModalContent, ModalFooter, ModalHeader } from '../Modal';
-import TazHero from '../../../static/icons/taz_hero.png';
 import './taz-modal.scss';
-import Button from '../Button';
-import { useLocation } from 'react-router';
 import { Identity } from '@semaphore-protocol/identity';
-import { findProof } from '../../util/merkle';
-import { postWorkerMessage } from '../../util/sw';
-import { setIdentity } from '../../serviceWorkers/util';
+import React, { ReactElement, useEffect, useState } from 'react';
+import { useLocation } from 'react-router';
+import TazHero from '../../../static/icons/taz_hero.png';
 import { ViewType } from '../../pages/SignupView';
+import { setIdentity } from '../../serviceWorkers/util';
+import { findProof } from '~/merkle';
+import { postWorkerMessage } from '~/sw';
+import Button from '../Button';
+import Modal, { ModalContent, ModalFooter, ModalHeader } from '../Modal';
 
 type Props = {
   onClose: () => void;

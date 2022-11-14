@@ -1,6 +1,6 @@
-import React, { ChangeEventHandler, ReactElement } from 'react';
 import './switch-button.scss';
 import classNames from 'classnames';
+import React, { ChangeEventHandler, ReactElement } from 'react';
 
 type Props = {
   checked?: boolean;

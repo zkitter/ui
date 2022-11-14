@@ -1,23 +1,23 @@
-import copy from 'copy-to-clipboard';
 import classNames from 'classnames';
+import copy from 'copy-to-clipboard';
 import React, { ReactElement, useCallback, useState } from 'react';
 import { useDispatch } from 'react-redux';
 
-import { setBlockedPost, useMeta, usePost } from '../../ducks/posts';
-import { setBlocked, useUser } from '../../ducks/users';
-import { useSelectedLocalId, useWorkerUnlocked } from '../../ducks/worker';
-import { useThemeContext } from '../ThemeContext';
-import { removeMessage, submitConnection, submitModeration } from '../../ducks/drafts';
+import { removeMessage, submitConnection, submitModeration } from '@ducks/drafts';
+import { setBlockedPost, useMeta, usePost } from '@ducks/posts';
+import { setBlocked, useUser } from '@ducks/users';
+import { useSelectedLocalId, useWorkerUnlocked } from '@ducks/worker';
 import {
   ConnectionMessageSubType,
   MessageType,
   ModerationMessageSubType,
   PostMessageSubType,
-} from '../../util/message';
-import { getName } from '../../util/user';
-
+} from '~/message';
+import { getName } from '~/user';
 import Icon from '../Icon';
+
 import Menuable from '../Menuable';
+import { useThemeContext } from '../ThemeContext';
 import PostButton from './PostButton';
 import { Props } from './types';
 

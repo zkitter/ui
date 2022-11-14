@@ -1,9 +1,9 @@
-import React, { ReactElement, useEffect, useState } from 'react';
 import classNames from 'classnames';
-import Modal, { ModalHeader, ModalContent } from '../Modal';
-import { useSelectedLocalId } from '../../ducks/worker';
-import config from '../../util/config';
+import React, { ReactElement, useEffect, useState } from 'react';
+import { useSelectedLocalId } from '@ducks/worker';
+import config from '~/config';
 import { UserRow } from '../DiscoverUserPanel';
+import Modal, { ModalContent, ModalHeader } from '../Modal';
 
 type Props = {
   className?: string;

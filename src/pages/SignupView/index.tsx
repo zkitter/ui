@@ -1,3 +1,8 @@
+import './signup.scss';
+import { Decoder } from '@nuintun/qrcode';
+import { Identity } from '@semaphore-protocol/identity';
+import classNames from 'classnames';
+import deepEqual from 'fast-deep-equal';
 import React, {
   ChangeEvent,
   MouseEventHandler,
@@ -7,8 +12,18 @@ import React, {
   useEffect,
   useState,
 } from 'react';
-import './signup.scss';
-import Button from '../../components/Button';
+import QrReader from 'react-qr-reader';
+import { useDispatch } from 'react-redux';
+import { useHistory } from 'react-router';
+import MetamaskSVG from '../../../static/icons/metamask-fox.svg';
+import Avatar, { Username } from '@components/Avatar';
+import Button from '@components/Button';
+import Icon from '@components/Icon';
+import Input from '@components/Input';
+import Textarea from '@components/Textarea';
+import { useThemeContext } from '@components/ThemeContext';
+import { submitProfile } from '@ducks/drafts';
+import { setUser, useUser, watchUser } from '@ducks/users';
 import {
   connectWeb3,
   createRecordTx,
@@ -21,43 +36,20 @@ import {
   usePendingCreateTx,
   useWeb3Account,
   useWeb3Loading,
-} from '../../ducks/web3';
-import { useDispatch } from 'react-redux';
-import config from '../../util/config';
-import { getIdentityHash, watchTx } from '../../util/arb3';
-import { setUser, useUser, watchUser } from '../../ducks/users';
-import Input from '../../components/Input';
-import Textarea from '../../components/Textarea';
-import { CoverImageEditor, ProfileImageEditor } from '../ProfileView';
-import { submitProfile } from '../../ducks/drafts';
-import { ProfileMessageSubType } from '../../util/message';
-import { useHistory } from 'react-router';
-import deepEqual from 'fast-deep-equal';
-import { addIdentity, setIdentity, setPassphrase } from '../../serviceWorkers/util';
-import { postWorkerMessage } from '../../util/sw';
-import { useIdentities, useSelectedLocalId, useWorkerUnlocked } from '../../ducks/worker';
-import Icon from '../../components/Icon';
-import classNames from 'classnames';
-import {
-  connectZKPR,
-  disconnectZKPR,
-  useIdCommitment,
-  useZKPR,
-  useZKPRLoading,
-} from '../../ducks/zkpr';
-
-import MetamaskSVG from '../../../static/icons/metamask-fox.svg';
-import ZKPRSVG from '../../../static/icons/zkpr-logo.svg';
-import TazLogo from '../../../static/icons/taz-logo.png';
+} from '@ducks/web3';
+import { useIdentities, useSelectedLocalId, useWorkerUnlocked } from '@ducks/worker';
+import { connectZKPR, disconnectZKPR, useIdCommitment, useZKPR, useZKPRLoading } from '@ducks/zkpr';
+import { getIdentityHash, watchTx } from '~/arb3';
+import config from '~/config';
+import { findProof } from '~/merkle';
+import { ProfileMessageSubType } from '~/message';
+import { safeJsonParse } from '~/misc';
+import { postWorkerMessage } from '~/sw';
 import SpinnerGIF from '../../../static/icons/spinner.gif';
-import Avatar, { Username } from '../../components/Avatar';
-import { useThemeContext } from '../../components/ThemeContext';
-import QrReader from 'react-qr-reader';
-import { safeJsonParse } from '../../util/misc';
-import { Decoder } from '@nuintun/qrcode';
-import { Strategy, ZkIdentity } from '@zk-kit/identity';
-import { Identity } from '@semaphore-protocol/identity';
-import { findProof } from '../../util/merkle';
+import TazLogo from '../../../static/icons/taz-logo.png';
+import ZKPRSVG from '../../../static/icons/zkpr-logo.svg';
+import { addIdentity, setIdentity, setPassphrase } from '../../serviceWorkers/util';
+import { CoverImageEditor, ProfileImageEditor } from '../ProfileView';
 
 export enum ViewType {
   welcome,
@@ -118,8 +110,6 @@ export default function SignupView(props: Props): ReactElement {
 
 function WelcomeView(props: { setViewType: (v: ViewType) => void }): ReactElement {
   const account = useWeb3Account();
-  const user = useUser(account);
-  const history = useHistory();
 
   // useEffect(() => {
   //     if (user?.joinedTx) {
@@ -266,14 +256,13 @@ function AccountOption(props: {
 }
 
 function ChooseWalletView(props: { setViewType: (v: ViewType) => void }): ReactElement {
-  const [selectedOption, selectOption] = useState<'wallet' | 'incognito'>('wallet');
+  const [, selectOption] = useState<'wallet' | 'incognito'>('wallet');
   const history = useHistory();
   const zkpr = useZKPR();
-  const [walletOption, setWalletOption] = useState<string>('metamask');
+  const [walletOption] = useState<string>('metamask');
   const zkprLoading = useZKPRLoading();
   const dispatch = useDispatch();
   const web3Loading = useWeb3Loading();
-  const web3Account = useWeb3Account();
   const selected = useSelectedLocalId();
 
   const disconnect = useCallback(() => {
@@ -533,9 +522,9 @@ function SetupProfileView(props: { setViewType: (v: ViewType) => void }): ReactE
   const account = useAccount();
   const user = useUser(account);
   const [coverImageUrl, setCoverImageUrl] = useState('');
-  const [coverImageFile, setCoverImageFile] = useState<File | null>(null);
+  const [coverImageFile] = useState<File | null>(null);
   const [profileImageUrl, setProfileImageUrl] = useState('');
-  const [profileImageFile, setProfileImageFile] = useState<File | null>(null);
+  const [profileImageFile] = useState<File | null>(null);
   const [name, setName] = useState('');
   const [bio, setBio] = useState('');
   const [website, setWebsite] = useState('');
@@ -659,7 +648,6 @@ function LocalBackupView(props: {
   setViewType: (v: ViewType) => void;
   isOnboarding?: boolean;
 }): ReactElement {
-  const dispatch = useDispatch();
   const [pw, setPw] = useState('');
   const [errorMessage, setErrorMessage] = useState('');
   const [confirmPw, setConfirmPw] = useState('');
@@ -765,7 +753,6 @@ function LocalBackupView(props: {
 }
 
 function QRScannerView(props: { setViewType: (v: ViewType) => void }): ReactElement {
-  const history = useHistory();
   const [errorMessage, setError] = useState('');
 
   const validate = useCallback(async (data: string) => {
@@ -868,7 +855,7 @@ function DoneView(props: { setViewType: (v: ViewType) => void }): ReactElement {
     <div className="flex flex-col flex-nowrap flex-grow my-4 mx-8 signup__content signup__welcome">
       <div className="flex flex-row items-center justify-center my-4">
         <div className="text-xl mr-2">👋</div>
-        <div className="text-xl font-semibold">Signup is completed! </div>
+        <div className="text-xl font-semibold">Signup is completed!</div>
       </div>
       <div className="my-4">
         If you have any suggestions or issues, please join and report in our{' '}

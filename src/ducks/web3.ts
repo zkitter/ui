@@ -1,21 +1,22 @@
-import Web3 from 'web3';
-import { useSelector } from 'react-redux';
-import deepEqual from 'fast-deep-equal';
-import { AppRootState } from '../store/configureAppStore';
-import { Subscription } from 'web3-core-subscriptions';
-import { ThunkDispatch } from 'redux-thunk';
-import { Dispatch } from 'redux';
-import Web3Modal from 'web3modal';
-import { generateGunKeyPairFromHex } from '../util/crypto';
-import { defaultWeb3, fetchNameByAddress } from '../util/web3';
-import gun, { authenticateGun } from '../util/gun';
 import createIdentity from '@interep/identity';
-import config from '../util/config';
-import { getUser } from './users';
-import { getIdentityHash } from '../util/arb3';
-import { postWorkerMessage } from '../util/sw';
+import deepEqual from 'fast-deep-equal';
+import { useSelector } from 'react-redux';
+import { Dispatch } from 'redux';
+import { ThunkDispatch } from 'redux-thunk';
+import Web3 from 'web3';
+import Web3Modal from 'web3modal';
+
 import { setIdentity } from '../serviceWorkers/util';
-import { findProof } from '../util/merkle';
+import { getIdentityHash } from '~/arb3';
+import config from '~/config';
+import { generateGunKeyPairFromHex } from '~/crypto';
+import gun, { authenticateGun } from '~/gun';
+import { findProof } from '~/merkle';
+import { postWorkerMessage } from '~/sw';
+import { defaultWeb3, fetchNameByAddress } from '~/web3';
+import { AppRootState } from '../store/configureAppStore';
+
+import { getUser } from './users';
 
 export const web3Modal = new Web3Modal({
   network: 'main', // optional
@@ -115,8 +116,6 @@ export const initialState: State = {
   },
 };
 
-let event: Subscription<any> | null;
-
 export const UserNotExistError = new Error('user not exist');
 
 export const connectWeb3 = () => async (dispatch: ThunkDispatch<any, any, any>) => {
@@ -135,7 +134,7 @@ export const connectWeb3 = () => async (dispatch: ThunkDispatch<any, any, any>) 
       throw new Error('No accounts found');
     }
 
-    await dispatch(setWeb3(web3, accounts[0]));
+    await dispatch(setWeb3(web3));
     dispatch({
       type: ActionTypes.SET_LOADING,
       payload: false,
@@ -232,7 +231,7 @@ export const fetchJoinedTx =
   };
 
 export const disconnectWeb3 = () => async (dispatch: ThunkDispatch<any, any, any>) => {
-  dispatch(reset());
+  await dispatch(reset());
   await web3Modal.clearCachedProvider();
 };
 
@@ -259,7 +258,7 @@ const refreshAccount =
     } = getState();
 
     if (!web3) {
-      dispatch(reset());
+      await dispatch(reset());
       return;
     }
 
@@ -272,50 +271,49 @@ const refreshAccount =
     }
   };
 
-export const setWeb3 =
-  (web3: Web3 | null, account: string) => async (dispatch: ThunkDispatch<any, any, any>) => {
-    dispatch({
-      type: ActionTypes.SET_WEB3,
-      payload: web3,
-    });
+export const setWeb3 = (web3: Web3 | null) => async (dispatch: ThunkDispatch<any, any, any>) => {
+  dispatch({
+    type: ActionTypes.SET_WEB3,
+    payload: web3,
+  });
 
-    if (!web3) {
-      dispatch(reset());
-      return;
+  if (!web3) {
+    await dispatch(reset());
+    return;
+  }
+
+  // event = web3.eth.subscribe('newBlockHeaders', async (err, result) => {
+  //     if (!err) {
+  //         await dispatch(lookupENS());
+  //     }
+  // });
+
+  const networkType = await web3.eth.net.getNetworkType();
+
+  await dispatch(refreshAccount());
+  dispatch(setNetwork(networkType));
+
+  // @ts-ignore
+  web3.currentProvider.on('accountsChanged', async () => {
+    await dispatch(reset());
+    dispatch(setWeb3Loading(true));
+    const gunUser = gun.user();
+
+    // @ts-ignore
+    if (gunUser.is) {
+      gunUser.leave();
     }
 
-    // event = web3.eth.subscribe('newBlockHeaders', async (err, result) => {
-    //     if (!err) {
-    //         await dispatch(lookupENS());
-    //     }
-    // });
-
-    const networkType = await web3.eth.net.getNetworkType();
-
     await dispatch(refreshAccount());
+    dispatch(setWeb3Loading(false));
+  });
+
+  // @ts-ignore
+  web3.currentProvider.on('chainChanged', async () => {
+    const networkType = await web3.eth.net.getNetworkType();
     dispatch(setNetwork(networkType));
-
-    // @ts-ignore
-    web3.currentProvider.on('accountsChanged', async ([acct]) => {
-      dispatch(reset());
-      dispatch(setWeb3Loading(true));
-      const gunUser = gun.user();
-
-      // @ts-ignore
-      if (gunUser.is) {
-        gunUser.leave();
-      }
-
-      await dispatch(refreshAccount());
-      dispatch(setWeb3Loading(false));
-    });
-
-    // @ts-ignore
-    web3.currentProvider.on('chainChanged', async () => {
-      const networkType = await web3.eth.net.getNetworkType();
-      dispatch(setNetwork(networkType));
-    });
-  };
+  });
+};
 
 export const loginGun =
   (nonce = 0) =>
@@ -358,16 +356,16 @@ export const genSemaphore =
       const {
         web3: { account },
       } = getState();
-      const result: any = await dispatch(generateSemaphoreID(web2Provider, nonce));
-      const commitment = await result.genIdentityCommitment();
+      const result: any = await dispatch(generateSemaphoreID(web2Provider));
+      const commitment = result.genIdentityCommitment();
 
       const data = await findProof(
         `interrep_${web2Provider.toLowerCase()}_${reputation}`,
         commitment.toString(16)
       ).catch(() => undefined);
-      const [protocol, groupType, groupName] = (data?.group || '').split('_');
+      const [, groupType, groupName] = (data?.group || '').split('_');
 
-      postWorkerMessage(
+      await postWorkerMessage(
         setIdentity({
           type: 'interrep',
           address: account,
@@ -459,12 +457,11 @@ const _generateGunKeyPair = async (seed: string): Promise<{ pub: string; priv: s
   const hashBuffer = await crypto.subtle.digest('SHA-256', data);
   const hashArray = Array.from(new Uint8Array(hashBuffer));
   const hashHex = hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
-  const pair = await generateGunKeyPairFromHex(hashHex);
-  return pair;
+  return await generateGunKeyPairFromHex(hashHex);
 };
 
 const generateSemaphoreID =
-  (web2Provider: 'Twitter' | 'Reddit' | 'Github' = 'Twitter', nonce = 0) =>
+  (web2Provider: 'Twitter' | 'Reddit' | 'Github' = 'Twitter') =>
   async (dispatch: Dispatch, getState: () => AppRootState) => {
     const state = getState();
     const { web3, account } = state.web3;
@@ -473,14 +470,12 @@ const generateSemaphoreID =
       return Promise.reject(new Error('not connected to web3'));
     }
 
-    const identity = await createIdentity(
+    return await createIdentity(
       // @ts-ignore
       (message: string) => web3.eth.personal.sign(message, account),
       web2Provider,
       0
     );
-
-    return identity;
   };
 
 export const lookupENS = () => async (dispatch: Dispatch, getState: () => AppRootState) => {
@@ -503,6 +498,168 @@ export const lookupENS = () => async (dispatch: Dispatch, getState: () => AppRoo
     dispatch(setFetchingENS(false));
     throw e;
   }
+};
+
+export const useWeb3 = () => {
+  return useSelector((state: AppRootState) => {
+    return state.web3.web3;
+  }, deepEqual);
+};
+
+export const useCanNonPostMessage = () => {
+  return useSelector((state: AppRootState) => {
+    const {
+      worker: { selected },
+    } = state;
+
+    if (!selected) return false;
+
+    return !(selected.type === 'interrep' || selected.type === 'zkpr_interrep');
+  }, deepEqual);
+};
+
+export const useLoggedIn = () => {
+  return useSelector((state: AppRootState) => {
+    const {
+      worker: { selected },
+    } = state;
+
+    if (!selected) return false;
+
+    if (selected.type === 'interrep') {
+      if (!selected.identityPath || !selected.serializedIdentity) {
+        return false;
+      }
+    }
+
+    return true;
+  }, deepEqual);
+};
+
+export const useGunLoggedIn = () => {
+  return useSelector((state: AppRootState) => {
+    const { web3, account, gun } = state.web3;
+
+    const { selected } = state.worker;
+
+    if (selected?.type === 'gun') {
+      return true;
+    }
+
+    const hasGun = !!gun.priv && !!gun.pub;
+    return !!(web3 && account && gun.joinedTx && hasGun);
+  }, deepEqual);
+};
+
+export const useWeb3Account = () => {
+  return useSelector((state: AppRootState) => {
+    return state.web3.account;
+  }, deepEqual);
+};
+
+export const useAccount = (opt?: { uppercase?: boolean }) => {
+  return useSelector((state: AppRootState) => {
+    const account = state.web3.account;
+    const { selected } = state.worker;
+    let address = account;
+
+    if (selected) {
+      address = selected.address || '';
+    }
+
+    if (!address) return '';
+
+    return opt?.uppercase ? `0x${address.slice(-40).toUpperCase()}` : address;
+  }, deepEqual);
+};
+
+export const useENSName = () => {
+  return useSelector((state: AppRootState) => {
+    return state.web3.ensName;
+  }, deepEqual);
+};
+
+export const useWeb3Loading = () => {
+  return useSelector((state: AppRootState) => {
+    return state.web3.loading;
+  }, deepEqual);
+};
+
+export const usePendingCreateTx = () => {
+  return useSelector((state: AppRootState) => {
+    const {
+      web3: { account },
+    } = state;
+    return state.web3.pending.createRecordTx[account];
+  }, deepEqual);
+};
+
+export const useWeb3Unlocking = () => {
+  return useSelector((state: AppRootState) => {
+    return state.web3.unlocking;
+  }, deepEqual);
+};
+
+export const useENSFetching = () => {
+  return useSelector((state: AppRootState) => {
+    return state.web3.fetchingENS;
+  }, deepEqual);
+};
+
+export const useGunKey = (): State['gun'] => {
+  return useSelector((state: AppRootState) => {
+    return state.web3.gun;
+  }, deepEqual);
+};
+
+export const useGunNonce = (): number => {
+  return useSelector((state: AppRootState) => {
+    return state.web3.gun.nonce;
+  }, deepEqual);
+};
+
+export const useSemaphoreID = (): State['semaphore'] => {
+  return useSelector((state: AppRootState) => {
+    return state.web3.semaphore;
+  }, deepEqual);
+};
+
+export const useSemaphoreNonce = (): number => {
+  return useSelector((state: AppRootState) => {
+    return state.web3.semaphore.nonce;
+  }, deepEqual);
+};
+
+export const useNetworkType = () => {
+  return useSelector((state: AppRootState) => {
+    return state.web3.networkType;
+  }, deepEqual);
+};
+
+export const useHasLocal = () => {
+  return useSelector((state: AppRootState) => {
+    const {
+      worker: { identities, selected },
+    } = state;
+
+    if (!selected) return false;
+
+    return !!identities.find(id => {
+      if (id.type === 'taz' && selected.type === 'taz') {
+        return id.identityCommitment === selected.identityCommitment;
+      }
+
+      if (id.type === 'interrep' && selected.type === 'interrep') {
+        return id.identityCommitment === selected.identityCommitment;
+      }
+
+      if (id.type === 'gun' && selected.type === 'gun') {
+        return id.address === selected.address;
+      }
+
+      return false;
+    });
+  }, deepEqual);
 };
 
 export default function web3(state = initialState, action: Action): State {
@@ -607,171 +764,3 @@ export default function web3(state = initialState, action: Action): State {
       return state;
   }
 }
-
-export const useWeb3 = () => {
-  return useSelector((state: AppRootState) => {
-    return state.web3.web3;
-  }, deepEqual);
-};
-
-export const useCanNonPostMessage = () => {
-  return useSelector((state: AppRootState) => {
-    const {
-      worker: { selected },
-    } = state;
-
-    if (!selected) return false;
-
-    if (selected.type === 'interrep' || selected.type === 'zkpr_interrep') {
-      return false;
-    }
-
-    return true;
-  }, deepEqual);
-};
-
-export const useLoggedIn = () => {
-  return useSelector((state: AppRootState) => {
-    const {
-      worker: { selected },
-    } = state;
-
-    if (!selected) return false;
-
-    if (selected.type === 'interrep') {
-      if (!selected.identityPath || !selected.serializedIdentity) {
-        return false;
-      }
-    }
-
-    return true;
-  }, deepEqual);
-};
-
-export const useGunLoggedIn = () => {
-  return useSelector((state: AppRootState) => {
-    const { web3, account, gun } = state.web3;
-
-    const { unlocked, selected, identities } = state.worker;
-
-    if (selected?.type === 'gun') {
-      return true;
-    }
-
-    const hasGun = !!gun.priv && !!gun.pub;
-    return !!(web3 && account && gun.joinedTx && hasGun);
-  }, deepEqual);
-};
-
-export const useWeb3Account = () => {
-  return useSelector((state: AppRootState) => {
-    const account = state.web3.account;
-    return account;
-  }, deepEqual);
-};
-
-export const useAccount = (opt?: { uppercase?: boolean }) => {
-  return useSelector((state: AppRootState) => {
-    const account = state.web3.account;
-    const { selected, identities, unlocked } = state.worker;
-    let address = account;
-
-    if (selected) {
-      address = selected.address || '';
-    }
-
-    if (!address) return '';
-
-    return opt?.uppercase ? `0x${address.slice(-40).toUpperCase()}` : address;
-  }, deepEqual);
-};
-
-export const useENSName = () => {
-  return useSelector((state: AppRootState) => {
-    return state.web3.ensName;
-  }, deepEqual);
-};
-
-export const useWeb3Loading = () => {
-  return useSelector((state: AppRootState) => {
-    return state.web3.loading;
-  }, deepEqual);
-};
-
-export const usePendingCreateTx = () => {
-  return useSelector((state: AppRootState) => {
-    const {
-      web3: { account },
-    } = state;
-    return state.web3.pending.createRecordTx[account];
-  }, deepEqual);
-};
-
-export const useWeb3Unlocking = () => {
-  return useSelector((state: AppRootState) => {
-    return state.web3.unlocking;
-  }, deepEqual);
-};
-
-export const useENSFetching = () => {
-  return useSelector((state: AppRootState) => {
-    return state.web3.fetchingENS;
-  }, deepEqual);
-};
-
-export const useGunKey = (): State['gun'] => {
-  return useSelector((state: AppRootState) => {
-    return state.web3.gun;
-  }, deepEqual);
-};
-
-export const useGunNonce = (): number => {
-  return useSelector((state: AppRootState) => {
-    return state.web3.gun.nonce;
-  }, deepEqual);
-};
-
-export const useSemaphoreID = (): State['semaphore'] => {
-  return useSelector((state: AppRootState) => {
-    return state.web3.semaphore;
-  }, deepEqual);
-};
-
-export const useSemaphoreNonce = (): number => {
-  return useSelector((state: AppRootState) => {
-    return state.web3.semaphore.nonce;
-  }, deepEqual);
-};
-
-export const useNetworkType = () => {
-  return useSelector((state: AppRootState) => {
-    return state.web3.networkType;
-  }, deepEqual);
-};
-
-export const useHasLocal = () => {
-  return useSelector((state: AppRootState) => {
-    const {
-      web3: { account },
-      worker: { identities, unlocked, selected },
-    } = state;
-
-    if (!selected) return false;
-
-    return !!identities.find(id => {
-      if (id.type === 'taz' && selected.type === 'taz') {
-        return id.identityCommitment === selected.identityCommitment;
-      }
-
-      if (id.type === 'interrep' && selected.type === 'interrep') {
-        return id.identityCommitment === selected.identityCommitment;
-      }
-
-      if (id.type === 'gun' && selected.type === 'gun') {
-        return id.address === selected.address;
-      }
-
-      return false;
-    });
-  }, deepEqual);
-};

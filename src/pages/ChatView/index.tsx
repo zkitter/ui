@@ -1,28 +1,17 @@
-import React, { ReactElement, useCallback, useEffect, useState } from 'react';
-import {
-  generateECDHKeyPairFromhex,
-  generateZkIdentityFromHex,
-  sha256,
-  signWithP256,
-} from '../../util/crypto';
-import { useSelectedLocalId } from '../../ducks/worker';
-import { useDispatch } from 'react-redux';
-import { submitProfile } from '../../ducks/drafts';
-import { ProfileMessageSubType } from '../../util/message';
-import { useUser } from '../../ducks/users';
-import ChatMenu from '../../components/ChatMenu';
-import ChatContent from '../../components/ChatContent';
 import './chat-view.scss';
+import React, { ReactElement, useCallback, useState } from 'react';
+import { useDispatch } from 'react-redux';
 import { Route, Switch } from 'react-router';
+import ChatContent from '@components/ChatContent';
+import ChatMenu from '@components/ChatMenu';
+import { submitProfile } from '@ducks/drafts';
+import { ProfileMessageSubType } from '~/message';
 
 export default function ChatView(): ReactElement {
-  const selectedLocalId = useSelectedLocalId();
   const dispatch = useDispatch();
-  const user = useUser(selectedLocalId?.address);
-  const [idcommitment, setIdCommitment] = useState('');
-  const [ecdhPub, setEcdhPub] = useState('');
-
-  const onRegister = useCallback(async () => {
+  const [idcommitment] = useState('');
+  const [ecdhPub] = useState('');
+  useCallback(async () => {
     await dispatch(submitProfile(ProfileMessageSubType.Custom, idcommitment, 'id_commitment'));
     await dispatch(submitProfile(ProfileMessageSubType.Custom, ecdhPub, 'ecdh_pubkey'));
   }, [idcommitment, ecdhPub]);

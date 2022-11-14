@@ -1,18 +1,18 @@
 import React, { ReactElement, useCallback, useState } from 'react';
-import NotificationBox from '../NotificationBox';
-import Button from '../Button';
+import { useHistory } from 'react-router';
+import { useHasLocal, useLoggedIn } from '@ducks/web3';
+import { useSelectedLocalId } from '@ducks/worker';
+import { Identity } from '../../serviceWorkers/identity';
 import {
   addIdentity,
   getIdentities,
   getIdentityStatus,
   selectIdentity,
 } from '../../serviceWorkers/util';
-import { useHasLocal, useLoggedIn } from '../../ducks/web3';
-import { useHistory } from 'react-router';
-import { postWorkerMessage } from '../../util/sw';
-import { Identity } from '../../serviceWorkers/identity';
+import { postWorkerMessage } from '~/sw';
+import Button from '../Button';
 import LoginModal from '../LoginModal';
-import { useSelectedLocalId } from '../../ducks/worker';
+import NotificationBox from '../NotificationBox';
 
 export default function LocalBackupNotification(): ReactElement {
   const loggedIn = useLoggedIn();

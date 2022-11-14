@@ -1,12 +1,28 @@
-import React, { MouseEventHandler, ReactElement, useCallback, useEffect, useState } from 'react';
+import './profile-view.scss';
 import classNames from 'classnames';
-import { fetchLikedBy, fetchPosts, fetchRepliedBy, useGoToPost } from '../../ducks/posts';
+import deepEqual from 'fast-deep-equal';
+import moment from 'moment';
+import React, { MouseEventHandler, ReactElement, useCallback, useEffect, useState } from 'react';
 import { useDispatch } from 'react-redux';
 import { Route, Switch, useHistory, useLocation, useParams } from 'react-router';
-import './profile-view.scss';
-import Post from '../../components/Post';
-import Button from '../../components/Button';
-import Icon from '../../components/Icon';
+import Web3 from 'web3';
+import EtherScanSVG from '../../../static/icons/etherscan-logo-gray-500.svg';
+import Avatar from '@components/Avatar';
+import Button from '@components/Button';
+import Checkbox from '@components/Checkbox';
+import FileUploadModal from '@components/FileUploadModal';
+import Icon from '@components/Icon';
+import InfiniteScrollable from '@components/InfiniteScrollable';
+import Input from '@components/Input';
+import MemberInviteModal from '@components/MemberInviteModal';
+import Menuable, { ItemProps } from '@components/Menuable';
+import Modal, { ModalContent, ModalFooter, ModalHeader } from '@components/Modal';
+import Post from '@components/Post';
+import Textarea from '@components/Textarea';
+import { useThemeContext } from '@components/ThemeContext';
+import UserCountModal, { Item } from '@components/UsersCountModal';
+import { removeMessage, submitConnection, submitProfile } from '@ducks/drafts';
+import { fetchLikedBy, fetchPosts, fetchRepliedBy, useGoToPost } from '@ducks/posts';
 import {
   fetchAddressByName,
   getUser,
@@ -16,148 +32,76 @@ import {
   setUser,
   useConnectedTwitter,
   useUser,
-} from '../../ducks/users';
-import { useAccount, useCanNonPostMessage } from '../../ducks/web3';
-import moment from 'moment';
-import Modal, { ModalContent, ModalFooter, ModalHeader } from '../../components/Modal';
-import Input from '../../components/Input';
-import Textarea from '../../components/Textarea';
-import deepEqual from 'fast-deep-equal';
-import { removeMessage, submitConnection, submitProfile } from '../../ducks/drafts';
-import { ConnectionMessageSubType, ProfileMessageSubType } from '../../util/message';
-import Avatar from '../../components/Avatar';
-import EtherScanSVG from '../../../static/icons/etherscan-logo-gray-500.svg';
-import InfiniteScrollable from '../../components/InfiniteScrollable';
-import Menuable, { ItemProps } from '../../components/Menuable';
-import Web3 from 'web3';
-import { getHandle, getName } from '../../util/user';
-import config from '../../util/config';
-import { verifyTweet } from '../../util/twitter';
-import { useSelectedLocalId } from '../../ducks/worker';
-import FileUploadModal from '../../components/FileUploadModal';
+} from '@ducks/users';
+import { useAccount, useCanNonPostMessage } from '@ducks/web3';
+import { useSelectedLocalId } from '@ducks/worker';
+import config from '~/config';
+import { ConnectionMessageSubType, ProfileMessageSubType } from '~/message';
+import { verifyTweet } from '~/twitter';
+import { getHandle, getName } from '~/user';
 import SpinnerGIF from '../../../static/icons/spinner.gif';
-import { useThemeContext } from '../../components/ThemeContext';
-import Checkbox from '../../components/Checkbox';
-import MemberInviteModal from '../../components/MemberInviteModal';
-import UserCountModal, { Item } from '../../components/UsersCountModal';
 
 let t: any = null;
 
-export default function ProfileView(): ReactElement {
-  const { name } = useParams<{ name: string }>();
-  const [fetching, setFetching] = useState(false);
-  const [limit, setLimit] = useState(20);
-  const [offset, setOffset] = useState(0);
-  const [order, setOrder] = useState<string[]>([]);
-  const history = useHistory();
-  const loc = useLocation();
-  const selected = useSelectedLocalId();
-  const subpath = loc.pathname.split('/')[2];
-  const [username, setUsername] = useState('');
-  const theme = useThemeContext();
-  const dispatch = useDispatch();
+export function CoverImageEditor(props: {
+  url: string;
+  onUrlChange: (url: string) => void;
+}): ReactElement {
+  const [showingFileModal, setShowingFileModal] = useState(false);
+  const [url, setUrl] = useState('');
+  const [loading, setLoading] = useState(false);
+
+  const toggle = useCallback(() => {
+    setShowingFileModal(!showingFileModal);
+  }, [showingFileModal]);
+
+  const onUrlChange = useCallback((link: string) => {
+    props.onUrlChange(link);
+    setShowingFileModal(false);
+    setLoading(true);
+  }, []);
 
   useEffect(() => {
-    (async () => {
-      if (!Web3.utils.isAddress(name)) {
-        const address: any = await dispatch(fetchAddressByName(name));
-        setUsername(address);
-      } else {
-        setUsername(name);
-      }
-    })();
-  }, [name]);
-
-  const fetchMore = useCallback(
-    async (reset = false) => {
-      if (!username) return;
-
-      setFetching(true);
-
-      let fetchFn: any = fetchPosts;
-
-      if (subpath === 'likes') {
-        fetchFn = fetchLikedBy;
-      } else if (subpath === 'replies') {
-        fetchFn = fetchRepliedBy;
-      }
-
-      if (reset) {
-        const messageIds: any = await dispatch(fetchFn(username, 20, 0));
-        setOffset(20);
-        setOrder(messageIds);
-      } else {
-        if (order.length % limit) return;
-        const messageIds: any = await dispatch(fetchFn(username, limit, offset));
-        setOffset(offset + limit);
-        setOrder(order.concat(messageIds));
-      }
-
-      setFetching(false);
-    },
-    [limit, offset, order, username, subpath]
-  );
-
-  useEffect(() => {
-    (async function onProfileViewViewMount() {
-      setOrder([]);
-      setOffset(0);
-
-      if (t) {
-        clearTimeout(t);
-      }
-
-      t = setTimeout(() => {
-        fetchMore(true);
-        t = null;
-      }, 100);
-
-      if (username) {
-        dispatch(getUser(username));
-      }
-    })();
-  }, [selected, subpath, username]);
+    setUrl(props.url);
+  }, [props.url]);
 
   return (
-    <InfiniteScrollable
-      className={classNames('flex-grow profile-view', 'mx-4 py-2')}
-      onScrolledToBottom={fetchMore}>
-      <ProfileCard />
-      <div
-        className={classNames(
-          'flex flex-row flex-nowrap items-center justify-center',
-          'border rounded-xl mb-1',
-          'profile-menu',
-          {
-            'border-gray-200': theme !== 'dark',
-            'border-gray-800': theme === 'dark',
-          }
-        )}>
-        <ProfileMenuButton
-          iconFa="fas fa-comment-alt"
-          label="Posts"
-          onClick={() => history.push(`/${name}/`)}
-          active={!subpath}
+    <div
+      className={classNames(
+        'w-full h-48 flex flex-col flex-nowrap relative',
+        'justify-center items-center bg-gray-100'
+      )}>
+      {url && (
+        <img
+          className="absolute w-full h-full object-cover"
+          src={url}
+          onLoad={() => setLoading(false)}
+          onError={() => setLoading(false)}
         />
-        <ProfileMenuButton
-          iconFa="fas fa-reply"
-          label="Replies"
-          onClick={() => history.push(`/${name}/replies`)}
-          active={subpath === 'replies'}
-        />
-        <ProfileMenuButton
-          iconFa="fas fa-heart"
-          label="Likes"
-          onClick={() => history.push(`/${name}/likes`)}
-          active={subpath === 'likes'}
+      )}
+      <div className="flex flex-row flex-nowrap items-center justify-center h-full w-full bg-black bg-opacity-30">
+        <Icon
+          className={classNames(
+            'flex flex-row flex-nowrap items-center justify-center',
+            'rounded-full w-10 h-10',
+            'bg-white text-white text-opacity-80 bg-opacity-20',
+            'relative z-200'
+            // "cursor-pointer hover:bg-opacity-40 hover:text-opacity-100",
+          )}
+          fa={loading ? undefined : 'fas fa-upload'}
+          url={loading ? SpinnerGIF : undefined}
+          onClick={loading ? undefined : toggle}
+          size={loading ? 3 : undefined}
         />
       </div>
-      <Switch>
-        <Route path="/:name">
-          <PostList list={order} fetching={fetching} />
-        </Route>
-      </Switch>
-    </InfiniteScrollable>
+      {showingFileModal && (
+        <FileUploadModal
+          onClose={() => setShowingFileModal(false)}
+          onAccept={onUrlChange}
+          mustLinkBeImage
+        />
+      )}
+    </div>
   );
 }
 
@@ -507,7 +451,7 @@ function ProfileCard(): ReactElement {
       </div>
       <div className="px-4 py-3 text-light">{user.meta?.blocked ? '' : user.bio}</div>
       <div className="px-4 flex flex-row flex-nowrap profile-view__datas">
-        {!!user.group && (
+        {user.group && (
           <div className="profile-view__data-group flex flex-row flex-nowrap items-center text-light text-gray-500">
             <Icon fa="fas fa-users" />
             <div className="ml-2 profile-view__data-group__value">Group Profile</div>
@@ -535,7 +479,7 @@ function ProfileCard(): ReactElement {
             </div>
           </div>
         )}
-        {!!verifiedTwitter && (
+        {verifiedTwitter && (
           <div
             className="profile-view__data-group flex flex-row flex-nowrap items-center text-light text-gray-500 cursor-pointer"
             onClick={() => window.open(user.twitterVerification, '_blank')}>
@@ -547,7 +491,7 @@ function ProfileCard(): ReactElement {
         )}
       </div>
       <div className="p-4 flex flex-row flex-nowrap item-center text-light">
-        {!!user.group && (
+        {user.group && (
           <div className="flex flex-row flex-nowrap item-center mr-4">
             <div className="font-semibold">{0}</div>
             <div className="ml-2 text-gray-500">Members</div>
@@ -696,68 +640,6 @@ function ProfileEditor(props: ProfileEditorProps): ReactElement {
   );
 }
 
-export function CoverImageEditor(props: {
-  url: string;
-  onUrlChange: (url: string) => void;
-}): ReactElement {
-  const [showingFileModal, setShowingFileModal] = useState(false);
-  const [url, setUrl] = useState('');
-  const [loading, setLoading] = useState(false);
-
-  const toggle = useCallback(() => {
-    setShowingFileModal(!showingFileModal);
-  }, [showingFileModal]);
-
-  const onUrlChange = useCallback((link: string) => {
-    props.onUrlChange(link);
-    setShowingFileModal(false);
-    setLoading(true);
-  }, []);
-
-  useEffect(() => {
-    setUrl(props.url);
-  }, [props.url]);
-
-  return (
-    <div
-      className={classNames(
-        'w-full h-48 flex flex-col flex-nowrap relative',
-        'justify-center items-center bg-gray-100'
-      )}>
-      {url && (
-        <img
-          className="absolute w-full h-full object-cover"
-          src={url}
-          onLoad={() => setLoading(false)}
-          onError={() => setLoading(false)}
-        />
-      )}
-      <div className="flex flex-row flex-nowrap items-center justify-center h-full w-full bg-black bg-opacity-30">
-        <Icon
-          className={classNames(
-            'flex flex-row flex-nowrap items-center justify-center',
-            'rounded-full w-10 h-10',
-            'bg-white text-white text-opacity-80 bg-opacity-20',
-            'relative z-200'
-            // "cursor-pointer hover:bg-opacity-40 hover:text-opacity-100",
-          )}
-          fa={loading ? undefined : 'fas fa-upload'}
-          url={loading ? SpinnerGIF : undefined}
-          onClick={loading ? undefined : toggle}
-          size={loading ? 3 : undefined}
-        />
-      </div>
-      {showingFileModal && (
-        <FileUploadModal
-          onClose={() => setShowingFileModal(false)}
-          onAccept={onUrlChange}
-          mustLinkBeImage
-        />
-      )}
-    </div>
-  );
-}
-
 export function ProfileImageEditor(props: {
   url: string;
   onUrlChange: (url: string) => void;
@@ -823,5 +705,123 @@ export function ProfileImageEditor(props: {
         />
       )}
     </div>
+  );
+}
+
+export default function ProfileView(): ReactElement {
+  const { name } = useParams<{ name: string }>();
+  const [fetching, setFetching] = useState(false);
+  const [limit] = useState(20);
+  const [offset, setOffset] = useState(0);
+  const [order, setOrder] = useState<string[]>([]);
+  const history = useHistory();
+  const loc = useLocation();
+  const selected = useSelectedLocalId();
+  const subpath = loc.pathname.split('/')[2];
+  const [username, setUsername] = useState('');
+  const theme = useThemeContext();
+  const dispatch = useDispatch();
+
+  useEffect(() => {
+    (async () => {
+      if (!Web3.utils.isAddress(name)) {
+        const address: any = await dispatch(fetchAddressByName(name));
+        setUsername(address);
+      } else {
+        setUsername(name);
+      }
+    })();
+  }, [name]);
+
+  const fetchMore = useCallback(
+    async (reset = false) => {
+      if (!username) return;
+
+      setFetching(true);
+
+      let fetchFn: any = fetchPosts;
+
+      if (subpath === 'likes') {
+        fetchFn = fetchLikedBy;
+      } else if (subpath === 'replies') {
+        fetchFn = fetchRepliedBy;
+      }
+
+      if (reset) {
+        const messageIds: any = await dispatch(fetchFn(username, 20, 0));
+        setOffset(20);
+        setOrder(messageIds);
+      } else {
+        if (order.length % limit) return;
+        const messageIds: any = await dispatch(fetchFn(username, limit, offset));
+        setOffset(offset + limit);
+        setOrder(order.concat(messageIds));
+      }
+
+      setFetching(false);
+    },
+    [limit, offset, order, username, subpath]
+  );
+
+  useEffect(() => {
+    (async function onProfileViewViewMount() {
+      setOrder([]);
+      setOffset(0);
+
+      if (t) {
+        clearTimeout(t);
+      }
+
+      t = setTimeout(() => {
+        fetchMore(true);
+        t = null;
+      }, 100);
+
+      if (username) {
+        dispatch(getUser(username));
+      }
+    })();
+  }, [selected, subpath, username]);
+
+  return (
+    <InfiniteScrollable
+      className={classNames('flex-grow profile-view', 'mx-4 py-2')}
+      onScrolledToBottom={fetchMore}>
+      <ProfileCard />
+      <div
+        className={classNames(
+          'flex flex-row flex-nowrap items-center justify-center',
+          'border rounded-xl mb-1',
+          'profile-menu',
+          {
+            'border-gray-200': theme !== 'dark',
+            'border-gray-800': theme === 'dark',
+          }
+        )}>
+        <ProfileMenuButton
+          iconFa="fas fa-comment-alt"
+          label="Posts"
+          onClick={() => history.push(`/${name}/`)}
+          active={!subpath}
+        />
+        <ProfileMenuButton
+          iconFa="fas fa-reply"
+          label="Replies"
+          onClick={() => history.push(`/${name}/replies`)}
+          active={subpath === 'replies'}
+        />
+        <ProfileMenuButton
+          iconFa="fas fa-heart"
+          label="Likes"
+          onClick={() => history.push(`/${name}/likes`)}
+          active={subpath === 'likes'}
+        />
+      </div>
+      <Switch>
+        <Route path="/:name">
+          <PostList list={order} fetching={fetching} />
+        </Route>
+      </Switch>
+    </InfiniteScrollable>
   );
 }

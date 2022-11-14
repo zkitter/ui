@@ -1,21 +1,22 @@
-import EC from 'elliptic';
+import crypto from 'crypto';
+import { Identity } from '@semaphore-protocol/identity';
+import { ZkIdentity } from '@zk-kit/identity';
 import {
   genExternalNullifier,
-  RLNFullProof,
-  RLN,
   MerkleProof,
+  RLN,
+  RLNFullProof,
   Semaphore,
   SemaphoreFullProof,
 } from '@zk-kit/protocols';
-import crypto from 'crypto';
-import { ZkIdentity } from '@zk-kit/identity';
-import config from './config';
+import EC from 'elliptic';
 import EventEmitter2, { ConstructorOptions } from 'eventemitter2';
+
+import config from './config';
+import { generateECDHKeyPairFromhex, sha256 } from './crypto';
 import { decrypt, encrypt } from './encrypt';
-import { base64ToArrayBuffer, generateECDHKeyPairFromhex, sha256 } from './crypto';
-import { safeJsonParse } from './misc';
-import { Identity } from '@semaphore-protocol/identity';
 import { findProof } from './merkle';
+import { safeJsonParse } from './misc';
 
 export enum ChatMessageType {
   DIRECT = 'DIRECT',
@@ -372,9 +373,7 @@ export class ZKChatClient extends EventEmitter2 {
       {}
     );
 
-    const validChats = await this._validateConvos(bucket.activeChats);
-
-    this.activeChats = validChats;
+    this.activeChats = await this._validateConvos(bucket.activeChats);
   }
 
   async importIdentity(identity: ZKChatIdentity) {
@@ -642,9 +641,7 @@ export class ZKChatClient extends EventEmitter2 {
   ) => {
     this._ensureIdentity();
     this._ensureChat(chat);
-
-    const chatId = this.deriveChatId(chat);
-
+    this.deriveChatId(chat);
     if (chat.type !== 'DIRECT') return;
 
     const ecdh = chat.receiverECDH;

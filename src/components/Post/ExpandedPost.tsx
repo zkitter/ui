@@ -3,19 +3,19 @@ import moment from 'moment/moment';
 import React, { ReactElement, useCallback, useEffect, useState } from 'react';
 import { useHistory } from 'react-router';
 
-import { convertMarkdownToDraft, DraftEditor } from '../DraftEditor';
-import { fetchLikersByPost, useMeta, usePost, useZKGroupFromPost } from '../../ducks/posts';
-import { useUser } from '../../ducks/users';
-import { PostMessageSubType } from '../../util/message';
-import { getHandle, getUsername } from '../../util/user';
-import { useThemeContext } from '../ThemeContext';
-
+import { fetchLikersByPost, useMeta, usePost, useZKGroupFromPost } from '@ducks/posts';
+import { useUser } from '@ducks/users';
+import { PostMessageSubType } from '~/message';
+import { getHandle, getUsername } from '~/user';
 import Avatar from '../Avatar';
+import { convertMarkdownToDraft, DraftEditor } from '../DraftEditor';
+
 import Nickname from '../Nickname';
-import PostFooter from './PostFooter';
-import UsersCountModal, { Item } from '../UsersCountModal';
-import PostMenu from './PostMenu';
+import { useThemeContext } from '../ThemeContext';
 import URLPreview from '../URLPreview';
+import UsersCountModal, { Item } from '../UsersCountModal';
+import PostFooter from './PostFooter';
+import PostMenu from './PostMenu';
 import { Props } from './types';
 
 export default function ExpandedPost(

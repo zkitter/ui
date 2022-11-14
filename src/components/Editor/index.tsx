@@ -1,20 +1,9 @@
-import React, { ReactElement, useCallback, useEffect, useState } from 'react';
-import { convertFromRaw, DraftHandleValue, EditorState, RichUtils } from 'draft-js';
-import classNames from 'classnames';
 import './editor.scss';
-import {
-  useAccount,
-  useCanNonPostMessage,
-  useENSName,
-  useGunKey,
-  useLoggedIn,
-  useSemaphoreID,
-} from '../../ducks/web3';
-import Avatar from '../Avatar';
-import Web3Button from '../Web3Button';
-import Button from '../Button';
-import { DraftEditor } from '../DraftEditor';
-import Icon from '../Icon';
+import classNames from 'classnames';
+import { convertFromRaw, DraftHandleValue, EditorState, RichUtils } from 'draft-js';
+import React, { ReactElement, useCallback, useEffect, useState } from 'react';
+import { useDispatch } from 'react-redux';
+import { useHistory } from 'react-router';
 import drafts, {
   setDraft,
   setGloabl,
@@ -22,29 +11,40 @@ import drafts, {
   setModeration,
   useDraft,
   useMirror,
-} from '../../ducks/drafts';
-import { useDispatch } from 'react-redux';
-import URLPreview from '../URLPreview';
-import SpinnerGif from '../../../static/icons/spinner.gif';
-import { useUser } from '../../ducks/users';
+} from '@ducks/drafts';
+import { usePostModeration } from '@ducks/mods';
+import { useCommentDisabled, useMeta } from '@ducks/posts';
+import { useUser } from '@ducks/users';
+import {
+  useAccount,
+  useCanNonPostMessage,
+  useENSName,
+  useGunKey,
+  useLoggedIn,
+  useSemaphoreID,
+} from '@ducks/web3';
 import {
   setPostingGroup,
   usePostingGroup,
   useSelectedLocalId,
   useSelectedZKGroup,
-} from '../../ducks/worker';
-import { useHistory } from 'react-router';
+} from '@ducks/worker';
+import { ModerationMessageSubType } from '~/message';
+import { getSession, verifyTweet } from '~/twitter';
+import SpinnerGif from '../../../static/icons/spinner.gif';
+import Avatar from '../Avatar';
+import Button from '../Button';
 import Checkbox from '../Checkbox';
-import { getSession, verifyTweet } from '../../util/twitter';
-import ModerationButton from '../ModerationButton';
-import { ModerationMessageSubType } from '../../util/message';
-import { usePostModeration } from '../../ducks/mods';
-import { useCommentDisabled, useMeta } from '../../ducks/posts';
-import Menuable from '../Menuable';
-import FileUploadModal from '../FileUploadModal';
-import LinkInputModal from '../LinkInputModal';
-import { useThemeContext } from '../ThemeContext';
 import CustomGroupSelectModal from '../CustomGroupSelectModal';
+import { DraftEditor } from '../DraftEditor';
+import FileUploadModal from '../FileUploadModal';
+import Icon from '../Icon';
+import LinkInputModal from '../LinkInputModal';
+import Menuable from '../Menuable';
+import ModerationButton from '../ModerationButton';
+import { useThemeContext } from '../ThemeContext';
+import URLPreview from '../URLPreview';
+import Web3Button from '../Web3Button';
 
 type Props = {
   messageId: string;

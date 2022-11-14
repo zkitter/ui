@@ -1,29 +1,37 @@
+import { Identity } from '@semaphore-protocol/identity';
 import { Strategy, ZkIdentity } from '@zk-kit/identity';
-import { checkPath } from './interrep';
 import {
   genExternalNullifier,
   MerkleProof,
   RLN,
   RLNFullProof,
-  Semaphore,
   SemaphoreFullProof,
 } from '@zk-kit/protocols';
-import config from './config';
 import { Dispatch } from 'redux';
+import { ZKPR } from '@ducks/zkpr';
+// eslint-disable-next-line import/no-unresolved
+import { SerializedIdentity } from '@zk-kit/identity/src/types';
 import { AppRootState } from '../store/configureAppStore';
-import { ZKPR } from '../ducks/zkpr';
-import { getEpoch } from './zkchat';
+import config from './config';
 import { sha256 } from './crypto';
+import { checkPath } from './interrep';
 import { findProof } from './merkle';
-import { Identity } from '@semaphore-protocol/identity';
-import { SerializedIdentity } from '@zk-kit/identity/src/types/index';
+import { getEpoch } from './zkchat';
 
 export const generateRLNProof =
   (signalString: string) =>
   async (dispatch: Dispatch, getState: () => AppRootState): Promise<RLNFullProof | null> => {
     const state = getState();
     const { selected } = state.worker;
-    const { zkpr } = state.zkpr;
+    // @ts-ignore
+    const zkIdentity = new Identity(selected.serializedIdentity);
+    const identityTrapdoor = zkIdentity.getTrapdoor();
+    const identityNullifier = zkIdentity.getNullifier();
+    const data: SerializedIdentity = {
+      identityTrapdoor: identityTrapdoor.toString(16),
+      identityNullifier: identityNullifier.toString(16),
+      secret: [identityNullifier, identityTrapdoor].map(item => item.toString(16)),
+    };
 
     switch (selected?.type) {
       case 'interrep':
@@ -33,14 +41,6 @@ export const generateRLNProof =
           `interrep_${selected.provider.toLowerCase()}_${selected.name}`
         );
       case 'taz':
-        const zkIdentity = new Identity(selected.serializedIdentity);
-        const identityTrapdoor = zkIdentity.getTrapdoor();
-        const identityNullifier = zkIdentity.getNullifier();
-        const data: SerializedIdentity = {
-          identityTrapdoor: identityTrapdoor.toString(16),
-          identityNullifier: identityNullifier.toString(16),
-          secret: [identityNullifier, identityTrapdoor].map(item => item.toString(16)),
-        };
         return generateRLNProofFromLocalIdentity(
           signalString,
           new ZkIdentity(Strategy.SERIALIZED, JSON.stringify(data)),
@@ -109,7 +109,6 @@ export const generateRLNProofFromLocalIdentity = async (
   );
   const identityPathElements = merkleProof!.siblings;
   const identityPathIndex = merkleProof!.pathIndices;
-  const root = merkleProof!.root;
 
   if (!identityCommitment || !identityPathElements || !identityPathIndex) {
     return null;

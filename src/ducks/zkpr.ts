@@ -1,18 +1,19 @@
-import { ThunkDispatch } from 'redux-thunk';
-import { useSelector } from 'react-redux';
-import deepEqual from 'fast-deep-equal';
-import { AppRootState } from '../store/configureAppStore';
-import { checkPath } from '../util/interrep';
-import { Identity } from '../serviceWorkers/identity';
-import { postWorkerMessage } from '../util/sw';
-import { selectIdentity, setIdentity } from '../serviceWorkers/util';
-import { Dispatch } from 'redux';
 import {
-  SemaphoreFullProof,
-  SemaphoreSolidityProof,
   MerkleProof,
   RLNFullProof,
+  SemaphoreFullProof,
+  SemaphoreSolidityProof,
 } from '@zk-kit/protocols';
+import deepEqual from 'fast-deep-equal';
+import { useSelector } from 'react-redux';
+import { Dispatch } from 'redux';
+import { ThunkDispatch } from 'redux-thunk';
+
+import { Identity } from '../serviceWorkers/identity';
+import { selectIdentity, setIdentity } from '../serviceWorkers/util';
+import { AppRootState } from '../store/configureAppStore';
+import { postWorkerMessage } from '~/sw';
+import { checkPath } from '~/interrep';
 
 enum ActionTypes {
   SET_LOADING = 'zkpr/setLoading',
@@ -56,22 +57,22 @@ export const connectZKPR =
         const client = await zkpr.connect();
         const zkprClient = new ZKPR(client);
 
-        zkprClient.on('logout', async data => {
+        zkprClient.on('logout', async () => {
           const {
-            worker: { selected, identities },
+            worker: { identities },
           } = getState();
 
           dispatch(disconnectZKPR());
 
           const [defaultId] = identities;
           if (defaultId) {
-            postWorkerMessage(
+            await postWorkerMessage(
               selectIdentity(
                 defaultId.type === 'gun' ? defaultId.publicKey : defaultId.identityCommitment
               )
             );
           } else {
-            postWorkerMessage(setIdentity(null));
+            await postWorkerMessage(setIdentity(null));
           }
         });
 
@@ -182,33 +183,6 @@ export const setZKPR = (zkpr: ZKPR | null) => ({
   payload: zkpr,
 });
 
-export default function zkpr(state = initialState, action: Action<any>): State {
-  switch (action.type) {
-    case ActionTypes.SET_UNLOCKING:
-      return {
-        ...state,
-        unlocking: action.payload,
-      };
-    case ActionTypes.SET_LOADING:
-      return {
-        ...state,
-        loading: action.payload,
-      };
-    case ActionTypes.SET_ZKPR:
-      return {
-        ...state,
-        zkpr: action.payload,
-      };
-    case ActionTypes.SET_ID_COMMIMENT:
-      return {
-        ...state,
-        idCommitment: action.payload,
-      };
-    default:
-      return state;
-  }
-}
-
 export const useZKPRLoading = () => {
   return useSelector((state: AppRootState) => {
     return state.zkpr.loading;
@@ -297,5 +271,32 @@ export class ZKPR {
       rlnIdentifier,
       merkleProof
     );
+  }
+}
+
+export default function zkpr(state = initialState, action: Action<any>): State {
+  switch (action.type) {
+    case ActionTypes.SET_UNLOCKING:
+      return {
+        ...state,
+        unlocking: action.payload,
+      };
+    case ActionTypes.SET_LOADING:
+      return {
+        ...state,
+        loading: action.payload,
+      };
+    case ActionTypes.SET_ZKPR:
+      return {
+        ...state,
+        zkpr: action.payload,
+      };
+    case ActionTypes.SET_ID_COMMIMENT:
+      return {
+        ...state,
+        idCommitment: action.payload,
+      };
+    default:
+      return state;
   }
 }

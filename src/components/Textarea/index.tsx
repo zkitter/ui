@@ -1,6 +1,6 @@
-import React, { TextareaHTMLAttributes, ReactElement, LegacyRef } from 'react';
-import classNames from 'classnames';
 import './textarea.scss';
+import classNames from 'classnames';
+import React, { LegacyRef, ReactElement, TextareaHTMLAttributes } from 'react';
 import { useThemeContext } from '../ThemeContext';
 
 type Props = {

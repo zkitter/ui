@@ -1,18 +1,18 @@
-import React, { ReactElement, useEffect, useState } from 'react';
 import classNames from 'classnames';
-import Icon from '../Icon';
-import SpinnerGIF from '../../../static/icons/spinner.gif';
-import SwitchButton from '../SwitchButton';
-import { useThemeContext } from '../ThemeContext';
-import { UserRow } from '../DiscoverUserPanel';
-import Button from '../Button';
+import React, { ReactElement, useEffect, useState } from 'react';
+import { useDispatch } from 'react-redux';
 import { useParams } from 'react-router';
 import Web3 from 'web3';
-import { fetchAddressByName, useUser } from '../../ducks/users';
-import { useDispatch } from 'react-redux';
-import { useSelectedLocalId } from '../../ducks/worker';
+import SpinnerGIF from '../../../static/icons/spinner.gif';
+import { fetchAddressByName, useUser } from '@ducks/users';
+import { useSelectedLocalId } from '@ducks/worker';
+import config from '~/config';
+import Button from '../Button';
+import { UserRow } from '../DiscoverUserPanel';
+import Icon from '../Icon';
 import MemberInviteModal from '../MemberInviteModal';
-import config from '../../util/config';
+import SwitchButton from '../SwitchButton';
+import { useThemeContext } from '../ThemeContext';
 
 type Props = {};
 

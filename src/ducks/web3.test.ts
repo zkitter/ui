@@ -1,5 +1,6 @@
 import sinon from 'sinon';
-import { store, ducks, web3Stub, fetchStub, postWorkMessageStub } from '../util/testUtils';
+
+import { ducks, fetchStub, postWorkMessageStub, store, web3Stub } from '../util/testUtils';
 
 const {
   web3: { connectWeb3, setWeb3, loginGun, genSemaphore, updateIdentity, web3Modal },
@@ -28,7 +29,7 @@ describe('Web3 Duck', () => {
     }
 
     // @ts-ignore
-    await store.dispatch(setWeb3(web3Stub, '0x0000000000000000000000000000000000000000'));
+    await store.dispatch(setWeb3(web3Stub));
 
     expect(store.getState().web3.account).toBe('0x0000000000000000000000000000000000000000');
     expect(store.getState().web3.networkType).toBe('main');

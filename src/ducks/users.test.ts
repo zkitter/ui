@@ -1,4 +1,4 @@
-import { store, ducks, fetchStub } from '../util/testUtils';
+import { ducks, fetchStub, store } from '../util/testUtils';
 
 const {
   users: { fetchAddressByName, fetchUsers, getUser, resetUser, searchUsers, setFollowed },

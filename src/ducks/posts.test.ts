@@ -1,5 +1,5 @@
-import { ducks, fetchStub, gunStub, store } from '../util/testUtils';
-import { MessageType, Post, PostMessageSubType } from '../util/message';
+import { MessageType, PostMessageSubType } from '~/message';
+import { ducks, fetchStub, gunStub, store } from '~/testUtils';
 
 const {
   posts: {
@@ -11,7 +11,6 @@ const {
     fetchHomeFeed,
     fetchLikedBy,
     fetchRepliedBy,
-    setPost,
     setLiked,
     setReposted,
     setBlockedPost,
@@ -20,7 +19,6 @@ const {
     incrementLike,
     decrementRepost,
     decrementLike,
-    unsetPost,
   },
 } = ducks;
 
@@ -31,8 +29,8 @@ describe('Posts Duck', () => {
 
   it('should fetch meta', async () => {
     const messageId = '0xmeta/0000000000000000000000000000000000000000000000000000000000000000';
-    // @ts-ignore
     fetchStub.returns(
+      // @ts-ignore
       Promise.resolve({
         json: async () => ({
           payload: {
@@ -57,8 +55,8 @@ describe('Posts Duck', () => {
     const messageId = 'e6789d8ea65b57efd365ada389924246e4bd7be9c109a7fe294646831f67db8b';
     gunStub.get
       .withArgs('message/e6789d8ea65b57efd365ada389924246e4bd7be9c109a7fe294646831f67db8b')
-      // @ts-ignore
       .returns(
+        // @ts-ignore
         Promise.resolve({
           type: 'POST',
           subtype: 'REPLY',
@@ -68,11 +66,11 @@ describe('Posts Duck', () => {
           },
         })
       )
-      // @ts-ignore
       .withArgs('payload')
+      // @ts-ignore
       .returns(Promise.resolve({ content: 'fetch post' }));
-    // @ts-ignore
     fetchStub.returns(
+      // @ts-ignore
       Promise.resolve({
         json: async () => ({
           payload: {
@@ -88,8 +86,8 @@ describe('Posts Duck', () => {
   });
 
   it('should fetch posts', async () => {
-    // @ts-ignore
     fetchStub.returns(
+      // @ts-ignore
       Promise.resolve({
         json: async () => ({
           payload: [
@@ -127,8 +125,8 @@ describe('Posts Duck', () => {
   });
 
   it('should fetch liked by', async () => {
-    // @ts-ignore
     fetchStub.returns(
+      // @ts-ignore
       Promise.resolve({
         json: async () => ({
           payload: [
@@ -167,8 +165,8 @@ describe('Posts Duck', () => {
   });
 
   it('should fetch replied by', async () => {
-    // @ts-ignore
     fetchStub.returns(
+      // @ts-ignore
       Promise.resolve({
         json: async () => ({
           payload: [
@@ -207,8 +205,8 @@ describe('Posts Duck', () => {
   });
 
   it('should fetch homefed', async () => {
-    // @ts-ignore
     fetchStub.returns(
+      // @ts-ignore
       Promise.resolve({
         json: async () => ({
           payload: [
@@ -232,6 +230,7 @@ describe('Posts Duck', () => {
         }),
       })
     );
+
     // @ts-ignore
     await store.dispatch(fetchHomeFeed());
     const map = store.getState().posts.map;
@@ -247,8 +246,8 @@ describe('Posts Duck', () => {
   });
 
   it('should fetch tagfeed', async () => {
-    // @ts-ignore
     fetchStub.returns(
+      // @ts-ignore
       Promise.resolve({
         json: async () => ({
           payload: [
@@ -272,6 +271,7 @@ describe('Posts Duck', () => {
         }),
       })
     );
+
     // @ts-ignore
     await store.dispatch(fetchTagFeed('#tagfeed'));
     const map = store.getState().posts.map;
@@ -287,8 +287,8 @@ describe('Posts Duck', () => {
   });
 
   it('should fetch replies', async () => {
-    // @ts-ignore
     fetchStub.returns(
+      // @ts-ignore
       Promise.resolve({
         json: async () => ({
           payload: [
@@ -312,6 +312,7 @@ describe('Posts Duck', () => {
         }),
       })
     );
+
     // @ts-ignore
     await store.dispatch(fetchReplies('0xparent'));
     const map = store.getState().posts.map;
@@ -329,12 +330,12 @@ describe('Posts Duck', () => {
   });
 
   it('should handle meta', async () => {
-    await store.dispatch(incrementLike('0xtestmeta'));
-    await store.dispatch(incrementReply('0xtestmeta'));
-    await store.dispatch(incrementRepost('0xtestmeta'));
-    await store.dispatch(setLiked('0xtestmeta', '0xlikedtestmeta'));
-    await store.dispatch(setReposted('0xtestmeta', '0xrepostedtestmeta'));
-    await store.dispatch(setBlockedPost('0xtestmeta', '0xblockedtestmeta'));
+    store.dispatch(incrementLike('0xtestmeta'));
+    store.dispatch(incrementReply('0xtestmeta'));
+    store.dispatch(incrementRepost('0xtestmeta'));
+    store.dispatch(setLiked('0xtestmeta', '0xlikedtestmeta'));
+    store.dispatch(setReposted('0xtestmeta', '0xrepostedtestmeta'));
+    store.dispatch(setBlockedPost('0xtestmeta', '0xblockedtestmeta'));
     expect(store.getState().posts.meta['0xtestmeta']).toStrictEqual({
       likeCount: 1,
       replyCount: 1,
@@ -343,11 +344,11 @@ describe('Posts Duck', () => {
       reposted: '0xrepostedtestmeta',
       blocked: '0xblockedtestmeta',
     });
-    await store.dispatch(decrementLike('0xtestmeta'));
-    await store.dispatch(decrementRepost('0xtestmeta'));
-    await store.dispatch(setLiked('0xtestmeta', null));
-    await store.dispatch(setReposted('0xtestmeta', null));
-    await store.dispatch(setBlockedPost('0xtestmeta', null));
+    store.dispatch(decrementLike('0xtestmeta'));
+    store.dispatch(decrementRepost('0xtestmeta'));
+    store.dispatch(setLiked('0xtestmeta', null));
+    store.dispatch(setReposted('0xtestmeta', null));
+    store.dispatch(setBlockedPost('0xtestmeta', null));
     expect(store.getState().posts.meta['0xtestmeta']).toStrictEqual({
       likeCount: 0,
       replyCount: 1,

@@ -1,6 +1,7 @@
+import { Identity } from '../serviceWorkers/identity';
+
 import config from './config';
 import { signWithP256 } from './crypto';
-import { Identity } from '../serviceWorkers/identity';
 
 export async function verifyTweet(
   account?: string,
@@ -11,9 +12,11 @@ export async function verifyTweet(
 
   let id;
   try {
-    const [twitterHandle, _, tweetId] = tweetURL.replace('https://twitter.com/', '').split('/');
+    const [, , tweetId] = tweetURL.replace('https://twitter.com/', '').split('/');
     id = tweetId;
-  } catch (e) {}
+  } catch (e) {
+    // swallow
+  }
 
   const resp = await fetch(`${config.indexerAPI}/twitter/status?id=${id}`);
   const json = await resp.json();
@@ -104,7 +107,7 @@ export const getTwitterUser = async (username: string) => {
     return cachedTwitterUser[username];
   }
 
-  const promise = new Promise(async (resolve, reject) => {
+  const promise = new Promise(async resolve => {
     const resp = await fetch(`${config.indexerAPI}/twitter/user/${username}`);
     const json = await resp.json();
 

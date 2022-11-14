@@ -1,6 +1,6 @@
-import React, { InputHTMLAttributes, ReactElement, ReactNode } from 'react';
-import classNames from 'classnames';
 import './checkbox.scss';
+import classNames from 'classnames';
+import React, { InputHTMLAttributes, ReactElement, ReactNode } from 'react';
 
 type Props = {
   className?: string;

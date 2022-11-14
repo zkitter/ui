@@ -1,8 +1,8 @@
-import React, { ChangeEvent, EventHandler, ReactElement } from 'react';
 import './file-select-btn.scss';
+import classNames from 'classnames';
+import React, { ChangeEvent, EventHandler, ReactElement } from 'react';
 import Button from '../Button';
 import Icon from '../Icon';
-import classNames from 'classnames';
 
 type Props = {
   className?: string;

@@ -1,11 +1,11 @@
+import classNames from 'classnames';
 import React, { MouseEventHandler, ReactElement, useCallback, useEffect, useState } from 'react';
 import { useDispatch } from 'react-redux';
 import { useHistory, useParams } from 'react-router';
-import { fetchPost, fetchReplies, useGoToPost, useMeta } from '../../ducks/posts';
-import classNames from 'classnames';
+import { usePostModeration } from '@ducks/mods';
+import { fetchPost, fetchReplies, useGoToPost, useMeta } from '@ducks/posts';
+import { parseMessageId, Post as PostMessage } from '~/message';
 import Post from '../Post';
-import { parseMessageId, Post as PostMessage } from '../../util/message';
-import { usePostModeration } from '../../ducks/mods';
 import { useThemeContext } from '../ThemeContext';
 
 type Props = {

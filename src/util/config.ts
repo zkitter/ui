@@ -17,7 +17,9 @@ try {
     : process.env.NODE_ENV === 'test'
     ? '../../config.test.json'
     : '../../config.prod.json');
-} catch (e) {}
+} catch (e) {
+  // swallow
+}
 
 const web3HttpProvider = json.web3HttpProvider || process.env.WEB3_HTTP_PROVIDER;
 const ensResolver = json.ensResolver || process.env.ENS_RESOLVER;

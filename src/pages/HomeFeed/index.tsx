@@ -1,23 +1,20 @@
-import React, { ReactElement, useCallback, useEffect, useState } from 'react';
-import classNames from 'classnames';
-import { EditorState } from 'draft-js';
-import Post from '../../components/Post';
-import { useDispatch } from 'react-redux';
-import { fetchHomeFeed, setPost, useGoToPost } from '../../ducks/posts';
 import './home-feed.scss';
-import Editor from '../../components/Editor';
-import { useHasLocal, useLoggedIn } from '../../ducks/web3';
-import { Post as PostMessage } from '../../util/message';
-import { setDraft, submitPost, useDraft, useSubmitting } from '../../ducks/drafts';
-import InfiniteScrollable from '../../components/InfiniteScrollable';
-import NotificationBox from '../../components/NotificationBox';
-import Button from '../../components/Button';
-import LocalBackupNotification from '../../components/LocalBackupNotification';
-import { useSelectedLocalId } from '../../ducks/worker';
-import { useThemeContext } from '../../components/ThemeContext';
+import classNames from 'classnames';
+import React, { ReactElement, useCallback, useEffect, useState } from 'react';
+import { useDispatch } from 'react-redux';
+import Editor from '@components/Editor';
+import InfiniteScrollable from '@components/InfiniteScrollable';
+import LocalBackupNotification from '@components/LocalBackupNotification';
+import Post from '@components/Post';
+import { useThemeContext } from '@components/ThemeContext';
+import { submitPost, useDraft, useSubmitting } from '@ducks/drafts';
+import { fetchHomeFeed, setPost, useGoToPost } from '@ducks/posts';
+import { useLoggedIn } from '@ducks/web3';
+import { useSelectedLocalId } from '@ducks/worker';
+import { Post as PostMessage } from '~/message';
 
 export default function HomeFeed(): ReactElement {
-  const [limit, setLimit] = useState(20);
+  const [limit] = useState(20);
   const [offset, setOffset] = useState(0);
   const [order, setOrder] = useState<string[]>([]);
   const [fetching, setFetching] = useState(false);
@@ -84,11 +81,10 @@ export default function HomeFeed(): ReactElement {
           Nothing to see here yet
         </div>
       )}
-      {order.map((messageId, i) => {
+      {order.map(messageId => {
         return (
           <Post
             key={messageId}
-            // key={i}
             className={classNames('rounded-xl transition-colors mb-1 cursor-pointer border', {
               'hover:border-gray-300 border-gray-200': theme !== 'dark',
               'hover:border-gray-700 border-gray-800': theme === 'dark',

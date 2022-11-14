@@ -1,16 +1,16 @@
-import React, { ReactElement, useCallback, useEffect, useState } from 'react';
-import classNames from 'classnames';
-import { useDispatch } from 'react-redux';
-import { useUser } from '../../ducks/users';
-import Icon from '../Icon';
-import SpinnerGIF from '../../../static/icons/spinner.gif';
-import { useHistory, useParams } from 'react-router';
-import { getHandle, getUsername } from '../../util/user';
 import './post-mod-panel.scss';
-import { useMeta, usePost } from '../../ducks/posts';
-import { ModerationMessageSubType, PostMessageSubType } from '../../util/message';
+import classNames from 'classnames';
+import React, { ReactElement, useCallback, useEffect, useState } from 'react';
+import { useDispatch } from 'react-redux';
+import { useHistory, useParams } from 'react-router';
+import SpinnerGIF from '../../../static/icons/spinner.gif';
+import { unmoderate, usePostModeration } from '@ducks/mods';
+import { useMeta, usePost } from '@ducks/posts';
+import { useUser } from '@ducks/users';
+import { ModerationMessageSubType, PostMessageSubType } from '~/message';
+import { getHandle, getUsername } from '~/user';
+import Icon from '../Icon';
 import SwitchButton from '../SwitchButton';
-import { unmoderate, usePostModeration } from '../../ducks/mods';
 import { useThemeContext } from '../ThemeContext';
 
 export default function PostModerationPanel(): ReactElement {

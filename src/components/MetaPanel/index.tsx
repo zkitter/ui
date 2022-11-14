@@ -1,11 +1,11 @@
+import classNames from 'classnames';
 import React, { ReactElement } from 'react';
 import { Route, Switch } from 'react-router';
-import DiscoverUserPanel from '../DiscoverUserPanel';
 import DiscoverTagPanel from '../DiscoverTagPanel';
-import PostModerationPanel from '../PostModerationPanel';
-import Icon from '../Icon';
-import classNames from 'classnames';
+import DiscoverUserPanel from '../DiscoverUserPanel';
 import GroupMembersPanel from '../GroupMembersPanel';
+import Icon from '../Icon';
+import PostModerationPanel from '../PostModerationPanel';
 
 export default function MetaPanel(props: { className?: string }): ReactElement {
   return (

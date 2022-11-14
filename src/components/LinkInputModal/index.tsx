@@ -1,9 +1,9 @@
-import React, { ChangeEvent, KeyboardEvent, ReactElement, useCallback, useState } from 'react';
-import Modal, { ModalContent, ModalFooter, ModalHeader } from '../Modal';
 import classNames from 'classnames';
-import Input from '../Input';
-import Icon from '../Icon';
+import React, { ChangeEvent, KeyboardEvent, ReactElement, useCallback, useState } from 'react';
 import Button from '../Button';
+import Icon from '../Icon';
+import Input from '../Input';
+import Modal, { ModalContent, ModalFooter, ModalHeader } from '../Modal';
 import URLPreview from '../URLPreview';
 
 type Props = {

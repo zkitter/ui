@@ -1,10 +1,12 @@
-import { Chat, ChatMessage, ZKChatClient } from '../util/zkchat';
+import deepEqual from 'fast-deep-equal';
+import { useSelector } from 'react-redux';
 import { Dispatch } from 'redux';
+
 import store, { AppRootState } from '../store/configureAppStore';
 import config from '../util/config';
-import { useSelector } from 'react-redux';
-import deepEqual from 'fast-deep-equal';
 import sse from '../util/sse';
+import { Chat, ChatMessage, ZKChatClient } from '~/zkchat';
+
 const EVENTS = ZKChatClient.EVENTS;
 
 export const zkchat = new ZKChatClient({
@@ -13,7 +15,7 @@ export const zkchat = new ZKChatClient({
 
 sse.on('NEW_CHAT_MESSAGE', async (payload: any) => {
   const message = await zkchat.inflateMessage(payload);
-  zkchat.prependMessage(message);
+  await zkchat.prependMessage(message);
 });
 
 const onNewMessage = (message: ChatMessage) => {
@@ -88,17 +90,6 @@ const addChat = (chat: Chat): Action<Chat> => ({
   payload: chat,
 });
 
-const setNickname = (
-  chat: Chat,
-  nickname: string
-): Action<{
-  chat: Chat;
-  nickname: string;
-}> => ({
-  type: ActionTypes.SET_CHAT_NICKNAME,
-  payload: { chat, nickname },
-});
-
 const setMessage = (msg: ChatMessage): Action<ChatMessage> => ({
   type: ActionTypes.SET_MESSAGE,
   payload: msg,
@@ -118,28 +109,11 @@ export const fetchChats =
     dispatch(setChats(zkchat.activeChats));
   };
 
-export default function chats(state = initialState, action: Action<any>): State {
-  switch (action.type) {
-    case ActionTypes.SET_CHATS:
-      return handleSetChats(state, action);
-    case ActionTypes.ADD_CHAT:
-      return handeAddChat(state, action);
-    case ActionTypes.SET_MESSAGES_FOR_CHAT:
-      return handleSetMessagesForChats(state, action);
-    case ActionTypes.SET_CHAT_NICKNAME:
-      return handeSetNickname(state, action);
-    case ActionTypes.SET_MESSAGE:
-      return {
-        ...state,
-        messages: {
-          ...state.messages,
-          [action.payload.messageId]: action.payload,
-        },
-      };
-    default:
-      return state;
-  }
-}
+export const useChatIds = () => {
+  return useSelector((state: AppRootState) => {
+    return state.chats.chats.order;
+  }, deepEqual);
+};
 
 function handeSetNickname(state: State, action: Action<{ chat: Chat; nickname: string }>) {
   const chatId = zkchat.deriveChatId(action.payload!.chat);
@@ -244,19 +218,13 @@ function handleSetMessagesForChats(
   };
 }
 
-export const useChatIds = () => {
-  return useSelector((state: AppRootState) => {
-    return state.chats.chats.order;
-  }, deepEqual);
-};
-
 export const useChatId = (chatId: string) => {
   return useSelector((state: AppRootState) => {
     const chat = state.chats.chats.map[chatId];
 
     if (!chat) return;
 
-    const { messages, nickname, ...rest } = chat;
+    const { ...rest } = chat;
 
     return rest;
   }, deepEqual);
@@ -271,10 +239,7 @@ export const useMessagesByChatId = (chatId: string) => {
 export const useLastNMessages = (chatId: string, n = 1): ChatMessage[] => {
   return useSelector((state: AppRootState) => {
     const {
-      chats: {
-        chats: { map },
-        messages,
-      },
+      chats: { messages },
     } = state;
     const ids = state.chats.chats.map[chatId]?.messages || [];
     return ids.slice(0, n).map(messageId => messages[messageId]);
@@ -286,3 +251,26 @@ export const useChatMessage = (messageId: string) => {
     return state.chats.messages[messageId];
   }, deepEqual);
 };
+
+export default function chats(state = initialState, action: Action<any>): State {
+  switch (action.type) {
+    case ActionTypes.SET_CHATS:
+      return handleSetChats(state, action);
+    case ActionTypes.ADD_CHAT:
+      return handeAddChat(state, action);
+    case ActionTypes.SET_MESSAGES_FOR_CHAT:
+      return handleSetMessagesForChats(state, action);
+    case ActionTypes.SET_CHAT_NICKNAME:
+      return handeSetNickname(state, action);
+    case ActionTypes.SET_MESSAGE:
+      return {
+        ...state,
+        messages: {
+          ...state.messages,
+          [action.payload.messageId]: action.payload,
+        },
+      };
+    default:
+      return state;
+  }
+}

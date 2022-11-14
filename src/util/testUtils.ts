@@ -1,5 +1,5 @@
 import 'isomorphic-fetch';
-import { TextEncoder, TextDecoder } from 'util';
+import { Semaphore } from '@zk-kit/protocols';
 import crypto from 'crypto';
 // @ts-ignore
 global.TextEncoder = TextEncoder;
@@ -17,18 +17,20 @@ global.crypto = {
 };
 import sinon from 'sinon';
 
-import originalStore from '../store/configureAppStore';
+import { TextDecoder, TextEncoder } from 'util';
+
 import * as drafts from '../ducks/drafts';
+import * as mods from '../ducks/mods';
 import * as posts from '../ducks/posts';
-import * as worker from '../ducks/worker';
 import * as users from '../ducks/users';
 import * as web3 from '../ducks/web3';
+import * as worker from '../ducks/worker';
 import * as zkpr from '../ducks/zkpr';
-import * as mods from '../ducks/mods';
-import originalGun from '../util/gun';
-import { Semaphore } from '@zk-kit/protocols';
-import * as swModules from './sw';
 import * as swUtilsModules from '../serviceWorkers/util';
+import originalStore from '../store/configureAppStore';
+import originalGun from '../util/gun';
+
+import * as swModules from './sw';
 
 export const pushReduxActionStub = sinon.stub(swUtilsModules, 'pushReduxAction');
 

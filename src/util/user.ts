@@ -1,8 +1,8 @@
-import { getUser, resetUser, User } from '../ducks/users';
+
+import { submitProfile } from '@ducks/drafts';
+import { getUser, resetUser, User } from '@ducks/users';
 import { Identity } from '../serviceWorkers/identity';
-import { authenticateGun } from './gun';
-import { postWorkerMessage } from './sw';
-import { addIdentity, selectIdentity, setIdentity } from '../serviceWorkers/util';
+import { selectIdentity } from '../serviceWorkers/util';
 import store, { AppRootState } from '../store/configureAppStore';
 import {
   generateECDHKeyPairFromhex,
@@ -10,8 +10,9 @@ import {
   sha256,
   signWithP256,
 } from './crypto';
-import { submitProfile } from '../ducks/drafts';
+import { authenticateGun } from './gun';
 import { ProfileMessageSubType } from './message';
+import { postWorkerMessage } from './sw';
 
 export const ellipsify = (str: string, start = 6, end = 4) => {
   return str.slice(0, start) + '...' + str.slice(-end);
@@ -75,9 +76,9 @@ async function checkChat() {
     selectedUser = await store.dispatch(getUser(selected?.address));
   }
 
-  (async () => {
+  await (async () => {
     if (!selectedUser.ecdh) {
-      const ecdhseed = await signWithP256(selected.privateKey, 'signing for ecdh - 0');
+      const ecdhseed = signWithP256(selected.privateKey, 'signing for ecdh - 0');
       const ecdhHex = await sha256(ecdhseed);
       const keyPair = await generateECDHKeyPairFromhex(ecdhHex);
       const ecdhPub = keyPair.pub;
@@ -86,12 +87,12 @@ async function checkChat() {
     }
 
     if (!selectedUser.idcommitment) {
-      const zkseed = await signWithP256(selected.privateKey, 'signing for zk identity - 0');
+      const zkseed = signWithP256(selected.privateKey, 'signing for zk identity - 0');
       const zkHex = await sha256(zkseed);
       const zkIdentity = await generateZkIdentityFromHex(zkHex);
       const idcommitment = zkIdentity.genIdentityCommitment().toString(16);
-      // @ts-ignore
       await store.dispatch(
+        // @ts-ignore
         submitProfile(ProfileMessageSubType.Custom, idcommitment, 'id_commitment')
       );
     }

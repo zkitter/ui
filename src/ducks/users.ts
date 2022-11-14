@@ -1,15 +1,12 @@
-import { Dispatch } from 'redux';
-import { AppRootState } from '../store/configureAppStore';
-import { useSelector } from 'react-redux';
 import deepEqual from 'fast-deep-equal';
-import config from '../util/config';
-import {
-  defaultENS,
-  fetchNameByAddress,
-  fetchAddressByName as _fetchAddressByName,
-} from '../util/web3';
+import { useSelector } from 'react-redux';
+import { Dispatch } from 'redux';
 import { ThunkDispatch } from 'redux-thunk';
-import { setJoinedTx } from './web3';
+
+import { AppRootState } from '../store/configureAppStore';
+import config from '../util/config';
+import { fetchAddressByName as _fetchAddressByName } from '../util/web3';
+
 import { getContextNameFromState } from './posts';
 
 enum ActionTypes {
@@ -88,7 +85,7 @@ export const fetchAddressByName = (ens: string) => async (dispatch: Dispatch) =>
 };
 
 export const watchUser = (username: string) => async (dispatch: ThunkDispatch<any, any, any>) => {
-  return new Promise(async (resolve, reject) => {
+  return new Promise(async resolve => {
     _getUser();
 
     async function _getUser() {
@@ -114,7 +111,7 @@ export const getUser =
       return fetchPromises[key];
     }
 
-    const fetchPromise = new Promise<User>(async (resolve, reject) => {
+    const fetchPromise = new Promise<User>(async resolve => {
       let payload;
 
       if (cachedUser[key]) {

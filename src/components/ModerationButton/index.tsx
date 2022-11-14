@@ -1,10 +1,10 @@
-import React, { ReactElement, ReactNode, useEffect, useState } from 'react';
-import Icon from '../Icon';
 import './moderation-btn.scss';
 import classNames from 'classnames';
-import Modal, { ModalContent, ModalFooter, ModalHeader } from '../Modal';
+import React, { ReactElement, ReactNode, useEffect, useState } from 'react';
+import { ModerationMessageSubType } from '~/message';
 import Button from '../Button';
-import { ModerationMessageSubType } from '../../util/message';
+import Icon from '../Icon';
+import Modal, { ModalContent, ModalFooter, ModalHeader } from '../Modal';
 import { useThemeContext } from '../ThemeContext';
 
 type Props = {

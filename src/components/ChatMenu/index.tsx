@@ -1,4 +1,6 @@
 import './chat-menu.scss';
+import classNames from 'classnames';
+import moment from 'moment';
 import React, {
   ChangeEvent,
   MouseEvent,
@@ -7,154 +9,45 @@ import React, {
   useEffect,
   useState,
 } from 'react';
-import classNames from 'classnames';
-import Avatar, { Username } from '../Avatar';
-import { useSelectedLocalId, useSelectedZKGroup } from '../../ducks/worker';
-import moment from 'moment';
-import config from '../../util/config';
-import Nickname from '../Nickname';
-import { useHistory, useParams } from 'react-router';
 import { useDispatch } from 'react-redux';
-import chats, {
-  fetchChats,
-  setChats,
-  useChatId,
-  useChatIds,
-  useLastNMessages,
-  zkchat,
-} from '../../ducks/chats';
+import { useHistory, useParams } from 'react-router';
+import { fetchChats, useChatId, useChatIds, useLastNMessages, zkchat } from '@ducks/chats';
+import { useUser } from '@ducks/users';
+import { useSelectedLocalId, useSelectedZKGroup } from '@ducks/worker';
+import config from '~/config';
+import sse from '~/sse';
+import { getName } from '~/user';
+import { Chat } from '~/zkchat';
+import Avatar from '../Avatar';
+import Button from '../Button';
 import Icon from '../Icon';
 import Input from '../Input';
-import { Chat } from '../../util/zkchat';
-import Modal, { ModalContent, ModalFooter, ModalHeader } from '../Modal';
-import Button from '../Button';
-import { getName } from '../../util/user';
-import { useUser } from '../../ducks/users';
-import sse from '../../util/sse';
+import Modal, { ModalFooter, ModalHeader } from '../Modal';
+import Nickname from '../Nickname';
 import { useThemeContext } from '../ThemeContext';
 
-export default function ChatMenu(): ReactElement {
-  const selected = useSelectedLocalId();
-  const selecteduser = useUser(selected?.address);
-  const history = useHistory();
-  const dispatch = useDispatch();
-  const chatIds = useChatIds();
-  const [showingCreateChat, setShowingCreateChat] = useState(false);
-  const [selectedNewConvo, selectNewConvo] = useState<Chat | null>(null);
-  const [searchParam, setSearchParam] = useState('');
-  const [searchResults, setSearchResults] = useState<Chat[] | null>(null);
-  const params = useParams<{ chatId: string }>();
+export function FromNow(props: { timestamp: Date; className?: string }): ReactElement {
+  const now = new Date();
+  const past = props.timestamp.getTime();
+  const diff = now.getTime() - past;
 
-  useEffect(() => {
-    if (selecteduser?.ecdh && selected?.type === 'gun') {
-      setTimeout(() => {
-        dispatch(fetchChats(selecteduser.ecdh));
-      }, 500);
-    } else if (selected?.type === 'interrep' || selected?.type === 'taz') {
-      setTimeout(() => {
-        dispatch(fetchChats(selected.identityCommitment));
-      }, 500);
-    }
-  }, [selected, selecteduser]);
+  let fromNow = '';
 
-  const onSearchNewChatChange = useCallback(async (e: ChangeEvent<HTMLInputElement>) => {
-    setSearchParam(e.target.value);
-    const res = await fetch(`${config.indexerAPI}/v1/zkchat/chats/search/${e.target.value}`);
-    const json = await res.json();
+  if (diff < ONE_MIN) {
+    fromNow = 'Now';
+  } else if (diff < ONE_HOUR) {
+    fromNow = Math.floor(diff / ONE_MIN) + 'm';
+  } else if (diff < ONE_DAY) {
+    fromNow = Math.floor(diff / ONE_HOUR) + 'h';
+  } else if (diff < ONE_WEEK) {
+    fromNow = Math.floor(diff / ONE_DAY) + 'd';
+  } else if (props.timestamp.getFullYear() === now.getFullYear()) {
+    fromNow = moment(props.timestamp).format('ll').split(',')[0];
+  } else {
+    fromNow = moment(props.timestamp).format('ll');
+  }
 
-    setSearchResults(
-      json.payload.map((data: any) => ({
-        type: 'DIRECT',
-        receiver: data.receiver_address,
-        ecdh: data.receiver_ecdh,
-      }))
-    );
-  }, []);
-
-  if (!selected) return <></>;
-
-  return (
-    <div
-      className={classNames('chat-menu', {
-        'chat-menu--chat-selected': params.chatId,
-      })}>
-      <div className="chat-menu__header">
-        <div className="flex flex-row chat-menu__header__r">
-          {showingCreateChat && (
-            <Icon
-              className="chat-menu__create-icon text-gray-400 hover:text-gray-800 py-2 pl-2"
-              fa="fas fa-arrow-left"
-              size={0.75}
-              onClick={() => {
-                setShowingCreateChat(false);
-                setSearchParam('');
-                setSearchResults(null);
-              }}
-            />
-          )}
-          <div className="text-xs font-bold flex-grow ml-2">
-            {showingCreateChat ? 'Create New Conversation' : 'Conversations'}
-          </div>
-          {!showingCreateChat && (
-            <Icon
-              className="chat-menu__create-icon text-gray-400 hover:text-gray-800 py-2 px-2"
-              fa="fas fa-plus"
-              size={0.75}
-              onClick={() => {
-                setShowingCreateChat(true);
-                // @ts-ignore
-                onSearchNewChatChange({ target: { value: '' } });
-              }}
-            />
-          )}
-        </div>
-        <Input
-          className="border text-sm chat-menu__search"
-          onChange={showingCreateChat ? onSearchNewChatChange : () => null}
-          value={searchParam}
-          placeholder={!showingCreateChat ? 'Search' : 'Search by name'}>
-          <Icon className="text-gray-400 mx-2" fa="fas fa-search" size={0.75} />
-        </Input>
-      </div>
-      {!!showingCreateChat &&
-        (searchResults?.length ? (
-          searchResults.map(chat => (
-            <ChatMenuItem
-              key={chat.type + chat.receiver}
-              chatId=""
-              chat={chat}
-              selectNewConvo={selectNewConvo}
-              setCreating={setShowingCreateChat}
-              isCreating={showingCreateChat}
-              hideLastChat
-            />
-          ))
-        ) : (
-          <div className="text-center text-light text-gray-400 font-semibold my-2">
-            No conversations found
-          </div>
-        ))}
-      {!showingCreateChat &&
-        chatIds.map(chatId => (
-          <ChatMenuItem
-            key={chatId}
-            chatId={chatId}
-            selectNewConvo={selectNewConvo}
-            setCreating={setShowingCreateChat}
-            isCreating={showingCreateChat}
-          />
-        ))}
-      {selectedNewConvo && (
-        <CreateChatOptionModal
-          onClose={() => {
-            selectNewConvo(null);
-            setShowingCreateChat(false);
-          }}
-          chat={selectedNewConvo}
-        />
-      )}
-    </div>
-  );
+  return <div className={props.className}>{fromNow}</div>;
 }
 
 function CreateChatOptionModal(props: { chat: Chat; onClose: () => void }): ReactElement {
@@ -310,26 +203,126 @@ function ChatMenuItem(props: {
   );
 }
 
-export function FromNow(props: { timestamp: Date; className?: string }): ReactElement {
-  const now = new Date();
-  const past = props.timestamp.getTime();
-  const diff = now.getTime() - past;
+export default function ChatMenu(): ReactElement {
+  const selected = useSelectedLocalId();
+  const selecteduser = useUser(selected?.address);
+  const history = useHistory();
+  const dispatch = useDispatch();
+  const chatIds = useChatIds();
+  const [showingCreateChat, setShowingCreateChat] = useState(false);
+  const [selectedNewConvo, selectNewConvo] = useState<Chat | null>(null);
+  const [searchParam, setSearchParam] = useState('');
+  const [searchResults, setSearchResults] = useState<Chat[] | null>(null);
+  const params = useParams<{ chatId: string }>();
 
-  let fromNow = '';
+  useEffect(() => {
+    if (selecteduser?.ecdh && selected?.type === 'gun') {
+      setTimeout(() => {
+        dispatch(fetchChats(selecteduser.ecdh));
+      }, 500);
+    } else if (selected?.type === 'interrep' || selected?.type === 'taz') {
+      setTimeout(() => {
+        dispatch(fetchChats(selected.identityCommitment));
+      }, 500);
+    }
+  }, [selected, selecteduser]);
 
-  if (diff < ONE_MIN) {
-    fromNow = 'Now';
-  } else if (diff < ONE_HOUR) {
-    fromNow = Math.floor(diff / ONE_MIN) + 'm';
-  } else if (diff < ONE_DAY) {
-    fromNow = Math.floor(diff / ONE_HOUR) + 'h';
-  } else if (diff < ONE_WEEK) {
-    fromNow = Math.floor(diff / ONE_DAY) + 'd';
-  } else if (props.timestamp.getFullYear() === now.getFullYear()) {
-    fromNow = moment(props.timestamp).format('ll').split(',')[0];
-  } else {
-    fromNow = moment(props.timestamp).format('ll');
-  }
+  const onSearchNewChatChange = useCallback(async (e: ChangeEvent<HTMLInputElement>) => {
+    setSearchParam(e.target.value);
+    const res = await fetch(`${config.indexerAPI}/v1/zkchat/chats/search/${e.target.value}`);
+    const json = await res.json();
 
-  return <div className={props.className}>{fromNow}</div>;
+    setSearchResults(
+      json.payload.map((data: any) => ({
+        type: 'DIRECT',
+        receiver: data.receiver_address,
+        ecdh: data.receiver_ecdh,
+      }))
+    );
+  }, []);
+
+  if (!selected) return <></>;
+
+  return (
+    <div
+      className={classNames('chat-menu', {
+        'chat-menu--chat-selected': params.chatId,
+      })}>
+      <div className="chat-menu__header">
+        <div className="flex flex-row chat-menu__header__r">
+          {showingCreateChat && (
+            <Icon
+              className="chat-menu__create-icon text-gray-400 hover:text-gray-800 py-2 pl-2"
+              fa="fas fa-arrow-left"
+              size={0.75}
+              onClick={() => {
+                setShowingCreateChat(false);
+                setSearchParam('');
+                setSearchResults(null);
+              }}
+            />
+          )}
+          <div className="text-xs font-bold flex-grow ml-2">
+            {showingCreateChat ? 'Create New Conversation' : 'Conversations'}
+          </div>
+          {!showingCreateChat && (
+            <Icon
+              className="chat-menu__create-icon text-gray-400 hover:text-gray-800 py-2 px-2"
+              fa="fas fa-plus"
+              size={0.75}
+              onClick={() => {
+                setShowingCreateChat(true);
+                // @ts-ignore
+                onSearchNewChatChange({ target: { value: '' } });
+              }}
+            />
+          )}
+        </div>
+        <Input
+          className="border text-sm chat-menu__search"
+          onChange={showingCreateChat ? onSearchNewChatChange : () => null}
+          value={searchParam}
+          placeholder={!showingCreateChat ? 'Search' : 'Search by name'}>
+          <Icon className="text-gray-400 mx-2" fa="fas fa-search" size={0.75} />
+        </Input>
+      </div>
+      {!!showingCreateChat &&
+        (searchResults?.length ? (
+          searchResults.map(chat => (
+            <ChatMenuItem
+              key={chat.type + chat.receiver}
+              chatId=""
+              chat={chat}
+              selectNewConvo={selectNewConvo}
+              setCreating={setShowingCreateChat}
+              isCreating={showingCreateChat}
+              hideLastChat
+            />
+          ))
+        ) : (
+          <div className="text-center text-light text-gray-400 font-semibold my-2">
+            No conversations found
+          </div>
+        ))}
+      {!showingCreateChat &&
+        chatIds.map(chatId => (
+          <ChatMenuItem
+            key={chatId}
+            chatId={chatId}
+            selectNewConvo={selectNewConvo}
+            setCreating={setShowingCreateChat}
+            isCreating={showingCreateChat}
+          />
+        ))}
+      {selectedNewConvo && (
+        <CreateChatOptionModal
+          onClose={() => {
+            selectNewConvo(null);
+            setShowingCreateChat(false);
+          }}
+          chat={selectedNewConvo}
+        />
+      )}
+    </div>
+  );
 }

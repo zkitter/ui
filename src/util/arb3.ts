@@ -1,6 +1,7 @@
 import Web3 from 'web3';
-import config from './config';
+
 import { arbRegistrarABI } from './abi';
+import config from './config';
 
 const arcHttpProvider = new Web3.providers.HttpProvider(config.arbitrumHttpProvider);
 export const arb3 = new Web3(arcHttpProvider);

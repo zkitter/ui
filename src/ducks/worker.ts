@@ -1,10 +1,11 @@
-import { Identity } from '../serviceWorkers/identity';
-import { Dispatch } from 'redux';
-import { postWorkerMessage } from '../util/sw';
-import { getIdentities, getIdentityStatus } from '../serviceWorkers/util';
-import { useSelector } from 'react-redux';
-import { AppRootState } from '../store/configureAppStore';
 import deepEqual from 'fast-deep-equal';
+import { useSelector } from 'react-redux';
+import { Dispatch } from 'redux';
+
+import { Identity } from '../serviceWorkers/identity';
+import { getIdentities, getIdentityStatus } from '../serviceWorkers/util';
+import { AppRootState } from '../store/configureAppStore';
+import { postWorkerMessage } from '../util/sw';
 
 export enum ActionType {
   SET_SELECTED_ID = 'worker/setSelectedId',
@@ -71,34 +72,6 @@ export const setPostingGroup = (id: string): Action<string> => ({
   type: ActionType.SET_POSTING_GROUP,
   payload: id,
 });
-
-export default function worker(state = initialState, action: Action<any>): State {
-  switch (action.type) {
-    case ActionType.SET_IDENTITIES:
-      return {
-        ...state,
-        identities: action.payload,
-      };
-    case ActionType.SET_SELECTED_ID:
-      return {
-        ...state,
-        selected: action.payload,
-        postingGroup: '',
-      };
-    case ActionType.SET_UNLOCKED:
-      return {
-        ...state,
-        unlocked: action.payload,
-      };
-    case ActionType.SET_POSTING_GROUP:
-      return {
-        ...state,
-        postingGroup: action.payload,
-      };
-    default:
-      return state;
-  }
-}
 
 export const useIdentities = () => {
   return useSelector((state: AppRootState) => {
@@ -178,3 +151,31 @@ export const useHasIdConnected = () => {
     return false;
   }, deepEqual);
 };
+
+export default function worker(state = initialState, action: Action<any>): State {
+  switch (action.type) {
+    case ActionType.SET_IDENTITIES:
+      return {
+        ...state,
+        identities: action.payload,
+      };
+    case ActionType.SET_SELECTED_ID:
+      return {
+        ...state,
+        selected: action.payload,
+        postingGroup: '',
+      };
+    case ActionType.SET_UNLOCKED:
+      return {
+        ...state,
+        unlocked: action.payload,
+      };
+    case ActionType.SET_POSTING_GROUP:
+      return {
+        ...state,
+        postingGroup: action.payload,
+      };
+    default:
+      return state;
+  }
+}

@@ -1,19 +1,19 @@
-import React, { ReactElement, useEffect, useState } from 'react';
-import makeBlockie from 'ethereum-blockies-base64';
+import './avatar.scss';
 import classNames from 'classnames';
-import Icon from '../Icon';
-import { fetchAddressByName, getUser, User, useUser } from '../../ducks/users';
+import makeBlockie from 'ethereum-blockies-base64';
+import React, { ReactElement, useEffect, useState } from 'react';
 import { useDispatch } from 'react-redux';
 import Web3 from 'web3';
-import { getTwitterUser } from '../../util/twitter';
-import { fetchNameByAddress } from '../../util/web3';
-import { ellipsify } from '../../util/user';
-import TwitterBronze from '../../../static/icons/twitter_bronze.svg';
-import TwitterSilver from '../../../static/icons/twitter_silver.svg';
-import TwitterGold from '../../../static/icons/twitter_gold.svg';
-import TwitterUnrated from '../../../static/icons/twitter_unrated.svg';
+import { fetchAddressByName, getUser, User, useUser } from '@ducks/users';
+import { getTwitterUser } from '~/twitter';
+import { ellipsify } from '~/user';
+import { fetchNameByAddress } from '~/web3';
 import TAZLogo from '../../../static/icons/taz-logo.svg';
-import './avatar.scss';
+import TwitterBronze from '../../../static/icons/twitter_bronze.svg';
+import TwitterGold from '../../../static/icons/twitter_gold.svg';
+import TwitterSilver from '../../../static/icons/twitter_silver.svg';
+import TwitterUnrated from '../../../static/icons/twitter_unrated.svg';
+import Icon from '../Icon';
 
 type Props = {
   name?: string;
@@ -54,6 +54,30 @@ export function Username(props: { address?: string }): ReactElement {
   }, [address]);
 
   return <>{ensName ? ensName : ellipsify(address)}</>;
+}
+
+export function getImageUrl(user: User | null): string {
+  if (!user) return '';
+
+  let imageUrl = user?.profileImage;
+
+  if (!user?.profileImage && user.username) {
+    imageUrl = CACHE[user.username] ? CACHE[user.username] : makeBlockie(user.username);
+    CACHE[user.username] = imageUrl;
+  }
+
+  if (imageUrl) {
+    try {
+      const avatar = new URL(imageUrl);
+      if (avatar.protocol === 'ipfs:') {
+        imageUrl = `https://ipfs.io/ipfs/${avatar.pathname.slice(2)}`;
+      } else {
+        imageUrl = avatar.href;
+      }
+    } catch (e) {}
+  }
+
+  return imageUrl;
 }
 
 export default function Avatar(props: Props): ReactElement {
@@ -168,28 +192,4 @@ export default function Avatar(props: Props): ReactElement {
       }}
     />
   );
-}
-
-export function getImageUrl(user: User | null): string {
-  if (!user) return '';
-
-  let imageUrl = user?.profileImage;
-
-  if (!user?.profileImage && user.username) {
-    imageUrl = CACHE[user.username] ? CACHE[user.username] : makeBlockie(user.username);
-    CACHE[user.username] = imageUrl;
-  }
-
-  if (imageUrl) {
-    try {
-      const avatar = new URL(imageUrl);
-      if (avatar.protocol === 'ipfs:') {
-        imageUrl = `https://ipfs.io/ipfs/${avatar.pathname.slice(2)}`;
-      } else {
-        imageUrl = avatar.href;
-      }
-    } catch (e) {}
-  }
-
-  return imageUrl;
 }

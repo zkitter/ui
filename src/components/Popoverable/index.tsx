@@ -1,5 +1,5 @@
-import React, { ReactElement, ReactNode } from 'react';
 import './popoverable.scss';
+import React, { ReactElement, ReactNode } from 'react';
 
 type Props = {
   label: string;

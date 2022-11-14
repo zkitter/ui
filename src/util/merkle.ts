@@ -1,11 +1,6 @@
-import config from './config';
 import { MerkleProof } from '@zk-kit/protocols';
 
-type PathData = {
-  path_elements: string[] | string[][];
-  path_index: number[];
-  root: string;
-};
+import config from './config';
 
 export type ValidGroups = 'zksocial_all' | 'interep_twitter_unrated';
 

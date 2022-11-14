@@ -1,0 +1,18 @@
+plugins: ['@typescript-eslint', 'sort']
+extends: ['eslint:recommended', 'plugin:@typescript-eslint/eslint-recommended', 'plugin:import/recommended','plugin:sort/recommended', 'prettier']
+parser: '@typescript-eslint/parser'
+parserOptions:
+  project: ['tsconfig.json']
+root: true
+settings:
+  import/resolver: typescript
+rules:
+  '@typescript-eslint/explicit-function-return-type': off
+  '@typescript-eslint/return-await': off
+  '@typescript-eslint/no-unused-vars': warn
+  import/order: off
+  import/newline-after-import: warn
+  no-console: off
+  no-unused-vars: off
+  sort/destructuring-properties: off
+  sort/object-properties: off

@@ -1,3 +1,5 @@
+import './menuable.scss';
+import classNames from 'classnames';
 import React, {
   MouseEvent,
   ReactElement,
@@ -7,8 +9,6 @@ import React, {
   useEffect,
   useState,
 } from 'react';
-import classNames from 'classnames';
-import './menuable.scss';
 import Icon from '../Icon';
 import { useThemeContext } from '../ThemeContext';
 

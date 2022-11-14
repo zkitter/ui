@@ -1,3 +1,10 @@
+import deepEqual from 'fast-deep-equal';
+import { useCallback } from 'react';
+import { useSelector } from 'react-redux';
+import { useHistory } from 'react-router';
+import { Dispatch } from 'redux';
+import { ThunkDispatch } from 'redux-thunk';
+
 import {
   MessageType,
   ModerationMessageSubType,
@@ -5,17 +12,11 @@ import {
   Post,
   PostMessageOption,
   PostMessageSubType,
-} from '../util/message';
-import { fetchMessage } from '../util/gun';
-import { getUser } from './users';
-import { ThunkDispatch } from 'redux-thunk';
+} from '~/message';
 import { AppRootState } from '../store/configureAppStore';
-import { useSelector } from 'react-redux';
-import deepEqual from 'fast-deep-equal';
 import config from '../util/config';
-import { Dispatch } from 'redux';
-import { useHistory } from 'react-router';
-import { useCallback } from 'react';
+import { getUser } from './users';
+import { fetchMessage } from '~/gun';
 
 enum ActionTypes {
   SET_POSTS = 'posts/setPosts',
@@ -200,7 +201,7 @@ export const fetchPosts =
       }
     );
     const json = await resp.json();
-    dispatch(processPosts(json.payload));
+    await dispatch(processPosts(json.payload));
 
     return json.payload.map((post: any) => post.messageId);
   };
@@ -220,7 +221,7 @@ export const fetchLikedBy =
       }
     );
     const json = await resp.json();
-    dispatch(processPosts(json.payload));
+    await dispatch(processPosts(json.payload));
 
     return json.payload.map((post: any) => post.messageId);
   };
@@ -300,7 +301,7 @@ export const fetchRepliedBy =
       }
     );
     const json = await resp.json();
-    dispatch(processPosts(json.payload));
+    await dispatch(processPosts(json.payload));
 
     return json.payload.map((post: any) => post.messageId);
   };
@@ -448,7 +449,7 @@ export const fetchReplies =
         // @ts-ignore
         headers: {
           'x-contextual-name': contextualName,
-          'x-unmoderated': !!unmoderated ? 'true' : '',
+          'x-unmoderated': unmoderated ? 'true' : '',
         },
       }
     );
@@ -577,37 +578,18 @@ export const useGoToPost = () => {
   }, []);
 };
 
-export default function posts(state = initialState, action: Action): State {
-  switch (action.type) {
-    case ActionTypes.SET_POSTS:
-      return reduceSetPosts(state, action);
-    case ActionTypes.SET_POST:
-      return reduceSetPost(state, action);
-    case ActionTypes.UNSET_POST:
-      return reduceUnsetPost(state, action);
-    case ActionTypes.SET_META:
-      return reduceSetMeta(state, action);
-    case ActionTypes.APPEND_POSTS:
-      return reduceAppendPosts(state, action);
-    case ActionTypes.INCREMENT_REPLY:
-      return reduceIncrementReply(state, action);
-    case ActionTypes.INCREMENT_REPOST:
-      return reduceIncrementRepost(state, action);
-    case ActionTypes.INCREMENT_LIKE:
-      return reduceIncrementLike(state, action);
-    case ActionTypes.SET_LIKED:
-      return reduceSetLiked(state, action);
-    case ActionTypes.SET_BLOCKED:
-      return reduceSetBlocked(state, action);
-    case ActionTypes.SET_REPOSTED:
-      return reduceSetReposted(state, action);
-    case ActionTypes.DECREMENT_LIKE:
-      return reduceDecrementLike(state, action);
-    case ActionTypes.DECREMENT_REPOST:
-      return reduceDecrementRepost(state, action);
-    default:
-      return state;
+export function getContextNameFromState(state: AppRootState): string | undefined {
+  const {
+    worker: { selected },
+  } = state;
+
+  let contextualName = undefined;
+
+  if (selected) {
+    contextualName = selected.address;
   }
+
+  return contextualName;
 }
 
 function reduceSetPost(state: State, action: Action): State {
@@ -821,16 +803,35 @@ function reduceAppendPosts(state: State, action: Action): State {
   };
 }
 
-export function getContextNameFromState(state: AppRootState): string | undefined {
-  const {
-    worker: { selected },
-  } = state;
-
-  let contextualName = undefined;
-
-  if (selected) {
-    contextualName = selected.address;
+export default function posts(state = initialState, action: Action): State {
+  switch (action.type) {
+    case ActionTypes.SET_POSTS:
+      return reduceSetPosts(state, action);
+    case ActionTypes.SET_POST:
+      return reduceSetPost(state, action);
+    case ActionTypes.UNSET_POST:
+      return reduceUnsetPost(state, action);
+    case ActionTypes.SET_META:
+      return reduceSetMeta(state, action);
+    case ActionTypes.APPEND_POSTS:
+      return reduceAppendPosts(state, action);
+    case ActionTypes.INCREMENT_REPLY:
+      return reduceIncrementReply(state, action);
+    case ActionTypes.INCREMENT_REPOST:
+      return reduceIncrementRepost(state, action);
+    case ActionTypes.INCREMENT_LIKE:
+      return reduceIncrementLike(state, action);
+    case ActionTypes.SET_LIKED:
+      return reduceSetLiked(state, action);
+    case ActionTypes.SET_BLOCKED:
+      return reduceSetBlocked(state, action);
+    case ActionTypes.SET_REPOSTED:
+      return reduceSetReposted(state, action);
+    case ActionTypes.DECREMENT_LIKE:
+      return reduceDecrementLike(state, action);
+    case ActionTypes.DECREMENT_REPOST:
+      return reduceDecrementRepost(state, action);
+    default:
+      return state;
   }
-
-  return contextualName;
 }

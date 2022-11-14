@@ -7,11 +7,11 @@ import {
   fetchUserFollowers,
   fetchUserFollowings,
   useMeta,
-} from '../../ducks/posts';
+} from '@ducks/posts';
 
-import Modal, { ModalContent, ModalHeader } from '../Modal';
+import { useUser } from '@ducks/users';
 import { UserRow } from '../DiscoverUserPanel';
-import { useUser } from '../../ducks/users';
+import Modal, { ModalContent, ModalHeader } from '../Modal';
 
 function UsersList(props: { onClose: () => void; users: string[]; title: string }): ReactElement {
   const { onClose, title, users } = props;
@@ -93,7 +93,7 @@ export default function UsersCountModal(props: {
     - likes/retweets: show nothing
     - follower/following: show "0 follower/following"
   */
-  return !!count ? (
+  return count ? (
     <>
       <div className="flex flex-row flex-nowrap items-center text-light">
         <div className={classNames(className)}>

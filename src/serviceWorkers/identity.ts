@@ -1,8 +1,9 @@
-import { GenericService } from '../util/svc';
-import { decrypt, encrypt, randomSalt } from '../util/encrypt';
+import { setIdentities, setSelectedId, setUnlocked } from '@ducks/worker';
+import { decrypt, encrypt, randomSalt } from '~/encrypt';
+import { safeJsonParse } from '~/misc';
+import { GenericService } from '~/svc';
 import { pushReduxAction } from './util';
-import { setIdentities, setSelectedId, setUnlocked } from '../ducks/worker';
-import { safeJsonParse } from '../util/misc';
+
 
 export type GunIdentity = {
   type: 'gun';
@@ -192,7 +193,7 @@ export class IdentityService extends GenericService {
     await this.ensure();
     const identities = await this.getIdentities();
 
-    for (let id of identities) {
+    for (const id of identities) {
       if (id.type === 'gun') {
         if (!decrypt(id.privateKey, passphrase)) {
           throw new Error('invalid passphrase');
@@ -230,7 +231,7 @@ export class IdentityService extends GenericService {
       return;
     }
 
-    for (let id of identities) {
+    for (const id of identities) {
       if (id.type === 'gun') {
         if (id.publicKey === pubkeyOrCommitment) {
           this.currentIdentity = this.wrapIdentity(id);
@@ -241,7 +242,6 @@ export class IdentityService extends GenericService {
       }
 
       if (['interrep', 'taz'].includes(id.type)) {
-        // @ts-ignore
         if (id.identityCommitment === pubkeyOrCommitment) {
           this.currentIdentity = this.wrapIdentity(id);
           await pushReduxAction(setSelectedId(this.currentIdentity));
@@ -263,7 +263,7 @@ export class IdentityService extends GenericService {
 
     if (identity.type === 'interrep') {
       const { serializedIdentity } = identity;
-      for (let id of identities) {
+      for (const id of identities) {
         if (id.type === 'interrep') {
           if (id.serializedIdentity !== serializedIdentity) {
             const tx = this.db?.transaction('identity', 'readwrite');
