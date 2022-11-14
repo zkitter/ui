@@ -2,6 +2,7 @@ const webpack = require('webpack');
 const HtmlWebpackPlugin = require('html-webpack-plugin');
 const CopyPlugin = require('copy-webpack-plugin');
 const path = require('path');
+const { compilerOptions } = require('./tsconfig.json');
 
 const isProd = process.env.NODE_ENV === 'production';
 
@@ -91,7 +92,12 @@ module.exports = [
     devtool: 'source-map',
     resolve: {
       extensions: ['.ts', '.tsx', '.js', '.jsx', '.png', '.svg'],
-      modules: [path.resolve('./node_modules')],
+      modules: [path.resolve('./node_modules'), path.resolve(__dirname, compilerOptions.baseUrl)],
+      alias: {
+        '@components': 'src/components',
+        '@ducks': 'src/ducks',
+        '~': 'src/util',
+      },
       fallback: {
         browserify: require.resolve('browserify'),
         stream: require.resolve('stream-browserify'),
