@@ -1,6 +1,6 @@
+import Gun from 'gun/gun';
 // const Gun = require('gun');
 import 'gun/sea';
-import Gun from 'gun/gun';
 
 import config from './config';
 import { Message, MessageType, Post, PostMessageOption, PostMessageSubType } from './message';
