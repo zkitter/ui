@@ -13,7 +13,7 @@
     "format:check": "prettier --check 'src'",
     "format:fix": "prettier --write 'src'",
     "lint:check": "eslint . --ext .ts --ext .tsx",
-    "lint:fix": "eslint . --ext .ts --ext .tsx --fix"
+    "lint:fix": "eslint . --ext .ts --ext .tsx --fix",
     "prepare": "husky install"
   },
   "dependencies": {
