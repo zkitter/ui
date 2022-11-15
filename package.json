@@ -11,7 +11,8 @@
     "test": "NODE_ENV=test jest --coverage=false",
     "test:coverage": "NODE_ENV=test jest --coverage",
     "format:check": "prettier --check 'src'",
-    "format:write": "prettier --write 'src'"
+    "format:fix": "prettier --write 'src'",
+    "prepare": "husky install"
   },
   "dependencies": {
     "@draft-js-plugins/editor": "^4.1.0",
@@ -85,6 +86,7 @@
     "fake-indexeddb": "^3.1.7",
     "file-loader": "^5.0.2",
     "html-webpack-plugin": "~5.3.2",
+    "husky": "^8.0.2",
     "image-webpack-loader": "^6.0.0",
     "jest": "^27.5.1",
     "node-loader": "^0.6.0",
