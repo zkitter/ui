@@ -17,7 +17,7 @@ import {
 } from '@ducks/worker';
 import { ModerationMessageSubType } from '~/message';
 import { getSession, verifyTweet } from '~/twitter';
-import SpinnerGif from '../../../static/icons/spinner.gif';
+import SpinnerGif from '#/icons/spinner.gif';
 import Avatar from '../Avatar';
 import Button from '../Button';
 import Checkbox from '../Checkbox';

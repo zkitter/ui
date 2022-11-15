@@ -8,11 +8,11 @@ import { fetchAddressByName, getUser, User, useUser } from '@ducks/users';
 import { getTwitterUser } from '~/twitter';
 import { ellipsify } from '~/user';
 import { fetchNameByAddress } from '~/web3';
-import TAZLogo from '../../../static/icons/taz-logo.svg';
-import TwitterBronze from '../../../static/icons/twitter_bronze.svg';
-import TwitterGold from '../../../static/icons/twitter_gold.svg';
-import TwitterSilver from '../../../static/icons/twitter_silver.svg';
-import TwitterUnrated from '../../../static/icons/twitter_unrated.svg';
+import TAZLogo from '#/icons/taz-logo.svg';
+import TwitterBronze from '#/icons/twitter_bronze.svg';
+import TwitterGold from '#/icons/twitter_gold.svg';
+import TwitterSilver from '#/icons/twitter_silver.svg';
+import TwitterUnrated from '#/icons/twitter_unrated.svg';
 import Icon from '../Icon';
 
 type Props = {

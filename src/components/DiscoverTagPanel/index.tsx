@@ -3,7 +3,7 @@ import classNames from 'classnames';
 import React, { ReactElement, useEffect, useState } from 'react';
 import { useHistory } from 'react-router';
 import config from '~/config';
-import SpinnerGIF from '../../../static/icons/spinner.gif';
+import SpinnerGIF from '#/icons/spinner.gif';
 import Icon from '../Icon';
 import { useThemeContext } from '../ThemeContext';
 

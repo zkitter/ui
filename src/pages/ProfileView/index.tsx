@@ -38,8 +38,8 @@ import config from '~/config';
 import { ConnectionMessageSubType, ProfileMessageSubType } from '~/message';
 import { verifyTweet } from '~/twitter';
 import { getHandle, getName } from '~/user';
-import EtherScanSVG from '../../../static/icons/etherscan-logo-gray-500.svg';
-import SpinnerGIF from '../../../static/icons/spinner.gif';
+import EtherScanSVG from '#/icons/etherscan-logo-gray-500.svg';
+import SpinnerGIF from '#/icons/spinner.gif';
 
 let t: any = null;
 

@@ -1,7 +1,7 @@
 import './button.scss';
 import classNames from 'classnames';
 import React, { ButtonHTMLAttributes, ReactElement } from 'react';
-import SpinnerGif from '../../../static/icons/spinner.gif';
+import SpinnerGif from '#/icons/spinner.gif';
 import Icon from '../Icon';
 
 type Props = {

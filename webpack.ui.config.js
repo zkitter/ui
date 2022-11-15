@@ -97,6 +97,7 @@ module.exports = [
         '@components': 'src/components',
         '@ducks': 'src/ducks',
         '~': 'src/util',
+        '#': 'static',
       },
       fallback: {
         browserify: require.resolve('browserify'),

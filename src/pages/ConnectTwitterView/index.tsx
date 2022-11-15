@@ -13,8 +13,8 @@ import { signWithP256 } from '~/crypto';
 import { ProfileMessageSubType } from '~/message';
 import { verifyTweet } from '~/twitter';
 import { getHandle } from '~/user';
-import SpinnerGif from '../../../static/icons/spinner.gif';
-import TwitterLogo from '../../../static/icons/twitter.svg';
+import SpinnerGif from '#/icons/spinner.gif';
+import TwitterLogo from '#/icons/twitter.svg';
 
 export enum ViewType {
   welcome,

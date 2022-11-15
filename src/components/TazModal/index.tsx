@@ -3,7 +3,7 @@ import { Identity } from '@semaphore-protocol/identity';
 import React, { ReactElement, useEffect, useState } from 'react';
 import { findProof } from '~/merkle';
 import { postWorkerMessage } from '~/sw';
-import TazHero from '../../../static/icons/taz_hero.png';
+import TazHero from '#/icons/taz_hero.png';
 import { setIdentity } from '../../serviceWorkers/util';
 import Button from '../Button';
 import Modal, { ModalContent, ModalFooter, ModalHeader } from '../Modal';

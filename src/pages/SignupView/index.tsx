@@ -45,10 +45,10 @@ import { ProfileMessageSubType } from '~/message';
 import { safeJsonParse } from '~/misc';
 import { postWorkerMessage } from '~/sw';
 import { addIdentity, setIdentity, setPassphrase } from 'src/serviceWorkers/util';
-import MetamaskSVG from '../../../static/icons/metamask-fox.svg';
-import SpinnerGIF from '../../../static/icons/spinner.gif';
-import TazLogo from '../../../static/icons/taz-logo.png';
-import ZKPRSVG from '../../../static/icons/zkpr-logo.svg';
+import MetamaskSVG from '#/icons/metamask-fox.svg';
+import SpinnerGIF from '#/icons/spinner.gif';
+import TazLogo from '#/icons/taz-logo.png';
+import ZKPRSVG from '#/icons/zkpr-logo.svg';
 import { CoverImageEditor, ProfileImageEditor } from '../ProfileView';
 
 export enum ViewType {

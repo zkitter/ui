@@ -8,7 +8,7 @@ import { useSelectedLocalId, useSelectedZKGroup } from '@ducks/worker';
 import { generateZkIdentityFromHex, sha256, signWithP256 } from '~/crypto';
 import { findProof } from '~/merkle';
 import { Chat } from '~/zkchat';
-import SpinnerGIF from '../../../static/icons/spinner.gif';
+import SpinnerGIF from '#/icons/spinner.gif';
 import Avatar, { Username } from '../Avatar';
 import { FromNow } from '../ChatMenu';
 import Icon from '../Icon';

@@ -5,13 +5,17 @@ parserOptions:
   project: ['tsconfig.json']
 root: true
 settings:
-  import/resolver: typescript
+  import/resolver:
+    - typescript
 rules:
   '@typescript-eslint/explicit-function-return-type': off
   '@typescript-eslint/return-await': off
   '@typescript-eslint/no-unused-vars': warn
   import/order: warn
   import/newline-after-import: warn
+  import/no-unresolved:
+    - error
+    - ignore: ['\.gif', '\.png', '\.svg']
   no-console: off
   no-unused-vars: off
   sort/destructuring-properties: off

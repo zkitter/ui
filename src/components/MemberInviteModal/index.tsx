@@ -7,7 +7,7 @@ import { submitConnection } from '@ducks/drafts';
 import { fetchAddressByName, searchUsers, useUser } from '@ducks/users';
 import { ConnectionMessageSubType } from '~/message';
 import { getHandle, getName } from '~/user';
-import SpinnerGIF from '../../../static/icons/spinner.gif';
+import SpinnerGIF from '#/icons/spinner.gif';
 import Avatar from '../Avatar';
 import Button from '../Button';
 import Icon from '../Icon';

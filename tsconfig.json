@@ -25,7 +25,8 @@
     "paths": {
       "@components/*": ["src/components/*"],
       "@ducks/*": ["src/ducks/*"],
-      "~/*": ["src/util/*"]
+      "~/*": ["src/util/*"],
+      "#/*": ["static/*"]
     }
   },
   "include": [

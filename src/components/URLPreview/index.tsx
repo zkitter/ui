@@ -2,7 +2,7 @@ import './url-preview.scss';
 import classNames from 'classnames';
 import React, { ReactElement, useCallback, useEffect, useState } from 'react';
 import config from '~/config';
-import SpinnerGif from '../../../static/icons/spinner.gif';
+import SpinnerGif from '#/icons/spinner.gif';
 import { shouldBlurImage } from '../../pages/SettingView';
 import Icon from '../Icon';
 import WebTorrentViewer from '../WebTorrentViewer';

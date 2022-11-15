@@ -8,7 +8,7 @@ import { useMeta, usePost } from '@ducks/posts';
 import { useUser } from '@ducks/users';
 import { ModerationMessageSubType, PostMessageSubType } from '~/message';
 import { getHandle, getUsername } from '~/user';
-import SpinnerGIF from '../../../static/icons/spinner.gif';
+import SpinnerGIF from '#/icons/spinner.gif';
 import Icon from '../Icon';
 import SwitchButton from '../SwitchButton';
 import { useThemeContext } from '../ThemeContext';

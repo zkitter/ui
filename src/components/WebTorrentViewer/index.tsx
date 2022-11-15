@@ -5,8 +5,8 @@ import prettyBytes from 'pretty-bytes';
 import React, { ReactElement, useCallback, useEffect, useRef, useState } from 'react';
 import { Torrent, TorrentFile } from 'webtorrent';
 import { addMagnetURL, getInfoHashFromMagnet, getWebtorrentClient } from '~/webtorrent';
-import SpinnerGif from '../../../static/icons/spinner.gif';
-import WTIcon from '../../../static/icons/webtorrent-small.png';
+import SpinnerGif from '#/icons/spinner.gif';
+import WTIcon from '#/icons/webtorrent-small.png';
 import Icon from '../Icon';
 
 type Props = {

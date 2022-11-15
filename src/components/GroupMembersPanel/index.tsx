@@ -6,7 +6,7 @@ import Web3 from 'web3';
 import { fetchAddressByName, useUser } from '@ducks/users';
 import { useSelectedLocalId } from '@ducks/worker';
 import config from '~/config';
-import SpinnerGIF from '../../../static/icons/spinner.gif';
+import SpinnerGIF from '#/icons/spinner.gif';
 import { UserRow } from '../DiscoverUserPanel';
 import Icon from '../Icon';
 import MemberInviteModal from '../MemberInviteModal';

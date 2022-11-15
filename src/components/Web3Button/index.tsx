@@ -23,7 +23,7 @@ import gun from '~/gun';
 import { postWorkerMessage } from '~/sw';
 import { getHandle, loginUser } from '~/user';
 import { fetchNameByAddress } from '~/web3';
-import SpinnerGIF from '../../../static/icons/spinner.gif';
+import SpinnerGIF from '#/icons/spinner.gif';
 import { Identity, InterrepIdentity } from '../../serviceWorkers/identity';
 import { setIdentity } from '../../serviceWorkers/util';
 import Avatar, { Username } from '../Avatar';

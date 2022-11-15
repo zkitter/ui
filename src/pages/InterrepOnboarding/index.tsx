@@ -13,8 +13,8 @@ import config from '~/config';
 import { watchPath } from '~/interrep';
 import { findProof } from '~/merkle';
 import { postWorkerMessage } from '~/sw';
-import SpinnerGif from '../../../static/icons/spinner.gif';
-import { setIdentity } from '../../serviceWorkers/util';
+import SpinnerGif from '#/icons/spinner.gif';
+import { setIdentity } from 'src/serviceWorkers/util';
 
 export enum ViewType {
   welcome,

@@ -8,7 +8,6 @@ import classNames from 'classnames';
 import {
   CompositeDecorator,
   ContentBlock,
-  ContentState,
   convertFromRaw,
   DefaultDraftBlockRenderMap,
   EditorState,

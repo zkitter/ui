@@ -6,7 +6,7 @@ import { useHistory } from 'react-router';
 import Web3 from 'web3';
 import { fetchAddressByName, fetchUsers, useUser } from '@ducks/users';
 import { getHandle, getName } from '~/user';
-import SpinnerGIF from '../../../static/icons/spinner.gif';
+import SpinnerGIF from '#/icons/spinner.gif';
 import Avatar from '../Avatar';
 import Icon from '../Icon';
 import Nickname from '../Nickname';

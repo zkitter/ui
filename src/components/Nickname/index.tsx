@@ -2,10 +2,10 @@ import React, { ReactElement, useEffect, useState } from 'react';
 import { useDispatch } from 'react-redux';
 import { getUser, useUser } from '@ducks/users';
 import { getName } from '~/user';
-import TwitterBronze from '../../../static/icons/twitter-bronze.png';
-import TwitterGold from '../../../static/icons/twitter-gold.png';
-import TwitterPaper from '../../../static/icons/twitter-paper.png';
-import TwitterSilver from '../../../static/icons/twitter-silver.png';
+import TwitterBronze from '#/icons/twitter-bronze.png';
+import TwitterGold from '#/icons/twitter-gold.png';
+import TwitterPaper from '#/icons/twitter-paper.png';
+import TwitterSilver from '#/icons/twitter-silver.png';
 import Icon from '../Icon';
 import Popoverable from '../Popoverable';
 
