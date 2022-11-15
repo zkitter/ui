@@ -1,6 +1,9 @@
+// changing the order of these imports would break gun
+/* eslint-disable-next-line sort/imports */
 import Gun from 'gun/gun';
 // const Gun = require('gun');
 import 'gun/sea';
+/* eslint-disable-next-line sort/imports */
 
 import config from './config';
 import { Message, MessageType, Post, PostMessageOption, PostMessageSubType } from './message';
