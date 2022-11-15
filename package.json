@@ -86,6 +86,7 @@
     "fake-indexeddb": "^3.1.7",
     "file-loader": "^5.0.2",
     "html-webpack-plugin": "~5.3.2",
+    "husky": "^8.0.2",
     "image-webpack-loader": "^6.0.0",
     "jest": "^27.5.1",
     "node-loader": "^0.6.0",
@@ -102,8 +103,7 @@
     "webpack": "^5.52.0",
     "webpack-cli": "^3.3.10",
     "webpack-dev-server": "^3.9.0",
-    "webpack-node-externals": "^1.7.2",
-    "husky": "^8.0.0"
+    "webpack-node-externals": "^1.7.2"
   },
   "engines": {
     "node": "<15"
