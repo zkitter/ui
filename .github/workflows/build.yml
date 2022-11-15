@@ -16,9 +16,7 @@ jobs:
           cache: 'npm'
 
       - name: Install
-        run: |
-          npm pkg delete scripts.prepare
-          npm ci
+        run: npm ci
 
       - name: Format
         run: npm run format:check
