@@ -234,8 +234,8 @@ const mentionRegExp =
   '\u00C0-\u1EF9' +
   '\u002E' +
   ']';
-const HASHTAG_REGEX = /\#[\w\u0590-\u05ff]+/g;
-const MENTION_REGEX = new RegExp(`\@${mentionRegExp}+`, 'g');
+const HASHTAG_REGEX = /#[\w\u0590-\u05ff]+/g;
+const MENTION_REGEX = new RegExp(`@${mentionRegExp}+`, 'g');
 function findHashtagEntities(contentBlock: ContentBlock, callback: any) {
   findWithRegex(HASHTAG_REGEX, contentBlock, callback);
 }
