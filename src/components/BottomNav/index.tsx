@@ -4,9 +4,9 @@ import Web3Button from '../Web3Button';
 import { useHistory, useLocation } from 'react-router';
 import Icon from '../Icon';
 import classNames from 'classnames';
-import { useAccount, useGunLoggedIn } from '../../ducks/web3';
-import { useSelectedLocalId } from '../../ducks/worker';
-import { fetchNameByAddress } from '../../util/web3';
+import { useAccount, useGunLoggedIn } from '@ducks/web3';
+import { useSelectedLocalId } from '@ducks/worker';
+import { fetchNameByAddress } from '~/web3';
 
 export default function BottomNav(): ReactElement {
   const loggedIn = useGunLoggedIn();

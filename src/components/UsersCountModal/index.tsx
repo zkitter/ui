@@ -7,11 +7,11 @@ import {
   fetchUserFollowers,
   fetchUserFollowings,
   useMeta,
-} from '../../ducks/posts';
+} from '@ducks/posts';
 
 import Modal, { ModalContent, ModalHeader } from '../Modal';
 import { UserRow } from '../DiscoverUserPanel';
-import { useUser } from '../../ducks/users';
+import { useUser } from '@ducks/users';
 
 function UsersList(props: { onClose: () => void; users: string[]; title: string }): ReactElement {
   const { onClose, title, users } = props;

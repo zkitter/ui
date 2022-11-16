@@ -3,7 +3,6 @@ import ReactDOM from 'react-dom';
 import './modal.scss';
 import Icon from '../Icon';
 import classNames from 'classnames';
-import CancelSVG from '../../../static/icons/cancel.svg';
 import { useThemeContext } from '../ThemeContext';
 
 type Props = {

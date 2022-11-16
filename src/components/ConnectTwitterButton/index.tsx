@@ -1,9 +1,9 @@
 import React, { ReactElement, useCallback, useEffect, useState } from 'react';
 import Button from '../Button';
 import Icon from '../Icon';
-import config from '../../util/config';
-import SpinnerGif from '../../../static/icons/spinner.gif';
-import { useCanNonPostMessage, useLoggedIn } from '../../ducks/web3';
+import config from '~/config';
+import SpinnerGif from '#/icons/spinner.gif';
+import { useCanNonPostMessage, useLoggedIn } from '@ducks/web3';
 
 export default function ConnectTwitterButton(props: {
   className?: string;

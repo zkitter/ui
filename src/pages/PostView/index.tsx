@@ -1,27 +1,17 @@
 import React, { ReactElement, useCallback, useEffect, useRef, useState } from 'react';
-import { useHistory, useLocation, useParams } from 'react-router';
-import {
-  fetchHomeFeed,
-  fetchMeta,
-  fetchPost,
-  fetchPosts,
-  fetchReplies,
-  setPost,
-  useGoToPost,
-  useMeta,
-  usePost,
-} from '../../ducks/posts';
-import Post from '../../components/Post';
+import { useHistory, useParams } from 'react-router';
+import { fetchMeta, fetchReplies, setPost, useGoToPost, useMeta, usePost } from '@ducks/posts';
+import Post from '@components/Post';
 import classNames from 'classnames';
 import './post-view.scss';
 import { useDispatch } from 'react-redux';
-import Thread from '../../components/Thread';
-import ParentThread from '../../components/ParentThread';
-import { Post as PostMessage, PostMessageSubType } from '../../util/message';
-import { useENSName, useLoggedIn } from '../../ducks/web3';
-import { useSelectedLocalId } from '../../ducks/worker';
-import { usePostModeration } from '../../ducks/mods';
-import { useThemeContext } from '../../components/ThemeContext';
+import Thread from '@components/Thread';
+import ParentThread from '@components/ParentThread';
+import { Post as PostMessage, PostMessageSubType } from '~/message';
+import { useENSName, useLoggedIn } from '@ducks/web3';
+import { useSelectedLocalId } from '@ducks/worker';
+import { usePostModeration } from '@ducks/mods';
+import { useThemeContext } from '@components/ThemeContext';
 
 type Props = {};
 

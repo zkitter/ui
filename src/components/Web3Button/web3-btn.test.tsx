@@ -2,9 +2,8 @@ import React from 'react';
 import ReactDOM from 'react-dom';
 import { act } from 'react-dom/test-utils';
 import { Provider } from 'react-redux';
-import { ducks, store } from '../../util/testUtils';
+import { ducks, store } from '~/testUtils';
 import Web3Button from './index';
-import { setSelectedId } from '../../ducks/worker';
 import { ZkIdentity } from '@zk-kit/identity';
 
 describe('<Web3Button>', () => {

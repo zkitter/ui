@@ -4,7 +4,7 @@ import ReactDOM from 'react-dom';
 import { Provider } from 'react-redux';
 import { BrowserRouter } from 'react-router-dom';
 import sinon from 'sinon';
-import { store } from '../../util/testUtils';
+import { store } from '~/testUtils';
 
 // @ts-ignore
 navigator.serviceWorker = {

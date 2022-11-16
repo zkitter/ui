@@ -4,29 +4,25 @@ import {
   ContentBlock,
   ContentState,
   convertFromRaw,
-  convertToRaw,
   DefaultDraftBlockRenderMap,
   EditorState,
 } from 'draft-js';
 import DraftJSPluginEditor, { PluginEditorProps } from '@draft-js-plugins/editor';
 import createLinkifyPlugin from '@draft-js-plugins/linkify';
 import createHashtagPlugin from '@draft-js-plugins/hashtag';
-import createMentionPlugin, {
-  defaultSuggestionsFilter,
-  MentionData,
-} from '@draft-js-plugins/mention';
-const TableUtils = require('draft-js-table');
-const { linkify } = require('remarkable/linkify');
-const { markdownToDraft } = require('markdown-draft-js');
+import createMentionPlugin, { MentionData } from '@draft-js-plugins/mention';
 import './draft-js-editor.scss';
 import { useHistory } from 'react-router';
 import { useDispatch } from 'react-redux';
-import { fetchAddressByName, getUser, searchUsers, useUser } from '../../ducks/users';
+import { fetchAddressByName, getUser, searchUsers, useUser } from '@ducks/users';
 import Avatar from '../Avatar';
 import classNames from 'classnames';
-import debounce from 'lodash.debounce';
-import { getHandle, getName, getUsername } from '../../util/user';
+import { getHandle, getName, getUsername } from '~/user';
 import Web3 from 'web3';
+
+const TableUtils = require('draft-js-table');
+const { linkify } = require('remarkable/linkify');
+const { markdownToDraft } = require('markdown-draft-js');
 
 let searchNonce = 0;
 let searchTimeout: any = null;

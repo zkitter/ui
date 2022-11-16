@@ -7,12 +7,12 @@ import {
   getIdentityStatus,
   selectIdentity,
 } from '../../serviceWorkers/util';
-import { useHasLocal, useLoggedIn } from '../../ducks/web3';
+import { useHasLocal, useLoggedIn } from '@ducks/web3';
 import { useHistory } from 'react-router';
-import { postWorkerMessage } from '../../util/sw';
+import { postWorkerMessage } from '~/sw';
 import { Identity } from '../../serviceWorkers/identity';
 import LoginModal from '../LoginModal';
-import { useSelectedLocalId } from '../../ducks/worker';
+import { useSelectedLocalId } from '@ducks/worker';
 
 export default function LocalBackupNotification(): ReactElement {
   const loggedIn = useLoggedIn();

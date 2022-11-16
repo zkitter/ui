@@ -3,11 +3,11 @@ import moment from 'moment/moment';
 import React, { ReactElement, useCallback } from 'react';
 import { useHistory } from 'react-router';
 
-import { useMeta, usePost, useZKGroupFromPost } from '../../ducks/posts';
-import { MessageType, PostMessageSubType } from '../../util/message';
+import { useMeta, usePost, useZKGroupFromPost } from '@ducks/posts';
+import { MessageType, PostMessageSubType } from '~/message';
 import { convertMarkdownToDraft, DraftEditor } from '../DraftEditor';
-import { useUser } from '../../ducks/users';
-import { getHandle, getUsername } from '../../util/user';
+import { useUser } from '@ducks/users';
+import { getHandle, getUsername } from '~/user';
 
 import Avatar from '../Avatar';
 import Icon from '../Icon';

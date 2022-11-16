@@ -1,20 +1,17 @@
 import React, { ReactElement, useCallback, useEffect, useState } from 'react';
 import classNames from 'classnames';
-import { EditorState } from 'draft-js';
-import Post from '../../components/Post';
+import Post from '@components/Post';
 import { useDispatch } from 'react-redux';
-import { fetchHomeFeed, setPost, useGoToPost } from '../../ducks/posts';
+import { fetchHomeFeed, setPost, useGoToPost } from '@ducks/posts';
 import './home-feed.scss';
-import Editor from '../../components/Editor';
-import { useHasLocal, useLoggedIn } from '../../ducks/web3';
-import { Post as PostMessage } from '../../util/message';
-import { setDraft, submitPost, useDraft, useSubmitting } from '../../ducks/drafts';
-import InfiniteScrollable from '../../components/InfiniteScrollable';
-import NotificationBox from '../../components/NotificationBox';
-import Button from '../../components/Button';
-import LocalBackupNotification from '../../components/LocalBackupNotification';
-import { useSelectedLocalId } from '../../ducks/worker';
-import { useThemeContext } from '../../components/ThemeContext';
+import Editor from '@components/Editor';
+import { useLoggedIn } from '@ducks/web3';
+import { Post as PostMessage } from '~/message';
+import { submitPost, useDraft, useSubmitting } from '@ducks/drafts';
+import InfiniteScrollable from '@components/InfiniteScrollable';
+import LocalBackupNotification from '@components/LocalBackupNotification';
+import { useSelectedLocalId } from '@ducks/worker';
+import { useThemeContext } from '@components/ThemeContext';
 
 export default function HomeFeed(): ReactElement {
   const [limit, setLimit] = useState(20);

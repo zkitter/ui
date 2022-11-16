@@ -1,17 +1,11 @@
-import React, { ReactElement, useCallback, useEffect, useState } from 'react';
-import {
-  generateECDHKeyPairFromhex,
-  generateZkIdentityFromHex,
-  sha256,
-  signWithP256,
-} from '../../util/crypto';
-import { useSelectedLocalId } from '../../ducks/worker';
+import React, { ReactElement, useCallback, useState } from 'react';
+import { useSelectedLocalId } from '@ducks/worker';
 import { useDispatch } from 'react-redux';
-import { submitProfile } from '../../ducks/drafts';
-import { ProfileMessageSubType } from '../../util/message';
-import { useUser } from '../../ducks/users';
-import ChatMenu from '../../components/ChatMenu';
-import ChatContent from '../../components/ChatContent';
+import { submitProfile } from '@ducks/drafts';
+import { ProfileMessageSubType } from '~/message';
+import { useUser } from '@ducks/users';
+import ChatMenu from '@components/ChatMenu';
+import ChatContent from '@components/ChatContent';
 import './chat-view.scss';
 import { Route, Switch } from 'react-router';
 

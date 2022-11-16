@@ -1,13 +1,13 @@
 import classNames from 'classnames';
 import moment from 'moment/moment';
-import React, { ReactElement, useCallback, useEffect, useState } from 'react';
+import React, { ReactElement, useCallback } from 'react';
 import { useHistory } from 'react-router';
 
 import { convertMarkdownToDraft, DraftEditor } from '../DraftEditor';
-import { fetchLikersByPost, useMeta, usePost, useZKGroupFromPost } from '../../ducks/posts';
-import { useUser } from '../../ducks/users';
-import { PostMessageSubType } from '../../util/message';
-import { getHandle, getUsername } from '../../util/user';
+import { useMeta, usePost, useZKGroupFromPost } from '@ducks/posts';
+import { useUser } from '@ducks/users';
+import { PostMessageSubType } from '~/message';
+import { getHandle, getUsername } from '~/user';
 import { useThemeContext } from '../ThemeContext';
 
 import Avatar from '../Avatar';

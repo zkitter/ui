@@ -1,5 +1,5 @@
 import React, { ReactElement, ReactNode, useContext } from 'react';
-import { useSetting } from '../../ducks/app';
+import { useSetting } from '@ducks/app';
 
 const ThemeContext = React.createContext('light');
 

@@ -3,9 +3,8 @@ import ReactDOM from 'react-dom';
 import { act } from 'react-dom/test-utils';
 import { Provider } from 'react-redux';
 import Post from './index';
-import { Post as PostMessage } from '../../util/message';
-import { dispatchSpy, ducks, gunStub, store } from '../../util/testUtils';
-import { MessageType, PostMessageSubType } from '../../util/message';
+import { MessageType, Post as PostMessage, PostMessageSubType } from '~/message';
+import { ducks, store } from '~/testUtils';
 
 describe('<Post>', () => {
   const root = document.createElement('div');

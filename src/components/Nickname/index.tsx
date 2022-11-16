@@ -1,12 +1,12 @@
 import React, { ReactElement, useEffect, useState } from 'react';
-import { getUser, useUser } from '../../ducks/users';
+import { getUser, useUser } from '@ducks/users';
 import { useDispatch } from 'react-redux';
-import { getName } from '../../util/user';
+import { getName } from '~/user';
 import Icon from '../Icon';
-import TwitterPaper from '../../../static/icons/twitter-paper.png';
-import TwitterBronze from '../../../static/icons/twitter-bronze.png';
-import TwitterSilver from '../../../static/icons/twitter-silver.png';
-import TwitterGold from '../../../static/icons/twitter-gold.png';
+import TwitterPaper from '#/icons/twitter-paper.png';
+import TwitterBronze from '#/icons/twitter-bronze.png';
+import TwitterSilver from '#/icons/twitter-silver.png';
+import TwitterGold from '#/icons/twitter-gold.png';
 import Popoverable from '../Popoverable';
 
 type Props = {

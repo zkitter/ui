@@ -1,21 +1,20 @@
-import React, { ReactElement, useCallback, useContext, useEffect, useState } from 'react';
+import React, { ReactElement, useCallback, useEffect, useState } from 'react';
 import Icon from '../Icon';
 import classNames from 'classnames';
 import './top-nav.scss';
 import { Route, Switch, useHistory, useLocation, useParams } from 'react-router';
 import Web3Button from '../Web3Button';
-import { useAccount, useGunLoggedIn, useSemaphoreID } from '../../ducks/web3';
+import { useAccount, useGunLoggedIn } from '@ducks/web3';
 import { useDispatch } from 'react-redux';
-import { fetchAddressByName, useUser } from '../../ducks/users';
+import { fetchAddressByName, useUser } from '@ducks/users';
 import Web3 from 'web3';
-import { getName } from '../../util/user';
-import { useSelectedLocalId } from '../../ducks/worker';
-import { fetchNameByAddress } from '../../util/web3';
-// import Logo from "../../../static/icons/applogo.svg";
+import { getName } from '~/user';
+import { useSelectedLocalId } from '@ducks/worker';
+import { fetchNameByAddress } from '~/web3';
+// import Logo from "#/icons/applogo.svg";
 import Modal from '../Modal';
 import MetaPanel from '../MetaPanel';
 import { useThemeContext } from '../ThemeContext';
-import config from '../../util/config';
 
 export default function TopNav(): ReactElement {
   const theme = useThemeContext();

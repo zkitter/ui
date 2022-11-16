@@ -1,17 +1,17 @@
 import React, { ReactElement, useCallback, useEffect, useState } from 'react';
 import classNames from 'classnames';
-import Post from '../../components/Post';
+import Post from '@components/Post';
 import { useDispatch } from 'react-redux';
-import { fetchPosts, setPost, useGoToPost } from '../../ducks/posts';
+import { fetchPosts, setPost, useGoToPost } from '@ducks/posts';
 import './global-feed.scss';
-import Editor from '../../components/Editor';
-import { useHasLocal, useLoggedIn } from '../../ducks/web3';
-import { setDraft, submitPost, useDraft, useSubmitting } from '../../ducks/drafts';
-import InfiniteScrollable from '../../components/InfiniteScrollable';
-import { Post as PostMessage } from '../../util/message';
-import LocalBackupNotification from '../../components/LocalBackupNotification';
-import { useSelectedLocalId } from '../../ducks/worker';
-import { useThemeContext } from '../../components/ThemeContext';
+import Editor from '@components/Editor';
+import { useHasLocal, useLoggedIn } from '@ducks/web3';
+import { submitPost, useDraft, useSubmitting } from '@ducks/drafts';
+import InfiniteScrollable from '@components/InfiniteScrollable';
+import { Post as PostMessage } from '~/message';
+import LocalBackupNotification from '@components/LocalBackupNotification';
+import { useSelectedLocalId } from '@ducks/worker';
+import { useThemeContext } from '@components/ThemeContext';
 
 export default function GlobalFeed(): ReactElement {
   const [limit, setLimit] = useState(20);

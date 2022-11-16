@@ -2,39 +2,38 @@ import React, { ReactElement, ReactNode, useCallback, useEffect, useState } from
 import './web3-btn.scss';
 import Button from '../Button';
 import {
-  useAccount,
-  useWeb3Loading,
-  useWeb3Unlocking,
   setGunPrivateKey,
   setSemaphoreID,
   setSemaphoreIDPath,
-} from '../../ducks/web3';
+  useAccount,
+  useWeb3Unlocking,
+} from '@ducks/web3';
 import { useDispatch } from 'react-redux';
 import classNames from 'classnames';
 import Avatar, { Username } from '../Avatar';
 import Icon from '../Icon';
 import Menuable, { ItemProps } from '../Menuable';
-import SpinnerGIF from '../../../static/icons/spinner.gif';
-import gun from '../../util/gun';
+import SpinnerGIF from '#/icons/spinner.gif';
+import gun from '~/gun';
 import { useHistory } from 'react-router';
-import { getHandle, loginUser } from '../../util/user';
+import { getHandle, loginUser } from '~/user';
 import {
   getZKGroupFromIdentity,
   useIdentities,
   useSelectedLocalId,
   useSelectedZKGroup,
   useWorkerUnlocked,
-} from '../../ducks/worker';
+} from '@ducks/worker';
 import LoginModal from '../LoginModal';
-import { fetchNameByAddress } from '../../util/web3';
-import { useUser } from '../../ducks/users';
+import { fetchNameByAddress } from '~/web3';
+import { useUser } from '@ducks/users';
 import { setIdentity } from '../../serviceWorkers/util';
-import { postWorkerMessage } from '../../util/sw';
+import { postWorkerMessage } from '~/sw';
 import { Identity, InterrepIdentity } from '../../serviceWorkers/identity';
 import QRScanner from '../QRScanner';
 import Modal from '../Modal';
 import ExportPrivateKeyModal from '../ExportPrivateKeyModal';
-import config from '../../util/config';
+import config from '~/config';
 import Nickname from '../Nickname';
 import { useThemeContext } from '../ThemeContext';
 
