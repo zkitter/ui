@@ -1,6 +1,20 @@
 import 'isomorphic-fetch';
-import { TextEncoder, TextDecoder } from 'util';
+import { TextDecoder, TextEncoder } from 'util';
 import crypto from 'crypto';
+import sinon from 'sinon';
+
+import originalStore from '../store/configureAppStore';
+import * as drafts from '@ducks/drafts';
+import * as posts from '@ducks/posts';
+import * as worker from '@ducks/worker';
+import * as users from '@ducks/users';
+import * as web3 from '@ducks/web3';
+import * as zkpr from '@ducks/zkpr';
+import * as mods from '@ducks/mods';
+import originalGun from '~/gun';
+import { Semaphore } from '@zk-kit/protocols';
+import * as swModules from './sw';
+import * as swUtilsModules from '../serviceWorkers/util';
 // @ts-ignore
 global.TextEncoder = TextEncoder;
 // @ts-ignore
@@ -15,20 +29,6 @@ global.crypto = {
   },
   getRandomValues: (arr: any) => crypto.randomBytes(arr.length),
 };
-import sinon from 'sinon';
-
-import originalStore from '../store/configureAppStore';
-import * as drafts from '../ducks/drafts';
-import * as posts from '../ducks/posts';
-import * as worker from '../ducks/worker';
-import * as users from '../ducks/users';
-import * as web3 from '../ducks/web3';
-import * as zkpr from '../ducks/zkpr';
-import * as mods from '../ducks/mods';
-import originalGun from '../util/gun';
-import { Semaphore } from '@zk-kit/protocols';
-import * as swModules from './sw';
-import * as swUtilsModules from '../serviceWorkers/util';
 
 export const pushReduxActionStub = sinon.stub(swUtilsModules, 'pushReduxAction');
 

@@ -1,7 +1,7 @@
 import config from './config';
 import { safeJsonParse } from './misc';
 import EventEmitter2 from 'eventemitter2';
-import { zkchat } from '../ducks/chats';
+import { zkchat } from '@ducks/chats';
 
 class SSE extends EventEmitter2 {
   eventSource?: EventSource;

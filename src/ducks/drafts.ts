@@ -15,18 +15,17 @@ import {
   PostMessageSubType,
   Profile,
   ProfileMessageSubType,
-} from '../util/message';
-import gun from '../util/gun';
+} from '~/message';
+import gun from '~/gun';
 import { ThunkDispatch } from 'redux-thunk';
-import { markdownConvertOptions } from '../components/DraftEditor';
-import config from '../util/config';
+import { markdownConvertOptions } from '@components/DraftEditor';
+import config from '~/config';
 import { setBlocked, setFollowed } from './users';
-import { updateStatus } from '../util/twitter';
-import { checkPath } from '../util/interrep';
+import { updateStatus } from '~/twitter';
 import { setBlockedPost } from './posts';
-import { findProof } from '../util/merkle';
-import { generateZkIdentityFromHex, sha256, signWithP256 } from '../util/crypto';
-import { getEpoch } from '../util/zkchat';
+import { findProof } from '~/merkle';
+import { generateZkIdentityFromHex, sha256, signWithP256 } from '~/crypto';
+import { getEpoch } from '~/zkchat';
 import { Identity } from '@semaphore-protocol/identity';
 
 const { draftToMarkdown } = require('markdown-draft-js');

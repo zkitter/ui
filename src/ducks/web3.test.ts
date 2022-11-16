@@ -1,5 +1,5 @@
 import sinon from 'sinon';
-import { store, ducks, web3Stub, fetchStub, postWorkMessageStub } from '../util/testUtils';
+import { ducks, fetchStub, postWorkMessageStub, store, web3Stub } from '~/testUtils';
 
 const {
   web3: { connectWeb3, setWeb3, loginGun, genSemaphore, updateIdentity, web3Modal },

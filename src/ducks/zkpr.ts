@@ -2,16 +2,16 @@ import { ThunkDispatch } from 'redux-thunk';
 import { useSelector } from 'react-redux';
 import deepEqual from 'fast-deep-equal';
 import { AppRootState } from '../store/configureAppStore';
-import { checkPath } from '../util/interrep';
+import { checkPath } from '~/interrep';
 import { Identity } from '../serviceWorkers/identity';
-import { postWorkerMessage } from '../util/sw';
+import { postWorkerMessage } from '~/sw';
 import { selectIdentity, setIdentity } from '../serviceWorkers/util';
 import { Dispatch } from 'redux';
 import {
-  SemaphoreFullProof,
-  SemaphoreSolidityProof,
   MerkleProof,
   RLNFullProof,
+  SemaphoreFullProof,
+  SemaphoreSolidityProof,
 } from '@zk-kit/protocols';
 
 enum ActionTypes {

@@ -1,4 +1,4 @@
-import { ducks, fetchReset, fetchStub, store } from '../util/testUtils';
+import { ducks, fetchReset, fetchStub, store } from '~/testUtils';
 import { createEditorStateWithText } from '@draft-js-plugins/editor';
 import { ZkIdentity } from '@zk-kit/identity';
 

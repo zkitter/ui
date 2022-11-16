@@ -1,5 +1,5 @@
-import sinon from 'sinon';
-import { store, ducks, fetchStub, zkprStub, postWorkMessageStub } from '../util/testUtils';
+import { ducks, fetchStub, postWorkMessageStub, store, zkprStub } from '~/testUtils';
+
 const {
   zkpr: { connectZKPR, createZKPRIdentity, maybeSetZKPRIdentity },
 } = ducks;

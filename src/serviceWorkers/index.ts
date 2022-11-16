@@ -1,7 +1,7 @@
 // @ts-ignore
 
-import { AppService } from '../util/svc';
-import { IdentityService, Identity } from './identity';
+import { AppService } from '~/svc';
+import { Identity, IdentityService } from './identity';
 import { ServiceWorkerActionType, WorkerAction, WorkerResponse } from './util';
 
 const global: ServiceWorkerGlobalScope = self as any;
