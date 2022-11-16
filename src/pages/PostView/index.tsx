@@ -1,5 +1,5 @@
 import React, { ReactElement, useCallback, useEffect, useRef, useState } from 'react';
-import { useHistory, useParams } from 'react-router';
+import { useParams } from 'react-router';
 import { fetchMeta, fetchReplies, setPost, useGoToPost, useMeta, usePost } from '@ducks/posts';
 import Post from '@components/Post';
 import classNames from 'classnames';
@@ -8,7 +8,7 @@ import { useDispatch } from 'react-redux';
 import Thread from '@components/Thread';
 import ParentThread from '@components/ParentThread';
 import { Post as PostMessage, PostMessageSubType } from '~/message';
-import { useENSName, useLoggedIn } from '@ducks/web3';
+import { useENSName } from '@ducks/web3';
 import { useSelectedLocalId } from '@ducks/worker';
 import { usePostModeration } from '@ducks/mods';
 import { useThemeContext } from '@components/ThemeContext';
@@ -25,8 +25,6 @@ export default function PostView(props: Props): ReactElement {
   const [offset, setOffset] = useState(0);
   const [order, setOrder] = useState<string[]>([]);
   const dispatch = useDispatch();
-  const history = useHistory();
-  const loggedIn = useLoggedIn();
   const ensName = useENSName();
   const parentEl = useRef<HTMLDivElement>(null);
   const containerEl = useRef<HTMLDivElement>(null);
@@ -146,7 +144,7 @@ export default function PostView(props: Props): ReactElement {
             />
           </div>
           <Post className="rounded-xl" messageId={messageId} onSuccessPost={onSuccessPost} expand />
-          {order.map((messageId, index) => {
+          {order.map(messageId => {
             return (
               <Thread
                 key={messageId}

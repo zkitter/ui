@@ -110,9 +110,9 @@ export default function SignupView(props: Props): ReactElement {
 }
 
 function WelcomeView(props: { setViewType: (v: ViewType) => void }): ReactElement {
-  const account = useWeb3Account();
-  const user = useUser(account);
-  const history = useHistory();
+  // const account = useWeb3Account();
+  // const user = useUser(account);
+  // const history = useHistory();
 
   // useEffect(() => {
   //     if (user?.joinedTx) {
@@ -266,7 +266,6 @@ function ChooseWalletView(props: { setViewType: (v: ViewType) => void }): ReactE
   const zkprLoading = useZKPRLoading();
   const dispatch = useDispatch();
   const web3Loading = useWeb3Loading();
-  const web3Account = useWeb3Account();
   const selected = useSelectedLocalId();
 
   const disconnect = useCallback(() => {
@@ -652,7 +651,6 @@ function LocalBackupView(props: {
   setViewType: (v: ViewType) => void;
   isOnboarding?: boolean;
 }): ReactElement {
-  const dispatch = useDispatch();
   const [pw, setPw] = useState('');
   const [errorMessage, setErrorMessage] = useState('');
   const [confirmPw, setConfirmPw] = useState('');
@@ -758,7 +756,6 @@ function LocalBackupView(props: {
 }
 
 function QRScannerView(props: { setViewType: (v: ViewType) => void }): ReactElement {
-  const history = useHistory();
   const [errorMessage, setError] = useState('');
 
   const validate = useCallback(async (data: string) => {

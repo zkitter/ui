@@ -5,7 +5,7 @@ import { useDispatch } from 'react-redux';
 import { fetchPosts, setPost, useGoToPost } from '@ducks/posts';
 import './global-feed.scss';
 import Editor from '@components/Editor';
-import { useHasLocal, useLoggedIn } from '@ducks/web3';
+import { useLoggedIn } from '@ducks/web3';
 import { submitPost, useDraft, useSubmitting } from '@ducks/drafts';
 import InfiniteScrollable from '@components/InfiniteScrollable';
 import { Post as PostMessage } from '~/message';
@@ -18,9 +18,7 @@ export default function GlobalFeed(): ReactElement {
   const [offset, setOffset] = useState(0);
   const [order, setOrder] = useState<string[]>([]);
   const dispatch = useDispatch();
-  const loggedIn = useLoggedIn();
   const selected = useSelectedLocalId();
-  const hasLocalBackup = useHasLocal();
   const theme = useThemeContext();
 
   useEffect(() => {

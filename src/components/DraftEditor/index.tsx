@@ -2,7 +2,6 @@ import React, { ReactElement, useCallback, useEffect, useMemo, useState } from '
 import {
   CompositeDecorator,
   ContentBlock,
-  ContentState,
   convertFromRaw,
   DefaultDraftBlockRenderMap,
   EditorState,
@@ -235,19 +234,11 @@ const mentionRegExp =
   ']';
 const HASHTAG_REGEX = /\#[\w\u0590-\u05ff]+/g;
 const MENTION_REGEX = new RegExp(`\@${mentionRegExp}+`, 'g');
-function findHashtagEntities(
-  contentBlock: ContentBlock,
-  callback: any,
-  contentState: ContentState
-) {
+function findHashtagEntities(contentBlock: ContentBlock, callback: any) {
   findWithRegex(HASHTAG_REGEX, contentBlock, callback);
 }
 
-function findMentionEntities(
-  contentBlock: ContentBlock,
-  callback: any,
-  contentState: ContentState
-) {
+function findMentionEntities(contentBlock: ContentBlock, callback: any) {
   findWithRegex(MENTION_REGEX, contentBlock, callback);
 }
 

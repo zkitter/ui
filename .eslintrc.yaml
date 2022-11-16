@@ -16,4 +16,7 @@ rules:
     - ignore: [ '\.gif', '\.png', '\.svg' ]
   no-case-declarations: warn
   no-console: off
+  no-empty:
+    - error
+    - allowEmptyCatch: true
   no-unused-vars: off

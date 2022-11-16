@@ -1,11 +1,4 @@
-import React, {
-  BaseHTMLAttributes,
-  ReactElement,
-  ReactNode,
-  useCallback,
-  useRef,
-  useState,
-} from 'react';
+import React, { ReactElement, ReactNode, useCallback, useRef } from 'react';
 import classNames from 'classnames';
 import debounce from 'lodash.debounce';
 
