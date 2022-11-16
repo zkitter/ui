@@ -1,4 +1,4 @@
-import { store } from '../util/testUtils';
+import { store } from '~/testUtils';
 
 test('store - should initialize', async () => {
   expect(store.getState()).toStrictEqual({

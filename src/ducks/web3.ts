@@ -5,16 +5,16 @@ import { AppRootState } from '../store/configureAppStore';
 import { ThunkDispatch } from 'redux-thunk';
 import { Dispatch } from 'redux';
 import Web3Modal from 'web3modal';
-import { generateGunKeyPairFromHex } from '../util/crypto';
-import { defaultWeb3, fetchNameByAddress } from '../util/web3';
-import gun, { authenticateGun } from '../util/gun';
+import { generateGunKeyPairFromHex } from '~/crypto';
+import { defaultWeb3, fetchNameByAddress } from '~/web3';
+import gun, { authenticateGun } from '~/gun';
 import createIdentity from '@interep/identity';
-import config from '../util/config';
+import config from '~/config';
 import { getUser } from './users';
-import { getIdentityHash } from '../util/arb3';
-import { postWorkerMessage } from '../util/sw';
+import { getIdentityHash } from '~/arb3';
+import { postWorkerMessage } from '~/sw';
 import { setIdentity } from '../serviceWorkers/util';
-import { findProof } from '../util/merkle';
+import { findProof } from '~/merkle';
 
 export const web3Modal = new Web3Modal({
   network: 'main', // optional

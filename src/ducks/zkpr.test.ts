@@ -1,7 +1,7 @@
-import { ducks, fetchStub, postWorkMessageStub, store, zkprStub } from '../util/testUtils';
+import { ducks, fetchStub, postWorkMessageStub, store, zkprStub } from '~/testUtils';
 
 const {
-  zkpr: { connectZKPR, createZKPRIdentity, maybeSetZKPRIdentity },
+  zkpr: { connectZKPR },
 } = ducks;
 
 describe('ZKPR duck', () => {

@@ -1,8 +1,8 @@
-import { GenericService } from '../util/svc';
-import { decrypt, encrypt, randomSalt } from '../util/encrypt';
+import { GenericService } from '~/svc';
+import { decrypt, encrypt, randomSalt } from '~/encrypt';
 import { pushReduxAction } from './util';
-import { setIdentities, setSelectedId, setUnlocked } from '../ducks/worker';
-import { safeJsonParse } from '../util/misc';
+import { setIdentities, setSelectedId, setUnlocked } from '@ducks/worker';
+import { safeJsonParse } from '~/misc';
 
 export type GunIdentity = {
   type: 'gun';

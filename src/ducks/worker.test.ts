@@ -1,4 +1,4 @@
-import { store, ducks, postWorkMessageStub } from '../util/testUtils';
+import { ducks, postWorkMessageStub, store } from '~/testUtils';
 import { Identity } from '../serviceWorkers/identity';
 import { ServiceWorkerActionType } from '../serviceWorkers/util';
 

@@ -5,14 +5,14 @@ import {
   Post,
   PostMessageOption,
   PostMessageSubType,
-} from '../util/message';
-import { fetchMessage } from '../util/gun';
+} from '~/message';
+import { fetchMessage } from '~/gun';
 import { getUser } from './users';
 import { ThunkDispatch } from 'redux-thunk';
 import { AppRootState } from '../store/configureAppStore';
 import { useSelector } from 'react-redux';
 import deepEqual from 'fast-deep-equal';
-import config from '../util/config';
+import config from '~/config';
 import { Dispatch } from 'redux';
 import { useHistory } from 'react-router';
 import { useCallback } from 'react';

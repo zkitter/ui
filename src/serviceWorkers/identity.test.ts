@@ -1,4 +1,4 @@
-import { pushReduxActionStub } from '../util/testUtils';
+import { pushReduxActionStub } from '~/testUtils';
 import { IdentityService } from './identity';
 import { ZkIdentity } from '@zk-kit/identity';
 

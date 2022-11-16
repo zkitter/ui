@@ -2,14 +2,9 @@ import { Dispatch } from 'redux';
 import { AppRootState } from '../store/configureAppStore';
 import { useSelector } from 'react-redux';
 import deepEqual from 'fast-deep-equal';
-import config from '../util/config';
-import {
-  defaultENS,
-  fetchNameByAddress,
-  fetchAddressByName as _fetchAddressByName,
-} from '../util/web3';
+import config from '~/config';
+import { fetchAddressByName as _fetchAddressByName } from '~/web3';
 import { ThunkDispatch } from 'redux-thunk';
-import { setJoinedTx } from './web3';
 import { getContextNameFromState } from './posts';
 
 enum ActionTypes {
