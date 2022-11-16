@@ -1,6 +1,6 @@
 import { Identity } from '../serviceWorkers/identity';
 import { Dispatch } from 'redux';
-import { postWorkerMessage } from '../util/sw';
+import { postWorkerMessage } from '~/sw';
 import { getIdentities, getIdentityStatus } from '../serviceWorkers/util';
 import { useSelector } from 'react-redux';
 import { AppRootState } from '../store/configureAppStore';

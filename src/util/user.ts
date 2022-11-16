@@ -1,4 +1,4 @@
-import { getUser, resetUser, User } from '../ducks/users';
+import { getUser, resetUser, User } from '@ducks/users';
 import { Identity } from '../serviceWorkers/identity';
 import { authenticateGun } from './gun';
 import { postWorkerMessage } from './sw';
@@ -10,7 +10,7 @@ import {
   sha256,
   signWithP256,
 } from './crypto';
-import { submitProfile } from '../ducks/drafts';
+import { submitProfile } from '@ducks/drafts';
 import { ProfileMessageSubType } from './message';
 
 export const ellipsify = (str: string, start = 6, end = 4) => {

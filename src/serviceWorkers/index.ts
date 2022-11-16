@@ -1,6 +1,6 @@
 // @ts-ignore
 
-import { AppService } from '../util/svc';
+import { AppService } from '~/svc';
 import { Identity, IdentityService } from './identity';
 import { ServiceWorkerActionType, WorkerAction, WorkerResponse } from './util';
 

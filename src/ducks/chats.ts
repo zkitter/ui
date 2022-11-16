@@ -1,10 +1,11 @@
-import { Chat, ChatMessage, ZKChatClient } from '../util/zkchat';
+import { Chat, ChatMessage, ZKChatClient } from '~/zkchat';
 import { Dispatch } from 'redux';
 import store, { AppRootState } from '../store/configureAppStore';
-import config from '../util/config';
+import config from '~/config';
 import { useSelector } from 'react-redux';
 import deepEqual from 'fast-deep-equal';
-import sse from '../util/sse';
+import sse from '~/sse';
+
 const EVENTS = ZKChatClient.EVENTS;
 
 export const zkchat = new ZKChatClient({

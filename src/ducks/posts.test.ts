@@ -1,5 +1,5 @@
-import { ducks, fetchStub, gunStub, store } from '../util/testUtils';
-import { MessageType, PostMessageSubType } from '../util/message';
+import { ducks, fetchStub, gunStub, store } from '~/testUtils';
+import { MessageType, PostMessageSubType } from '~/message';
 
 const {
   posts: {
@@ -11,7 +11,6 @@ const {
     fetchHomeFeed,
     fetchLikedBy,
     fetchRepliedBy,
-    setPost,
     setLiked,
     setReposted,
     setBlockedPost,
@@ -20,7 +19,6 @@ const {
     incrementLike,
     decrementRepost,
     decrementLike,
-    unsetPost,
   },
 } = ducks;
 

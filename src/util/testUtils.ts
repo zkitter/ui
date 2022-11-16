@@ -3,17 +3,31 @@ import { TextDecoder, TextEncoder } from 'util';
 import sinon from 'sinon';
 
 import originalStore from '../store/configureAppStore';
-import * as drafts from '../ducks/drafts';
-import * as posts from '../ducks/posts';
-import * as worker from '../ducks/worker';
-import * as users from '../ducks/users';
-import * as web3 from '../ducks/web3';
-import * as zkpr from '../ducks/zkpr';
-import * as mods from '../ducks/mods';
-import originalGun from '../util/gun';
+import * as drafts from '@ducks/drafts';
+import * as posts from '@ducks/posts';
+import * as worker from '@ducks/worker';
+import * as users from '@ducks/users';
+import * as web3 from '@ducks/web3';
+import * as zkpr from '@ducks/zkpr';
+import * as mods from '@ducks/mods';
+import originalGun from '~/gun';
 import { Semaphore } from '@zk-kit/protocols';
 import * as swModules from './sw';
 import * as swUtilsModules from '../serviceWorkers/util';
+// @ts-ignore
+global.TextEncoder = TextEncoder;
+// @ts-ignore
+global.TextDecoder = TextDecoder;
+// @ts-ignore
+global.crypto = {
+  subtle: {
+    // @ts-ignore
+    digest: async (type: string, data) => {
+      return crypto.createHash(type.replace('-', '').toLowerCase()).digest(data);
+    },
+  },
+  getRandomValues: (arr: any) => crypto.randomBytes(arr.length),
+};
 
 // @ts-ignore
 global.TextEncoder = TextEncoder;

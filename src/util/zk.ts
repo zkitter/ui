@@ -5,13 +5,12 @@ import {
   MerkleProof,
   RLN,
   RLNFullProof,
-  Semaphore,
   SemaphoreFullProof,
 } from '@zk-kit/protocols';
 import config from './config';
 import { Dispatch } from 'redux';
 import { AppRootState } from '../store/configureAppStore';
-import { ZKPR } from '../ducks/zkpr';
+import { ZKPR } from '@ducks/zkpr';
 import { getEpoch } from './zkchat';
 import { sha256 } from './crypto';
 import { findProof } from './merkle';
