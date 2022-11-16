@@ -20,7 +20,7 @@ type State = {
 };
 
 const getTheme = () => {
-  let theme = localStorage.getItem(THEME_LS_KEY);
+  const theme = localStorage.getItem(THEME_LS_KEY);
   if (theme === 'dark' || theme === 'light') return theme;
   if (window.matchMedia('(prefers-color-scheme: dark)')) return 'dark';
   return 'light';

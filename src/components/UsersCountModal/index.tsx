@@ -93,7 +93,7 @@ export default function UsersCountModal(props: {
     - likes/retweets: show nothing
     - follower/following: show "0 follower/following"
   */
-  return !!count ? (
+  return count ? (
     <>
       <div className="flex flex-row flex-nowrap items-center text-light">
         <div className={classNames(className)}>

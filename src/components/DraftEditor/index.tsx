@@ -68,7 +68,7 @@ export function DraftEditor(props: PluginEditorProps): ReactElement {
       if (oldNonce !== searchNonce) return;
       const suggestions = [];
 
-      for (let r of result) {
+      for (const r of result) {
         suggestions.push({
           name: '@' + (r.ens || r.address),
           address: r.address,
