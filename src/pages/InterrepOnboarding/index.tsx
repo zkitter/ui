@@ -3,9 +3,8 @@ import './interrep-onboarding.scss';
 import { useSelectedLocalId } from '@ducks/worker';
 import Icon from '@components/Icon';
 import SpinnerGif from '#/icons/spinner.gif';
-import config from '~/config';
 import { useWeb3Account } from '@ducks/web3';
-import { ConnectView, DoneView, JoinGroupView, WelcomeView } from './Views';
+import { DoneView, JoinGroupView, SelectProviderView, WelcomeView } from './Views';
 
 export enum ViewType {
   welcome,
@@ -18,10 +17,18 @@ type Props = {
   viewType?: ViewType;
 };
 
+export enum AuthProviderName {
+  Github = 'Github',
+  Twitter = 'Twitter',
+}
+
+export type AuthProvider = { name: AuthProviderName; sessionUrl?: string; resetUrl?: string };
+
 export default function InterrepOnboarding(props: Props): ReactElement {
   const [viewType, setViewType] = useState<ViewType>(props.viewType || ViewType.welcome);
   const [fetching, setFetching] = useState(true);
-  const [twitterAuth, setTwitterAuth] = useState<{
+  const [authProvider, setAuthProvider] = useState<AuthProvider | null>(null);
+  const [auth, setAuth] = useState<{
     token: string;
     username: string;
     reputation: string;
@@ -39,23 +46,25 @@ export default function InterrepOnboarding(props: Props): ReactElement {
           return;
         }
 
-        const resp = await fetch(`${config.indexerAPI}/twitter/session`, {
-          credentials: 'include',
-        });
-        const json: any = await resp.json();
-
-        if (json?.error) {
-          setViewType(ViewType.welcome);
-          return;
-        }
-
-        if (json?.payload) {
-          setViewType(ViewType.joinGroup);
-          setTwitterAuth({
-            token: json?.payload.user_token,
-            username: json?.payload.username,
-            reputation: json?.payload.reputation,
+        if (authProvider?.sessionUrl) {
+          const resp = await fetch(authProvider.sessionUrl, {
+            credentials: 'include',
           });
+          const json: any = await resp.json();
+
+          if (json?.error) {
+            setViewType(ViewType.welcome);
+            return;
+          }
+
+          if (json?.payload) {
+            setViewType(ViewType.joinGroup);
+            setAuth({
+              token: json?.payload.user_token,
+              username: json?.payload.username,
+              reputation: json?.payload.reputation,
+            });
+          }
         }
       } catch (e) {
         console.error(e);
@@ -66,14 +75,16 @@ export default function InterrepOnboarding(props: Props): ReactElement {
   }, [selected, account]);
 
   const onResetAuth = useCallback(async () => {
-    const resp = await fetch(`${config.indexerAPI}/oauth/reset`, {
-      credentials: 'include',
-    });
-    const json = await resp.json();
+    if (authProvider?.resetUrl) {
+      const resp = await fetch(authProvider.resetUrl, {
+        credentials: 'include',
+      });
+      const json = await resp.json();
 
-    if (!json.error) {
-      setViewType(ViewType.connect);
-      setTwitterAuth(null);
+      if (!json.error) {
+        setViewType(ViewType.connect);
+        setAuth(null);
+      }
     }
   }, []);
 
@@ -92,16 +103,10 @@ export default function InterrepOnboarding(props: Props): ReactElement {
       content = <WelcomeView setViewType={setViewType} />;
       break;
     case ViewType.connect:
-      content = <ConnectView setViewType={setViewType} />;
+      content = <SelectProviderView setViewType={setViewType} setAuthProvider={setAuthProvider} />;
       break;
     case ViewType.joinGroup:
-      content = (
-        <JoinGroupView
-          setViewType={setViewType}
-          twitterAuth={twitterAuth}
-          onResetAuth={onResetAuth}
-        />
-      );
+      content = <JoinGroupView setViewType={setViewType} auth={auth} onResetAuth={onResetAuth} />;
       break;
     case ViewType.done:
       content = <DoneView setViewType={setViewType} />;

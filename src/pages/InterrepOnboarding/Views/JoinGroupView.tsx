@@ -12,20 +12,21 @@ import { watchPath } from '~/interrep';
 import { WalletPanel } from '../WalletPanel';
 import Input from '@components/Input';
 import Button from '@components/Button';
-import { ViewType } from '../index';
+import { AuthProviderName, ViewType } from '../index';
 
 export function JoinGroupView(props: {
   setViewType: (v: ViewType) => void;
   onResetAuth: () => void;
-  twitterAuth: {
+  auth: {
     token: string;
     username: string;
     reputation: string;
   } | null;
+  authProviderName: AuthProviderName;
 }): ReactElement {
   const [errorMessage, setErrorMessage] = useState('');
   const [joining, setJoining] = useState(false);
-  const { twitterAuth } = props;
+  const { auth } = props;
   const selected = useSelectedLocalId();
   const dispatch = useDispatch();
   const unlocking = useWeb3Unlocking();
@@ -35,7 +36,7 @@ export function JoinGroupView(props: {
   const zkpr = useZKPR();
 
   let username = '';
-  let name: 'Twitter' | '' = '';
+  let name: AuthProviderName | '' = '';
   let group = '';
   let reputation = '';
   let token = '';
@@ -100,12 +101,12 @@ export function JoinGroupView(props: {
     })();
   }, [selected, account, idCommitment, zkpr, noIdCommitment]);
 
-  if (twitterAuth) {
-    name = 'Twitter';
-    group = 'twitter';
-    username = twitterAuth.username;
-    reputation = twitterAuth.reputation;
-    token = twitterAuth.token;
+  if (auth) {
+    name = props.authProviderName;
+    group = name.toLowerCase();
+    username = auth.username;
+    reputation = auth.reputation;
+    token = auth.token;
   }
 
   const onCreateIdentity = useCallback(() => {
@@ -190,7 +191,7 @@ export function JoinGroupView(props: {
     } finally {
       setJoining(false);
     }
-  }, [twitterAuth, selected, reputation, group, token, zkpr, idCommitment, noIdCommitment]);
+  }, [auth, selected, reputation, group, token, zkpr, idCommitment, noIdCommitment]);
 
   return (
     <div className="flex flex-col flex-nowrap flex-grow my-4 mx-8 signup__content signup__welcome">
