@@ -1,9 +1,8 @@
 import React, { ReactElement } from 'react';
-import { AuthProvider, AuthProviderName, ViewType } from '..';
+import { AuthProvider, ViewType } from '..';
 import { WalletPanel } from '../WalletPanel';
 import { AuthGithub } from './AuthGithub';
 import { AuthTwitter } from './AuthTwitter';
-import config from '~/config';
 
 export function SelectProviderView(props: {
   setViewType: (v: ViewType) => void;
@@ -21,24 +20,8 @@ export function SelectProviderView(props: {
         your reputation, you will first need to connect to a reputation providers below.
       </div>
       <div className="flex-grow flex flex-col mt-8 mb-4 flex-nowrap items-center justify-center">
-        <AuthTwitter
-          onClick={() =>
-            props.setAuthProvider({
-              name: AuthProviderName.Twitter,
-              sessionUrl: `${config.indexerAPI}/twitter/session`,
-              resetUrl: `${config.indexerAPI}/oauth/reset`,
-            })
-          }
-        />
-        <AuthGithub
-          onClick={() =>
-            props.setAuthProvider({
-              name: AuthProviderName.Github,
-              sessionUrl: '',
-              resetUrl: '',
-            })
-          }
-        />
+        <AuthTwitter />
+        <AuthGithub />
       </div>
     </div>
   );

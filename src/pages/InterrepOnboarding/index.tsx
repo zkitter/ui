@@ -5,6 +5,7 @@ import Icon from '@components/Icon';
 import SpinnerGif from '#/icons/spinner.gif';
 import { useWeb3Account } from '@ducks/web3';
 import { DoneView, JoinGroupView, SelectProviderView, WelcomeView } from './Views';
+import config from '~/config';
 
 export enum ViewType {
   welcome,
@@ -46,25 +47,25 @@ export default function InterrepOnboarding(props: Props): ReactElement {
           return;
         }
 
-        if (authProvider?.sessionUrl) {
-          const resp = await fetch(authProvider.sessionUrl, {
-            credentials: 'include',
+        const resp = await fetch(`${config.indexerAPI}/session`, {
+          credentials: 'include',
+        });
+        const { error, payload }: any = await resp.json();
+
+        if (error) {
+          setViewType(ViewType.welcome);
+          return;
+        }
+
+        if (payload) {
+          setAuthProvider({ name: payload.provider });
+          setViewType(ViewType.joinGroup);
+          setAuth({
+            token: payload.user_token,
+            username: payload.username,
+            reputation: payload.reputation,
           });
-          const json: any = await resp.json();
-
-          if (json?.error) {
-            setViewType(ViewType.welcome);
-            return;
-          }
-
-          if (json?.payload) {
-            setViewType(ViewType.joinGroup);
-            setAuth({
-              token: json?.payload.user_token,
-              username: json?.payload.username,
-              reputation: json?.payload.reputation,
-            });
-          }
+          return;
         }
       } catch (e) {
         console.error(e);
@@ -103,13 +104,20 @@ export default function InterrepOnboarding(props: Props): ReactElement {
       content = <WelcomeView setViewType={setViewType} />;
       break;
     case ViewType.connect:
-      content = <SelectProviderView setViewType={setViewType} setAuthProvider={setAuthProvider} />;
+      content = <SelectProviderView setViewType={setViewType} setAuthProvider={setAuthProvider}/>;
       break;
     case ViewType.joinGroup:
-      content = <JoinGroupView setViewType={setViewType} auth={auth} onResetAuth={onResetAuth} />;
+      content = (
+          <JoinGroupView
+              setViewType={setViewType}
+              auth={auth}
+              onResetAuth={onResetAuth}
+              authProviderName={authProvider!.name}
+          />
+      );
       break;
     case ViewType.done:
-      content = <DoneView setViewType={setViewType} />;
+      content = <DoneView setViewType={setViewType}/>;
       break;
   }
 
