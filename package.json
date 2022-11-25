@@ -8,6 +8,7 @@
     "build-ui": "webpack --config webpack.ui.config.js",
     "dev": "NODE_ENV=development concurrently --kill-others-on-fail npm:dev-ui",
     "build": "NODE_ENV=production npm run build-ui",
+    "build:ci": "NODE_ENV=development npm run build-ui",
     "test": "NODE_ENV=test jest --coverage=false --silent",
     "test:ci": "NODE_ENV=test jest --silent --coverage=false --reporters=jest-silent-reporter",
     "test:coverage": "NODE_ENV=test jest --coverage",
