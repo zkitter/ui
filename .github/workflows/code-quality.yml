@@ -46,4 +46,4 @@ jobs:
         run: pnpm run test:ci
 
       - name: Build
-        run: pnpm run build:ci
+        run: npm rebuild node-sass && npm run build:ci
