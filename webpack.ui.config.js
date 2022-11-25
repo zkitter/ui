@@ -115,20 +115,22 @@ module.exports = [
       new webpack.ProvidePlugin({
         process: 'process',
       }),
-      new CopyPlugin([
-        {
-          from: process.env.FAVICON || __dirname + '/static/icons/favicon.zkitter.png',
-          to: __dirname + '/build/favicon.png',
-        },
-        {
-          from: process.env.MANIFEST || __dirname + '/static/manifest.zkitter.json',
-          to: __dirname + '/build/manifest.json',
-        },
-        {
-          from: process.env.APP_LOGO || __dirname + '/static/icons/zkitter_logo.svg',
-          to: __dirname + '/build/applogo.svg',
-        },
-      ]),
+      new CopyPlugin({
+        patterns: [
+          {
+            from: process.env.FAVICON || __dirname + '/static/icons/favicon.zkitter.png',
+            to: __dirname + '/build/favicon.png',
+          },
+          {
+            from: process.env.MANIFEST || __dirname + '/static/manifest.zkitter.json',
+            to: __dirname + '/build/manifest.json',
+          },
+          {
+            from: process.env.APP_LOGO || __dirname + '/static/icons/zkitter_logo.svg',
+            to: __dirname + '/build/applogo.svg',
+          },
+        ],
+      }),
       new HtmlWebpackPlugin({
         template: './static/index.template.ejs',
         filename: `index.html`,
@@ -136,9 +138,9 @@ module.exports = [
         inject: true,
       }),
     ],
+    stats: 'minimal',
     devServer: {
       historyApiFallback: true,
-      stats: 'minimal',
       proxy: {
         '/rest': {
           target: `http://127.0.0.1:8080`,
