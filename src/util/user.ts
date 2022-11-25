@@ -2,7 +2,7 @@ import { getUser, resetUser, User } from '../ducks/users';
 import { Identity } from '../serviceWorkers/identity';
 import { authenticateGun } from './gun';
 import { postWorkerMessage } from './sw';
-import { addIdentity, selectIdentity, setIdentity } from '../serviceWorkers/util';
+import { selectIdentity } from '../serviceWorkers/util';
 import store, { AppRootState } from '../store/configureAppStore';
 import {
   generateECDHKeyPairFromhex,
@@ -90,8 +90,8 @@ async function checkChat() {
       const zkHex = await sha256(zkseed);
       const zkIdentity = await generateZkIdentityFromHex(zkHex);
       const idcommitment = zkIdentity.genIdentityCommitment().toString(16);
-      // @ts-ignore
       await store.dispatch(
+        // @ts-ignore
         submitProfile(ProfileMessageSubType.Custom, idcommitment, 'id_commitment')
       );
     }
