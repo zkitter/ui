@@ -1,7 +1,7 @@
 // @ts-ignore
 
 import { AppService } from '../util/svc';
-import { IdentityService, Identity } from './identity';
+import { Identity, IdentityService } from './identity';
 import { ServiceWorkerActionType, WorkerAction, WorkerResponse } from './util';
 
 const global: ServiceWorkerGlobalScope = self as any;
@@ -37,7 +37,7 @@ const filesToCache = ['/index.html', '/app.js'];
 
 global.addEventListener('install', e => {
   e.waitUntil(
-    new Promise(async resolve => {
+    new Promise<void>(async resolve => {
       const cacheNames = await caches.keys();
       await Promise.all(
         cacheNames.map(name => {
@@ -58,7 +58,7 @@ global.addEventListener('fetch', e => {
 
 global.addEventListener('activate', e => {
   e.waitUntil(
-    new Promise(async resolve => {
+    new Promise<void>(async resolve => {
       await getApp();
       resolve();
     })
