@@ -1,3 +1,5 @@
+const crypto = require('crypto');
+
 window.matchMedia =
   window.matchMedia ||
   function () {
@@ -14,3 +16,13 @@ global.EventSource = class EventSource {
   onmessage = () => {};
   onopen = () => {};
 };
+
+Object.defineProperty(global, 'crypto', {
+  value: {
+    subtle: {
+      digest: async (type, data) =>
+        crypto.createHash(type.replace('-', '').toLowerCase()).digest(data),
+    },
+    getRandomValues: arr => crypto.randomBytes(arr.length),
+  },
+});

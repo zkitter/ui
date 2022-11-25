@@ -1,5 +1,5 @@
 import 'isomorphic-fetch';
-import {TextDecoder, TextEncoder} from 'util';
+import { TextDecoder, TextEncoder } from 'util';
 import crypto from 'crypto';
 import sinon from 'sinon';
 
@@ -12,7 +12,7 @@ import * as web3 from '../ducks/web3';
 import * as zkpr from '../ducks/zkpr';
 import * as mods from '../ducks/mods';
 import originalGun from '../util/gun';
-import {Semaphore} from '@zk-kit/protocols';
+import { Semaphore } from '@zk-kit/protocols';
 import * as swModules from './sw';
 import * as swUtilsModules from '../serviceWorkers/util';
 
@@ -20,15 +20,6 @@ import * as swUtilsModules from '../serviceWorkers/util';
 global.TextEncoder = TextEncoder;
 // @ts-ignore
 global.TextDecoder = TextDecoder;
-global.crypto = {
-  // @ts-ignore
-  subtle: {
-    digest: async (type: string, data) =>
-      // @ts-ignore
-      crypto.createHash(type.replace('-', '').toLowerCase()).digest(data),
-  },
-  getRandomValues: (arr: any) => crypto.randomBytes(arr.length),
-};
 
 export const pushReduxActionStub = sinon.stub(swUtilsModules, 'pushReduxAction');
 

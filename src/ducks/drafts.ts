@@ -502,7 +502,7 @@ export const submitPost =
         type: MessageType.Post,
         subtype: subtype,
         creator:
-          ['interrep', 'zkpr_interrep', 'taz'].includes(selected!.type) || !!postingGroup
+          ['interrep', 'zkpr_interrep', 'taz'].includes(selected?.type ?? '') || !!postingGroup
             ? ''
             : account,
         payload: {
