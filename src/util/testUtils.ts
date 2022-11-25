@@ -1,5 +1,5 @@
 import 'isomorphic-fetch';
-import { TextDecoder, TextEncoder } from 'util';
+import {TextDecoder, TextEncoder} from 'util';
 import crypto from 'crypto';
 import sinon from 'sinon';
 
@@ -12,9 +12,10 @@ import * as web3 from '../ducks/web3';
 import * as zkpr from '../ducks/zkpr';
 import * as mods from '../ducks/mods';
 import originalGun from '../util/gun';
-import { Semaphore } from '@zk-kit/protocols';
+import {Semaphore} from '@zk-kit/protocols';
 import * as swModules from './sw';
 import * as swUtilsModules from '../serviceWorkers/util';
+
 // @ts-ignore
 global.TextEncoder = TextEncoder;
 // @ts-ignore
