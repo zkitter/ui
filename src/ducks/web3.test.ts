@@ -5,7 +5,7 @@ const {
   web3: { connectWeb3, setWeb3, loginGun, genSemaphore, updateIdentity, web3Modal },
 } = ducks;
 
-describe('Web3 Duck', () => {
+describe.skip('Web3 Duck', () => {
   it('should set web3', async () => {
     sinon.stub(web3Modal, 'clearCachedProvider');
     sinon.stub(web3Modal, 'connect').returns(Promise.resolve(null));

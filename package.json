@@ -8,7 +8,7 @@
     "build-ui": "webpack --config webpack.ui.config.js",
     "dev": "NODE_ENV=development concurrently --kill-others-on-fail npm:dev-ui",
     "build": "NODE_ENV=production npm run build-ui",
-    "test": "NODE_ENV=test jest --coverage=false",
+    "test": "NODE_ENV=test jest --coverage=false --silent",
     "test:coverage": "NODE_ENV=test jest --coverage",
     "format:check": "prettier --check 'src'",
     "format:fix": "prettier --write 'src'",
