@@ -74,8 +74,8 @@ describe('Drafts Duck', () => {
       })
     );
     store.dispatch(setMirror(false));
-    // @ts-ignore
     fetchStub.returns(
+      // @ts-ignore
       Promise.resolve({
         status: 200,
         json: async () => ({
@@ -127,8 +127,8 @@ describe('Drafts Duck', () => {
       })
     );
     store.dispatch(setMirror(false));
-    // @ts-ignore
     fetchStub.returns(
+      // @ts-ignore
       Promise.resolve({
         status: 200,
         json: async () => ({

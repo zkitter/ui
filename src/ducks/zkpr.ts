@@ -8,10 +8,10 @@ import { postWorkerMessage } from '../util/sw';
 import { selectIdentity, setIdentity } from '../serviceWorkers/util';
 import { Dispatch } from 'redux';
 import {
-  SemaphoreFullProof,
-  SemaphoreSolidityProof,
   MerkleProof,
   RLNFullProof,
+  SemaphoreFullProof,
+  SemaphoreSolidityProof,
 } from '@zk-kit/protocols';
 
 enum ActionTypes {
@@ -84,7 +84,9 @@ export const connectZKPR =
           dispatch(setIdCommitment(''));
 
           if (idCommitment) {
+            // @ts-ignore
             dispatch(setIdCommitment(idCommitment));
+            // @ts-ignore
             const id: any = await maybeSetZKPRIdentity(idCommitment);
             if (!id) {
               const [defaultId] = identities;

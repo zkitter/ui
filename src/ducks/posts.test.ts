@@ -1,5 +1,5 @@
 import { ducks, fetchStub, gunStub, store } from '../util/testUtils';
-import { MessageType, Post, PostMessageSubType } from '../util/message';
+import { MessageType, PostMessageSubType } from '../util/message';
 
 const {
   posts: {
@@ -31,8 +31,8 @@ describe('Posts Duck', () => {
 
   it('should fetch meta', async () => {
     const messageId = '0xmeta/0000000000000000000000000000000000000000000000000000000000000000';
-    // @ts-ignore
     fetchStub.returns(
+      // @ts-ignore
       Promise.resolve({
         json: async () => ({
           payload: {
@@ -56,9 +56,11 @@ describe('Posts Duck', () => {
   it('should fetch post', async () => {
     const messageId = 'e6789d8ea65b57efd365ada389924246e4bd7be9c109a7fe294646831f67db8b';
     gunStub.get
-      .withArgs('message/e6789d8ea65b57efd365ada389924246e4bd7be9c109a7fe294646831f67db8b')
       // @ts-ignore
+      .withArgs('message/e6789d8ea65b57efd365ada389924246e4bd7be9c109a7fe294646831f67db8b')
       .returns(
+        // @ts-ignore
+
         Promise.resolve({
           type: 'POST',
           subtype: 'REPLY',
@@ -70,9 +72,10 @@ describe('Posts Duck', () => {
       )
       // @ts-ignore
       .withArgs('payload')
+      // @ts-ignore
       .returns(Promise.resolve({ content: 'fetch post' }));
-    // @ts-ignore
     fetchStub.returns(
+      // @ts-ignore
       Promise.resolve({
         json: async () => ({
           payload: {
@@ -88,8 +91,8 @@ describe('Posts Duck', () => {
   });
 
   it('should fetch posts', async () => {
-    // @ts-ignore
     fetchStub.returns(
+      // @ts-ignore
       Promise.resolve({
         json: async () => ({
           payload: [
@@ -127,8 +130,8 @@ describe('Posts Duck', () => {
   });
 
   it('should fetch liked by', async () => {
-    // @ts-ignore
     fetchStub.returns(
+      // @ts-ignore
       Promise.resolve({
         json: async () => ({
           payload: [
@@ -167,8 +170,8 @@ describe('Posts Duck', () => {
   });
 
   it('should fetch replied by', async () => {
-    // @ts-ignore
     fetchStub.returns(
+      // @ts-ignore
       Promise.resolve({
         json: async () => ({
           payload: [
@@ -207,8 +210,8 @@ describe('Posts Duck', () => {
   });
 
   it('should fetch homefed', async () => {
-    // @ts-ignore
     fetchStub.returns(
+      // @ts-ignore
       Promise.resolve({
         json: async () => ({
           payload: [
@@ -247,8 +250,8 @@ describe('Posts Duck', () => {
   });
 
   it('should fetch tagfeed', async () => {
-    // @ts-ignore
     fetchStub.returns(
+      // @ts-ignore
       Promise.resolve({
         json: async () => ({
           payload: [
@@ -287,8 +290,8 @@ describe('Posts Duck', () => {
   });
 
   it('should fetch replies', async () => {
-    // @ts-ignore
     fetchStub.returns(
+      // @ts-ignore
       Promise.resolve({
         json: async () => ({
           payload: [
