@@ -28,7 +28,17 @@ test('store - should initialize', async () => {
     posts: { map: {}, meta: {} },
     users: { map: {} },
     drafts: { submitting: false, mirror: false, map: {} },
-    worker: { unlocked: false, selected: null, identities: [] },
+    worker: { unlocked: false, selected: null, identities: [], postingGroup: '' },
     mods: { posts: {} },
+    app: {
+      theme: 'dark',
+    },
+    chats: {
+      chats: {
+        map: {},
+        order: [],
+      },
+      messages: {},
+    },
   });
 });
