@@ -7,6 +7,7 @@ import { Post as PostMessage } from '../../util/message';
 import { dispatchSpy, ducks, gunStub, store } from '../../util/testUtils';
 import { MessageType, PostMessageSubType } from '../../util/message';
 
+// FIXME transform  pretty-bytes (jest config?)
 describe('<Post>', () => {
   const root = document.createElement('div');
   const post = new PostMessage({
