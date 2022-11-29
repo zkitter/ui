@@ -76,16 +76,14 @@ export default function InterrepOnboarding(props: Props): ReactElement {
   }, [selected, account]);
 
   const onResetAuth = useCallback(async () => {
-    if (authProvider?.resetUrl) {
-      const resp = await fetch(authProvider.resetUrl, {
-        credentials: 'include',
-      });
-      const json = await resp.json();
+    const resp = await fetch(authProvider?.resetUrl ?? `${config.indexerAPI}/logout`, {
+      credentials: 'include',
+    });
+    const json = await resp.json();
 
-      if (!json.error) {
-        setViewType(ViewType.connect);
-        setAuth(null);
-      }
+    if (!json.error) {
+      setViewType(ViewType.connect);
+      setAuth(null);
     }
   }, []);
 
@@ -104,20 +102,20 @@ export default function InterrepOnboarding(props: Props): ReactElement {
       content = <WelcomeView setViewType={setViewType} />;
       break;
     case ViewType.connect:
-      content = <SelectProviderView setViewType={setViewType} setAuthProvider={setAuthProvider}/>;
+      content = <SelectProviderView setViewType={setViewType} setAuthProvider={setAuthProvider} />;
       break;
     case ViewType.joinGroup:
       content = (
-          <JoinGroupView
-              setViewType={setViewType}
-              auth={auth}
-              onResetAuth={onResetAuth}
-              authProviderName={authProvider!.name}
-          />
+        <JoinGroupView
+          setViewType={setViewType}
+          auth={auth}
+          onResetAuth={onResetAuth}
+          authProviderName={authProvider!.name}
+        />
       );
       break;
     case ViewType.done:
-      content = <DoneView setViewType={setViewType}/>;
+      content = <DoneView setViewType={setViewType} />;
       break;
   }
 
