@@ -16,6 +16,8 @@ import config from '../util/config';
 import { Dispatch } from 'redux';
 import { useHistory } from 'react-router';
 import { useCallback } from 'react';
+import { EditorState } from 'draft-js';
+import { convertMarkdownToDraft } from '../components/DraftEditor';
 
 enum ActionTypes {
   SET_POSTS = 'posts/setPosts',
@@ -203,6 +205,16 @@ export const fetchPosts =
     dispatch(processPosts(json.payload));
 
     return json.payload.map((post: any) => post.messageId);
+  };
+
+export const fetchNotifications =
+  (address: string, limit = 10, offset = 0) =>
+  async () => {
+    const resp = await fetch(
+      `${config.indexerAPI}/v1/${address}/notifications?limit=${limit}&offset=${offset}`
+    );
+    const json = await resp.json();
+    return json.payload;
   };
 
 export const fetchLikedBy =
@@ -501,6 +513,16 @@ export const usePost = (messageId?: string): Post | null => {
   }, deepEqual);
 };
 
+export const usePostContent = (messageId?: string): string => {
+  return useSelector((state: AppRootState) => {
+    const post = state.posts.map[messageId || ''];
+
+    if (!post) return '';
+
+    return post.payload.content.slice(0, 512);
+  }, deepEqual);
+};
+
 export const useMeta = (messageId = '') => {
   return useSelector((state: AppRootState): PostMeta => {
     return (
@@ -518,7 +540,7 @@ export const useZKGroupFromPost = (messageId?: string) => {
   return useSelector((state: AppRootState): string | undefined => {
     if (!messageId) return;
     const post = state.posts.meta[messageId];
-    if (!post) return undefined;
+    if (!post?.interepProvider) return undefined;
 
     return post.interepProvider === 'taz'
       ? 'semaphore_taz_members'

@@ -32,7 +32,8 @@ import ThemeContext from '../../components/ThemeContext';
 import classNames from 'classnames';
 import { Identity } from '@semaphore-protocol/identity';
 import TazModal from '../../components/TazModal';
-import NotificationView from "../NotificationView";
+import NotificationView from '../NotificationView';
+import { refreshLastRead, updateNotifications } from '../../ducks/app';
 
 export default function App(): ReactElement {
   const dispatch = useDispatch();
@@ -95,6 +96,8 @@ export default function App(): ReactElement {
           zk: zkIdentity,
           ecdh: keyPair,
         });
+        await dispatch(refreshLastRead());
+        await dispatch(updateNotifications());
       })();
     } else if (selected?.type === 'interrep') {
       (async () => {

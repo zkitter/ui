@@ -74,7 +74,7 @@ export default function RegularPost(
         <div>
           <Avatar
             className="mr-3 w-12 h-12"
-            address={user?.username}
+            address={user?.address}
             incognito={post.creator === ''}
             group={zkGroup}
             twitterUsername={post.type === MessageType._TWEET ? post.creator : undefined}

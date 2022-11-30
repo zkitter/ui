@@ -25,7 +25,9 @@ export default function MetaPanel(props: { className?: string }): ReactElement {
       <Route path="/home">
         <DefaultMetaPanels className={props.className} />
       </Route>
-      <Route path="/notifications" />
+      <Route path="/notifications">
+        <DefaultMetaPanels className={props.className} />
+      </Route>
       <Route path="/settings" />
       <Route path="/create-local-backup" />
       <Route path="/onboarding/interrep" />
