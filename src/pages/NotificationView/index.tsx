@@ -93,6 +93,7 @@ export default function NotificationView(): ReactElement {
           case 'REPOST':
             return <IncomingReactionRow type={type} messageId={message_id} />;
           case 'MEMBER_INVITE':
+          case 'MEMBER_ACCEPT':
             return <IncomingReactionRow type={type} messageId={message_id} />;
           case 'REPLY':
             return <IncomingReplyRow messageId={message_id} />;
@@ -137,7 +138,7 @@ function IncomingChatRow(props: { sender_pubkey: string; creator: string }): Rea
 
 function IncomingReactionRow(props: {
   messageId: string;
-  type: 'LIKE' | 'REPOST' | 'MEMBER_INVITE';
+  type: 'LIKE' | 'REPOST' | 'MEMBER_INVITE' | 'MEMBER_ACCEPT';
 }): ReactElement {
   const { creator, hash } = parseMessageId(props.messageId);
   const user = useUser(creator);
@@ -153,7 +154,7 @@ function IncomingReactionRow(props: {
   const content = usePostContent(messageId);
 
   const goto = useCallback(() => {
-    if (props.type === 'MEMBER_INVITE') {
+    if (props.type === 'MEMBER_INVITE' || props.type === 'MEMBER_ACCEPT') {
       history.push(`/${creator}`);
     } else {
       history.push(`/${creator}/status/${hash}`);
@@ -175,8 +176,9 @@ function IncomingReactionRow(props: {
           'fas fa-heart text-red-500 ': props.type === 'LIKE',
           'fas fa-retweet text-green-500': props.type === 'REPOST',
           'fas fa-user-plus text-blue-500': props.type === 'MEMBER_INVITE',
+          'fas fa-user-check text-blue-500': props.type === 'MEMBER_ACCEPT',
         })}
-        size={props.type === 'MEMBER_INVITE' ? 1.6125 : 2}
+        size={props.type === 'MEMBER_INVITE' || props.type === 'MEMBER_ACCEPT' ? 1.6125 : 2}
       />
       <div className="flex flex-col items-start">
         <Avatar className="w-8 h-8" address={creator} incognito={!creator} />
@@ -184,6 +186,12 @@ function IncomingReactionRow(props: {
           <div className="mt-2 text-sm">
             <span className="mr-1">You received an invitation to join</span>
             <span className="font-semibold">{getName(user)}</span>
+          </div>
+        )}
+        {props.type === 'MEMBER_ACCEPT' && (
+          <div className="mt-2 text-sm">
+            <span className="font-semibold">{getName(user)}</span>
+            <span className="ml-1">accepted your invitation</span>
           </div>
         )}
         {props.type === 'LIKE' && (

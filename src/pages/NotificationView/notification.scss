@@ -18,13 +18,13 @@
   }
 }
 
-.notification-row + .notification-row {
-  border-top: 1px solid $gray-100;
+.notification-row {
+  border-bottom: 1px solid $gray-100;
 }
 
 .dark {
-  .notification-row + .notification-row {
-    border-top: 1px solid $gray-800;
+  .notification-row {
+    border-bottom: 1px solid $gray-800;
   }
 }
 
