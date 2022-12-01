@@ -19,7 +19,7 @@ import { connectZKPR } from '../../ducks/zkpr';
 import SettingView from '../SettingView';
 import MetaPanel from '../../components/MetaPanel';
 import ChatView from '../ChatView';
-import { zkchat } from '../../ducks/chats';
+import { fetchUnreads, zkchat } from '../../ducks/chats';
 import {
   generateECDHKeyPairFromhex,
   generateZkIdentityFromHex,
@@ -96,6 +96,7 @@ export default function App(): ReactElement {
           zk: zkIdentity,
           ecdh: keyPair,
         });
+        await dispatch(fetchUnreads());
         await dispatch(refreshLastRead());
         await dispatch(updateNotifications());
       })();
@@ -115,6 +116,7 @@ export default function App(): ReactElement {
           zk: zkIdentity,
           ecdh: keyPair,
         });
+        await dispatch(fetchUnreads());
       })();
     } else if (selected?.type === 'taz') {
       (async () => {
@@ -127,6 +129,7 @@ export default function App(): ReactElement {
           zk: zkIdentity,
           ecdh: keyPair,
         });
+        await dispatch(fetchUnreads());
       })();
     }
   }, [selected]);

@@ -8,6 +8,7 @@ import { useAccount, useGunLoggedIn } from '../../ducks/web3';
 import { useSelectedLocalId } from '../../ducks/worker';
 import { fetchNameByAddress } from '../../util/web3';
 import NotificationIcon from '../NotificationIcon';
+import ChatNavIcon from '../ChatNavIcon';
 
 export default function BottomNav(): ReactElement {
   const loggedIn = useGunLoggedIn();
@@ -32,7 +33,7 @@ export default function BottomNav(): ReactElement {
     <div className="bottom-nav">
       <BottomNavIcon fa="fas fa-home" pathname="/home" disabled={!loggedIn} />
       {/*<BottomNavIcon fa="fas fa-envelope" pathname={`/${ensName || address}/`} disabled={!loggedIn} />*/}
-      <BottomNavIcon fa="fas fa-envelope" pathname={`/chat`} disabled={!selectedLocalId} />
+      <ChatNavIcon fa="fas fa-envelope" pathname={`/chat`} disabled={!selectedLocalId} />
       <BottomNavIcon fa="fas fa-globe-asia" pathname="/explore" />
       <NotificationIcon fa="fas fa-bell" pathname="/notifications" />
       <Web3Button className="bottom-nav__web3-icon" />

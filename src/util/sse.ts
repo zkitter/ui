@@ -47,16 +47,16 @@ class SSE extends EventEmitter2 {
           }
         });
 
-        this.updateTopics(topics);
+        this.updateTopics([...new Set(topics)]);
 
-        for (const chatId in zkchat.activeChats) {
-          const chat = zkchat.activeChats[chatId];
-          if (chat.type === 'DIRECT') {
-            if (chat.senderHash && chat.senderECDH) {
-              await this.updateTopics([`ecdh:${chat.senderECDH}`]);
-            }
-          }
-        }
+        // for (const chatId in zkchat.activeChats) {
+        //   const chat = zkchat.activeChats[chatId];
+        //   if (chat.type === 'DIRECT') {
+        //     if (chat.senderHash && chat.senderECDH) {
+        //       await this.updateTopics([`ecdh:${chat.senderECDH}`]);
+        //     }
+        //   }
+        // }
 
         if (this.pulse) {
           clearInterval(this.pulse);
@@ -77,6 +77,9 @@ class SSE extends EventEmitter2 {
 
         return;
       case 'NEW_CHAT_MESSAGE':
+        this.emit(data.type, data.message);
+        return;
+      case 'UPDATE_UNREAD':
         this.emit(data.type, data.message);
         return;
       default:

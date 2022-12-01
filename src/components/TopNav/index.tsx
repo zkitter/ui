@@ -17,6 +17,7 @@ import MetaPanel from '../MetaPanel';
 import { useThemeContext } from '../ThemeContext';
 import config from '../../util/config';
 import NotificationIcon from '../NotificationIcon';
+import ChatNavIcon from '../ChatNavIcon';
 
 export default function TopNav(): ReactElement {
   const theme = useThemeContext();
@@ -102,7 +103,7 @@ function NavIconRow() {
         }
       )}>
       <TopNavIcon fa="fas fa-home" pathname="/home" disabled={!loggedIn} />
-      <TopNavIcon fa="fas fa-envelope" pathname={`/chat`} disabled={!selectedLocalId} />
+      <ChatNavIcon isTop fa="fas fa-envelope" pathname="/chat" disabled={!selectedLocalId} />
       <TopNavIcon fa="fas fa-globe-asia" pathname="/explore" />
       <NotificationIcon isTop fa="fas fa-bell" pathname="/notifications" />
     </div>

@@ -16,7 +16,13 @@ import Avatar, { Username } from '../Avatar';
 import Textarea from '../Textarea';
 import { generateZkIdentityFromHex, sha256, signWithP256 } from '../../util/crypto';
 import { FromNow } from '../ChatMenu';
-import { useChatId, useChatMessage, useMessagesByChatId, zkchat } from '../../ducks/chats';
+import {
+  setLastReadForChatId,
+  useChatId,
+  useChatMessage,
+  useMessagesByChatId,
+  zkchat,
+} from '../../ducks/chats';
 import Icon from '../Icon';
 import SpinnerGIF from '../../../static/icons/spinner.gif';
 import { useDispatch } from 'react-redux';
@@ -30,6 +36,7 @@ export default function ChatContent(): ReactElement {
   const messages = useMessagesByChatId(chatId);
   const chat = useChatId(chatId);
   const params = useParams<{ chatId: string }>();
+  const dispatch = useDispatch();
 
   const loadMore = useCallback(async () => {
     if (!chat) return;
@@ -39,6 +46,10 @@ export default function ChatContent(): ReactElement {
   useEffect(() => {
     loadMore();
   }, [loadMore]);
+
+  useEffect(() => {
+    dispatch(setLastReadForChatId(chatId));
+  }, [chatId]);
 
   if (!chat) return <></>;
 

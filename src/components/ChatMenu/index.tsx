@@ -21,6 +21,7 @@ import chats, {
   useChatId,
   useChatIds,
   useLastNMessages,
+  useUnreadChatMessages,
   zkchat,
 } from '../../ducks/chats';
 import Icon from '../Icon';
@@ -35,9 +36,6 @@ import { useThemeContext } from '../ThemeContext';
 
 export default function ChatMenu(): ReactElement {
   const selected = useSelectedLocalId();
-  const selecteduser = useUser(selected?.address);
-  const history = useHistory();
-  const dispatch = useDispatch();
   const chatIds = useChatIds();
   const [showingCreateChat, setShowingCreateChat] = useState(false);
   const [selectedNewConvo, selectNewConvo] = useState<Chat | null>(null);
@@ -45,17 +43,17 @@ export default function ChatMenu(): ReactElement {
   const [searchResults, setSearchResults] = useState<Chat[] | null>(null);
   const params = useParams<{ chatId: string }>();
 
-  useEffect(() => {
-    if (selecteduser?.ecdh && selected?.type === 'gun') {
-      setTimeout(() => {
-        dispatch(fetchChats(selecteduser.ecdh));
-      }, 500);
-    } else if (selected?.type === 'interrep' || selected?.type === 'taz') {
-      setTimeout(() => {
-        dispatch(fetchChats(selected.identityCommitment));
-      }, 500);
-    }
-  }, [selected, selecteduser]);
+  // useEffect(() => {
+  //   if (selecteduser?.ecdh && selected?.type === 'gun') {
+  //     setTimeout(() => {
+  //       dispatch(fetchChats(selecteduser.ecdh));
+  //     }, 500);
+  //   } else if (selected?.type === 'interrep' || selected?.type === 'taz') {
+  //     setTimeout(() => {
+  //       dispatch(fetchChats(selected.identityCommitment));
+  //     }, 500);
+  //   }
+  // }, [selected, selecteduser]);
 
   const onSearchNewChatChange = useCallback(async (e: ChangeEvent<HTMLInputElement>) => {
     setSearchParam(e.target.value);
@@ -218,6 +216,7 @@ function ChatMenuItem(props: {
   const history = useHistory();
   const [last] = useLastNMessages(props.chatId, 1);
   const theme = useThemeContext();
+  const unreads = useUnreadChatMessages(props.chatId);
 
   const isSelected = props.chatId === params.chatId;
 
@@ -301,11 +300,18 @@ function ChatMenuItem(props: {
           </div>
         )}
       </div>
-      {!props.hideLastChat && (
-        <div className={classNames('flex-grow-0 flex-shrink-0 mt-1 text-gray-500')}>
-          {last?.timestamp && <FromNow className="text-xs" timestamp={last.timestamp} />}
-        </div>
-      )}
+      <div className="flex flex-col items-end justify-center">
+        {!!unreads && (
+          <div className="flex flex-row items-center justify-center bg-red-500 text-white text-xs rounded-full w-4 h-4">
+            {unreads}
+          </div>
+        )}
+        {!props.hideLastChat && (
+          <div className={classNames('flex-grow-0 flex-shrink-0 mt-1 text-gray-500')}>
+            {last?.timestamp && <FromNow className="text-xs" timestamp={last.timestamp} />}
+          </div>
+        )}
+      </div>
     </div>
   );
 }
