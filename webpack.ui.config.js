@@ -146,6 +146,7 @@ module.exports = [
         title: process.env.APP_TITLE || 'Zkitter',
         inject: true,
       }),
+      new webpack.ContextReplacementPlugin(/gun/)
     ],
     stats: 'minimal',
     devServer: {
