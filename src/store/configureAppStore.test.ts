@@ -32,6 +32,8 @@ test('store - should initialize', async () => {
     mods: { posts: {} },
     app: {
       theme: 'dark',
+      lastRead: new Date(0),
+      notifications: 0,
     },
     chats: {
       chats: {
