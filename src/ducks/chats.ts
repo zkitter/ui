@@ -14,6 +14,16 @@ export const zkchat = new ZKChatClient({
 sse.on('NEW_CHAT_MESSAGE', async (payload: any) => {
   const message = await zkchat.inflateMessage(payload);
   zkchat.prependMessage(message);
+  const chat: Chat = {
+    type: 'DIRECT',
+    receiver: '',
+    receiverECDH: message.receiver.ecdh!,
+    senderECDH: message.sender.ecdh!,
+    senderHash: message.sender.hash,
+  };
+  const chatId = zkchat.deriveChatId(chat);
+  // @ts-ignore
+  store.dispatch(incrementUnreadForChatId(chatId));
 });
 
 const LAST_READ_LS_KEY = 'zkchat/lastRead/';
@@ -168,6 +178,14 @@ export const fetchUnreads = () => async (dispatch: Dispatch, getState: () => App
     }
   }
 };
+
+export const incrementUnreadForChatId =
+  (chatId: string) => async (dispatch: Dispatch, getState: () => AppRootState) => {
+    const {
+      chats: { unreads },
+    } = getState();
+    dispatch(setUnread(chatId, (unreads[chatId] || 0) + 1));
+  };
 
 export default function chats(state = initialState, action: Action<any>): State {
   switch (action.type) {
