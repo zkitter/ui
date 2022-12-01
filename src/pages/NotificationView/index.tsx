@@ -76,8 +76,7 @@ export default function NotificationView(): ReactElement {
       bottomOffset={128}
       onScrolledToBottom={fetchMore}>
       {notifications.map((data: any) => {
-        const { message_id, timestamp, type, sender_pubkey } = data;
-        const { creator, hash } = parseMessageId(message_id);
+        const { message_id, type } = data;
 
         switch (type) {
           case 'DIRECT':
@@ -91,14 +90,14 @@ export default function NotificationView(): ReactElement {
           //     )
           case 'LIKE':
           case 'REPOST':
-            return <IncomingReactionRow type={type} messageId={message_id} />;
           case 'MEMBER_INVITE':
           case 'MEMBER_ACCEPT':
             return <IncomingReactionRow type={type} messageId={message_id} />;
           case 'REPLY':
+          case 'MENTION':
             return <IncomingReplyRow messageId={message_id} />;
           default:
-            return <div>{type}</div>;
+            return null;
         }
       })}
     </InfiniteScrollable>
