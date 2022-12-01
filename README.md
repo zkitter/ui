@@ -28,6 +28,8 @@ You can set configuration using environment variable or by creating a `config.pr
 **Installation**
 ```
 npm i
+# or
+pnpm i --shamefully-hoist
 ```
 
 **Unit test**

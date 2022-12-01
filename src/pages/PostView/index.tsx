@@ -1,16 +1,6 @@
 import React, { ReactElement, useCallback, useEffect, useRef, useState } from 'react';
-import { useHistory, useLocation, useParams } from 'react-router';
-import {
-  fetchHomeFeed,
-  fetchMeta,
-  fetchPost,
-  fetchPosts,
-  fetchReplies,
-  setPost,
-  useGoToPost,
-  useMeta,
-  usePost,
-} from '../../ducks/posts';
+import { useHistory, useParams } from 'react-router';
+import { fetchMeta, fetchReplies, setPost, useGoToPost, useMeta, usePost } from '../../ducks/posts';
 import Post from '../../components/Post';
 import classNames from 'classnames';
 import './post-view.scss';
@@ -108,12 +98,12 @@ export default function PostView(props: Props): ReactElement {
       cachedObserver.unobserve(containerEl.current);
       cachedObserver.disconnect();
     }
-    // @ts-ignore
     const observer = new window.ResizeObserver(() => {
       const rect = containerEl.current?.getBoundingClientRect();
       if (!rect) return;
       setHeight(window.innerHeight + rect.height - 80);
     });
+    // @ts-ignore
     observer.observe(containerEl.current);
     cachedObserver = observer;
   }, [containerEl, messageId]);

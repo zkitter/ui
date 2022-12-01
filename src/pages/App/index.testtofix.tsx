@@ -6,6 +6,8 @@ import { BrowserRouter } from 'react-router-dom';
 import sinon from 'sinon';
 import { store } from '../../util/testUtils';
 
+// FIXME transform of pretty-bytes (jest config?)
+
 // @ts-ignore
 navigator.serviceWorker = {
   addEventListener: sinon.stub(),

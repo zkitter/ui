@@ -1,20 +1,6 @@
 import 'isomorphic-fetch';
-import { TextEncoder, TextDecoder } from 'util';
+import { TextDecoder, TextEncoder } from 'util';
 import crypto from 'crypto';
-// @ts-ignore
-global.TextEncoder = TextEncoder;
-// @ts-ignore
-global.TextDecoder = TextDecoder;
-// @ts-ignore
-global.crypto = {
-  subtle: {
-    // @ts-ignore
-    digest: async (type: string, data) => {
-      return crypto.createHash(type.replace('-', '').toLowerCase()).digest(data);
-    },
-  },
-  getRandomValues: (arr: any) => crypto.randomBytes(arr.length),
-};
 import sinon from 'sinon';
 
 import originalStore from '../store/configureAppStore';
@@ -29,6 +15,11 @@ import originalGun from '../util/gun';
 import { Semaphore } from '@zk-kit/protocols';
 import * as swModules from './sw';
 import * as swUtilsModules from '../serviceWorkers/util';
+
+// @ts-ignore
+global.TextEncoder = TextEncoder;
+// @ts-ignore
+global.TextDecoder = TextDecoder;
 
 export const pushReduxActionStub = sinon.stub(swUtilsModules, 'pushReduxAction');
 
@@ -70,8 +61,8 @@ sinon.stub(Semaphore, 'genWitness').returns(Promise.resolve({}));
 // @ts-ignore
 sinon.stub(Semaphore, 'genProof').returns(Promise.resolve({}));
 
-// @ts-ignore
 export const fetchStub = sinon.stub(window, 'fetch').returns(
+  // @ts-ignore
   Promise.resolve({
     status: 200,
     json: async () => ({ payload: 'ok' }),
@@ -81,8 +72,8 @@ export const fetchStub = sinon.stub(window, 'fetch').returns(
 
 export const fetchReset = () => {
   fetchStub.reset();
-  // @ts-ignore
   fetchStub.returns(
+    // @ts-ignore
     Promise.resolve({
       status: 200,
       json: async () => ({ payload: 'ok' }),

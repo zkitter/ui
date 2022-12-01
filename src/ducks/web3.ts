@@ -2,7 +2,6 @@ import Web3 from 'web3';
 import { useSelector } from 'react-redux';
 import deepEqual from 'fast-deep-equal';
 import { AppRootState } from '../store/configureAppStore';
-import { Subscription } from 'web3-core-subscriptions';
 import { ThunkDispatch } from 'redux-thunk';
 import { Dispatch } from 'redux';
 import Web3Modal from 'web3modal';
@@ -114,8 +113,6 @@ export const initialState: State = {
     createRecordTx: {},
   },
 };
-
-let event: Subscription<any> | null;
 
 export const UserNotExistError = new Error('user not exist');
 

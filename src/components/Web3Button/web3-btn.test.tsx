@@ -64,6 +64,6 @@ describe('<Web3Button>', () => {
         identityPath: null,
       })
     );
-    expect(root.textContent).toBe('Connected to ZKPR');
+    expect(root.textContent).toBe('Connected to Crypt Keeper');
   });
 });
