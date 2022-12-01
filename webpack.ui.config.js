@@ -90,9 +90,17 @@ module.exports = [
     },
     devtool: 'source-map',
     resolve: {
-      extensions: ['.ts', '.tsx', '.js', '.jsx', '.png', '.svg'],
+      conditionNames: ['browser', 'import'],
+      extensions: ['.ts', '.tsx', '.js', 'json', '.jsx', '.png', '.svg'],
       modules: [path.resolve('./node_modules')],
       fallback: {
+        assert: require.resolve('assert'),
+        events: require.resolve('events'),
+        string_decoder: require.resolve('string_decoder'),
+        util: require.resolve('util/'),
+        url: require.resolve('url/'),
+        querystring: require.resolve('querystring-es3'),
+        vm: require.resolve('vm-browserify'),
         browserify: require.resolve('browserify'),
         stream: require.resolve('stream-browserify'),
         path: require.resolve('path-browserify'),
@@ -100,6 +108,7 @@ module.exports = [
         os: require.resolve('os-browserify/browser'),
         http: require.resolve('stream-http'),
         https: require.resolve('https-browserify'),
+        punycode: require.resolve('punycode'),
         constants: false,
         fs: false,
       },
@@ -137,6 +146,7 @@ module.exports = [
         title: process.env.APP_TITLE || 'Zkitter',
         inject: true,
       }),
+      new webpack.ContextReplacementPlugin(/gun/)
     ],
     stats: 'minimal',
     devServer: {
