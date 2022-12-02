@@ -1,0 +1,11 @@
+@import "../../util/variable";
+
+.search-view {
+  width: 36.25rem;
+  overflow-y: auto;
+
+  &::-webkit-scrollbar {
+    width: 0; /* Remove scrollbar space */
+    background: transparent; /* Optional: just make scrollbar invisible */
+  }
+}

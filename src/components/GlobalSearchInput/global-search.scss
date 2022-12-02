@@ -1,0 +1,25 @@
+@import "../../util/variable";
+
+.global-search {
+  @extend %row-nowrap;
+  border: 1px solid transparent;
+  border-radius: 2rem;
+  padding: 0 1rem;
+
+  .input-group {
+    background-color: transparent !important;
+  }
+
+  &:focus-within {
+    border-color: $primary-color;
+
+    .icon {
+      color: $primary-color;
+    }
+  }
+}
+
+.dark {
+  .global-search {
+  }
+}

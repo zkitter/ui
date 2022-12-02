@@ -355,6 +355,24 @@ const processPosts = (posts: any[]) => async (dispatch: Dispatch) => {
   }, 0);
 };
 
+export const searchPosts =
+  (query: string, limit = 20, offset = 0) =>
+  async (dispatch: ThunkDispatch<any, any, any>, getState: () => AppRootState) => {
+    const resp = await fetch(
+      `${config.indexerAPI}/v1/posts/search?limit=${limit}&offset=${offset}`,
+      {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ query }),
+      }
+    );
+    const json = await resp.json();
+
+    if (json.error) throw new Error(json.paylod);
+
+    return json.payload.map((p: any) => p.messageId);
+  };
+
 export const fetchHomeFeed =
   (limit = 10, offset = 0) =>
   async (dispatch: ThunkDispatch<any, any, any>, getState: () => AppRootState) => {
