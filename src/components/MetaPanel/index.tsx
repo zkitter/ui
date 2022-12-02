@@ -24,10 +24,10 @@ export default function MetaPanel(props: { className?: string }): ReactElement {
         <DefaultMetaPanels className={props.className} />
       </Route>
       <Route path="/home">
-        <DefaultMetaPanels className={props.className} />
+        <ExploreMetaPanels className={props.className} />
       </Route>
       <Route path="/notifications">
-        <DefaultMetaPanels className={props.className} />
+        <ExploreMetaPanels className={props.className} />
       </Route>
       <Route path="/settings" />
       <Route path="/create-local-backup" />
@@ -55,7 +55,7 @@ function DefaultMetaPanels(props: { className?: string }): ReactElement {
 function ExploreMetaPanels(props: { className?: string }): ReactElement {
   return (
     <div className={classNames('app__meta-content', props.className)}>
-      <GlobalSearchInput />
+      <GlobalSearchInput className="mt-2" />
       <DiscoverUserPanel key="discover-user" />
       <DiscoverTagPanel key="discover-tag" />
       <AppFooter />

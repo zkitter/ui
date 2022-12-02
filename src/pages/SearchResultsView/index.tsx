@@ -16,11 +16,11 @@ export default function SearchResultsView(): ReactElement {
   const location = useLocation();
   const dispatch = useDispatch();
   const gotoPost = useGoToPost();
+  const params = new URLSearchParams(location.search);
+  const query = params.get('q');
 
   const fetchMore = useCallback(
     async (reset = false) => {
-      const params = new URLSearchParams(location.search);
-      const query = params.get('q');
       if (!query) return;
 
       if (reset) {
@@ -35,12 +35,12 @@ export default function SearchResultsView(): ReactElement {
         setOrder(order.concat(messageIds));
       }
     },
-    [limit, offset, order]
+    [limit, offset, order, query]
   );
 
   useEffect(() => {
     fetchMore(true);
-  }, []);
+  }, [query]);
 
   return (
     <InfiniteScrollable
@@ -50,6 +50,9 @@ export default function SearchResultsView(): ReactElement {
       })}
       bottomOffset={128}
       onScrolledToBottom={fetchMore}>
+      {!order.length && (
+        <div className="text-sm text-gray-500 text-center mt-2">No matching results</div>
+      )}
       {order.map((messageId, i) => {
         return (
           <Post

@@ -7,7 +7,10 @@ import { useThemeContext } from '../ThemeContext';
 import config from '../../util/config';
 import { useHistory } from 'react-router';
 
-type Props = {};
+type Props = {
+  className?: string;
+  defaultValue?: string;
+};
 
 export default function GlobalSearchInput(props: Props): ReactElement {
   const theme = useThemeContext();
@@ -29,7 +32,7 @@ export default function GlobalSearchInput(props: Props): ReactElement {
 
   return (
     <div
-      className={classNames('mt-2 global-search', {
+      className={classNames('global-search', props.className, {
         'bg-gray-100': theme !== 'dark',
         'bg-gray-900': theme === 'dark',
       })}>
@@ -40,6 +43,7 @@ export default function GlobalSearchInput(props: Props): ReactElement {
         placeholder="Search Zkitter"
         onChange={onChange}
         onKeyPress={onEnter}
+        defaultValue={props.defaultValue}
       />
     </div>
   );
