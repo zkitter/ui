@@ -44,7 +44,7 @@ export default function SearchResultsView(): ReactElement {
 
   return (
     <InfiniteScrollable
-      className={classNames('search-view', 'border-l border-r', 'mx-4 py-2', {
+      className={classNames('search-view', 'mx-4 py-2', {
         'border-gray-100': theme !== 'dark',
         'border-gray-800': theme === 'dark',
       })}

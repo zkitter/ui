@@ -358,14 +358,11 @@ const processPosts = (posts: any[]) => async (dispatch: Dispatch) => {
 export const searchPosts =
   (query: string, limit = 20, offset = 0) =>
   async (dispatch: ThunkDispatch<any, any, any>, getState: () => AppRootState) => {
-    const resp = await fetch(
-      `${config.indexerAPI}/v1/posts/search?limit=${limit}&offset=${offset}`,
-      {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ query }),
-      }
-    );
+    const resp = await fetch(`${config.indexerAPI}/v1/posts/search`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ query, limit, offset }),
+    });
     const json = await resp.json();
 
     if (json.error) throw new Error(json.paylod);

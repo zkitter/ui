@@ -9,3 +9,9 @@
     background: transparent; /* Optional: just make scrollbar invisible */
   }
 }
+
+@media only screen and (max-width: 768px) {
+  .search-view {
+    margin: 0;
+  }
+}
