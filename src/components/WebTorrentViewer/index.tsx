@@ -1,11 +1,6 @@
 import React, { ReactElement, useCallback, useEffect, useRef, useState } from 'react';
 import classNames from 'classnames';
-import {
-  addMagnetURL,
-  getInfoHashFromMagnet,
-  getWebtorrentClient,
-  removeMagnetURL,
-} from '../../util/webtorrent';
+import { addMagnetURL, getInfoHashFromMagnet, getWebtorrentClient } from '../../util/webtorrent';
 import Icon from '../Icon';
 import SpinnerGif from '../../../static/icons/spinner.gif';
 import { Torrent, TorrentFile } from 'webtorrent';
@@ -110,7 +105,7 @@ export default function WebTorrentViewer(props: Props): ReactElement {
         });
       }
 
-      return new Promise(resolve => {
+      return new Promise<void>(resolve => {
         file.getBlobURL((err, url) => {
           if (err || !url) throw err;
           const a = document.createElement('a');

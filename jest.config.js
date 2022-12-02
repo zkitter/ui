@@ -20,7 +20,7 @@ module.exports = {
       '<rootDir>/__mocks__/fileMock.js',
     '\\.(css|less|scss)$': '<rootDir>/__mocks__/styleMock.js',
   },
-  setupFiles: ['fake-indexeddb/auto'],
+  setupFiles: ['fake-indexeddb/auto', 'jsdom-worker','<rootDir>/src/util/mocks.js'],
   testEnvironmentOptions: {
     html: `
       <!DOCTYPE html>

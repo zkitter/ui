@@ -3,6 +3,7 @@ import React, { ReactElement, useCallback, useEffect, useState } from 'react';
 
 import {
   fetchLikersByPost,
+  fetchRetweetsByPost,
   fetchUserFollowers,
   fetchUserFollowings,
   useMeta,
@@ -30,6 +31,7 @@ export enum Item {
   Like = 'Like',
   Follower = 'Follower',
   Following = 'Following',
+  Retweet = 'Retweet',
 }
 
 const useItem = (item: Item, id: string) => {
@@ -37,7 +39,10 @@ const useItem = (item: Item, id: string) => {
   if (item === Item.Follower)
     return { fetch: fetchUserFollowers, count: useUser(id)?.meta.followerCount };
 
-  return { fetch: fetchUserFollowings, count: useUser(id)?.meta.followingCount };
+  if (item === Item.Following)
+    return { fetch: fetchUserFollowings, count: useUser(id)?.meta.followingCount };
+
+  return { fetch: fetchRetweetsByPost, count: useMeta(id).repostCount };
 };
 
 function MaybePlural(props: { users: string[]; text: Item }): ReactElement {
@@ -84,9 +89,10 @@ export default function UsersCountModal(props: {
   );
 
   /*
-    if 0 likes show nothing
-    if 0 follow-er/ing, show "0 Follow-er/ing"
-   */
+    if 0:
+    - likes/retweets: show nothing
+    - follower/following: show "0 follower/following"
+  */
   return !!count ? (
     <>
       <div className="flex flex-row flex-nowrap items-center text-light">
@@ -103,7 +109,7 @@ export default function UsersCountModal(props: {
         <UsersList onClose={() => setShowList(false)} users={users!} title={title} />
       )}
     </>
-  ) : item !== Item.Like ? (
+  ) : [Item.Follower, Item.Following].includes(item) ? (
     <>
       <div className="flex flex-row flex-nowrap items-center text-light">
         <div className={classNames(className)}>

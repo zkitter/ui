@@ -269,6 +269,22 @@ export const fetchUserFollowings = async (
   return !followings.length ? null : followings;
 };
 
+export const fetchRetweetsByPost = async (
+  messageId: string,
+  limit = 10,
+  offset = 0
+): Promise<string[] | null> => {
+  const { creator, hash } = parseMessageId(messageId);
+
+  const resp = await fetch(
+    `${config.indexerAPI}/v1/post/${creator}%2F${hash}/retweets?limit=${limit}&offset=${offset}`,
+    { method: 'GET' }
+  );
+
+  const { payload: retweets } = await resp.json();
+  return !retweets.length ? null : retweets;
+};
+
 export const fetchRepliedBy =
   (creator: string, limit = 10, offset = 0) =>
   async (dispatch: ThunkDispatch<any, any, any>, getState: () => AppRootState) => {

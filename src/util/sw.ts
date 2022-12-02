@@ -29,7 +29,7 @@ export async function createServiceWorker() {
         }
       });
 
-      resolve();
+      resolve(null);
     });
   });
 }

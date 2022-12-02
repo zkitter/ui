@@ -415,7 +415,7 @@ export class IdentityService extends GenericService {
         const res = request.result;
 
         if (!res) {
-          resolve();
+          resolve(null as returnType);
           return;
         }
 
@@ -439,7 +439,7 @@ export class IdentityService extends GenericService {
         const id = request.result;
 
         if (!id) {
-          resolve();
+          resolve(null);
           return;
         }
 

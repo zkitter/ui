@@ -1,5 +1,12 @@
 import './chat-content.scss';
-import React, { ReactElement, useState, KeyboardEvent, useCallback, useEffect } from 'react';
+import React, {
+  ChangeEvent,
+  KeyboardEvent,
+  ReactElement,
+  useCallback,
+  useEffect,
+  useState,
+} from 'react';
 import classNames from 'classnames';
 import { useParams } from 'react-router';
 import InfiniteScrollable from '../InfiniteScrollable';
@@ -7,20 +14,9 @@ import { useSelectedLocalId, useSelectedZKGroup } from '../../ducks/worker';
 import Nickname from '../Nickname';
 import Avatar, { Username } from '../Avatar';
 import Textarea from '../Textarea';
-import {
-  generateECDHKeyPairFromhex,
-  generateZkIdentityFromHex,
-  sha256,
-  signWithP256,
-} from '../../util/crypto';
+import { generateZkIdentityFromHex, sha256, signWithP256 } from '../../util/crypto';
 import { FromNow } from '../ChatMenu';
-import chats, {
-  InflatedChat,
-  useChatId,
-  useChatMessage,
-  useMessagesByChatId,
-  zkchat,
-} from '../../ducks/chats';
+import { useChatId, useChatMessage, useMessagesByChatId, zkchat } from '../../ducks/chats';
 import Icon from '../Icon';
 import SpinnerGIF from '../../../static/icons/spinner.gif';
 import { useDispatch } from 'react-redux';
@@ -183,14 +179,14 @@ function ChatEditor(): ReactElement {
           setError(e.message);
         } finally {
           setSending(false);
-          e.target.focus();
+          e.currentTarget.focus();
         }
       }
     },
     [submitMessage]
   );
 
-  const onChange = useCallback(async (e: KeyboardEvent<HTMLTextAreaElement>) => {
+  const onChange = useCallback((e: ChangeEvent<HTMLTextAreaElement>) => {
     setContent(e.target.value);
     setError('');
   }, []);
