@@ -192,7 +192,7 @@ export class IdentityService extends GenericService {
     await this.ensure();
     const identities = await this.getIdentities();
 
-    for (let id of identities) {
+    for (const id of identities) {
       if (id.type === 'gun') {
         if (!decrypt(id.privateKey, passphrase)) {
           throw new Error('invalid passphrase');
@@ -230,7 +230,7 @@ export class IdentityService extends GenericService {
       return;
     }
 
-    for (let id of identities) {
+    for (const id of identities) {
       if (id.type === 'gun') {
         if (id.publicKey === pubkeyOrCommitment) {
           this.currentIdentity = this.wrapIdentity(id);
@@ -263,7 +263,7 @@ export class IdentityService extends GenericService {
 
     if (identity.type === 'interrep') {
       const { serializedIdentity } = identity;
-      for (let id of identities) {
+      for (const id of identities) {
         if (id.type === 'interrep') {
           if (id.serializedIdentity !== serializedIdentity) {
             const tx = this.db?.transaction('identity', 'readwrite');

@@ -54,11 +54,9 @@ describe('Posts Duck', () => {
   it('should fetch post', async () => {
     const messageId = 'e6789d8ea65b57efd365ada389924246e4bd7be9c109a7fe294646831f67db8b';
     gunStub.get
-      // @ts-ignore
       .withArgs('message/e6789d8ea65b57efd365ada389924246e4bd7be9c109a7fe294646831f67db8b')
       .returns(
         // @ts-ignore
-
         Promise.resolve({
           type: 'POST',
           subtype: 'REPLY',
@@ -68,7 +66,6 @@ describe('Posts Duck', () => {
           },
         })
       )
-      // @ts-ignore
       .withArgs('payload')
       // @ts-ignore
       .returns(Promise.resolve({ content: 'fetch post' }));

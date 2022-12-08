@@ -1,16 +1,8 @@
 import { extractHashtagsWithIndices } from '@draft-js-plugins/hashtag';
 
 function parseTokens(state: any) {
-  let i,
-    j,
-    l,
-    tokens,
-    token,
-    text,
-    nodes,
-    ln,
-    level,
-    blockTokens = state.tokens;
+  let i, j, l, tokens, token, text, nodes, ln, level;
+  const blockTokens = state.tokens;
 
   for (j = 0, l = blockTokens.length; j < l; j++) {
     if (blockTokens[j].type !== 'inline') {

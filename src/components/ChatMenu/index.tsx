@@ -99,7 +99,7 @@ export default function ChatMenu(): ReactElement {
           <Icon className="text-gray-400 mx-2" fa="fas fa-search" size={0.75} />
         </Input>
       </div>
-      {!!showingCreateChat &&
+      {showingCreateChat &&
         (searchResults?.length ? (
           searchResults.map(chat => (
             <ChatMenuItem

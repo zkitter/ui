@@ -107,17 +107,6 @@ const addChat = (chat: Chat): Action<Chat> => ({
   payload: chat,
 });
 
-const setNickname = (
-  chat: Chat,
-  nickname: string
-): Action<{
-  chat: Chat;
-  nickname: string;
-}> => ({
-  type: ActionTypes.SET_CHAT_NICKNAME,
-  payload: { chat, nickname },
-});
-
 const setMessage = (msg: ChatMessage): Action<ChatMessage> => ({
   type: ActionTypes.SET_MESSAGE,
   payload: msg,
@@ -379,7 +368,7 @@ export const useLastNMessages = (chatId: string, n = 1): ChatMessage[] => {
         messages,
       },
     } = state;
-    const ids = state.chats.chats.map[chatId]?.messages || [];
+    const ids = map[chatId]?.messages || [];
     return ids.slice(0, n).map(messageId => messages[messageId]);
   }, deepEqual);
 };

@@ -61,7 +61,7 @@ export default function Web3Button(props: Props): ReactElement {
         const ens = await fetchNameByAddress(account);
         setEnsName(ens);
       } else {
-        let id = selectedLocalId || identities[0];
+        const id = selectedLocalId || identities[0];
 
         if (id?.type !== 'zkpr_interrep' && id?.type !== 'taz') {
           setEnsName('');
@@ -73,7 +73,7 @@ export default function Web3Button(props: Props): ReactElement {
   }, [account, identities, selectedLocalId]);
 
   let btnContent;
-  let id = selectedLocalId || identities[0];
+  const id = selectedLocalId || identities[0];
 
   const onClick = useCallback(() => {
     if (!id) {
@@ -230,7 +230,7 @@ function UserMenuable(props: {
     });
   }, []);
 
-  let items: ItemProps[] = [];
+  const items: ItemProps[] = [];
 
   if (selectedLocalId || identities.length) {
     items.push({
@@ -393,7 +393,7 @@ function CurrentUserItem(props: {
 
   const gotoProfile = useCallback(() => {
     if (!selectedUser) return;
-    const { ens, name, address } = selectedUser;
+    const { ens, address } = selectedUser;
     history.push(`/${ens || address}/`);
     props.closePopup();
   }, [selectedUser]);

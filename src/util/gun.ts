@@ -1,14 +1,7 @@
 import Gun from 'gun/gun';
 // const Gun = require('gun');
 import 'gun/sea';
-import {
-  Message,
-  MessageType,
-  Post,
-  PostJSON,
-  PostMessageOption,
-  PostMessageSubType,
-} from './message';
+import { Message, MessageType, Post, PostMessageOption, PostMessageSubType } from './message';
 import config from './config';
 
 const gun = Gun(config.gunPeers);

@@ -99,8 +99,7 @@ class SSE extends EventEmitter2 {
         topics,
       }),
     });
-    const json = await resp.json();
-    return json;
+    return await resp.json();
   };
 }
 

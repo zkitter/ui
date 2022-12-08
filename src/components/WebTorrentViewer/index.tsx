@@ -34,8 +34,6 @@ export default function WebTorrentViewer(props: Props): ReactElement {
 
       const type = mime.lookup(file.name) || '';
       const isImage = /image/.test(type);
-      const isVideo = /video/.test(type);
-      const isAudio = /audio/.test(type);
 
       const onFileReady = () => {
         setLoading(true);
