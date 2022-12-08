@@ -5,7 +5,6 @@ import Button from '../Button';
 import './member-invite-modal.scss';
 import { fetchAddressByName, searchUsers, useUser } from '@ducks/users';
 import { useDispatch } from 'react-redux';
-import { useHistory } from 'react-router';
 import { useThemeContext } from '../ThemeContext';
 import Web3 from 'web3';
 import classNames from 'classnames';
@@ -118,7 +117,6 @@ function UserRow(props: {
   toggleInvite: () => void;
   selected: boolean;
 }): ReactElement {
-  const history = useHistory();
   const [username, setUsername] = useState('');
 
   const dispatch = useDispatch();

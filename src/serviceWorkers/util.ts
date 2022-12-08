@@ -67,7 +67,7 @@ export const getIdentityStatus = (): WorkerAction<any> => ({
 export async function pushReduxAction(action: Action) {
   const global: ServiceWorkerGlobalScope = self as any;
   const clients = await global.clients.matchAll();
-  for (let client of clients) {
+  for (const client of clients) {
     client.postMessage({
       target: 'redux',
       action: action,

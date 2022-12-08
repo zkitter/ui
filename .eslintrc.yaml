@@ -1,0 +1,22 @@
+plugins: [ '@typescript-eslint' ]
+extends: [ 'eslint:recommended', 'plugin:@typescript-eslint/eslint-recommended', 'plugin:import/recommended', 'prettier' ]
+parser: '@typescript-eslint/parser'
+parserOptions:
+  project: [ 'tsconfig.json' ]
+root: true
+settings:
+  import/resolver:
+    - typescript
+rules:
+  '@typescript-eslint/explicit-function-return-type': off
+  '@typescript-eslint/return-await': off
+  '@typescript-eslint/no-unused-vars': warn
+  import/no-unresolved:
+    - error
+    - ignore: [ '\.gif', '\.png', '\.svg' ]
+  no-case-declarations: warn
+  no-console: off
+  no-empty:
+    - error
+    - allowEmptyCatch: true
+  no-unused-vars: off

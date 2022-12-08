@@ -137,7 +137,6 @@ export const submitInterepPost =
 
     const identityPathElements = merkleProof!.siblings;
     const identityPathIndex = merkleProof!.pathIndices;
-    const root = merkleProof!.root;
 
     if (
       !identityCommitment ||

@@ -26,11 +26,10 @@ import {
 } from '@ducks/chats';
 import Icon from '../Icon';
 import SpinnerGIF from '#/icons/spinner.gif';
-import { useDispatch } from 'react-redux';
 import { findProof } from '~/merkle';
 import { Strategy, ZkIdentity } from '@zk-kit/identity';
 import { Chat } from '~/zkchat';
-import { Identity } from '@semaphore-protocol/identity';
+import { useDispatch } from 'react-redux';
 
 export default function ChatContent(): ReactElement {
   const { chatId } = useParams<{ chatId: string }>();
@@ -116,7 +115,6 @@ function ChatEditor(): ReactElement {
   const chat = useChatId(chatId);
   const [error, setError] = useState('');
   const [isSending, setSending] = useState(false);
-  const dispatch = useDispatch();
   const zkGroup = useSelectedZKGroup();
 
   useEffect(() => {
@@ -132,7 +130,7 @@ function ChatEditor(): ReactElement {
     if (selected?.type === 'gun') {
       signature = signWithP256(selected.privateKey, selected.address) + '.' + selected.address;
       if (chat.senderHash) {
-        const zkseed = await signWithP256(selected.privateKey, 'signing for zk identity - 0');
+        const zkseed = signWithP256(selected.privateKey, 'signing for zk identity - 0');
         const zkHex = await sha256(zkseed);
         const zkIdentity = await generateZkIdentityFromHex(zkHex);
         merkleProof = await findProof(
@@ -148,13 +146,12 @@ function ChatEditor(): ReactElement {
       merkleProof = await findProof(group, BigInt(identityCommitment).toString(16));
       identitySecretHash = zkIdentity.getSecretHash();
     } else if (selected?.type === 'taz') {
-      const { type, identityCommitment, serializedIdentity } = selected;
+      const { identityCommitment } = selected;
       const group = `semaphore_taz_members`;
-      const zkIdentity = new Identity(serializedIdentity);
       merkleProof = await findProof(group, BigInt(identityCommitment).toString(16));
     }
 
-    const json = await zkchat.sendDirectMessage(
+    await zkchat.sendDirectMessage(
       chat,
       content,
       {
@@ -218,6 +215,7 @@ function ChatEditor(): ReactElement {
             // ref={(el) => el?.focus()}
             rows={Math.max(0, content.split('\n').length)}
             value={content}
+            // @ts-ignore
             onChange={onChange}
             onKeyPress={onEnter}
             disabled={isSending}
