@@ -1,0 +1,9 @@
+export enum NotificationType {
+  DIRECT = 'DIRECT',
+  LIKE = 'LIKE',
+  REPOST = 'REPOST',
+  MEMBER_INVITE = 'MEMBER_INVITE',
+  MEMBER_ACCEPT = 'MEMBER_ACCEPT',
+  REPLY = 'REPLY',
+  MENTION = 'MENTION',
+}

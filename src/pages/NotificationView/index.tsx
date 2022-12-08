@@ -1,10 +1,8 @@
 import React, { ReactElement, useCallback, useEffect, useState } from 'react';
 import classNames from 'classnames';
 import { useSelectedLocalId } from '../../ducks/worker';
-import config from '../../util/config';
 import { useHistory } from 'react-router';
 import { parseMessageId, PostMessageSubType } from '../../util/message';
-import { zkchat } from '../../ducks/chats';
 import { getUser, useUser } from '../../ducks/users';
 import { useThemeContext } from '../../components/ThemeContext';
 import { useDispatch } from 'react-redux';
@@ -24,6 +22,7 @@ import {
 } from '../../ducks/posts';
 import InfiniteScrollable from '../../components/InfiniteScrollable';
 import { updateLastReadTimestamp } from '../../ducks/app';
+import { NotificationType } from '../../util/notifications';
 
 export default function NotificationView(): ReactElement {
   const [limit, setLimit] = useState(20);
@@ -82,59 +81,21 @@ export default function NotificationView(): ReactElement {
         const { message_id, type } = data;
 
         switch (type) {
-          case 'DIRECT':
+          case NotificationType.DIRECT:
             return null;
-          // case 'DIRECT':
-          //     return (
-          //         <IncomingChatRow
-          //             sender_pubkey={sender_pubkey}
-          //             creator={data.creator}
-          //         />
-          //     )
-          case 'LIKE':
-          case 'REPOST':
-          case 'MEMBER_INVITE':
-          case 'MEMBER_ACCEPT':
+          case NotificationType.LIKE:
+          case NotificationType.REPOST:
+          case NotificationType.MEMBER_INVITE:
+          case NotificationType.MEMBER_ACCEPT:
             return <IncomingReactionRow type={type} messageId={message_id} />;
-          case 'REPLY':
-          case 'MENTION':
+          case NotificationType.REPLY:
+          case NotificationType.MENTION:
             return <IncomingReplyRow messageId={message_id} />;
           default:
             return null;
         }
       })}
     </InfiniteScrollable>
-  );
-}
-
-function IncomingChatRow(props: { sender_pubkey: string; creator: string }): ReactElement {
-  const selected = useSelectedLocalId();
-  const selectedUser = useUser(selected?.address);
-  const creator = useUser(props.creator);
-  const theme = useThemeContext();
-  const history = useHistory();
-
-  const chatId =
-    selectedUser &&
-    zkchat.deriveChatId({
-      type: 'DIRECT',
-      receiver: selectedUser.address,
-      receiverECDH: selectedUser.ecdh,
-      senderECDH: props.sender_pubkey,
-    });
-
-  return (
-    <div
-      className="flex flex-row cursor-pointer notification-row px-4 py-2"
-      onClick={() => history.push(`/chat/${chatId}`)}>
-      <div className="flex flex-row items-center">
-        <Avatar className="w-8 h-8" address={props.creator} incognito={!props.creator} />
-        <div className="ml-2 text-sm">
-          <span className="font-semibold">{props.creator ? getName(creator) : 'Someone'}</span>
-          <span className="ml-2">sent you a message</span>
-        </div>
-      </div>
-    </div>
   );
 }
 
