@@ -6,7 +6,6 @@ import './global-search.scss';
 import { useThemeContext } from '../ThemeContext';
 import debounce from 'lodash.debounce';
 import { useHistory } from 'react-router';
-import { useDispatch } from 'react-redux';
 import { searchUsers } from '../../ducks/users';
 import store from '../../store/configureAppStore';
 import { UserRow } from '../DiscoverUserPanel';
@@ -37,7 +36,7 @@ export default function GlobalSearchInput(props: Props): ReactElement {
       setUserResults([]);
       setFocus(false);
       selectIndex(-1);
-    }, 0);
+    }, 100);
   }, []);
 
   const onFocus = useCallback(() => {
@@ -119,11 +118,14 @@ export default function GlobalSearchInput(props: Props): ReactElement {
           <div
             className={classNames(
               'flex flex-row flex-nowrap px-4 py-2',
-              'cursor-pointer items-center transition hover:bg-gray-800',
+              'cursor-pointer items-center transition',
               {
                 'global-search__result--selected': selectedIndex === 0,
+                'hover:bg-gray-200': theme !== 'dark',
+                'hover:bg-gray-800': theme === 'dark',
               }
-            )}>
+            )}
+            onClick={() => history.push(`/search?q=${encodeURIComponent(query)}`)}>
             {`Search for "${query}"`}
           </div>
           {userResults.map((address, i) => (
