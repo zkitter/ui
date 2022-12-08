@@ -173,7 +173,7 @@ function SearchHeaderGroup() {
     <div
       className={classNames(
         'flex flex-row flex-nowrap flex-grow items-center flex-shrink-0',
-        'p-1 mx-4 overflow-hidden'
+        'p-1 mx-4'
       )}>
       <Icon
         className="w-8 h-8 flex flex-row items-center justify-center top-nav__back-icon"
