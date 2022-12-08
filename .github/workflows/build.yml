@@ -1,11 +1,11 @@
 name: Format - Test - Build
-on: [push]
+on: [ push ]
 jobs:
   build:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        node: ['14.x']
+        node: [ '14.x' ]
     name: Node ${{ matrix.node }} build
     steps:
       - uses: actions/checkout@v3
@@ -17,6 +17,9 @@ jobs:
 
       - name: Install
         run: npm ci --silent
+
+      - name: Lint
+        run: npm run lint:check
 
       - name: Format
         run: npm run format:check

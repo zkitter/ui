@@ -1,5 +1,3 @@
-// @ts-ignore
-
 import { AppService } from '~/svc';
 import { Identity, IdentityService } from './identity';
 import { ServiceWorkerActionType, WorkerAction, WorkerResponse } from './util';
@@ -33,7 +31,6 @@ async function getApp(): Promise<AppService> {
 }
 
 const cacheName = 'autism-pwa-v3';
-const filesToCache = ['/index.html', '/app.js'];
 
 global.addEventListener('install', e => {
   e.waitUntil(

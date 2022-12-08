@@ -31,8 +31,8 @@ export default function RegularPost(
       ? originalPost.payload.reference
       : props.messageId;
   const post = originalPost?.subtype === PostMessageSubType.Repost ? referencedPost : originalPost;
-  let user = useUser(post?.creator);
-  let op = useUser(originalPost?.creator);
+  const user = useUser(post?.creator);
+  const op = useUser(originalPost?.creator);
   const history = useHistory();
   const postJson = post?.toJSON();
   const meta = useMeta(postJson?.messageId);

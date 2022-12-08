@@ -1,9 +1,9 @@
 import EC from 'elliptic';
 import {
   genExternalNullifier,
-  RLNFullProof,
-  RLN,
   MerkleProof,
+  RLN,
+  RLNFullProof,
   Semaphore,
   SemaphoreFullProof,
 } from '@zk-kit/protocols';
@@ -12,7 +12,7 @@ import { ZkIdentity } from '@zk-kit/identity';
 import config from './config';
 import EventEmitter2, { ConstructorOptions } from 'eventemitter2';
 import { decrypt, encrypt } from './encrypt';
-import { base64ToArrayBuffer, generateECDHKeyPairFromhex, sha256 } from './crypto';
+import { generateECDHKeyPairFromhex, sha256 } from './crypto';
 import { safeJsonParse } from './misc';
 import { Identity } from '@semaphore-protocol/identity';
 import { findProof } from './merkle';
@@ -372,9 +372,7 @@ export class ZKChatClient extends EventEmitter2 {
       {}
     );
 
-    const validChats = await this._validateConvos(bucket.activeChats);
-
-    this.activeChats = validChats;
+    this.activeChats = await this._validateConvos(bucket.activeChats);
   }
 
   async importIdentity(identity: ZKChatIdentity) {
@@ -643,8 +641,6 @@ export class ZKChatClient extends EventEmitter2 {
     this._ensureIdentity();
     this._ensureChat(chat);
 
-    const chatId = this.deriveChatId(chat);
-
     if (chat.type !== 'DIRECT') return;
 
     const ecdh = chat.receiverECDH;
@@ -661,7 +657,7 @@ export class ZKChatClient extends EventEmitter2 {
 
     const sharedKey = deriveSharedKey(ecdh, priv);
 
-    const ciphertext = await encrypt(content, sharedKey);
+    const ciphertext = encrypt(content, sharedKey);
     const bundle = await createMessageBundle({
       type: 'DIRECT',
       receiver: {

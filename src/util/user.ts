@@ -90,8 +90,8 @@ async function checkChat() {
       const zkHex = await sha256(zkseed);
       const zkIdentity = await generateZkIdentityFromHex(zkHex);
       const idcommitment = zkIdentity.genIdentityCommitment().toString(16);
-      // @ts-ignore
       await store.dispatch(
+        // @ts-ignore
         submitProfile(ProfileMessageSubType.Custom, idcommitment, 'id_commitment')
       );
     }

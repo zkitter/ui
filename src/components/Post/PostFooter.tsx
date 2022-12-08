@@ -21,7 +21,6 @@ import {
   usePost,
 } from '@ducks/posts';
 import { useCanNonPostMessage, useLoggedIn } from '@ducks/web3';
-import { useSelectedLocalId } from '@ducks/worker';
 import { usePostModeration } from '@ducks/mods';
 import { useThemeContext } from '../ThemeContext';
 import {
@@ -105,7 +104,6 @@ export default function PostFooter(props: {
   const meta = useMeta(messageId);
   const post = usePost(messageId);
   const loggedIn = useLoggedIn();
-  const selected = useSelectedLocalId();
   const canNonPostMessage = useCanNonPostMessage();
   const dispatch = useDispatch();
   const [showReply, setShowReply] = useState(false);

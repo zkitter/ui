@@ -448,7 +448,7 @@ export const fetchReplies =
         // @ts-ignore
         headers: {
           'x-contextual-name': contextualName,
-          'x-unmoderated': !!unmoderated ? 'true' : '',
+          'x-unmoderated': unmoderated ? 'true' : '',
         },
       }
     );
