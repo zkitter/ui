@@ -47,7 +47,7 @@ export default function RegularPost(
       const [protocol, groupAddress] = zkGroup?.split('_') || [];
 
       if (protocol === 'custom') {
-          history.push(`/${groupAddress}/`);
+        history.push(`/${groupAddress}/`);
       }
 
       if (!user || post?.type === MessageType._TWEET) return;
