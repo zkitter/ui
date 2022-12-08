@@ -40,11 +40,18 @@ export default function ExpandedPost(
 
   const gotoUserProfile = useCallback(
     (e: any) => {
-      if (!user || !post?.creator) return;
       e.stopPropagation();
+      const [protocol, groupAddress] = zkGroup?.split('_') || [];
+
+      if (protocol === 'custom') {
+        history.push(`/${groupAddress}/`);
+      }
+
+      if (!user || post?.type === MessageType._TWEET) return;
+
       history.push(`/${user?.ens || user?.username}/`);
     },
-    [user, post]
+    [user, post, zkGroup]
   );
 
   if (!post) return <></>;
