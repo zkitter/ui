@@ -365,7 +365,7 @@ export const searchPosts =
     });
     const json = await resp.json();
 
-    if (json.error) throw new Error(json.paylod);
+    if (json.error) throw new Error(json.payload);
 
     return json.payload.map((p: any) => p.messageId);
   };
