@@ -33,8 +33,10 @@ export default function GlobalSearchInput(props: Props): ReactElement {
   }, [query]);
 
   const onBlur = useCallback(() => {
-    setUserResults([]);
-    setFocus(false);
+    setTimeout(() => {
+      setUserResults([]);
+      setFocus(false);
+    }, 0);
   }, []);
 
   const onFocus = useCallback(() => {
