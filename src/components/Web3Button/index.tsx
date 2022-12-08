@@ -388,7 +388,7 @@ function CurrentUserItem(props: {
   const gotoProfile = useCallback(() => {
     if (!selectedUser) return;
     const { ens, name, address } = selectedUser;
-    history.push(`/${ens || address}`);
+    history.push(`/${ens || address}/`);
     props.closePopup();
   }, [selectedUser]);
 

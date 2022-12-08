@@ -1,0 +1,61 @@
+@import "../../util/variable";
+
+.global-search {
+  @extend %row-nowrap;
+  border: 1px solid transparent;
+  border-radius: 1rem;
+  padding: 0 1rem;
+
+  .input-group {
+    background-color: transparent !important;
+  }
+
+  &:focus-within {
+    border-color: $primary-color;
+
+    .icon {
+      color: $primary-color;
+    }
+  }
+
+  &--has-results {
+    border-bottom: 0;
+    border-bottom-left-radius: 0;
+    border-bottom-right-radius: 0;
+  }
+
+  &__results {
+    overflow: hidden;
+    overflow-y: auto;
+    top: 100%;
+    width: 100%;
+    max-height: 22.5rem;
+    left: 0;
+    border: 1px solid $primary-color;
+    border-top: 0;
+    z-index: 300;
+  }
+
+  &__result {
+    &--selected {
+      background-color: rgba($black, .1);
+    }
+  }
+}
+
+.dark {
+  .global-search {
+    &__result {
+      &--selected {
+        background-color: rgba($white, .1);
+      }
+    }
+  }
+}
+
+@media only screen and (max-width: 768px) {
+  .global-search {
+    width: 100%;
+    margin-right: 1rem;
+  }
+}

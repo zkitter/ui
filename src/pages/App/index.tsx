@@ -19,7 +19,7 @@ import { connectZKPR } from '../../ducks/zkpr';
 import SettingView from '../SettingView';
 import MetaPanel from '../../components/MetaPanel';
 import ChatView from '../ChatView';
-import { zkchat } from '../../ducks/chats';
+import { fetchUnreads, zkchat } from '../../ducks/chats';
 import {
   generateECDHKeyPairFromhex,
   generateZkIdentityFromHex,
@@ -33,7 +33,8 @@ import classNames from 'classnames';
 import { Identity } from '@semaphore-protocol/identity';
 import TazModal from '../../components/TazModal';
 import NotificationView from '../NotificationView';
-import { refreshLastRead, updateNotifications } from '../../ducks/app';
+import { updateNotifications } from '../../ducks/app';
+import SearchResultsView from '../SearchResultsView';
 
 export default function App(): ReactElement {
   const dispatch = useDispatch();
@@ -96,7 +97,7 @@ export default function App(): ReactElement {
           zk: zkIdentity,
           ecdh: keyPair,
         });
-        await dispatch(refreshLastRead());
+        await dispatch(fetchUnreads());
         await dispatch(updateNotifications());
       })();
     } else if (selected?.type === 'interrep') {
@@ -115,6 +116,7 @@ export default function App(): ReactElement {
           zk: zkIdentity,
           ecdh: keyPair,
         });
+        await dispatch(fetchUnreads());
       })();
     } else if (selected?.type === 'taz') {
       (async () => {
@@ -127,6 +129,7 @@ export default function App(): ReactElement {
           zk: zkIdentity,
           ecdh: keyPair,
         });
+        await dispatch(fetchUnreads());
       })();
     }
   }, [selected]);
@@ -197,6 +200,9 @@ export default function App(): ReactElement {
           </Route>
           <Route path="/taz">
             <GlobalFeed />
+          </Route>
+          <Route path="/search">
+            <SearchResultsView />
           </Route>
           <Route path="/:name">
             <ProfileView />

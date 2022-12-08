@@ -14,6 +14,16 @@ export const zkchat = new ZKChatClient({
 sse.on('NEW_CHAT_MESSAGE', async (payload: any) => {
   const message = await zkchat.inflateMessage(payload);
   zkchat.prependMessage(message);
+  const chat: Chat = {
+    type: 'DIRECT',
+    receiver: '',
+    receiverECDH: message.receiver.ecdh!,
+    senderECDH: message.sender.ecdh!,
+    senderHash: message.sender.hash,
+  };
+  const chatId = zkchat.deriveChatId(chat);
+  // @ts-ignore
+  store.dispatch(incrementUnreadForChatId(chatId));
 });
 
 const onNewMessage = (message: ChatMessage) => {
@@ -33,6 +43,9 @@ zkchat.on(EVENTS.MESSAGE_PREPENDED, onNewMessage);
 zkchat.on(EVENTS.CHAT_CREATED, (chat: Chat) => {
   store.dispatch(addChat(chat));
 });
+zkchat.on(EVENTS.IDENTITY_CHANGED, () => {
+  store.dispatch(setChats(zkchat.activeChats));
+});
 
 enum ActionTypes {
   SET_CHATS = 'chats/setChats',
@@ -40,6 +53,7 @@ enum ActionTypes {
   ADD_CHAT = 'chats/addChat',
   SET_CHAT_NICKNAME = 'chats/setChatNickname',
   SET_MESSAGE = 'chats/SET_MESSAGE',
+  SET_UNREAD = 'chats/SET_UNREAD',
 }
 
 type Action<payload> = {
@@ -56,6 +70,9 @@ type State = {
       [chatId: string]: InflatedChat;
     };
   };
+  unreads: {
+    [chatId: string]: number;
+  };
   messages: {
     [messageId: string]: ChatMessage;
   };
@@ -67,6 +84,7 @@ export type InflatedChat = Chat & {
 };
 
 const initialState: State = {
+  unreads: {},
   chats: {
     order: [],
     map: {},
@@ -104,6 +122,14 @@ const setMessage = (msg: ChatMessage): Action<ChatMessage> => ({
   payload: msg,
 });
 
+const setUnread = (
+  chatId: string,
+  unreads: number
+): Action<{ chatId: string; unreads: number }> => ({
+  type: ActionTypes.SET_UNREAD,
+  payload: { chatId, unreads },
+});
+
 const setMessagesForChat = (
   chatId: string,
   messages: string[]
@@ -112,10 +138,62 @@ const setMessagesForChat = (
   payload: { chatId, messages },
 });
 
-export const fetchChats =
-  (address: string) => async (dispatch: Dispatch, getState: () => AppRootState) => {
-    await zkchat.fetchActiveChats(address);
-    dispatch(setChats(zkchat.activeChats));
+export const setLastReadForChatId =
+  (chatId: string) => async (dispatch: Dispatch, getState: () => AppRootState) => {
+    const {
+      chats: {
+        chats: { map },
+      },
+    } = getState();
+
+    const chat = map[chatId];
+
+    if (!zkchat.identity || !chat) return;
+
+    const res = await fetch(
+      `${config.indexerAPI}/v1/lastread/${zkchat.identity.ecdh.pub}/${chat.receiverECDH}`,
+      {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          lastread: Date.now(),
+        }),
+      }
+    );
+    const json = await res.json();
+
+    if (json.error) {
+      throw new Error(json.payload);
+    }
+
+    dispatch(setUnread(chatId, 0));
+  };
+
+export const fetchChats = (address: string) => async (dispatch: Dispatch) => {
+  await zkchat.fetchActiveChats(address);
+  dispatch(setChats(zkchat.activeChats));
+};
+
+export const fetchUnreads = () => async (dispatch: Dispatch, getState: () => AppRootState) => {
+  for (const chat of Object.values(zkchat.activeChats)) {
+    const { senderECDH, receiverECDH } = chat || {};
+    const chatId = zkchat.deriveChatId(chat);
+    const resp = await fetch(
+      `${config.indexerAPI}/v1/zkchat/chat-messages/dm/${receiverECDH}/${senderECDH}/unread`
+    );
+    const json = await resp.json();
+    if (!json.error) {
+      dispatch(setUnread(chatId, json.payload));
+    }
+  }
+};
+
+export const incrementUnreadForChatId =
+  (chatId: string) => async (dispatch: Dispatch, getState: () => AppRootState) => {
+    const {
+      chats: { unreads },
+    } = getState();
+    dispatch(setUnread(chatId, (unreads[chatId] || 0) + 1));
   };
 
 export default function chats(state = initialState, action: Action<any>): State {
@@ -128,6 +206,14 @@ export default function chats(state = initialState, action: Action<any>): State 
       return handleSetMessagesForChats(state, action);
     case ActionTypes.SET_CHAT_NICKNAME:
       return handeSetNickname(state, action);
+    case ActionTypes.SET_UNREAD:
+      return {
+        ...state,
+        unreads: {
+          ...state.unreads,
+          [action.payload.chatId]: action.payload.unreads,
+        },
+      };
     case ActionTypes.SET_MESSAGE:
       return {
         ...state,
@@ -284,5 +370,17 @@ export const useLastNMessages = (chatId: string, n = 1): ChatMessage[] => {
 export const useChatMessage = (messageId: string) => {
   return useSelector((state: AppRootState) => {
     return state.chats.messages[messageId];
+  }, deepEqual);
+};
+
+export const useUnreadChatMessagesAll = () => {
+  return useSelector((state: AppRootState) => {
+    return Object.values(state.chats.unreads).reduce((sum, val) => (sum += val), 0);
+  }, deepEqual);
+};
+
+export const useUnreadChatMessages = (chatId: string) => {
+  return useSelector((state: AppRootState) => {
+    return state.chats.unreads[chatId] || 0;
   }, deepEqual);
 };

@@ -5,6 +5,7 @@ import React, {
   ReactElement,
   useCallback,
   useEffect,
+  useRef,
   useState,
 } from 'react';
 import classNames from 'classnames';
@@ -16,7 +17,13 @@ import Avatar, { Username } from '../Avatar';
 import Textarea from '../Textarea';
 import { generateZkIdentityFromHex, sha256, signWithP256 } from '../../util/crypto';
 import { FromNow } from '../ChatMenu';
-import { useChatId, useChatMessage, useMessagesByChatId, zkchat } from '../../ducks/chats';
+import {
+  setLastReadForChatId,
+  useChatId,
+  useChatMessage,
+  useMessagesByChatId,
+  zkchat,
+} from '../../ducks/chats';
 import Icon from '../Icon';
 import SpinnerGIF from '../../../static/icons/spinner.gif';
 import { useDispatch } from 'react-redux';
@@ -30,6 +37,7 @@ export default function ChatContent(): ReactElement {
   const messages = useMessagesByChatId(chatId);
   const chat = useChatId(chatId);
   const params = useParams<{ chatId: string }>();
+  const dispatch = useDispatch();
 
   const loadMore = useCallback(async () => {
     if (!chat) return;
@@ -39,6 +47,10 @@ export default function ChatContent(): ReactElement {
   useEffect(() => {
     loadMore();
   }, [loadMore]);
+
+  useEffect(() => {
+    dispatch(setLastReadForChatId(chatId));
+  }, [chatId, messages]);
 
   if (!chat) return <></>;
 
@@ -97,6 +109,7 @@ function ChatHeader(): ReactElement {
 }
 
 function ChatEditor(): ReactElement {
+  const textareaRef = useRef<HTMLTextAreaElement>(null);
   const { chatId } = useParams<{ chatId: string }>();
   const selected = useSelectedLocalId();
   const [content, setContent] = useState('');
@@ -179,11 +192,11 @@ function ChatEditor(): ReactElement {
           setError(e.message);
         } finally {
           setSending(false);
-          e.currentTarget.focus();
+          textareaRef.current?.focus();
         }
       }
     },
-    [submitMessage]
+    [submitMessage, textareaRef]
   );
 
   const onChange = useCallback((e: ChangeEvent<HTMLTextAreaElement>) => {
@@ -199,6 +212,7 @@ function ChatEditor(): ReactElement {
       <div className="flex flex-row w-full">
         <div className="chat-content__editor ml-2">
           <Textarea
+            _ref={textareaRef}
             key={chatId}
             className="text-light border mr-2 my-2"
             // ref={(el) => el?.focus()}

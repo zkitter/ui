@@ -55,8 +55,11 @@ export default function NotificationView(): ReactElement {
   useEffect(() => {
     (async function () {
       if (selected?.type === 'gun') {
-        fetchMore();
+        fetchMore(true);
         dispatch(updateLastReadTimestamp());
+      } else {
+        setNotifications([]);
+        setOffset(0);
       }
     })();
   }, [selected]);
