@@ -13,7 +13,7 @@ export default function Textarea(props: Props): ReactElement {
   const { label, errorMessage, className, ...textareaProps } = props;
 
   const theme = useThemeContext();
-  console.log(props._ref);
+
   return (
     <div
       className={classNames('rounded-lg textarea-group', className, {
