@@ -26,11 +26,6 @@ sse.on('NEW_CHAT_MESSAGE', async (payload: any) => {
   store.dispatch(incrementUnreadForChatId(chatId));
 });
 
-const LAST_READ_LS_KEY = 'zkchat/lastRead/';
-function getLasReadKey(address: string, chatId: string) {
-  return LAST_READ_LS_KEY + address + '/' + chatId;
-}
-
 const onNewMessage = (message: ChatMessage) => {
   const { receiver, sender } = message;
   const chatId = zkchat.deriveChatId({
@@ -143,19 +138,36 @@ const setMessagesForChat = (
   payload: { chatId, messages },
 });
 
-const getLastReadForChatId = (chatId: string): Date => {
-  if (!zkchat.identity) return new Date(0);
-  const key = getLasReadKey(zkchat.identity.address, chatId);
-  const val = localStorage.getItem(key);
-  return val ? new Date(val) : new Date(0);
-};
+export const setLastReadForChatId =
+  (chatId: string) => async (dispatch: Dispatch, getState: () => AppRootState) => {
+    const {
+      chats: {
+        chats: { map },
+      },
+    } = getState();
 
-export const setLastReadForChatId = (chatId: string) => async (dispatch: Dispatch) => {
-  if (!zkchat.identity) return;
-  const key = getLasReadKey(zkchat.identity.address, chatId);
-  localStorage.setItem(key, new Date().toString());
-  dispatch(setUnread(chatId, 0));
-};
+    const chat = map[chatId];
+
+    if (!zkchat.identity || !chat) return;
+
+    const res = await fetch(
+      `${config.indexerAPI}/v1/lastread/${zkchat.identity.ecdh.pub}/${chat.receiverECDH}`,
+      {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          lastread: Date.now(),
+        }),
+      }
+    );
+    const json = await res.json();
+
+    if (json.error) {
+      throw new Error(json.payload);
+    }
+
+    dispatch(setUnread(chatId, 0));
+  };
 
 export const fetchChats = (address: string) => async (dispatch: Dispatch) => {
   await zkchat.fetchActiveChats(address);
@@ -166,11 +178,8 @@ export const fetchUnreads = () => async (dispatch: Dispatch, getState: () => App
   for (const chat of Object.values(zkchat.activeChats)) {
     const { senderECDH, receiverECDH } = chat || {};
     const chatId = zkchat.deriveChatId(chat);
-    const lastRead = getLastReadForChatId(chatId);
     const resp = await fetch(
-      `${
-        config.indexerAPI
-      }/v1/zkchat/chat-messages/dm/${receiverECDH}/${senderECDH}/unread?lastRead=${lastRead.getTime()}`
+      `${config.indexerAPI}/v1/zkchat/chat-messages/dm/${receiverECDH}/${senderECDH}/unread`
     );
     const json = await resp.json();
     if (!json.error) {
