@@ -1,4 +1,4 @@
-@import "../../util/variable";
+@import '../../util/variable';
 
 .global-search {
   @extend %row-nowrap;
@@ -38,7 +38,7 @@
 
   &__result {
     &--selected {
-      background-color: rgba($black, .1);
+      background-color: rgba($black, 0.1);
     }
   }
 }
@@ -47,7 +47,7 @@
   .global-search {
     &__result {
       &--selected {
-        background-color: rgba($white, .1);
+        background-color: rgba($white, 0.1);
       }
     }
   }
