@@ -18,6 +18,7 @@ import { useHistory } from 'react-router';
 import { useCallback } from 'react';
 import { EditorState } from 'draft-js';
 import { convertMarkdownToDraft } from '../components/DraftEditor';
+import Web3 from 'web3';
 
 enum ActionTypes {
   SET_POSTS = 'posts/setPosts',
@@ -554,12 +555,18 @@ export const useMeta = (messageId = '') => {
 export const useZKGroupFromPost = (messageId?: string) => {
   return useSelector((state: AppRootState): string | undefined => {
     if (!messageId) return;
+
     const post = state.posts.meta[messageId];
+
     if (!post?.interepProvider) return undefined;
+
+    const { interepProvider, interepGroup } = post;
+
+    if (Web3.utils.isAddress(interepProvider)) return `custom_${interepProvider}`;
 
     return post.interepProvider === 'taz'
       ? 'semaphore_taz_members'
-      : `interrep_${post.interepProvider}_${post.interepGroup}`;
+      : `interrep_${interepProvider}_${interepGroup}`;
   }, deepEqual);
 };
 
