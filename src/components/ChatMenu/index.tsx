@@ -8,30 +8,27 @@ import React, {
   useState,
 } from 'react';
 import classNames from 'classnames';
-import Avatar, { Username } from '../Avatar';
-import { useSelectedLocalId, useSelectedZKGroup } from '../../ducks/worker';
+import Avatar from '../Avatar';
+import { useSelectedLocalId, useSelectedZKGroup } from '@ducks/worker';
 import moment from 'moment';
-import config from '../../util/config';
+import config from '~/config';
 import Nickname from '../Nickname';
 import { useHistory, useParams } from 'react-router';
-import { useDispatch } from 'react-redux';
-import chats, {
-  fetchChats,
-  setChats,
+import {
   useChatId,
   useChatIds,
   useLastNMessages,
   useUnreadChatMessages,
   zkchat,
-} from '../../ducks/chats';
+} from '@ducks/chats';
 import Icon from '../Icon';
 import Input from '../Input';
-import { Chat } from '../../util/zkchat';
-import Modal, { ModalContent, ModalFooter, ModalHeader } from '../Modal';
+import { Chat } from '~/zkchat';
+import Modal, { ModalFooter, ModalHeader } from '../Modal';
 import Button from '../Button';
-import { getName } from '../../util/user';
-import { useUser } from '../../ducks/users';
-import sse from '../../util/sse';
+import { getName } from '~/user';
+import { useUser } from '@ducks/users';
+import sse from '~/sse';
 import { useThemeContext } from '../ThemeContext';
 
 export default function ChatMenu(): ReactElement {

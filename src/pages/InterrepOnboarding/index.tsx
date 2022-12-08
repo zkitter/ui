@@ -1,20 +1,20 @@
-import React, { ReactElement, ReactNode, useCallback, useEffect, useState } from 'react';
+import React, { ReactElement, useCallback, useEffect, useState } from 'react';
 import './interrep-onboarding.scss';
 import { useHistory } from 'react-router';
-import Button from '../../components/Button';
-import { useSelectedLocalId } from '../../ducks/worker';
-import Icon from '../../components/Icon';
-import SpinnerGif from '../../../static/icons/spinner.gif';
-import config from '../../util/config';
-import Input from '../../components/Input';
-import { checkPath, watchPath } from '../../util/interrep';
-import { postWorkerMessage } from '../../util/sw';
+import Button from '@components/Button';
+import { useSelectedLocalId } from '@ducks/worker';
+import Icon from '@components/Icon';
+import SpinnerGif from '#/icons/spinner.gif';
+import config from '~/config';
+import Input from '@components/Input';
+import { watchPath } from '~/interrep';
+import { postWorkerMessage } from '~/sw';
 import { setIdentity } from '../../serviceWorkers/util';
-import { disconnectWeb3, genSemaphore, useWeb3Account, useWeb3Unlocking } from '../../ducks/web3';
+import { disconnectWeb3, genSemaphore, useWeb3Account, useWeb3Unlocking } from '@ducks/web3';
 import { useDispatch } from 'react-redux';
-import { createZKPRIdentity, disconnectZKPR, useIdCommitment, useZKPR } from '../../ducks/zkpr';
-import Avatar, { Username } from '../../components/Avatar';
-import { findProof } from '../../util/merkle';
+import { createZKPRIdentity, disconnectZKPR, useIdCommitment, useZKPR } from '@ducks/zkpr';
+import Avatar, { Username } from '@components/Avatar';
+import { findProof } from '~/merkle';
 
 export enum ViewType {
   welcome,

@@ -1,6 +1,6 @@
 import React, {
-  KeyboardEvent,
   ChangeEvent,
+  KeyboardEvent,
   ReactElement,
   useCallback,
   useEffect,
@@ -14,10 +14,8 @@ import classNames from 'classnames';
 import './file-upload-modal.scss';
 import FileSelectButton from '../FileSelectButton';
 import Input from '../Input';
-import config from '../../util/config';
-import URLPreview from '../URLPreview';
 import { useDispatch } from 'react-redux';
-import { ipfsUploadOne } from '../../util/upload';
+import { ipfsUploadOne } from '~/upload';
 
 type Props = {
   className?: string;

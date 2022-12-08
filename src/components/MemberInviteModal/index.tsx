@@ -3,18 +3,18 @@ import Modal, { ModalContent, ModalFooter, ModalHeader } from '../Modal';
 import Input from '../Input';
 import Button from '../Button';
 import './member-invite-modal.scss';
-import { fetchAddressByName, searchUsers, useUser } from '../../ducks/users';
+import { fetchAddressByName, searchUsers, useUser } from '@ducks/users';
 import { useDispatch } from 'react-redux';
 import { useHistory } from 'react-router';
 import { useThemeContext } from '../ThemeContext';
 import Web3 from 'web3';
 import classNames from 'classnames';
 import Avatar from '../Avatar';
-import { getHandle, getName } from '../../util/user';
+import { getHandle, getName } from '~/user';
 import Icon from '../Icon';
-import SpinnerGIF from '../../../static/icons/spinner.gif';
-import { submitConnection } from '../../ducks/drafts';
-import { ConnectionMessageSubType } from '../../util/message';
+import SpinnerGIF from '#/icons/spinner.gif';
+import { submitConnection } from '@ducks/drafts';
+import { ConnectionMessageSubType } from '~/message';
 
 type Props = {
   onClose: () => void;

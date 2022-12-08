@@ -1,18 +1,16 @@
 import React, { ReactElement, useEffect, useState } from 'react';
 import classNames from 'classnames';
 import Icon from '../Icon';
-import SpinnerGIF from '../../../static/icons/spinner.gif';
-import SwitchButton from '../SwitchButton';
+import SpinnerGIF from '#/icons/spinner.gif';
 import { useThemeContext } from '../ThemeContext';
 import { UserRow } from '../DiscoverUserPanel';
-import Button from '../Button';
 import { useParams } from 'react-router';
 import Web3 from 'web3';
-import { fetchAddressByName, useUser } from '../../ducks/users';
+import { fetchAddressByName, useUser } from '@ducks/users';
 import { useDispatch } from 'react-redux';
-import { useSelectedLocalId } from '../../ducks/worker';
+import { useSelectedLocalId } from '@ducks/worker';
 import MemberInviteModal from '../MemberInviteModal';
-import config from '../../util/config';
+import config from '~/config';
 
 type Props = {};
 

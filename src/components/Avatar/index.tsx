@@ -2,17 +2,17 @@ import React, { ReactElement, useEffect, useState } from 'react';
 import makeBlockie from 'ethereum-blockies-base64';
 import classNames from 'classnames';
 import Icon from '../Icon';
-import { fetchAddressByName, getUser, User, useUser } from '../../ducks/users';
+import { fetchAddressByName, getUser, User, useUser } from '@ducks/users';
 import { useDispatch } from 'react-redux';
 import Web3 from 'web3';
-import { getTwitterUser } from '../../util/twitter';
-import { fetchNameByAddress } from '../../util/web3';
-import { ellipsify } from '../../util/user';
-import TwitterBronze from '../../../static/icons/twitter_bronze.svg';
-import TwitterSilver from '../../../static/icons/twitter_silver.svg';
-import TwitterGold from '../../../static/icons/twitter_gold.svg';
-import TwitterUnrated from '../../../static/icons/twitter_unrated.svg';
-import TAZLogo from '../../../static/icons/taz-logo.svg';
+import { getTwitterUser } from '~/twitter';
+import { fetchNameByAddress } from '~/web3';
+import { ellipsify } from '~/user';
+import TwitterBronze from '#/icons/twitter_bronze.svg';
+import TwitterSilver from '#/icons/twitter_silver.svg';
+import TwitterGold from '#/icons/twitter_gold.svg';
+import TwitterUnrated from '#/icons/twitter_unrated.svg';
+import TAZLogo from '#/icons/taz-logo.svg';
 import './avatar.scss';
 
 type Props = {

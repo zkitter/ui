@@ -2,9 +2,9 @@ import React, { ReactElement, useEffect, useState } from 'react';
 import classNames from 'classnames';
 import './discover-tag.scss';
 import Icon from '../Icon';
-import SpinnerGIF from '../../../static/icons/spinner.gif';
+import SpinnerGIF from '#/icons/spinner.gif';
 import { useHistory } from 'react-router';
-import config from '../../util/config';
+import config from '~/config';
 import { useThemeContext } from '../ThemeContext';
 
 export default function DiscoverTagPanel(): ReactElement {

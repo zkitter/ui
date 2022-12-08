@@ -1,8 +1,7 @@
 import React, { ReactElement } from 'react';
 import Modal, { ModalContent, ModalHeader } from '../Modal';
-import { useSelectedLocalId } from '../../ducks/worker';
+import { useSelectedLocalId } from '@ducks/worker';
 import QRCode from 'react-qr-code';
-import { Identity } from '../../serviceWorkers/identity';
 
 type Props = {
   onClose: () => void;

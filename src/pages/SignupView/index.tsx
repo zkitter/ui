@@ -8,7 +8,7 @@ import React, {
   useState,
 } from 'react';
 import './signup.scss';
-import Button from '../../components/Button';
+import Button from '@components/Button';
 import {
   connectWeb3,
   createRecordTx,
@@ -21,43 +21,36 @@ import {
   usePendingCreateTx,
   useWeb3Account,
   useWeb3Loading,
-} from '../../ducks/web3';
+} from '@ducks/web3';
 import { useDispatch } from 'react-redux';
-import config from '../../util/config';
-import { getIdentityHash, watchTx } from '../../util/arb3';
-import { setUser, useUser, watchUser } from '../../ducks/users';
-import Input from '../../components/Input';
-import Textarea from '../../components/Textarea';
+import config from '~/config';
+import { getIdentityHash, watchTx } from '~/arb3';
+import { setUser, useUser, watchUser } from '@ducks/users';
+import Input from '@components/Input';
+import Textarea from '@components/Textarea';
 import { CoverImageEditor, ProfileImageEditor } from '../ProfileView';
-import { submitProfile } from '../../ducks/drafts';
-import { ProfileMessageSubType } from '../../util/message';
+import { submitProfile } from '@ducks/drafts';
+import { ProfileMessageSubType } from '~/message';
 import { useHistory } from 'react-router';
 import deepEqual from 'fast-deep-equal';
 import { addIdentity, setIdentity, setPassphrase } from '../../serviceWorkers/util';
-import { postWorkerMessage } from '../../util/sw';
-import { useIdentities, useSelectedLocalId, useWorkerUnlocked } from '../../ducks/worker';
-import Icon from '../../components/Icon';
+import { postWorkerMessage } from '~/sw';
+import { useIdentities, useSelectedLocalId, useWorkerUnlocked } from '@ducks/worker';
+import Icon from '@components/Icon';
 import classNames from 'classnames';
-import {
-  connectZKPR,
-  disconnectZKPR,
-  useIdCommitment,
-  useZKPR,
-  useZKPRLoading,
-} from '../../ducks/zkpr';
+import { connectZKPR, disconnectZKPR, useIdCommitment, useZKPR, useZKPRLoading } from '@ducks/zkpr';
 
-import MetamaskSVG from '../../../static/icons/metamask-fox.svg';
-import ZKPRSVG from '../../../static/icons/zkpr-logo.svg';
-import TazLogo from '../../../static/icons/taz-logo.png';
-import SpinnerGIF from '../../../static/icons/spinner.gif';
-import Avatar, { Username } from '../../components/Avatar';
-import { useThemeContext } from '../../components/ThemeContext';
+import MetamaskSVG from '#/icons/metamask-fox.svg';
+import ZKPRSVG from '#/icons/zkpr-logo.svg';
+import TazLogo from '#/icons/taz-logo.png';
+import SpinnerGIF from '#/icons/spinner.gif';
+import Avatar, { Username } from '@components/Avatar';
+import { useThemeContext } from '@components/ThemeContext';
 import QrReader from 'react-qr-reader';
-import { safeJsonParse } from '../../util/misc';
+import { safeJsonParse } from '~/misc';
 import { Decoder } from '@nuintun/qrcode';
-import { Strategy, ZkIdentity } from '@zk-kit/identity';
 import { Identity } from '@semaphore-protocol/identity';
-import { findProof } from '../../util/merkle';
+import { findProof } from '~/merkle';
 
 export enum ViewType {
   welcome,

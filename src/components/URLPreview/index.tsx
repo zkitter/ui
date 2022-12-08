@@ -2,9 +2,9 @@ import React, { ReactElement, useCallback, useEffect, useState } from 'react';
 import './url-preview.scss';
 import Icon from '../Icon';
 import classNames from 'classnames';
-import config from '../../util/config';
+import config from '~/config';
 import { shouldBlurImage } from '../../pages/SettingView';
-import SpinnerGif from '../../../static/icons/spinner.gif';
+import SpinnerGif from '#/icons/spinner.gif';
 import WebTorrentViewer from '../WebTorrentViewer';
 
 type Props = {
