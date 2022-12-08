@@ -58,7 +58,7 @@ enum ActionTypes {
 
 type Action<payload> = {
   type: ActionTypes;
-  payload?: payload;
+  payload: payload;
   meta?: any;
   error?: boolean;
 };
@@ -207,13 +207,7 @@ export default function chats(state = initialState, action: Action<any>): State 
     case ActionTypes.SET_CHAT_NICKNAME:
       return handeSetNickname(state, action);
     case ActionTypes.SET_UNREAD:
-      return {
-        ...state,
-        unreads: {
-          ...state.unreads,
-          [action.payload.chatId]: action.payload.unreads,
-        },
-      };
+      return handleSetUnread(state, action);
     case ActionTypes.SET_MESSAGE:
       return {
         ...state,
@@ -330,9 +324,31 @@ function handleSetMessagesForChats(
   };
 }
 
+function handleSetUnread(state: State, action: Action<{ chatId: string; unreads: number }>): State {
+  const { chatId, unreads } = action.payload;
+  const { chats } = state;
+
+  return {
+    ...state,
+    chats: {
+      ...chats,
+      order: unreads ? [chatId].concat(chats.order.filter(id => id !== chatId)) : chats.order,
+    },
+    unreads: {
+      ...state.unreads,
+      [chatId]: unreads,
+    },
+  };
+}
+
 export const useChatIds = () => {
   return useSelector((state: AppRootState) => {
-    return state.chats.chats.order;
+    const {
+      chats: {
+        chats: { order },
+      },
+    } = state;
+    return order;
   }, deepEqual);
 };
 
@@ -375,7 +391,11 @@ export const useChatMessage = (messageId: string) => {
 
 export const useUnreadChatMessagesAll = () => {
   return useSelector((state: AppRootState) => {
-    return Object.values(state.chats.unreads).reduce((sum, val) => (sum += val), 0);
+    const {
+      chats: { order },
+      unreads,
+    } = state.chats;
+    return order.reduce((sum, id) => (sum += unreads[id] || 0), 0);
   }, deepEqual);
 };
 

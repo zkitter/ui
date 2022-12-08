@@ -43,18 +43,6 @@ export default function ChatMenu(): ReactElement {
   const [searchResults, setSearchResults] = useState<Chat[] | null>(null);
   const params = useParams<{ chatId: string }>();
 
-  // useEffect(() => {
-  //   if (selecteduser?.ecdh && selected?.type === 'gun') {
-  //     setTimeout(() => {
-  //       dispatch(fetchChats(selecteduser.ecdh));
-  //     }, 500);
-  //   } else if (selected?.type === 'interrep' || selected?.type === 'taz') {
-  //     setTimeout(() => {
-  //       dispatch(fetchChats(selected.identityCommitment));
-  //     }, 500);
-  //   }
-  // }, [selected, selecteduser]);
-
   const onSearchNewChatChange = useCallback(async (e: ChangeEvent<HTMLInputElement>) => {
     setSearchParam(e.target.value);
     const res = await fetch(`${config.indexerAPI}/v1/zkchat/chats/search/${e.target.value}`);
