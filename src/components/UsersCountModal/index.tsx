@@ -37,12 +37,21 @@ export enum Item {
 const useItem = (item: Item, id: string) => {
   if (item === Item.Like) return { fetch: fetchLikersByPost, count: useMeta(id).likeCount };
   if (item === Item.Follower)
-    return { fetch: fetchUserFollowers, count: useUser(id)?.meta.followerCount };
+    return {
+      fetch: fetchUserFollowers,
+      count: useUser(id)?.meta?.followerCount || 0,
+    };
 
   if (item === Item.Following)
-    return { fetch: fetchUserFollowings, count: useUser(id)?.meta.followingCount };
+    return {
+      fetch: fetchUserFollowings,
+      count: useUser(id)?.meta?.followingCount || 0,
+    };
 
-  return { fetch: fetchRetweetsByPost, count: useMeta(id).repostCount };
+  return {
+    fetch: fetchRetweetsByPost,
+    count: useMeta(id).repostCount,
+  };
 };
 
 function MaybePlural(props: { users: string[]; text: Item }): ReactElement {

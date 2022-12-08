@@ -84,10 +84,10 @@ export default function Avatar(props: Props): ReactElement {
   }, [name, address, groupName]);
 
   useEffect(() => {
-    if (username) {
+    if (username && !user) {
       dispatch(getUser(username));
     }
-  }, [username]);
+  }, [username, user]);
 
   useEffect(() => {
     (async () => {

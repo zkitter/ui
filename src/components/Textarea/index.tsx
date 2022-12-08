@@ -4,7 +4,7 @@ import './textarea.scss';
 import { useThemeContext } from '../ThemeContext';
 
 type Props = {
-  ref?: LegacyRef<HTMLTextAreaElement>;
+  _ref?: LegacyRef<HTMLTextAreaElement>;
   label?: string;
   errorMessage?: string;
 } & TextareaHTMLAttributes<HTMLTextAreaElement>;
@@ -23,7 +23,7 @@ export default function Textarea(props: Props): ReactElement {
         'focus-within:border-gray-600 border-gray-800': !textareaProps.readOnly && theme === 'dark',
       })}>
       {label && <div className="textarea-group__label">{label}</div>}
-      <textarea ref={props.ref} {...textareaProps} />
+      <textarea ref={props._ref} {...textareaProps} />
       {errorMessage && <small className="error-message">{errorMessage}</small>}
     </div>
   );

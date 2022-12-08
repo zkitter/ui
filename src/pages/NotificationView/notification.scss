@@ -1,0 +1,35 @@
+@import '../../util/variable';
+
+.notifications {
+  width: 36.25rem;
+  overflow-y: auto;
+
+  &::-webkit-scrollbar {
+    width: 0; /* Remove scrollbar space */
+    background: transparent; /* Optional: just make scrollbar invisible */
+  }
+}
+
+.notification-row {
+  //padding: 1rem 2rem;
+
+  &__icon {
+    align-items: flex-start !important;
+  }
+}
+
+.notification-row {
+  border-bottom: 1px solid $gray-100;
+}
+
+.dark {
+  .notification-row {
+    border-bottom: 1px solid $gray-800;
+  }
+}
+
+@media only screen and (max-width: 768px) {
+  .notifications {
+    margin: 0;
+  }
+}
