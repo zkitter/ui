@@ -94,6 +94,7 @@ export type Chat =
   | {
       type: 'PUBLIC_ROOM';
       receiver: string;
+      receiverECDH?: string;
       senderECDH: string;
       senderHash?: string;
     };
@@ -241,6 +242,7 @@ export class ZKChatClient extends EventEmitter2 {
     MESSAGE_PREPENDED: 'MESSAGE_PREPENDED',
     MESSAGE_APPENDED: 'MESSAGE_APPENDED',
     CHAT_CREATED: 'CHAT_CREATED',
+    IDENTITY_CHANGED: 'IDENTITY_CHANGED',
   };
 
   activeChats: {
@@ -375,11 +377,13 @@ export class ZKChatClient extends EventEmitter2 {
     const validChats = await this._validateConvos(bucket.activeChats);
 
     this.activeChats = validChats;
+    await this.fetchActiveChats(this.identity!.ecdh.pub);
   }
 
   async importIdentity(identity: ZKChatIdentity) {
     this.identity = identity;
     await this._load();
+    this.emit(ZKChatClient.EVENTS.IDENTITY_CHANGED);
   }
 
   createDM = async (receiver: string, receiverECDH: string, isAnon?: boolean): Promise<Chat> => {

@@ -16,6 +16,9 @@ import Modal from '../Modal';
 import MetaPanel from '../MetaPanel';
 import { useThemeContext } from '../ThemeContext';
 import config from '../../util/config';
+import NotificationIcon from '../NotificationIcon';
+import ChatNavIcon from '../ChatNavIcon';
+import GlobalSearchInput from '../GlobalSearchInput';
 
 export default function TopNav(): ReactElement {
   const theme = useThemeContext();
@@ -37,6 +40,7 @@ export default function TopNav(): ReactElement {
       )}>
       <div className={classNames('flex flex-row flex-nowrap items-center flex-grow flex-shrink-0')}>
         <Switch>
+          <Route path="/search" component={SearchHeaderGroup} />
           <Route path="/explore" component={GlobalHeaderGroup} />
           <Route path="/home" component={GlobalHeaderGroup} />
           <Route path="/tag/:tagName" component={TagHeaderGroup} />
@@ -46,7 +50,7 @@ export default function TopNav(): ReactElement {
           <Route path="/onboarding/interrep" component={DefaultHeaderGroup} />
           <Route path="/connect/twitter" component={DefaultHeaderGroup} />
           <Route path="/signup" component={DefaultHeaderGroup} />
-          <Route path="/notification" component={DefaultHeaderGroup} />
+          <Route path="/notifications" component={DefaultHeaderGroup} />
           <Route path="/chat/:chatId?" component={ChatHeaderGroup} />
           <Route path="/settings" component={SettingHeaderGroup} />
           <Route path="/:name" component={UserProfileHeaderGroup} />
@@ -101,9 +105,9 @@ function NavIconRow() {
         }
       )}>
       <TopNavIcon fa="fas fa-home" pathname="/home" disabled={!loggedIn} />
-      <TopNavIcon fa="fas fa-envelope" pathname={`/chat`} disabled={!selectedLocalId} />
+      <ChatNavIcon isTop fa="fas fa-envelope" pathname="/chat" disabled={!selectedLocalId} />
       <TopNavIcon fa="fas fa-globe-asia" pathname="/explore" />
-      {/*<TopNavIcon fa="fas fa-bell" pathname="/notifications" />*/}
+      <NotificationIcon isTop fa="fas fa-bell" pathname="/notifications" />
     </div>
   );
 }
@@ -134,6 +138,50 @@ function DefaultHeaderGroup() {
         'p-1 mx-4 overflow-hidden'
       )}>
       <Icon url="/applogo.svg" size={2} />
+    </div>
+  );
+}
+
+function SearchHeaderGroup() {
+  const loggedIn = useGunLoggedIn();
+  const account = useAccount();
+  const selectedLocalId = useSelectedLocalId();
+  const history = useHistory();
+  const [ensName, setEnsName] = useState('');
+  const params = new URLSearchParams(location.search);
+  const query = params.get('q') || undefined;
+
+  const goBack = useCallback(() => {
+    if (history.action !== 'POP') return history.goBack();
+    history.push('/');
+  }, [history]);
+
+  let address = '';
+
+  if (loggedIn) {
+    address = selectedLocalId?.address || account;
+  }
+
+  useEffect(() => {
+    (async () => {
+      const ens = await fetchNameByAddress(address);
+      setEnsName(ens);
+    })();
+  }, [address]);
+
+  return (
+    <div
+      className={classNames(
+        'flex flex-row flex-nowrap flex-grow items-center flex-shrink-0',
+        'p-1 mx-4'
+      )}>
+      <Icon
+        className="w-8 h-8 flex flex-row items-center justify-center top-nav__back-icon"
+        fa="fas fa-chevron-left"
+        onClick={goBack}
+      />
+      <GlobalSearchInput defaultValue={query} />
+      <TopNavContextButton />
     </div>
   );
 }

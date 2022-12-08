@@ -58,6 +58,7 @@ export function UserRow(props: {
   name?: string;
   group?: string;
   onClick?: () => void;
+  highlight?: boolean;
 }): ReactElement {
   const history = useHistory();
   const [username, setUsername] = useState('');
@@ -95,6 +96,8 @@ export function UserRow(props: {
         {
           'hover:bg-gray-200': theme !== 'dark',
           'hover:bg-gray-800': theme === 'dark',
+          'bg-gray-200': props.highlight && theme !== 'dark',
+          'bg-gray-800': props.highlight && theme === 'dark',
         }
       )}
       onClick={props.onClick || onClick}>

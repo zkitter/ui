@@ -6,12 +6,13 @@ import PostModerationPanel from '../PostModerationPanel';
 import Icon from '../Icon';
 import classNames from 'classnames';
 import GroupMembersPanel from '../GroupMembersPanel';
+import GlobalSearchInput from '../GlobalSearchInput';
 
 export default function MetaPanel(props: { className?: string }): ReactElement {
   return (
     <Switch>
       <Route path="/explore">
-        <DefaultMetaPanels className={props.className} />
+        <ExploreMetaPanels className={props.className} />
       </Route>
       <Route path="/:name/status/:hash">
         <PostMetaPanels className={props.className} />
@@ -23,9 +24,11 @@ export default function MetaPanel(props: { className?: string }): ReactElement {
         <DefaultMetaPanels className={props.className} />
       </Route>
       <Route path="/home">
-        <DefaultMetaPanels className={props.className} />
+        <ExploreMetaPanels className={props.className} />
       </Route>
-      <Route path="/notifications" />
+      <Route path="/notifications">
+        <ExploreMetaPanels className={props.className} />
+      </Route>
       <Route path="/settings" />
       <Route path="/create-local-backup" />
       <Route path="/onboarding/interrep" />
@@ -42,6 +45,17 @@ export default function MetaPanel(props: { className?: string }): ReactElement {
 function DefaultMetaPanels(props: { className?: string }): ReactElement {
   return (
     <div className={classNames('app__meta-content', props.className)}>
+      <DiscoverUserPanel key="discover-user" />
+      <DiscoverTagPanel key="discover-tag" />
+      <AppFooter />
+    </div>
+  );
+}
+
+function ExploreMetaPanels(props: { className?: string }): ReactElement {
+  return (
+    <div className={classNames('app__meta-content', props.className)}>
+      <GlobalSearchInput className="mt-2" />
       <DiscoverUserPanel key="discover-user" />
       <DiscoverTagPanel key="discover-tag" />
       <AppFooter />

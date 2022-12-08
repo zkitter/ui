@@ -32,6 +32,7 @@ test('store - should initialize', async () => {
     mods: { posts: {} },
     app: {
       theme: 'dark',
+      notifications: 0,
     },
     chats: {
       chats: {
@@ -39,6 +40,7 @@ test('store - should initialize', async () => {
         order: [],
       },
       messages: {},
+      unreads: {},
     },
   });
 });
