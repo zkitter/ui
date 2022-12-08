@@ -1,13 +1,13 @@
-import sinon from 'sinon';
-import { store, ducks, fetchStub, zkprStub, postWorkMessageStub } from '../util/testUtils';
+import { ducks, fetchStub, postWorkMessageStub, store, zkprStub } from '../util/testUtils';
+
 const {
   zkpr: { connectZKPR, createZKPRIdentity, maybeSetZKPRIdentity },
 } = ducks;
 
 describe('ZKPR duck', () => {
   it('should connect to zkpr', async () => {
-    // @ts-ignore
     fetchStub.returns(
+      // @ts-ignore
       Promise.resolve({
         json: async () => ({
           payload: {

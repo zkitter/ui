@@ -1,5 +1,13 @@
 import './chat-content.scss';
-import React, { ReactElement, useState, KeyboardEvent, useCallback, useEffect } from 'react';
+import React, {
+  ChangeEvent,
+  KeyboardEvent,
+  ReactElement,
+  useCallback,
+  useEffect,
+  useRef,
+  useState,
+} from 'react';
 import classNames from 'classnames';
 import { useParams } from 'react-router';
 import InfiniteScrollable from '../InfiniteScrollable';
@@ -7,15 +15,10 @@ import { useSelectedLocalId, useSelectedZKGroup } from '../../ducks/worker';
 import Nickname from '../Nickname';
 import Avatar, { Username } from '../Avatar';
 import Textarea from '../Textarea';
-import {
-  generateECDHKeyPairFromhex,
-  generateZkIdentityFromHex,
-  sha256,
-  signWithP256,
-} from '../../util/crypto';
+import { generateZkIdentityFromHex, sha256, signWithP256 } from '../../util/crypto';
 import { FromNow } from '../ChatMenu';
-import chats, {
-  InflatedChat,
+import {
+  setLastReadForChatId,
   useChatId,
   useChatMessage,
   useMessagesByChatId,
@@ -34,6 +37,7 @@ export default function ChatContent(): ReactElement {
   const messages = useMessagesByChatId(chatId);
   const chat = useChatId(chatId);
   const params = useParams<{ chatId: string }>();
+  const dispatch = useDispatch();
 
   const loadMore = useCallback(async () => {
     if (!chat) return;
@@ -43,6 +47,10 @@ export default function ChatContent(): ReactElement {
   useEffect(() => {
     loadMore();
   }, [loadMore]);
+
+  useEffect(() => {
+    dispatch(setLastReadForChatId(chatId));
+  }, [chatId, messages]);
 
   if (!chat) return <></>;
 
@@ -101,6 +109,7 @@ function ChatHeader(): ReactElement {
 }
 
 function ChatEditor(): ReactElement {
+  const textareaRef = useRef<HTMLTextAreaElement>(null);
   const { chatId } = useParams<{ chatId: string }>();
   const selected = useSelectedLocalId();
   const [content, setContent] = useState('');
@@ -183,14 +192,14 @@ function ChatEditor(): ReactElement {
           setError(e.message);
         } finally {
           setSending(false);
-          e.target.focus();
+          textareaRef.current?.focus();
         }
       }
     },
-    [submitMessage]
+    [submitMessage, textareaRef]
   );
 
-  const onChange = useCallback(async (e: KeyboardEvent<HTMLTextAreaElement>) => {
+  const onChange = useCallback((e: ChangeEvent<HTMLTextAreaElement>) => {
     setContent(e.target.value);
     setError('');
   }, []);
@@ -203,6 +212,7 @@ function ChatEditor(): ReactElement {
       <div className="flex flex-row w-full">
         <div className="chat-content__editor ml-2">
           <Textarea
+            _ref={textareaRef}
             key={chatId}
             className="text-light border mr-2 my-2"
             // ref={(el) => el?.focus()}

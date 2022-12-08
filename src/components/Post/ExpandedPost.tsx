@@ -6,14 +6,14 @@ import { useHistory } from 'react-router';
 import { convertMarkdownToDraft, DraftEditor } from '../DraftEditor';
 import { fetchLikersByPost, useMeta, usePost, useZKGroupFromPost } from '../../ducks/posts';
 import { useUser } from '../../ducks/users';
-import { PostMessageSubType } from '../../util/message';
+import { MessageType, PostMessageSubType } from '../../util/message';
 import { getHandle, getUsername } from '../../util/user';
 import { useThemeContext } from '../ThemeContext';
 
 import Avatar from '../Avatar';
 import Nickname from '../Nickname';
 import PostFooter from './PostFooter';
-import PostLikes, { Item } from '../UsersCountModal';
+import UsersCountModal, { Item } from '../UsersCountModal';
 import PostMenu from './PostMenu';
 import URLPreview from '../URLPreview';
 import { Props } from './types';
@@ -37,11 +37,6 @@ export default function ExpandedPost(
   const meta = useMeta(props.messageId);
   const zkGroup = useZKGroupFromPost(props.messageId);
   const theme = useThemeContext();
-  const [likers, setLikers] = useState<string[] | null>(null);
-
-  useEffect(() => {
-    fetchLikersByPost(messageId).then(likers => setLikers(likers));
-  }, []);
 
   const gotoUserProfile = useCallback(
     (e: any) => {
@@ -66,6 +61,7 @@ export default function ExpandedPost(
           address={user?.address}
           incognito={post.creator === ''}
           group={zkGroup}
+          twitterUsername={post.type === MessageType._TWEET ? post.creator : undefined}
         />
         <div className="flex flex-col flex-nowrap items-start text-light w-full cursor-pointer">
           <div className="font-bold text-base mr-1 hover:underline" onClick={gotoUserProfile}>
@@ -118,14 +114,25 @@ export default function ExpandedPost(
           <div className="text-gray-500 my-2">{moment(post.createdAt).format('lll')}</div>
         </div>
 
-        <PostLikes
-          className={classNames('mt-2 pt-3 border-t w-full', {
-            'border-gray-200': theme !== 'dark',
-            'border-gray-800': theme === 'dark',
-          })}
-          item={Item.Like}
-          id={messageId}
-        />
+        <div className="flex flex-row flex-no-wrap item-center text-light w-full">
+          <UsersCountModal
+            className={classNames('mt-2 pt-3 mx-2 w-full', {
+              'border-gray-200': theme !== 'dark',
+              'border-gray-800': theme === 'dark',
+            })}
+            item={Item.Like}
+            id={messageId}
+          />
+
+          <UsersCountModal
+            className={classNames('mt-2 pt-3 w-full', {
+              'border-gray-200': theme !== 'dark',
+              'border-gray-800': theme === 'dark',
+            })}
+            item={Item.Retweet}
+            id={messageId}
+          />
+        </div>
 
         <PostFooter
           messageId={messageId}

@@ -50,6 +50,7 @@ export default function Web3Button(props: Props): ReactElement {
   const identities = useIdentities();
   const selectedLocalId = useSelectedLocalId();
   const [ensName, setEnsName] = useState('');
+  const [opened, setOpened] = useState(false);
   const theme = useThemeContext();
   const history = useHistory();
 
@@ -78,6 +79,8 @@ export default function Web3Button(props: Props): ReactElement {
   const onClick = useCallback(() => {
     if (!id) {
       history.push('/signup');
+    } else if (id.type === 'gun') {
+      history.push(`/${id.address}`);
     } else {
       props.onClick && props.onClick();
     }
@@ -144,7 +147,7 @@ export default function Web3Button(props: Props): ReactElement {
           'bg-gray-100': theme !== 'dark',
         }
       )}>
-      <Web3ButtonLeft {...props} />
+      <Web3ButtonLeft {...props} opened={opened} setOpened={setOpened} />
       <Button
         className={classNames('text-black', 'font-inter', 'web3-button__content', {
           'text-gray-100 bg-gray-800': ['interrep', 'zkpr_interrep', 'taz'].includes(id?.type),
@@ -160,14 +163,18 @@ export default function Web3Button(props: Props): ReactElement {
   );
 }
 
-function Web3ButtonLeft(props: Props): ReactElement {
+function Web3ButtonLeft(
+  props: Props & {
+    opened: boolean;
+    setOpened: (opened: boolean) => void;
+  }
+): ReactElement {
   const selectedLocalId = useSelectedLocalId();
-  const [opened, setOpened] = useState(false);
   const group = useSelectedZKGroup();
 
   if (selectedLocalId) {
     return (
-      <UserMenuable opened={opened} setOpened={setOpened}>
+      <UserMenuable opened={props.opened} setOpened={props.setOpened}>
         <Icon
           className={classNames(
             'text-gray-500 hover:text-gray-800 mobile-hidden',
@@ -185,7 +192,7 @@ function Web3ButtonLeft(props: Props): ReactElement {
     );
   }
 
-  return <UnauthButton {...props} opened={opened} setOpened={setOpened} />;
+  return <UnauthButton {...props} opened={props.opened} setOpened={props.setOpened} />;
 }
 
 function UserMenuable(props: {
@@ -388,7 +395,7 @@ function CurrentUserItem(props: {
   const gotoProfile = useCallback(() => {
     if (!selectedUser) return;
     const { ens, name, address } = selectedUser;
-    history.push(`/${ens || address}`);
+    history.push(`/${ens || address}/`);
     props.closePopup();
   }, [selectedUser]);
 

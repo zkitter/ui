@@ -15,6 +15,8 @@ export const defaultENS = new ENS({
 });
 
 const cachedName: any = {};
+const fetchPromises: any = {};
+
 export const fetchNameByAddress = async (address: string) => {
   if (typeof cachedName[address] !== 'undefined') {
     return cachedName[address];
@@ -33,11 +35,21 @@ export const fetchAddressByName = async (ens: string) => {
   if (typeof cachedName[ens] !== 'undefined') {
     return cachedName[ens];
   }
-  const address = await defaultENS.name(ens).getAddress();
 
-  if (address) {
-    cachedName[ens] = address || null;
+  if (fetchPromises[ens]) {
+    return fetchPromises[ens];
   }
 
-  return address;
+  const fetchPromise = new Promise(async resolve => {
+    const address = await defaultENS.name(ens).getAddress();
+    if (address) {
+      cachedName[ens] = address || null;
+    }
+    delete fetchPromises[ens];
+    resolve(address);
+  });
+
+  fetchPromises[ens] = fetchPromise;
+
+  return fetchPromise;
 };

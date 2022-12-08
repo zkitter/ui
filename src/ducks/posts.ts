@@ -16,6 +16,8 @@ import config from '../util/config';
 import { Dispatch } from 'redux';
 import { useHistory } from 'react-router';
 import { useCallback } from 'react';
+import { EditorState } from 'draft-js';
+import { convertMarkdownToDraft } from '../components/DraftEditor';
 
 enum ActionTypes {
   SET_POSTS = 'posts/setPosts',
@@ -205,6 +207,16 @@ export const fetchPosts =
     return json.payload.map((post: any) => post.messageId);
   };
 
+export const fetchNotifications =
+  (address: string, limit = 10, offset = 0) =>
+  async () => {
+    const resp = await fetch(
+      `${config.indexerAPI}/v1/${address}/notifications?limit=${limit}&offset=${offset}`
+    );
+    const json = await resp.json();
+    return json.payload;
+  };
+
 export const fetchLikedBy =
   (creator?: string, limit = 10, offset = 0) =>
   async (dispatch: ThunkDispatch<any, any, any>, getState: () => AppRootState) => {
@@ -269,6 +281,22 @@ export const fetchUserFollowings = async (
   return !followings.length ? null : followings;
 };
 
+export const fetchRetweetsByPost = async (
+  messageId: string,
+  limit = 10,
+  offset = 0
+): Promise<string[] | null> => {
+  const { creator, hash } = parseMessageId(messageId);
+
+  const resp = await fetch(
+    `${config.indexerAPI}/v1/post/${creator}%2F${hash}/retweets?limit=${limit}&offset=${offset}`,
+    { method: 'GET' }
+  );
+
+  const { payload: retweets } = await resp.json();
+  return !retweets.length ? null : retweets;
+};
+
 export const fetchRepliedBy =
   (creator: string, limit = 10, offset = 0) =>
   async (dispatch: ThunkDispatch<any, any, any>, getState: () => AppRootState) => {
@@ -326,6 +354,21 @@ const processPosts = (posts: any[]) => async (dispatch: Dispatch) => {
     posts.forEach((post: any) => dispatch(fetchPost(post.messageId)));
   }, 0);
 };
+
+export const searchPosts =
+  (query: string, limit = 20, offset = 0) =>
+  async (dispatch: ThunkDispatch<any, any, any>, getState: () => AppRootState) => {
+    const resp = await fetch(`${config.indexerAPI}/v1/posts/search`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ query, limit, offset }),
+    });
+    const json = await resp.json();
+
+    if (json.error) throw new Error(json.payload);
+
+    return json.payload.map((p: any) => p.messageId);
+  };
 
 export const fetchHomeFeed =
   (limit = 10, offset = 0) =>
@@ -485,6 +528,16 @@ export const usePost = (messageId?: string): Post | null => {
   }, deepEqual);
 };
 
+export const usePostContent = (messageId?: string): string => {
+  return useSelector((state: AppRootState) => {
+    const post = state.posts.map[messageId || ''];
+
+    if (!post) return '';
+
+    return post.payload.content.slice(0, 512);
+  }, deepEqual);
+};
+
 export const useMeta = (messageId = '') => {
   return useSelector((state: AppRootState): PostMeta => {
     return (
@@ -502,7 +555,7 @@ export const useZKGroupFromPost = (messageId?: string) => {
   return useSelector((state: AppRootState): string | undefined => {
     if (!messageId) return;
     const post = state.posts.meta[messageId];
-    if (!post) return undefined;
+    if (!post?.interepProvider) return undefined;
 
     return post.interepProvider === 'taz'
       ? 'semaphore_taz_members'

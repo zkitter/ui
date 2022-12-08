@@ -19,7 +19,7 @@ import { connectZKPR } from '../../ducks/zkpr';
 import SettingView from '../SettingView';
 import MetaPanel from '../../components/MetaPanel';
 import ChatView from '../ChatView';
-import { zkchat } from '../../ducks/chats';
+import { fetchUnreads, zkchat } from '../../ducks/chats';
 import {
   generateECDHKeyPairFromhex,
   generateZkIdentityFromHex,
@@ -32,6 +32,9 @@ import ThemeContext from '../../components/ThemeContext';
 import classNames from 'classnames';
 import { Identity } from '@semaphore-protocol/identity';
 import TazModal from '../../components/TazModal';
+import NotificationView from '../NotificationView';
+import { updateNotifications } from '../../ducks/app';
+import SearchResultsView from '../SearchResultsView';
 
 export default function App(): ReactElement {
   const dispatch = useDispatch();
@@ -94,6 +97,8 @@ export default function App(): ReactElement {
           zk: zkIdentity,
           ecdh: keyPair,
         });
+        await dispatch(fetchUnreads());
+        await dispatch(updateNotifications());
       })();
     } else if (selected?.type === 'interrep') {
       (async () => {
@@ -111,6 +116,7 @@ export default function App(): ReactElement {
           zk: zkIdentity,
           ecdh: keyPair,
         });
+        await dispatch(fetchUnreads());
       })();
     } else if (selected?.type === 'taz') {
       (async () => {
@@ -123,6 +129,7 @@ export default function App(): ReactElement {
           zk: zkIdentity,
           ecdh: keyPair,
         });
+        await dispatch(fetchUnreads());
       })();
     }
   }, [selected]);
@@ -167,7 +174,9 @@ export default function App(): ReactElement {
           <AuthRoute path="/home">
             <HomeFeed />
           </AuthRoute>
-          <Route path="/notifications" />
+          <Route path="/notifications">
+            <NotificationView />
+          </Route>
           <Route path="/create-local-backup">
             <SignupView viewType={ViewType.localBackup} />
           </Route>
@@ -191,6 +200,9 @@ export default function App(): ReactElement {
           </Route>
           <Route path="/taz">
             <GlobalFeed />
+          </Route>
+          <Route path="/search">
+            <SearchResultsView />
           </Route>
           <Route path="/:name">
             <ProfileView />
