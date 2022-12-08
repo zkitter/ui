@@ -147,11 +147,7 @@ export default function Web3Button(props: Props): ReactElement {
           'bg-gray-100': theme !== 'dark',
         }
       )}>
-      <Web3ButtonLeft
-          {...props}
-          opened={opened}
-          setOpened={setOpened}
-      />
+      <Web3ButtonLeft {...props} opened={opened} setOpened={setOpened} />
       <Button
         className={classNames('text-black', 'font-inter', 'web3-button__content', {
           'text-gray-100 bg-gray-800': ['interrep', 'zkpr_interrep', 'taz'].includes(id?.type),
@@ -167,12 +163,13 @@ export default function Web3Button(props: Props): ReactElement {
   );
 }
 
-function Web3ButtonLeft(props: Props & {
-  opened: boolean;
-  setOpened: (opened: boolean) => void;
-}): ReactElement {
+function Web3ButtonLeft(
+  props: Props & {
+    opened: boolean;
+    setOpened: (opened: boolean) => void;
+  }
+): ReactElement {
   const selectedLocalId = useSelectedLocalId();
-  // const [opened, setOpened] = useState(false);
   const group = useSelectedZKGroup();
 
   if (selectedLocalId) {
