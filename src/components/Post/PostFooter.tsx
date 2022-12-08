@@ -7,7 +7,7 @@ import {
   ModerationMessageSubType,
   Post as PostMessage,
   PostMessageSubType,
-} from '../../util/message';
+} from '~/message';
 import {
   decrementLike,
   decrementRepost,
@@ -19,10 +19,10 @@ import {
   useCommentDisabled,
   useMeta,
   usePost,
-} from '../../ducks/posts';
-import { useCanNonPostMessage, useLoggedIn } from '../../ducks/web3';
-import { useSelectedLocalId } from '../../ducks/worker';
-import { usePostModeration } from '../../ducks/mods';
+} from '@ducks/posts';
+import { useCanNonPostMessage, useLoggedIn } from '@ducks/web3';
+import { useSelectedLocalId } from '@ducks/worker';
+import { usePostModeration } from '@ducks/mods';
 import { useThemeContext } from '../ThemeContext';
 import {
   removeMessage,
@@ -31,9 +31,9 @@ import {
   submitRepost,
   useDraft,
   useSubmitting,
-} from '../../ducks/drafts';
-import { useUser } from '../../ducks/users';
-import { getHandle } from '../../util/user';
+} from '@ducks/drafts';
+import { useUser } from '@ducks/users';
+import { getHandle } from '~/user';
 
 import Editor from '../Editor';
 import Modal, { ModalContent, ModalHeader } from '../Modal';

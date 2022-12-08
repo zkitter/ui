@@ -1,20 +1,20 @@
-import React, { ReactElement, ReactNode, useCallback, useEffect, useState } from 'react';
+import React, { ReactElement, useCallback, useEffect, useState } from 'react';
 import './connect-twitter.scss';
-import Button from '../../components/Button';
-import { useSelectedLocalId } from '../../ducks/worker';
-import Icon from '../../components/Icon';
-import SpinnerGif from '../../../static/icons/spinner.gif';
-import config from '../../util/config';
-import TwitterLogo from '../../../static/icons/twitter.svg';
-import { useAccount } from '../../ducks/web3';
-import { setUser, useConnectedTwitter, useUser } from '../../ducks/users';
+import Button from '@components/Button';
+import { useSelectedLocalId } from '@ducks/worker';
+import Icon from '@components/Icon';
+import SpinnerGif from '#/icons/spinner.gif';
+import config from '~/config';
+import TwitterLogo from '#/icons/twitter.svg';
+import { useAccount } from '@ducks/web3';
+import { setUser, useConnectedTwitter, useUser } from '@ducks/users';
 import { useDispatch } from 'react-redux';
-import { submitProfile } from '../../ducks/drafts';
-import { ProfileMessageSubType } from '../../util/message';
+import { submitProfile } from '@ducks/drafts';
+import { ProfileMessageSubType } from '~/message';
 import { useHistory } from 'react-router';
-import { verifyTweet } from '../../util/twitter';
-import { getHandle } from '../../util/user';
-import { signWithP256 } from '../../util/crypto';
+import { verifyTweet } from '~/twitter';
+import { getHandle } from '~/user';
+import { signWithP256 } from '~/crypto';
 
 export enum ViewType {
   welcome,

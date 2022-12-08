@@ -1,10 +1,10 @@
 import React, { MouseEventHandler, ReactElement, useEffect } from 'react';
-import { fetchMeta, useGoToPost, usePost } from '../../ducks/posts';
+import { fetchMeta, useGoToPost, usePost } from '@ducks/posts';
 import Post from '../Post';
-import { Post as PostMessage, PostMessageSubType } from '../../util/message';
+import { Post as PostMessage, PostMessageSubType } from '~/message';
 import classNames from 'classnames';
 import { useDispatch } from 'react-redux';
-import { useLoggedIn } from '../../ducks/web3';
+import { useLoggedIn } from '@ducks/web3';
 import { useThemeContext } from '../ThemeContext';
 
 type Props = {

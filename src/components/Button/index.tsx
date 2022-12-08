@@ -2,7 +2,7 @@ import React, { ButtonHTMLAttributes, ReactElement } from 'react';
 import classNames from 'classnames';
 import './button.scss';
 import Icon from '../Icon';
-import SpinnerGif from '../../../static/icons/spinner.gif';
+import SpinnerGif from '#/icons/spinner.gif';
 
 type Props = {
   className?: string;

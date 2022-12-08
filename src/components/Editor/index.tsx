@@ -1,45 +1,31 @@
 import React, { ReactElement, useCallback, useEffect, useState } from 'react';
-import { convertFromRaw, DraftHandleValue, EditorState, RichUtils } from 'draft-js';
+import { DraftHandleValue, EditorState, RichUtils } from 'draft-js';
 import classNames from 'classnames';
 import './editor.scss';
-import {
-  useAccount,
-  useCanNonPostMessage,
-  useENSName,
-  useGunKey,
-  useLoggedIn,
-  useSemaphoreID,
-} from '../../ducks/web3';
+import { useAccount, useCanNonPostMessage, useGunKey } from '@ducks/web3';
 import Avatar from '../Avatar';
 import Web3Button from '../Web3Button';
 import Button from '../Button';
 import { DraftEditor } from '../DraftEditor';
 import Icon from '../Icon';
-import drafts, {
-  setDraft,
-  setGloabl,
-  setMirror,
-  setModeration,
-  useDraft,
-  useMirror,
-} from '../../ducks/drafts';
+import { setDraft, setGloabl, setMirror, setModeration, useDraft, useMirror } from '@ducks/drafts';
 import { useDispatch } from 'react-redux';
 import URLPreview from '../URLPreview';
-import SpinnerGif from '../../../static/icons/spinner.gif';
-import { useUser } from '../../ducks/users';
+import SpinnerGif from '#/icons/spinner.gif';
+import { useUser } from '@ducks/users';
 import {
   setPostingGroup,
   usePostingGroup,
   useSelectedLocalId,
   useSelectedZKGroup,
-} from '../../ducks/worker';
+} from '@ducks/worker';
 import { useHistory } from 'react-router';
 import Checkbox from '../Checkbox';
-import { getSession, verifyTweet } from '../../util/twitter';
+import { getSession, verifyTweet } from '~/twitter';
 import ModerationButton from '../ModerationButton';
-import { ModerationMessageSubType } from '../../util/message';
-import { usePostModeration } from '../../ducks/mods';
-import { useCommentDisabled, useMeta } from '../../ducks/posts';
+import { ModerationMessageSubType } from '~/message';
+import { usePostModeration } from '@ducks/mods';
+import { useCommentDisabled, useMeta } from '@ducks/posts';
 import Menuable from '../Menuable';
 import FileUploadModal from '../FileUploadModal';
 import LinkInputModal from '../LinkInputModal';

@@ -1,12 +1,12 @@
-import '../../util/variable.scss';
+import '~/variable.scss';
 import './post.scss';
 
 import React, { MouseEventHandler, ReactElement, useCallback, useEffect, useState } from 'react';
 import { useDispatch } from 'react-redux';
 
-import { removeMessage } from '../../ducks/drafts';
-import { fetchMeta, fetchPost, unsetPost, usePost } from '../../ducks/posts';
-import { Post as PostMessage, PostMessageSubType } from '../../util/message';
+import { removeMessage } from '@ducks/drafts';
+import { fetchMeta, fetchPost, unsetPost, usePost } from '@ducks/posts';
+import { Post as PostMessage, PostMessageSubType } from '~/message';
 
 import ExpandedPost from './ExpandedPost';
 import LoadingPost from './LoadingPost';

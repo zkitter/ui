@@ -11,11 +11,11 @@ import React, {
 import classNames from 'classnames';
 import { useParams } from 'react-router';
 import InfiniteScrollable from '../InfiniteScrollable';
-import { useSelectedLocalId, useSelectedZKGroup } from '../../ducks/worker';
+import { useSelectedLocalId, useSelectedZKGroup } from '@ducks/worker';
 import Nickname from '../Nickname';
 import Avatar, { Username } from '../Avatar';
 import Textarea from '../Textarea';
-import { generateZkIdentityFromHex, sha256, signWithP256 } from '../../util/crypto';
+import { generateZkIdentityFromHex, sha256, signWithP256 } from '~/crypto';
 import { FromNow } from '../ChatMenu';
 import {
   setLastReadForChatId,
@@ -23,13 +23,13 @@ import {
   useChatMessage,
   useMessagesByChatId,
   zkchat,
-} from '../../ducks/chats';
+} from '@ducks/chats';
 import Icon from '../Icon';
-import SpinnerGIF from '../../../static/icons/spinner.gif';
+import SpinnerGIF from '#/icons/spinner.gif';
 import { useDispatch } from 'react-redux';
-import { findProof } from '../../util/merkle';
+import { findProof } from '~/merkle';
 import { Strategy, ZkIdentity } from '@zk-kit/identity';
-import { Chat } from '../../util/zkchat';
+import { Chat } from '~/zkchat';
 import { Identity } from '@semaphore-protocol/identity';
 
 export default function ChatContent(): ReactElement {

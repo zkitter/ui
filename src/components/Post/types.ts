@@ -1,5 +1,5 @@
 import { MouseEventHandler } from 'react';
-import { Post as PostMessage } from '../../util/message';
+import { Post as PostMessage } from '~/message';
 
 export type Props = {
   messageId: string;

@@ -2,14 +2,14 @@ import React, { ReactElement, ReactNode, useCallback, useEffect, useState } from
 import classNames from 'classnames';
 import './setting.scss';
 import { Redirect, Route, Switch, useHistory, useLocation } from 'react-router';
-import Icon from '../../components/Icon';
-import Avatar from '../../components/Avatar';
+import Icon from '@components/Icon';
+import Avatar from '@components/Avatar';
 import { useDispatch } from 'react-redux';
-import { fetchAddressByName, useUser } from '../../ducks/users';
+import { fetchAddressByName, useUser } from '@ducks/users';
 import Web3 from 'web3';
-import { getHandle, getName } from '../../util/user';
-import SwitchButton from '../../components/SwitchButton';
-import { setTheme, useSetting } from '../../ducks/app';
+import { getHandle, getName } from '~/user';
+import SwitchButton from '@components/SwitchButton';
+import { setTheme, useSetting } from '@ducks/app';
 
 export default function SettingView(): ReactElement {
   return (

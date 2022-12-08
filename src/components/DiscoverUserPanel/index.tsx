@@ -1,13 +1,13 @@
 import React, { ReactElement, useCallback, useEffect, useState } from 'react';
 import classNames from 'classnames';
 import { useDispatch } from 'react-redux';
-import { fetchAddressByName, fetchUsers, useUser } from '../../ducks/users';
+import { fetchAddressByName, fetchUsers, useUser } from '@ducks/users';
 import Avatar from '../Avatar';
 import './discover-user.scss';
 import Icon from '../Icon';
-import SpinnerGIF from '../../../static/icons/spinner.gif';
+import SpinnerGIF from '#/icons/spinner.gif';
 import { useHistory } from 'react-router';
-import { getName, getHandle } from '../../util/user';
+import { getHandle, getName } from '~/user';
 import Web3 from 'web3';
 import { useThemeContext } from '../ThemeContext';
 import Nickname from '../Nickname';

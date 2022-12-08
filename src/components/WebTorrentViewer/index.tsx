@@ -1,12 +1,12 @@
 import React, { ReactElement, useCallback, useEffect, useRef, useState } from 'react';
 import classNames from 'classnames';
-import { addMagnetURL, getInfoHashFromMagnet, getWebtorrentClient } from '../../util/webtorrent';
+import { addMagnetURL, getInfoHashFromMagnet, getWebtorrentClient } from '~/webtorrent';
 import Icon from '../Icon';
-import SpinnerGif from '../../../static/icons/spinner.gif';
+import SpinnerGif from '#/icons/spinner.gif';
 import { Torrent, TorrentFile } from 'webtorrent';
 import mime from 'mime-types';
 import prettyBytes from 'pretty-bytes';
-import WTIcon from '../../../static/icons/webtorrent-small.png';
+import WTIcon from '#/icons/webtorrent-small.png';
 import './wt-viewer.scss';
 
 type Props = {

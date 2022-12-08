@@ -1,12 +1,12 @@
 import React, { MouseEventHandler, ReactElement, useCallback, useEffect, useState } from 'react';
 import classNames from 'classnames';
-import { fetchLikedBy, fetchPosts, fetchRepliedBy, useGoToPost } from '../../ducks/posts';
+import { fetchLikedBy, fetchPosts, fetchRepliedBy, useGoToPost } from '@ducks/posts';
 import { useDispatch } from 'react-redux';
 import { Route, Switch, useHistory, useLocation, useParams } from 'react-router';
 import './profile-view.scss';
-import Post from '../../components/Post';
-import Button from '../../components/Button';
-import Icon from '../../components/Icon';
+import Post from '@components/Post';
+import Button from '@components/Button';
+import Icon from '@components/Icon';
 import {
   fetchAddressByName,
   getUser,
@@ -16,30 +16,30 @@ import {
   setUser,
   useConnectedTwitter,
   useUser,
-} from '../../ducks/users';
-import { useAccount, useCanNonPostMessage } from '../../ducks/web3';
+} from '@ducks/users';
+import { useAccount, useCanNonPostMessage } from '@ducks/web3';
 import moment from 'moment';
-import Modal, { ModalContent, ModalFooter, ModalHeader } from '../../components/Modal';
-import Input from '../../components/Input';
-import Textarea from '../../components/Textarea';
+import Modal, { ModalContent, ModalFooter, ModalHeader } from '@components/Modal';
+import Input from '@components/Input';
+import Textarea from '@components/Textarea';
 import deepEqual from 'fast-deep-equal';
-import { removeMessage, submitConnection, submitProfile } from '../../ducks/drafts';
-import { ConnectionMessageSubType, ProfileMessageSubType } from '../../util/message';
-import Avatar from '../../components/Avatar';
-import EtherScanSVG from '../../../static/icons/etherscan-logo-gray-500.svg';
-import InfiniteScrollable from '../../components/InfiniteScrollable';
-import Menuable, { ItemProps } from '../../components/Menuable';
+import { removeMessage, submitConnection, submitProfile } from '@ducks/drafts';
+import { ConnectionMessageSubType, ProfileMessageSubType } from '~/message';
+import Avatar from '@components/Avatar';
+import EtherScanSVG from '#/icons/etherscan-logo-gray-500.svg';
+import InfiniteScrollable from '@components/InfiniteScrollable';
+import Menuable, { ItemProps } from '@components/Menuable';
 import Web3 from 'web3';
-import { getHandle, getName } from '../../util/user';
-import config from '../../util/config';
-import { verifyTweet } from '../../util/twitter';
-import { useSelectedLocalId } from '../../ducks/worker';
-import FileUploadModal from '../../components/FileUploadModal';
-import SpinnerGIF from '../../../static/icons/spinner.gif';
-import { useThemeContext } from '../../components/ThemeContext';
-import Checkbox from '../../components/Checkbox';
-import MemberInviteModal from '../../components/MemberInviteModal';
-import UserCountModal, { Item } from '../../components/UsersCountModal';
+import { getHandle, getName } from '~/user';
+import config from '~/config';
+import { verifyTweet } from '~/twitter';
+import { useSelectedLocalId } from '@ducks/worker';
+import FileUploadModal from '@components/FileUploadModal';
+import SpinnerGIF from '#/icons/spinner.gif';
+import { useThemeContext } from '@components/ThemeContext';
+import Checkbox from '@components/Checkbox';
+import MemberInviteModal from '@components/MemberInviteModal';
+import UserCountModal, { Item } from '@components/UsersCountModal';
 
 let t: any = null;
 
