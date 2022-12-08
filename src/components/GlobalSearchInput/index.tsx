@@ -36,6 +36,7 @@ export default function GlobalSearchInput(props: Props): ReactElement {
     setTimeout(() => {
       setUserResults([]);
       setFocus(false);
+      selectIndex(-1);
     }, 0);
   }, []);
 
@@ -51,7 +52,7 @@ export default function GlobalSearchInput(props: Props): ReactElement {
   const onEnter = useCallback(
     async (e: KeyboardEvent<HTMLInputElement>) => {
       if (e.key === 'Enter') {
-        if (selectedIndex === 0) {
+        if (selectedIndex <= 0) {
           history.push(`/search?q=${encodeURIComponent(query)}`);
         } else if (selectedIndex <= userResults.length) {
           history.push(`/${userResults[selectedIndex - 1]}/`);
@@ -93,7 +94,7 @@ export default function GlobalSearchInput(props: Props): ReactElement {
         className={classNames('global-search', props.className, {
           'bg-gray-100 focus:bg-white': theme !== 'dark',
           'bg-gray-900 focus:bg-black': theme === 'dark',
-          'global-search--has-results': !!query,
+          'global-search--has-results': !!query && focused,
         })}>
         <Icon fa="fas fa-search" className="text-gray-500" />
         <Input
