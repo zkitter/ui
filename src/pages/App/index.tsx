@@ -33,7 +33,7 @@ import classNames from 'classnames';
 import { Identity } from '@semaphore-protocol/identity';
 import TazModal from '../../components/TazModal';
 import NotificationView from '../NotificationView';
-import { refreshLastRead, updateNotifications } from '../../ducks/app';
+import { updateNotifications } from '../../ducks/app';
 import SearchResultsView from '../SearchResultsView';
 
 export default function App(): ReactElement {
@@ -98,7 +98,6 @@ export default function App(): ReactElement {
           ecdh: keyPair,
         });
         await dispatch(fetchUnreads());
-        await dispatch(refreshLastRead());
         await dispatch(updateNotifications());
       })();
     } else if (selected?.type === 'interrep') {
