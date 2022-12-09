@@ -92,6 +92,7 @@ export default function NotificationView(): ReactElement {
                 key={[type, message_id, creator].join('-')}
                 type={type}
                 messageId={message_id}
+                creator={creator}
               />
             );
           case NotificationType.REPLY:
@@ -112,10 +113,12 @@ export default function NotificationView(): ReactElement {
 
 function IncomingReactionRow(props: {
   messageId: string;
+  creator: string;
   type: 'LIKE' | 'REPOST' | 'MEMBER_INVITE' | 'MEMBER_ACCEPT';
 }): ReactElement {
   const { creator, hash } = parseMessageId(props.messageId);
-  const user = useUser(creator);
+  const opUser = useUser(creator);
+  const reactedUser = useUser(props.creator);
   const history = useHistory();
   const originalPost = usePost(props.messageId);
   const referencedPost = usePost(originalPost?.payload.reference);
@@ -155,28 +158,32 @@ function IncomingReactionRow(props: {
         size={props.type === 'MEMBER_INVITE' || props.type === 'MEMBER_ACCEPT' ? 1.6125 : 2}
       />
       <div className="flex flex-col items-start">
-        <Avatar className="w-8 h-8" address={creator} incognito={!creator} />
+        <Avatar className="w-8 h-8" address={props.creator} incognito={!props.creator} />
         {props.type === 'MEMBER_INVITE' && (
           <div className="mt-2 text-sm">
             <span className="mr-1">You received an invitation to join</span>
-            <span className="font-semibold">{getName(user)}</span>
+            <span className="font-semibold">{getName(opUser)}</span>
           </div>
         )}
         {props.type === 'MEMBER_ACCEPT' && (
           <div className="mt-2 text-sm">
-            <span className="font-semibold">{getName(user)}</span>
+            <span className="font-semibold">{getName(opUser)}</span>
             <span className="ml-1">accepted your invitation</span>
           </div>
         )}
         {props.type === 'LIKE' && (
           <div className="mt-2 text-sm">
-            <span className="font-semibold">{creator ? getName(user) : 'Someone'}</span>
+            <span className="font-semibold">
+              {props.creator ? getName(reactedUser) : 'Someone'}
+            </span>
             <span className="ml-1">liked your post</span>
           </div>
         )}
         {props.type === 'REPOST' && (
           <div className="mt-2 text-sm">
-            <span className="font-semibold">{creator ? getName(user) : 'Someone'}</span>
+            <span className="font-semibold">
+              {props.creator ? getName(reactedUser) : 'Someone'}
+            </span>
             <span className="ml-1">shared your post</span>
           </div>
         )}
