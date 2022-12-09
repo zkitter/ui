@@ -80,7 +80,7 @@ export default function UsersCountModal(props: {
   // hacky?
   const { fetch, count } = useItem(item, id);
 
-  const many = count && count > 1 && item !== Item.Following;
+  const many = !!count && count > 1 && item !== Item.Following;
   const text = `${item}${many ? 's' : ''}`;
   const title = item === Item.Like ? 'Liked By' : text;
 
@@ -109,7 +109,7 @@ export default function UsersCountModal(props: {
           <div className="hover:underline cursor-pointer" onClick={onClick}>
             <div className="flex flex-row flex-nowrap item-center">
               <div className="font-semibold">{count}</div>
-              <div className="ml-2 text-gray-500">{`${text}${many ? 's' : ''}`}</div>
+              <div className="ml-2 text-gray-500">{`${text}`}</div>
             </div>
           </div>
         </div>
