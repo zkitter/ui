@@ -64,7 +64,7 @@ export default function URLPreview(props: Props): ReactElement {
           return;
         }
 
-        const resp = await fetch(`${config.indexerAPI}/preview?link=${encodeURI(url)}`);
+        const resp = await fetch(`${config.indexerAPI}/v1/preview?link=${encodeURI(url)}`);
         const json = await resp.json();
 
         if (!json.payload.error) {

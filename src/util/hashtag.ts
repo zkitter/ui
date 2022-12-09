@@ -65,7 +65,7 @@ function parseTokens(state: any) {
         }
 
         // @ts-ignore
-        console.log([].concat(tokens.slice(0, i), nodes, tokens.slice(i + 1)));
+        // console.log([].concat(tokens.slice(0, i), nodes, tokens.slice(i + 1)));
 
         // replace current node
         blockTokens[j].children = tokens = [].concat(
