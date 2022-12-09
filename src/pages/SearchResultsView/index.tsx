@@ -25,7 +25,6 @@ export default function SearchResultsView(): ReactElement {
 
       if (reset) {
         const messageIds: any = await dispatch(searchPosts(query, 20, 0));
-        console.log({ messageIds });
         setOffset(20);
         setOrder(messageIds);
       } else {

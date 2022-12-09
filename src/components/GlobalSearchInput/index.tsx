@@ -45,12 +45,15 @@ export default function GlobalSearchInput(props: Props): ReactElement {
   }, [search]);
 
   const onChange = useCallback(async (e: any) => {
+    setFocus(true);
     setQuery(e.target.value);
   }, []);
 
   const onEnter = useCallback(
     async (e: KeyboardEvent<HTMLInputElement>) => {
       if (e.key === 'Enter') {
+        setUserResults([]);
+        setFocus(false);
         if (selectedIndex <= 0) {
           history.push(`/search?q=${encodeURIComponent(query)}`);
         } else if (selectedIndex <= userResults.length) {

@@ -18,7 +18,7 @@ export async function verifyTweet(
   const resp = await fetch(`${config.indexerAPI}/twitter/status?id=${id}`);
   const json = await resp.json();
 
-  if (json?.payload) {
+  if (!json?.error && json?.payload) {
     const {
       entities: {
         urls: [{ expanded_url: profileUrl }],

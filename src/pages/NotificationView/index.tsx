@@ -78,7 +78,7 @@ export default function NotificationView(): ReactElement {
       bottomOffset={128}
       onScrolledToBottom={fetchMore}>
       {notifications.map((data: any) => {
-        const { message_id, type } = data;
+        const { message_id, type, creator } = data;
 
         switch (type) {
           case NotificationType.DIRECT:
@@ -87,10 +87,21 @@ export default function NotificationView(): ReactElement {
           case NotificationType.REPOST:
           case NotificationType.MEMBER_INVITE:
           case NotificationType.MEMBER_ACCEPT:
-            return <IncomingReactionRow type={type} messageId={message_id} />;
+            return (
+              <IncomingReactionRow
+                key={[type, message_id, creator].join('-')}
+                type={type}
+                messageId={message_id}
+              />
+            );
           case NotificationType.REPLY:
           case NotificationType.MENTION:
-            return <IncomingReplyRow messageId={message_id} />;
+            return (
+              <IncomingReplyRow
+                key={[type, message_id, creator].join('-')}
+                messageId={message_id}
+              />
+            );
           default:
             return null;
         }

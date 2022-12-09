@@ -527,6 +527,16 @@ export class ZKChatClient extends EventEmitter2 {
 
     if (!this.messages[message.messageId]) {
       const chatId = this.deriveChatId(chat);
+      const activeChat = this.activeChats[chatId];
+
+      if (!activeChat && chat.receiverECDH === this.identity?.ecdh.pub) {
+        await this.appendActiveChats({
+          ...chat,
+          receiver: this.identity?.address,
+          messages: [],
+        });
+      }
+
       const order = this.activeChats[chatId].messages;
       this.insertMessage(message);
       this.activeChats[chatId].messages = [message.messageId, ...order];

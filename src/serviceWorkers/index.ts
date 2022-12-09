@@ -42,7 +42,6 @@ global.addEventListener('install', e => {
       await Promise.all(
         cacheNames.map(name => {
           if (cacheName !== name) {
-            console.log(cacheName, name);
             return caches.delete(name);
           }
         })

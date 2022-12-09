@@ -38,7 +38,7 @@ export async function removeMagnetURL(url = '') {
   return new Promise<void>((resolve, reject) => {
     const client = getWebtorrentClient();
     client.remove(url, { destroyStore: false }, err => {
-      console.log(err);
+      console.error(err);
       if (err) return reject(err);
       resolve();
     });

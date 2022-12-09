@@ -1,6 +1,5 @@
 import 'isomorphic-fetch';
 import { TextDecoder, TextEncoder } from 'util';
-import crypto from 'crypto';
 import sinon from 'sinon';
 
 import originalStore from '../store/configureAppStore';

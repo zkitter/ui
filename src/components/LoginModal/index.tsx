@@ -22,7 +22,7 @@ export default function LoginModal(props: Props): ReactElement {
       props.onSuccess && props.onSuccess();
       props.onClose();
     } catch (e) {
-      console.log(e);
+      console.error(e);
       setErrorMessage(e.message);
     }
   }, [password]);

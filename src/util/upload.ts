@@ -24,7 +24,7 @@ export const ipfsUploadOne =
 
     data.append('files', file);
 
-    const res = await fetch(`${config.indexerAPI}/ipfs/upload`, {
+    const res = await fetch(`${config.indexerAPI}/v1/ipfs/upload`, {
       method: 'POST',
       body: data,
       headers: {

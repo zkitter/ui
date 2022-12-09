@@ -161,7 +161,7 @@ export const decorator = new CompositeDecorator([
   },
   {
     strategy: findMentionEntities,
-    component: (props: any) => {
+    component: function MentionEntity(props: any) {
       const history = useHistory();
       const nameOrAddress = props.decoratedText.slice(1);
       const [username, setUsername] = useState('');
