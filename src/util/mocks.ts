@@ -1,4 +1,4 @@
-import crypto, { BinaryToTextEncoding } from 'crypto'
+import crypto, { BinaryToTextEncoding } from 'crypto';
 
 window.matchMedia =
   window.matchMedia ||
@@ -12,8 +12,10 @@ window.matchMedia =
 
 // @ts-ignore
 global.EventSource = class EventSource {
-  private str: any
-  constructor(str: any) {this.str = str}
+  private str: any;
+  constructor(str: any) {
+    this.str = str;
+  }
 
   onmessage = () => {};
   onopen = () => {};
