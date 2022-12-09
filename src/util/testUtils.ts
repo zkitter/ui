@@ -19,7 +19,6 @@ global.TextEncoder = TextEncoder;
 // @ts-ignore
 global.TextDecoder = TextDecoder;
 
-
 export const pushReduxActionStub = sinon.stub(swUtilsModules, 'pushReduxAction');
 
 export const zkprStub = {
