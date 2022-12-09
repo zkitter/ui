@@ -1,4 +1,8 @@
 {
+    "include": [
+    "src",
+    "jest.config"
+  ],
   "compilerOptions": {
     "baseUrl": ".",
     "target": "es5",
@@ -37,8 +41,5 @@
         "static/*"
       ]
     }
-  },
-  "include": [
-    "src"
-  ]
+  }
 }

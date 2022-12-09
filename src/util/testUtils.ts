@@ -18,21 +18,7 @@ import * as swUtilsModules from '../serviceWorkers/util';
 global.TextEncoder = TextEncoder;
 // @ts-ignore
 global.TextDecoder = TextDecoder;
-// @ts-ignore
-global.crypto = {
-  subtle: {
-    // @ts-ignore
-    digest: async (type: string, data) => {
-      return crypto.createHash(type.replace('-', '').toLowerCase()).digest(data);
-    },
-  },
-  getRandomValues: (arr: any) => crypto.randomBytes(arr.length),
-};
 
-// @ts-ignore
-global.TextEncoder = TextEncoder;
-// @ts-ignore
-global.TextDecoder = TextDecoder;
 
 export const pushReduxActionStub = sinon.stub(swUtilsModules, 'pushReduxAction');
 

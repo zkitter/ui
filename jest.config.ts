@@ -1,5 +1,9 @@
-/** @type {import('ts-jest/dist/types').InitialOptionsTsJest} */
-module.exports = {
+import type { JestConfigWithTsJest } from 'ts-jest';
+import { pathsToModuleNameMapper } from 'ts-jest';
+
+import { compilerOptions } from './tsconfig.json';
+
+const jestConfig: JestConfigWithTsJest = {
   preset: 'ts-jest',
   testEnvironment: 'jsdom',
   collectCoverage: true,
@@ -13,14 +17,16 @@ module.exports = {
     '/src/util/message.ts',
     '/src/util/svc.ts',
   ],
+  rootDir: '.',
   roots: ['<rootDir>/src'],
   verbose: true,
   moduleNameMapper: {
     '\\.(jpg|jpeg|png|gif|eot|otf|webp|svg|ttf|woff|woff2|mp4|webm|wav|mp3|m4a|aac|oga)$':
       '<rootDir>/__mocks__/fileMock.js',
     '\\.(css|less|scss)$': '<rootDir>/__mocks__/styleMock.js',
+    ...pathsToModuleNameMapper(compilerOptions.paths, { prefix: '<rootDir>' }),
   },
-  setupFiles: ['fake-indexeddb/auto', 'jsdom-worker','<rootDir>/src/util/mocks.js'],
+  setupFiles: ['fake-indexeddb/auto', 'jsdom-worker', '<rootDir>/src/util/mocks.ts'],
   testEnvironmentOptions: {
     html: `
       <!DOCTYPE html>
@@ -53,3 +59,5 @@ module.exports = {
     },
   },
 };
+
+export default jestConfig
