@@ -246,7 +246,9 @@ export const fetchLikersByPost = async (
   const { creator, hash } = parseMessageId(messageId);
 
   const resp = await fetch(
-    `${config.indexerAPI}/v1/post/${creator}%2F${hash}/likes?limit=${limit}&offset=${offset}`,
+    `${config.indexerAPI}/v1/post/${encodeURIComponent(
+      messageId
+    )}/likes?limit=${limit}&offset=${offset}`,
     { method: 'GET' }
   );
 
