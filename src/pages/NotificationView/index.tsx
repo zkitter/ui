@@ -77,6 +77,19 @@ export default function NotificationView(): ReactElement {
       })}
       bottomOffset={128}
       onScrolledToBottom={fetchMore}>
+      {!notifications.length && (
+        <div
+          className={classNames(
+            'flex flex-row flex-nowrap items-center justify-center',
+            'py-6 mx-2 border border-gray-200 rounded-xl text-sm',
+            {
+              'border-gray-100 text-gray-300': theme !== 'dark',
+              'border-gray-800 text-gray-500': theme === 'dark',
+            }
+          )}>
+          Nothing to see here yet
+        </div>
+      )}
       {notifications.map((data: any) => {
         const { message_id, type, creator } = data;
 

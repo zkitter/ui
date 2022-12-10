@@ -80,14 +80,6 @@ module.exports = [
       app: path.join(__dirname, 'src', 'app.tsx'),
       serviceWorker: path.join(__dirname, 'src', 'serviceWorkers', 'index.ts'),
     },
-    // ignoreWarnings: [
-    //   { module: /node_modules\/gun\/gun.js/ },
-    //   { module: /node_modules\/gun\/sea.js/ },
-    // ],
-    // [
-    //     ...(isProd ? [] : devServerEntries),
-    //     `./src/app.tsx`,
-    // ],
     output: {
       path: __dirname + '/build',
       publicPath: isProd ? '/' : 'http://localhost:8080/',
