@@ -3,9 +3,11 @@ import './interrep-onboarding.scss';
 import { useSelectedLocalId } from '@ducks/worker';
 import Icon from '@components/Icon';
 import SpinnerGif from '#/icons/spinner.gif';
-import { useWeb3Account } from '@ducks/web3';
+import { connectCB, connectWC, connectWeb3, useWeb3Account } from '@ducks/web3';
 import { DoneView, JoinGroupView, SelectProviderView, WelcomeView } from './Views';
 import config from '~/config';
+import { connectZKPR } from '@ducks/zkpr';
+import { useDispatch } from 'react-redux';
 
 export enum ViewType {
   welcome,
@@ -36,6 +38,24 @@ export default function InterrepOnboarding(props: Props): ReactElement {
   } | null>(null);
   const selected = useSelectedLocalId();
   const account = useWeb3Account();
+  const dispatch = useDispatch();
+
+  useEffect(() => {
+    const cachedZKPR = localStorage.getItem('ZKPR_CACHED');
+    const cachedMetamask = localStorage.getItem('METAMASK_CACHED');
+    const cachedWc = localStorage.getItem('WC_CACHED');
+    const cachedCb = localStorage.getItem('CB_CACHED');
+
+    if (cachedZKPR) {
+      dispatch(connectZKPR());
+    } else if (cachedMetamask) {
+      dispatch(connectWeb3());
+    } else if (cachedWc) {
+      dispatch(connectWC());
+    } else if (cachedCb) {
+      dispatch(connectCB());
+    }
+  }, []);
 
   useEffect(() => {
     (async function () {

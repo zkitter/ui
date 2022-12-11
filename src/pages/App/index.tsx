@@ -71,18 +71,6 @@ export default function App(): ReactElement {
       if (id) {
         await loginUser(id);
       }
-
-      const cachedZKPR = localStorage.getItem('ZKPR_CACHED');
-      const cachedMetamask = localStorage.getItem('METAMASK_CACHED');
-      const cachedWc = localStorage.getItem('WC_CACHED');
-
-      if (cachedZKPR) {
-        await dispatch(connectZKPR());
-      } else if (cachedMetamask) {
-        await dispatch(connectWeb3());
-      } else if (cachedWc) {
-        await dispatch(connectWC());
-      }
     })();
   }, []);
 

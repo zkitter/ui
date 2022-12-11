@@ -10,22 +10,29 @@ type ConnectWalletConnectParams = {
   onSessionDelete?: (session: { id: number; topic: string }) => void;
 };
 
+let cached: any = null;
+async function getWCProvider() {
+  if (cached) return cached;
+  cached = await UniversalProvider.init({
+    projectId: config.wcProjectId,
+    logger: 'error',
+    relayUrl: `wss://relay.walletconnect.com`,
+  });
+  return cached;
+}
+
 export const connectWalletConnect = async (
   params?: ConnectWalletConnectParams
 ): Promise<IUniversalProvider> => {
   const { onSessionUpdate, onSessionDelete, onSessionEvent } = params || {};
 
   return new Promise(async (resolve, reject) => {
-    const provider = await UniversalProvider.init({
-      projectId: config.wcProjectId,
-      logger: 'error',
-      relayUrl: `wss://relay.walletconnect.com`,
-    });
+    const provider = await getWCProvider();
 
     provider.on('display_uri', async (uri: string) => {
-      console.log(uri);
       QRCodeModal.open(uri, () => {
         // handle on modal close
+        reject(new Error('Modal closed'));
       });
     });
 
@@ -43,8 +50,6 @@ export const connectWalletConnect = async (
 
     provider.on('session_delete', ({ id, topic }: { id: number; topic: string }) => {
       // Session was deleted -> reset the dapp state, clean up from user session, etc.
-      console.log('EVENT', 'session_deleted');
-      console.log(id, topic);
       if (onSessionDelete) onSessionDelete({ id, topic });
     });
 
@@ -87,4 +92,10 @@ export const connectWalletConnect = async (
       QRCodeModal.close();
     }
   });
+};
+
+export const disconnectWC = async () => {
+  const provider = await getWCProvider();
+  await provider.disconnect();
+  localStorage.setItem('WC_CACHED', '');
 };

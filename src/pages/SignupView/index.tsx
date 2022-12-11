@@ -10,6 +10,7 @@ import React, {
 import './signup.scss';
 import Button from '@components/Button';
 import {
+  connectCB,
   connectWC,
   connectWeb3,
   createRecordTx,
@@ -43,6 +44,7 @@ import { connectZKPR, disconnectZKPR, useIdCommitment, useZKPR, useZKPRLoading }
 
 import MetamaskSVG from '#/icons/metamask-fox.svg';
 import WalletConnectSVG from '#/icons/walletconnect_logo.svg';
+import CoinbasePNG from '#/icons/coinbase_logo.png';
 import ZKPRSVG from '#/icons/zkpr-logo.svg';
 import TazLogo from '#/icons/taz-logo.png';
 import SpinnerGIF from '#/icons/spinner.gif';
@@ -53,9 +55,8 @@ import { safeJsonParse } from '~/misc';
 import { Decoder } from '@nuintun/qrcode';
 import { Identity } from '@semaphore-protocol/identity';
 import { findProof } from '~/merkle';
-import SignClient from '@walletconnect/sign-client';
-import QRCodeModal from '@walletconnect/qrcode-modal';
-import { connectWalletConnect } from '~/walletconnect';
+import { disconnectWC } from '~/walletconnect';
+import { disconnectCoinbaseProvider } from '~/coinbaseWallet';
 
 export enum ViewType {
   welcome,
@@ -206,6 +207,8 @@ function WalletPanel(props: { setViewType: (v: ViewType) => void }): ReactElemen
   const disconnect = useCallback(() => {
     dispatch(disconnectZKPR());
     dispatch(disconnectWeb3());
+    disconnectWC();
+    disconnectCoinbaseProvider();
 
     if (selected?.type === 'zkpr_interrep') {
       postWorkerMessage(setIdentity(null));
@@ -288,6 +291,12 @@ function ChooseWalletView(props: { setViewType: (v: ViewType) => void }): ReactE
     props.setViewType(ViewType.accountOptions);
   }, []);
 
+  const onCBClick = useCallback(async () => {
+    disconnect();
+    await dispatch(connectCB());
+    props.setViewType(ViewType.accountOptions);
+  }, []);
+
   const connectWallet = useCallback(async () => {
     disconnect();
     await dispatch(connectWeb3());
@@ -328,6 +337,13 @@ function ChooseWalletView(props: { setViewType: (v: ViewType) => void }): ReactE
           selected={walletOption === 'walletconnect'}
           loading={web3Loading}>
           Wallet Connect
+        </WalletOption>
+        <WalletOption
+          iconUrl={CoinbasePNG}
+          onClick={onCBClick}
+          selected={walletOption === 'coinbase_wallet'}
+          loading={web3Loading}>
+          Coinbase Wallet
         </WalletOption>
         <WalletOption
           iconUrl={ZKPRSVG}
