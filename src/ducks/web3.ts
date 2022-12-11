@@ -14,6 +14,7 @@ import { getIdentityHash } from '~/arb3';
 import { postWorkerMessage } from '~/sw';
 import { setIdentity } from '../serviceWorkers/util';
 import { findProof } from '~/merkle';
+import { connectWalletConnect } from '~/walletconnect';
 
 export const web3Modal = new Web3Modal({
   network: 'main', // optional
@@ -111,6 +112,36 @@ export const initialState: State = {
   pending: {
     createRecordTx: {},
   },
+};
+
+export const connectWC = () => async (dispatch: ThunkDispatch<any, any, any>) => {
+  dispatch({
+    type: ActionTypes.SET_LOADING,
+    payload: true,
+  });
+
+  try {
+    const provider = await connectWalletConnect();
+    const web3 = new Web3(provider);
+    const accounts = await web3.eth.requestAccounts();
+
+    if (!accounts.length) {
+      throw new Error('No accounts found');
+    }
+
+    console.log(web3, accounts);
+    await dispatch(setWeb3(web3, accounts[0]));
+    dispatch({
+      type: ActionTypes.SET_LOADING,
+      payload: false,
+    });
+  } catch (e) {
+    dispatch({
+      type: ActionTypes.SET_LOADING,
+      payload: false,
+    });
+    throw e;
+  }
 };
 
 export const connectWeb3 = () => async (dispatch: ThunkDispatch<any, any, any>) => {
@@ -269,12 +300,6 @@ export const setWeb3 =
       dispatch(reset());
       return;
     }
-
-    // event = web3.eth.subscribe('newBlockHeaders', async (err, result) => {
-    //     if (!err) {
-    //         await dispatch(lookupENS());
-    //     }
-    // });
 
     const networkType = await web3.eth.net.getNetworkType();
 

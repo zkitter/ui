@@ -23,6 +23,7 @@ const envPlugin = new webpack.EnvironmentPlugin({
   GUN_PEERS: [],
   APP_TITLE: 'Zkitter',
   APP_LOGO: '',
+  WC_PROJECT_ID: '',
 });
 
 const rules = [
