@@ -3,13 +3,18 @@ import config from '~/config';
 import Button from '@components/Button';
 import Icon from '@components/Icon';
 
-const auth = () => {
-  window.open(
-    `${config.indexerAPI}/auth/twitter?redirectUrl=${encodeURI(
-      `${config.baseUrl}/signup/interep/`
-    )}`,
-    '_self'
+const auth = async () => {
+  const resp = await fetch(
+    `${config.indexerAPI}/twitter?redirectUrl=${encodeURI(`${config.baseUrl}/signup/interep/`)}`,
+    {
+      credentials: 'include',
+    }
   );
+  const json = await resp.json();
+
+  if (!json.error && json.payload) {
+    window.location.href = json.payload;
+  }
 };
 
 export function AuthTwitter(): ReactElement {
