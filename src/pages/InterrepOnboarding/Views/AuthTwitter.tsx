@@ -5,7 +5,9 @@ import Icon from '@components/Icon';
 
 const auth = () => {
   window.open(
-    `${config.indexerAPI}/twitter?redirectUrl=${encodeURI(`${config.baseUrl}/signup/interep/`)}`,
+    `${config.indexerAPI}/auth/twitter?redirectUrl=${encodeURI(
+      `${config.baseUrl}/signup/interep/`
+    )}`,
     '_self'
   );
 };
