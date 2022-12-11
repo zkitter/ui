@@ -5,10 +5,9 @@ import { AppRootState } from '../store/configureAppStore';
 import { ThunkDispatch } from 'redux-thunk';
 import { Dispatch } from 'redux';
 import Web3Modal from 'web3modal';
-import { generateGunKeyPairFromHex } from '~/crypto';
+import { generateGunKeyPairFromHex, generateZkIdentityFromHex } from '~/crypto';
 import { defaultWeb3, fetchNameByAddress } from '~/web3';
 import gun, { authenticateGun } from '~/gun';
-import createIdentity from '@interep/identity';
 import config from '~/config';
 import { getUser } from './users';
 import { getIdentityHash } from '~/arb3';
@@ -459,12 +458,13 @@ const generateSemaphoreID =
       return Promise.reject(new Error('not connected to web3'));
     }
 
-    return await createIdentity(
-      // @ts-ignore
-      (message: string) => web3.eth.personal.sign(message, account),
-      web2Provider,
-      0
+    // @ts-ignore
+    const zkHex = await web3.eth.personal.sign(
+      `Sign this message to generate your ${web2Provider} Semaphore identity with key nonce: ${nonce}.`,
+      account
     );
+    const zkIdentity = await generateZkIdentityFromHex(zkHex);
+    return zkIdentity;
   };
 
 export const lookupENS = () => async (dispatch: Dispatch, getState: () => AppRootState) => {

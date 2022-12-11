@@ -109,12 +109,18 @@ export function JoinGroupView(props: {
     token = auth.token;
   }
 
+  let interepProvider: 'Twitter' | 'Github' | 'Reddit' | null = null;
+
+  if (group === 'twitter') interepProvider = 'Twitter';
+  if (group === 'github') interepProvider = 'Github';
+  if (group === 'reddit') interepProvider = 'Reddit';
+
   const onCreateIdentity = useCallback(() => {
     if (name) {
       if (zkpr) {
         dispatch(createZKPRIdentity());
-      } else {
-        dispatch(genSemaphore(name, reputation));
+      } else if (interepProvider) {
+        dispatch(genSemaphore(interepProvider, reputation));
       }
     }
   }, [name, zkpr]);

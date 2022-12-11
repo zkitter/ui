@@ -3,6 +3,7 @@ import { AuthProvider, ViewType } from '..';
 import { WalletPanel } from '../WalletPanel';
 import { AuthGithub } from './AuthGithub';
 import { AuthTwitter } from './AuthTwitter';
+import { AuthReddit } from './AuthReddit';
 
 export function SelectProviderView(props: {
   setViewType: (v: ViewType) => void;
@@ -22,6 +23,7 @@ export function SelectProviderView(props: {
       <div className="flex-grow flex flex-col mt-8 mb-4 flex-nowrap items-center justify-center">
         <AuthTwitter />
         <AuthGithub />
+        <AuthReddit />
       </div>
     </div>
   );
