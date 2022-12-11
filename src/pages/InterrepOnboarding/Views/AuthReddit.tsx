@@ -5,20 +5,18 @@ import config from '~/config';
 
 const auth = () => {
   window.open(
-    `${config.indexerAPI}/auth/github?redirectUrl=${encodeURI(
+    `${config.indexerAPI}/auth/reddit?redirectUrl=${encodeURI(
       `${config.baseUrl}/signup/interep/`
     )}`,
     '_self'
   );
 };
 
-export function AuthGithub(): ReactElement {
+export function AuthReddit(): ReactElement {
   return (
-    <Button
-      className="mb-2 w-36 justify-center bg-black hover:bg-gray-900 text-white"
-      onClick={auth}>
+    <Button className="mb-2 w-36 justify-center bg-red-500" onClick={auth}>
       <Icon fa="fab fa-github" className="mr-2" />
-      Github
+      Reddit
     </Button>
   );
 }
