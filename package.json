@@ -135,6 +135,6 @@
     "webpack-node-externals": "^3.0.0"
   },
   "engines": {
-    "node": ">=16 <19"
+    "node": ">=16 <17"
   }
 }
