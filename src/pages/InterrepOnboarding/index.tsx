@@ -47,7 +47,7 @@ export default function InterrepOnboarding(props: Props): ReactElement {
           return;
         }
 
-        const resp = await fetch(`${config.indexerAPI}/session`, {
+        const resp = await fetch(`${config.indexerAPI}/auth/session`, {
           credentials: 'include',
         });
         const { error, payload }: any = await resp.json();
@@ -76,7 +76,7 @@ export default function InterrepOnboarding(props: Props): ReactElement {
   }, [selected, account]);
 
   const onResetAuth = useCallback(async () => {
-    const resp = await fetch(authProvider?.resetUrl ?? `${config.indexerAPI}/logout`, {
+    const resp = await fetch(authProvider?.resetUrl ?? `${config.indexerAPI}/auth/logout`, {
       credentials: 'include',
     });
     const json = await resp.json();
