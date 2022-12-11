@@ -1,14 +1,11 @@
-import sinon from 'sinon';
 import { ducks, fetchStub, postWorkMessageStub, store, web3Stub } from '~/testUtils';
 
 const {
-  web3: { connectWeb3, setWeb3, loginGun, genSemaphore, updateIdentity, web3Modal },
+  web3: { connectWeb3, setWeb3, loginGun, genSemaphore, updateIdentity },
 } = ducks;
 
 describe.skip('Web3 Duck', () => {
   it('should set web3', async () => {
-    sinon.stub(web3Modal, 'clearCachedProvider');
-    sinon.stub(web3Modal, 'connect').returns(Promise.resolve(null));
     fetchStub.returns(
       // @ts-ignore
       Promise.resolve({

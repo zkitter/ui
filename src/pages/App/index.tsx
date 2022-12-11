@@ -3,7 +3,7 @@ import { Redirect, Route, RouteProps, Switch, useHistory, useLocation } from 're
 import TopNav from '@components/TopNav';
 import GlobalFeed from '../GlobalFeed';
 import './app.scss';
-import { connectWeb3, useGunLoggedIn, web3Modal } from '@ducks/web3';
+import { connectWC, connectWeb3, useGunLoggedIn } from '@ducks/web3';
 import { useDispatch } from 'react-redux';
 import PostView from '../PostView';
 import ProfileView from '../ProfileView';
@@ -73,11 +73,15 @@ export default function App(): ReactElement {
       }
 
       const cachedZKPR = localStorage.getItem('ZKPR_CACHED');
+      const cachedMetamask = localStorage.getItem('METAMASK_CACHED');
+      const cachedWc = localStorage.getItem('WC_CACHED');
 
       if (cachedZKPR) {
         await dispatch(connectZKPR());
-      } else if (web3Modal.cachedProvider) {
+      } else if (cachedMetamask) {
         await dispatch(connectWeb3());
+      } else if (cachedWc) {
+        await dispatch(connectWC());
       }
     })();
   }, []);

@@ -4,7 +4,6 @@ import deepEqual from 'fast-deep-equal';
 import { AppRootState } from '../store/configureAppStore';
 import { ThunkDispatch } from 'redux-thunk';
 import { Dispatch } from 'redux';
-import Web3Modal from 'web3modal';
 import { generateGunKeyPairFromHex, generateZkIdentityFromHex } from '~/crypto';
 import { defaultWeb3, fetchNameByAddress } from '~/web3';
 import gun, { authenticateGun } from '~/gun';
@@ -15,13 +14,7 @@ import { postWorkerMessage } from '~/sw';
 import { setIdentity } from '../serviceWorkers/util';
 import { findProof } from '~/merkle';
 import { connectWalletConnect } from '~/walletconnect';
-
-export const web3Modal = new Web3Modal({
-  network: 'main', // optional
-  cacheProvider: true, // optional
-  // providerOptions: {
-  // },
-});
+import detectEthereumProvider from '@metamask/detect-provider';
 
 enum ActionTypes {
   SET_LOADING = 'web3/setLoading',
@@ -131,6 +124,9 @@ export const connectWC = () => async (dispatch: ThunkDispatch<any, any, any>) =>
 
     console.log(web3, accounts);
     await dispatch(setWeb3(web3, accounts[0]));
+
+    localStorage.setItem('WC_CACHED', '1');
+    localStorage.setItem('METAMASK_CACHED', '');
     dispatch({
       type: ActionTypes.SET_LOADING,
       payload: false,
@@ -151,8 +147,8 @@ export const connectWeb3 = () => async (dispatch: ThunkDispatch<any, any, any>) 
   });
 
   try {
-    await web3Modal.clearCachedProvider();
-    const provider = await web3Modal.connect();
+    const provider = await detectEthereumProvider();
+    // @ts-expect-error
     const web3 = new Web3(provider);
     const accounts = await web3.eth.requestAccounts();
 
@@ -161,6 +157,8 @@ export const connectWeb3 = () => async (dispatch: ThunkDispatch<any, any, any>) 
     }
 
     await dispatch(setWeb3(web3, accounts[0]));
+    localStorage.setItem('METAMASK_CACHED', '1');
+    localStorage.setItem('WC_CACHED', '');
     dispatch({
       type: ActionTypes.SET_LOADING,
       payload: false,
@@ -250,7 +248,6 @@ export const fetchJoinedTx =
 
 export const disconnectWeb3 = () => async (dispatch: ThunkDispatch<any, any, any>) => {
   dispatch(reset());
-  await web3Modal.clearCachedProvider();
 };
 
 const reset = () => async (dispatch: Dispatch) => {
@@ -260,6 +257,8 @@ const reset = () => async (dispatch: Dispatch) => {
   dispatch(setJoinedTx(''));
   dispatch(setGunPublicKey(''));
   dispatch(setGunPrivateKey(''));
+  localStorage.setItem('METAMASK_CACHED', '');
+  localStorage.setItem('WC_CACHED', '');
   dispatch(
     setSemaphoreID({
       identityNullifier: null,
