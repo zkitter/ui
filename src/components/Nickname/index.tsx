@@ -26,6 +26,14 @@ const GROUP_TO_NICKNAME: {
   interrep_twitter_bronze: 'A Twitter user with 500+ followers',
   interrep_twitter_silver: 'A Twitter user with 2k+ followers',
   interrep_twitter_gold: 'A Twitter user with 7k+ followers',
+  interrep_reddit_unrated: 'A Reddit user',
+  interrep_reddit_bronze: 'A Reddit user with 1k+ karma',
+  interrep_reddit_silver: 'A Reddit user with 5k+ karma',
+  interrep_reddit_gold: 'A Reddit user with 10k+ karma',
+  interrep_github_unrated: 'A Github user',
+  interrep_github_bronze: 'A Github user with 50+ stars',
+  interrep_github_silver: 'A Github user with 100+ stars',
+  interrep_github_gold: 'A Github user with 500+ stars',
 };
 
 export default function Nickname(props: Props): ReactElement {

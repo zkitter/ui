@@ -262,7 +262,6 @@ function ChatMenuItem(props: {
           <Avatar
             className={classNames('chat-menu__item__anon-marker', {
               'bg-gray-800': !zkGroup,
-              'bg-white': zkGroup,
             })}
             incognito
             group={zkGroup}
