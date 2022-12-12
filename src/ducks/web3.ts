@@ -4,7 +4,6 @@ import deepEqual from 'fast-deep-equal';
 import { AppRootState } from '../store/configureAppStore';
 import { ThunkDispatch } from 'redux-thunk';
 import { Dispatch } from 'redux';
-import Web3Modal from 'web3modal';
 import { generateGunKeyPairFromHex, generateZkIdentityFromHex } from '~/crypto';
 import { defaultWeb3, fetchNameByAddress } from '~/web3';
 import gun, { authenticateGun } from '~/gun';
@@ -14,15 +13,9 @@ import { getIdentityHash } from '~/arb3';
 import { postWorkerMessage } from '~/sw';
 import { setIdentity } from '../serviceWorkers/util';
 import { findProof } from '~/merkle';
+import detectEthereumProvider from '@metamask/detect-provider';
 
-export const web3Modal = new Web3Modal({
-  network: 'main', // optional
-  cacheProvider: true, // optional
-  // providerOptions: {
-  // },
-});
-
-enum ActionTypes {
+export enum ActionTypes {
   SET_LOADING = 'web3/setLoading',
   SET_UNLOCKING = 'web3/setUnlocking',
   SET_FETCHING_ENS = 'web3/setFetchingENS',
@@ -120,8 +113,8 @@ export const connectWeb3 = () => async (dispatch: ThunkDispatch<any, any, any>) 
   });
 
   try {
-    await web3Modal.clearCachedProvider();
-    const provider = await web3Modal.connect();
+    const provider = await detectEthereumProvider();
+    // @ts-expect-error
     const web3 = new Web3(provider);
     const accounts = await web3.eth.requestAccounts();
 
@@ -130,6 +123,9 @@ export const connectWeb3 = () => async (dispatch: ThunkDispatch<any, any, any>) 
     }
 
     await dispatch(setWeb3(web3, accounts[0]));
+    localStorage.setItem('METAMASK_CACHED', '1');
+    localStorage.setItem('CB_CACHED', '');
+    localStorage.setItem('WC_CACHED', '');
     dispatch({
       type: ActionTypes.SET_LOADING,
       payload: false,
@@ -219,7 +215,6 @@ export const fetchJoinedTx =
 
 export const disconnectWeb3 = () => async (dispatch: ThunkDispatch<any, any, any>) => {
   dispatch(reset());
-  await web3Modal.clearCachedProvider();
 };
 
 const reset = () => async (dispatch: Dispatch) => {
@@ -269,12 +264,6 @@ export const setWeb3 =
       dispatch(reset());
       return;
     }
-
-    // event = web3.eth.subscribe('newBlockHeaders', async (err, result) => {
-    //     if (!err) {
-    //         await dispatch(lookupENS());
-    //     }
-    // });
 
     const networkType = await web3.eth.net.getNetworkType();
 

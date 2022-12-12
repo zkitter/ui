@@ -9,6 +9,7 @@ let json: {
   baseUrl?: string;
   gunPeers?: string[];
   appLogo?: string;
+  wcProjectId?: string;
 } = {};
 
 try {
@@ -25,6 +26,7 @@ const appLogo = json.appLogo || process.env.APP_LOGO;
 const arbitrumHttpProvider = json.arbitrumHttpProvider || process.env.ARB_HTTP_PROVIDER;
 const arbitrumRegistrar = json.arbitrumRegistrar || process.env.ARB_REGISTRAR;
 const arbitrumExplorer = json.arbitrumExplorer || process.env.ARB_EXPLORER;
+const wcProjectId = json.wcProjectId || process.env.WC_PROJECT_ID;
 const indexerAPI = json.indexerAPI || process.env.INDEXER_API || 'http://localhost:3000';
 const baseUrl = json.baseUrl || process.env.BASE_URL || 'http://localhost:8080';
 const interrepAPI =
@@ -66,6 +68,7 @@ const config = {
   arbitrumExplorer,
   baseUrl,
   appLogo,
+  wcProjectId,
 };
 
 export default config;

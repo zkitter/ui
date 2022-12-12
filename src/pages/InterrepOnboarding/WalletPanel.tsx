@@ -8,6 +8,8 @@ import { postWorkerMessage } from '~/sw';
 import { setIdentity } from '../../serviceWorkers/util';
 import Avatar, { Username } from '@components/Avatar';
 import Icon from '@components/Icon';
+import { disconnectWC } from '~/walletconnect';
+import { disconnectCoinbaseProvider } from '~/coinbaseWallet';
 
 export function WalletPanel(): ReactElement {
   const web3Account = useWeb3Account();
@@ -20,6 +22,8 @@ export function WalletPanel(): ReactElement {
   const disconnect = useCallback(() => {
     dispatch(disconnectZKPR());
     dispatch(disconnectWeb3());
+    disconnectWC();
+    disconnectCoinbaseProvider();
 
     if (selected?.type === 'zkpr_interrep') {
       postWorkerMessage(setIdentity(null));
