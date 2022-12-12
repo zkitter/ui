@@ -10,8 +10,6 @@ import React, {
 import './signup.scss';
 import Button from '@components/Button';
 import {
-  connectCB,
-  connectWC,
   connectWeb3,
   createRecordTx,
   disconnectWeb3,
@@ -55,8 +53,8 @@ import { safeJsonParse } from '~/misc';
 import { Decoder } from '@nuintun/qrcode';
 import { Identity } from '@semaphore-protocol/identity';
 import { findProof } from '~/merkle';
-import { disconnectWC } from '~/walletconnect';
-import { disconnectCoinbaseProvider } from '~/coinbaseWallet';
+import { connectWC, disconnectWC } from '~/walletconnect';
+import { connectCB, disconnectCoinbaseProvider } from '~/coinbaseWallet';
 
 export enum ViewType {
   welcome,

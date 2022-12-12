@@ -3,11 +3,13 @@ import './interrep-onboarding.scss';
 import { useSelectedLocalId } from '@ducks/worker';
 import Icon from '@components/Icon';
 import SpinnerGif from '#/icons/spinner.gif';
-import { connectCB, connectWC, connectWeb3, useWeb3Account } from '@ducks/web3';
+import { connectWeb3, useWeb3Account } from '@ducks/web3';
 import { DoneView, JoinGroupView, SelectProviderView, WelcomeView } from './Views';
 import config from '~/config';
 import { connectZKPR } from '@ducks/zkpr';
 import { useDispatch } from 'react-redux';
+import { connectWC } from '~/walletconnect';
+import { connectCB } from '~/coinbaseWallet';
 
 export enum ViewType {
   welcome,

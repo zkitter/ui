@@ -3,7 +3,7 @@ import { Redirect, Route, RouteProps, Switch, useHistory, useLocation } from 're
 import TopNav from '@components/TopNav';
 import GlobalFeed from '../GlobalFeed';
 import './app.scss';
-import { connectWC, connectWeb3, useGunLoggedIn } from '@ducks/web3';
+import { useGunLoggedIn } from '@ducks/web3';
 import { useDispatch } from 'react-redux';
 import PostView from '../PostView';
 import ProfileView from '../ProfileView';
@@ -15,7 +15,6 @@ import BottomNav from '@components/BottomNav';
 import InterrepOnboarding from '../InterrepOnboarding';
 import ConnectTwitterView from '../ConnectTwitterView';
 import { loginUser } from '~/user';
-import { connectZKPR } from '@ducks/zkpr';
 import SettingView from '../SettingView';
 import MetaPanel from '@components/MetaPanel';
 import ChatView from '../ChatView';

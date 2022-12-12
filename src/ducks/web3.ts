@@ -13,11 +13,9 @@ import { getIdentityHash } from '~/arb3';
 import { postWorkerMessage } from '~/sw';
 import { setIdentity } from '../serviceWorkers/util';
 import { findProof } from '~/merkle';
-import { connectWalletConnect } from '~/walletconnect';
 import detectEthereumProvider from '@metamask/detect-provider';
-import { getCoinbaseProvider } from '~/coinbaseWallet';
 
-enum ActionTypes {
+export enum ActionTypes {
   SET_LOADING = 'web3/setLoading',
   SET_UNLOCKING = 'web3/setUnlocking',
   SET_FETCHING_ENS = 'web3/setFetchingENS',
@@ -106,75 +104,6 @@ export const initialState: State = {
   pending: {
     createRecordTx: {},
   },
-};
-
-export const connectWC = () => async (dispatch: ThunkDispatch<any, any, any>) => {
-  dispatch({
-    type: ActionTypes.SET_LOADING,
-    payload: true,
-  });
-
-  try {
-    const provider = await connectWalletConnect({
-      onSessionEvent: evt => console.log(evt),
-      onSessionDelete: () => localStorage.setItem('WC_CACHED', ''),
-    });
-    const web3 = new Web3(provider);
-    const accounts = await web3.eth.requestAccounts();
-
-    if (!accounts.length) {
-      throw new Error('No accounts found');
-    }
-
-    await dispatch(setWeb3(web3, accounts[0]));
-
-    localStorage.setItem('WC_CACHED', '1');
-    localStorage.setItem('CB_CACHED', '');
-    localStorage.setItem('METAMASK_CACHED', '');
-    dispatch({
-      type: ActionTypes.SET_LOADING,
-      payload: false,
-    });
-  } catch (e) {
-    dispatch({
-      type: ActionTypes.SET_LOADING,
-      payload: false,
-    });
-    throw e;
-  }
-};
-
-export const connectCB = () => async (dispatch: ThunkDispatch<any, any, any>) => {
-  dispatch({
-    type: ActionTypes.SET_LOADING,
-    payload: true,
-  });
-
-  try {
-    const provider = getCoinbaseProvider();
-    const web3 = new Web3(provider);
-    const accounts = await web3.eth.requestAccounts();
-
-    if (!accounts.length) {
-      throw new Error('No accounts found');
-    }
-
-    await dispatch(setWeb3(web3, accounts[0]));
-
-    localStorage.setItem('CB_CACHED', '1');
-    localStorage.setItem('WC_CACHED', '');
-    localStorage.setItem('METAMASK_CACHED', '');
-    dispatch({
-      type: ActionTypes.SET_LOADING,
-      payload: false,
-    });
-  } catch (e) {
-    dispatch({
-      type: ActionTypes.SET_LOADING,
-      payload: false,
-    });
-    throw e;
-  }
 };
 
 export const connectWeb3 = () => async (dispatch: ThunkDispatch<any, any, any>) => {

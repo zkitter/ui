@@ -1,8 +1,10 @@
 import { SessionTypes, SignClientTypes } from '@walletconnect/types';
 import config from '~/config';
 import { IUniversalProvider, UniversalProvider } from '@walletconnect/universal-provider';
-import Web3 from 'web3';
 import QRCodeModal from '@walletconnect/qrcode-modal';
+import { ThunkDispatch } from 'redux-thunk';
+import Web3 from 'web3';
+import { ActionTypes as WebActionTypes, setWeb3 } from '@ducks/web3';
 
 type ConnectWalletConnectParams = {
   onSessionUpdate?: (session: SessionTypes.Struct) => void;
@@ -92,6 +94,42 @@ export const connectWalletConnect = async (
       QRCodeModal.close();
     }
   });
+};
+
+export const connectWC = () => async (dispatch: ThunkDispatch<any, any, any>) => {
+  dispatch({
+    type: WebActionTypes.SET_LOADING,
+    payload: true,
+  });
+
+  try {
+    const provider = await connectWalletConnect({
+      onSessionEvent: evt => console.log(evt),
+      onSessionDelete: () => localStorage.setItem('WC_CACHED', ''),
+    });
+    const web3 = new Web3(provider);
+    const accounts = await web3.eth.requestAccounts();
+
+    if (!accounts.length) {
+      throw new Error('No accounts found');
+    }
+
+    await dispatch(setWeb3(web3, accounts[0]));
+
+    localStorage.setItem('WC_CACHED', '1');
+    localStorage.setItem('CB_CACHED', '');
+    localStorage.setItem('METAMASK_CACHED', '');
+    dispatch({
+      type: WebActionTypes.SET_LOADING,
+      payload: false,
+    });
+  } catch (e) {
+    dispatch({
+      type: WebActionTypes.SET_LOADING,
+      payload: false,
+    });
+    throw e;
+  }
 };
 
 export const disconnectWC = async () => {

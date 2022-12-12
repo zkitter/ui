@@ -59,6 +59,7 @@ specifiers:
   eslint-plugin-n: ^15.5.1
   eslint-plugin-promise: ^5.2.0
   eslint-plugin-sort: ^2.4.0
+  eth-json-rpc-middleware: git+https://github.com/zkitter/eth-json-rpc-middleware.git#6.0.0-a
   ethereum-blockies-base64: ^1.0.2
   ethers: ^5.7.2
   eventemitter2: ^6.4.9
@@ -144,6 +145,7 @@ dependencies:
   draft-js: 0.11.7_wcqkhtmu7mswc6yz4uyexck3ty
   draft-js-table: 0.3.0
   elliptic: 6.5.4
+  eth-json-rpc-middleware: github.com/zkitter/eth-json-rpc-middleware/61acf82c6aa99ce6021328fab7d1a802a9010843
   ethereum-blockies-base64: 1.0.2
   ethers: 5.7.2
   eventemitter2: 6.4.9
@@ -14389,4 +14391,24 @@ packages:
     dependencies:
       bn.js: 4.12.0
       ethereumjs-util: 6.2.1
+    dev: false
+
+  github.com/zkitter/eth-json-rpc-middleware/61acf82c6aa99ce6021328fab7d1a802a9010843:
+    resolution: {tarball: https://codeload.github.com/zkitter/eth-json-rpc-middleware/tar.gz/61acf82c6aa99ce6021328fab7d1a802a9010843}
+    name: eth-json-rpc-middleware
+    version: 6.0.0
+    dependencies:
+      btoa: 1.2.1
+      clone: 2.1.2
+      eth-query: 2.1.2
+      eth-rpc-errors: 3.0.0
+      eth-sig-util: 1.4.2
+      ethereumjs-util: 5.2.1
+      json-rpc-engine: 5.4.0
+      json-stable-stringify: 1.0.2
+      node-fetch: 2.6.7
+      pify: 3.0.0
+      safe-event-emitter: 1.0.1
+    transitivePeerDependencies:
+      - encoding
     dev: false
