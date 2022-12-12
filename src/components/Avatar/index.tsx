@@ -8,12 +8,8 @@ import Web3 from 'web3';
 import { getTwitterUser } from '~/twitter';
 import { fetchNameByAddress } from '~/web3';
 import { ellipsify } from '~/user';
-import TwitterBronze from '#/icons/twitter_bronze.svg';
-import TwitterSilver from '#/icons/twitter_silver.svg';
-import TwitterGold from '#/icons/twitter_gold.svg';
-import TwitterUnrated from '#/icons/twitter_unrated.svg';
-import TAZLogo from '#/icons/taz-logo.svg';
 import './avatar.scss';
+import { getGroupPFP } from '~/groups';
 
 type Props = {
   name?: string;
@@ -28,17 +24,6 @@ type Props = {
 const CACHE: {
   [address: string]: string;
 } = {};
-
-const GROUP_TO_PFP: {
-  [group: string]: string;
-} = {
-  interrep_twitter_not_sufficient: TwitterUnrated,
-  interrep_twitter_unrated: TwitterUnrated,
-  interrep_twitter_bronze: TwitterBronze,
-  interrep_twitter_silver: TwitterSilver,
-  interrep_twitter_gold: TwitterGold,
-  semaphore_taz_members: TAZLogo,
-};
 
 export function Username(props: { address?: string }): ReactElement {
   const [ensName, setEnsName] = useState('');
@@ -116,7 +101,7 @@ export default function Avatar(props: Props): ReactElement {
   }
 
   if (incognito && protocol !== 'custom') {
-    const url = group ? GROUP_TO_PFP[group] : undefined;
+    const url = group ? getGroupPFP(group) : undefined;
     return (
       <Icon
         className={classNames(
