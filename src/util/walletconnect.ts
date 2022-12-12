@@ -32,10 +32,17 @@ export const connectWalletConnect = async (
     const provider = await getWCProvider();
 
     provider.on('display_uri', async (uri: string) => {
-      QRCodeModal.open(uri, () => {
-        // handle on modal close
-        reject(new Error('Modal closed'));
-      });
+      console.log(uri);
+      QRCodeModal.open(
+        uri,
+        () => {
+          // handle on modal close
+          reject(new Error('Modal closed'));
+        },
+        {
+          mobileLinks: ['metamask', 'trust'],
+        }
+      );
     });
 
     provider.on('session_event', ({ event }: any) => {
