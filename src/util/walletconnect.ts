@@ -18,7 +18,10 @@ async function getWCProvider() {
   cached = await UniversalProvider.init({
     projectId: config.wcProjectId,
     logger: 'error',
-    relayUrl: `wss://relay.walletconnect.com`,
+    relayUrl:
+      process.env.NODE_ENV === 'production'
+        ? `wss://relay.walletconnect.com/?projectId=${config.wcProjectId}`
+        : `wss://relay.walletconnect.com`,
   });
   return cached;
 }
