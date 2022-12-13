@@ -114,6 +114,7 @@ export const connectWC = () => async (dispatch: ThunkDispatch<any, any, any>) =>
       onSessionEvent: evt => console.log(evt),
       onSessionDelete: () => localStorage.setItem('WC_CACHED', ''),
     });
+    await provider.enable();
     const web3 = new Web3(provider);
     const accounts = await web3.eth.requestAccounts();
 
