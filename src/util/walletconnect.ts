@@ -5,6 +5,9 @@ import QRCodeModal from '@walletconnect/qrcode-modal';
 import { ThunkDispatch } from 'redux-thunk';
 import Web3 from 'web3';
 import { ActionTypes as WebActionTypes, setWeb3 } from '@ducks/web3';
+import { Web3Modal } from '@web3modal/standalone';
+
+const web3modal = new Web3Modal({ projectId: config.wcProjectId });
 
 type ConnectWalletConnectParams = {
   onSessionUpdate?: (session: SessionTypes.Struct) => void;
@@ -32,17 +35,12 @@ export const connectWalletConnect = async (
     const provider = await getWCProvider();
 
     provider.on('display_uri', async (uri: string) => {
-      console.log(uri);
-      QRCodeModal.open(
-        uri,
-        () => {
-          // handle on modal close
-          reject(new Error('Modal closed'));
-        },
-        {
-          mobileLinks: ['metamask', 'trust'],
-        }
-      );
+      console.log('display_uri');
+      web3modal.openModal({ uri, standaloneChains: ['eip155:1'] });
+      // QRCodeModal.open(uri, () => {
+      //   // handle on modal close
+      //   reject(new Error('Modal closed'));
+      // });
     });
 
     provider.on('session_event', ({ event }: any) => {
@@ -66,31 +64,39 @@ export const connectWalletConnect = async (
     const pairings = signClient.pairing.getAll({ active: true });
     const pairing = provider.session && pairings[0];
 
+    if (provider.session) {
+      return resolve(provider);
+    }
+
     try {
-      const session =
-        provider.session ||
-        (await provider.connect({
-          // Optionally: pass a known prior pairing (e.g. from `signClient.core.pairing.getPairings()`) to skip the `uri` step.
-          pairingTopic: pairing?.topic,
-          // Provide the namespaces and chains (e.g. `eip155` for EVM-based chains) we want to use in this session.
-          namespaces: {
-            eip155: {
-              methods: [
-                'eth_sendTransaction',
-                'eth_signTransaction',
-                'eth_sign',
-                'personal_sign',
-                'eth_chainId',
-                'eth_signTypedData',
-              ],
-              chains: ['eip155:1'],
-              events: ['chainChanged', 'accountsChanged'],
-              rpcMap: {
-                '1': config.web3HttpProvider,
-              },
+      await provider.connect({
+        // Optionally: pass a known prior pairing (e.g. from `signClient.core.pairing.getPairings()`) to skip the `uri` step.
+        pairingTopic: pairing?.topic,
+        // Provide the namespaces and chains (e.g. `eip155` for EVM-based chains) we want to use in this session.
+        namespaces: {
+          eip155: {
+            methods: [
+              'eth_sendTransaction',
+              'eth_signTransaction',
+              'eth_sign',
+              'personal_sign',
+              'eth_chainId',
+              'eth_signTypedData',
+            ],
+            chains: ['eip155:1'],
+            events: ['chainChanged', 'accountsChanged'],
+            rpcMap: {
+              '1': config.web3HttpProvider,
             },
           },
-        }));
+        },
+      });
+
+      // if (uri) {
+      //   web3modal.openModal({ uri, standaloneChains: ['eip155:1'] });
+      //   await approval();
+      //   web3modal.closeModal();
+      // }
 
       resolve(provider);
     } catch (e) {
@@ -98,7 +104,8 @@ export const connectWalletConnect = async (
       reject(e);
     } finally {
       // Close the QRCode modal in case it was open.
-      QRCodeModal.close();
+      // QRCodeModal.close();
+      web3modal.closeModal();
     }
   });
 };
@@ -114,7 +121,6 @@ export const connectWC = () => async (dispatch: ThunkDispatch<any, any, any>) =>
       onSessionEvent: evt => console.log(evt),
       onSessionDelete: () => localStorage.setItem('WC_CACHED', ''),
     });
-    await provider.enable();
     const web3 = new Web3(provider);
     const accounts = await web3.eth.requestAccounts();
 
