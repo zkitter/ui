@@ -11,6 +11,7 @@ import worker from '@ducks/worker';
 import zkpr from '@ducks/zkpr';
 import mods from '@ducks/mods';
 import chats from '@ducks/chats';
+import zkitter from '@ducks/zkitter';
 
 const rootReducer = combineReducers({
   app,
@@ -22,6 +23,7 @@ const rootReducer = combineReducers({
   worker,
   mods,
   chats,
+  zkitter,
 });
 
 export type AppRootState = ReturnType<typeof rootReducer>;

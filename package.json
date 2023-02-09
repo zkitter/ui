@@ -76,7 +76,8 @@
     "remarkable": "^2.0.1",
     "web3": "^1.8.1",
     "web3modal": "^1.9.10",
-    "webtorrent": "^1.9.4"
+    "webtorrent": "^1.9.4",
+    "zkitter-js": "^1.0.14"
   },
   "author": "0xTsukino",
   "license": "ISC",
