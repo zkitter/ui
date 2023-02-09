@@ -34,6 +34,7 @@ import TazModal from '@components/TazModal';
 import NotificationView from '../NotificationView';
 import { updateNotifications } from '@ducks/app';
 import SearchResultsView from '../SearchResultsView';
+import { initZkitter } from '@ducks/zkitter';
 
 export default function App(): ReactElement {
   const dispatch = useDispatch();
@@ -66,6 +67,8 @@ export default function App(): ReactElement {
   useEffect(() => {
     (async function onAppMount() {
       const id: any = await dispatch(syncWorker());
+
+      await dispatch(initZkitter());
 
       if (id) {
         await loginUser(id);
