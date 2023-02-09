@@ -94,6 +94,7 @@ module.exports = [
       publicPath: isProd ? '/' : 'http://localhost:8080/',
       filename: `[name].js`,
     },
+    // externals: ['zkitter-js'],
     devtool: 'source-map',
     resolve: {
       extensions: ['.ts', '.tsx', '.js', '.jsx', '.png', '.svg'],
