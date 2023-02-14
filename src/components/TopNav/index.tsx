@@ -17,7 +17,7 @@ import { useThemeContext } from '../ThemeContext';
 import NotificationIcon from '../NotificationIcon';
 import ChatNavIcon from '../ChatNavIcon';
 import GlobalSearchInput from '../GlobalSearchInput';
-import HomeLogo from "@components/TopNav/HomeLogo";
+import HomeLogo from '@components/TopNav/HomeLogo';
 
 export default function TopNav(): ReactElement {
   const theme = useThemeContext();
@@ -154,7 +154,6 @@ function SearchHeaderGroup() {
     if (history.action !== 'POP') return history.goBack();
     history.push('/');
   }, [history]);
-
 
   let address = '';
 
