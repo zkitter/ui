@@ -12,6 +12,7 @@
     "test": "NODE_ENV=test jest --config jest.config.ts --coverage=false",
     "test:coverage": "npm run test --coverage=true",
     "test:ci": "npm run test --silent --reporters=jest-silent-reporter",
+    "fix": "npm run lint:fix && npm run format:fix",
     "format:check": "prettier --check 'src'",
     "format:fix": "prettier --write 'src'",
     "format:ci": "npm run format:check --loglevel warn",
