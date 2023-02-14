@@ -17,6 +17,7 @@ import { useThemeContext } from '../ThemeContext';
 import NotificationIcon from '../NotificationIcon';
 import ChatNavIcon from '../ChatNavIcon';
 import GlobalSearchInput from '../GlobalSearchInput';
+import HomeLogo from "@components/TopNav/HomeLogo";
 
 export default function TopNav(): ReactElement {
   const theme = useThemeContext();
@@ -135,7 +136,7 @@ function DefaultHeaderGroup() {
         'flex flex-row flex-nowrap items-center flex-shrink-0',
         'p-1 mx-4 overflow-hidden'
       )}>
-      <Icon url="/applogo.svg" size={2} />
+      <HomeLogo />
     </div>
   );
 }
@@ -153,6 +154,7 @@ function SearchHeaderGroup() {
     if (history.action !== 'POP') return history.goBack();
     history.push('/');
   }, [history]);
+
 
   let address = '';
 
@@ -209,7 +211,7 @@ function GlobalHeaderGroup() {
         'flex flex-row flex-nowrap flex-grow items-center flex-shrink-0',
         'p-1 mx-4 overflow-hidden'
       )}>
-      <Icon url="/applogo.svg" size={2} />
+      <HomeLogo />
       <TopNavContextButton />
     </div>
   );
