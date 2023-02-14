@@ -20,3 +20,11 @@ rules:
     - error
     - allowEmptyCatch: true
   no-unused-vars: off
+
+overrides:
+  - files: ['./src/components/DraftEditor/index.tsx']
+    rules:
+      no-useless-escape: warn
+  - files: ['./src/**/*.ts']
+    rules:
+      no-async-promise-executor: warn

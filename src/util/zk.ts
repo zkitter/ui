@@ -15,7 +15,8 @@ import { getEpoch } from './zkchat';
 import { sha256 } from './crypto';
 import { findProof } from './merkle';
 import { Identity } from '@semaphore-protocol/identity';
-import { SerializedIdentity } from '@zk-kit/identity/src/types/index';
+// eslint-disable-next-line import/no-unresolved
+import { SerializedIdentity } from '@zk-kit/identity/src/types';
 
 export const generateRLNProof =
   (signalString: string) =>
