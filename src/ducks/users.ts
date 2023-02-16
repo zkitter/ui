@@ -9,6 +9,7 @@ import { getContextNameFromState } from './posts';
 
 enum ActionTypes {
   SET_USER = 'users/setUser',
+  SET_USER_META = 'users/setUserMeta',
   RESET_USERS = 'users/resetUsers',
   SET_FOLLOWED = 'users/setFollowed',
   SET_BLOCKED = 'users/setBlocked',
@@ -23,6 +24,20 @@ type Action<payload> = {
   payload?: payload;
   meta?: any;
   error?: boolean;
+};
+
+export type UserMeta = {
+  blockedCount: number;
+  blockingCount: number;
+  followerCount: number;
+  followingCount: number;
+  postingCount: number;
+  followed: string | null;
+  blocked: string | null;
+  inviteSent: string | null;
+  acceptanceReceived: string | null;
+  inviteReceived: string | null;
+  acceptanceSent: string | null;
 };
 
 export type User = {
@@ -42,29 +57,20 @@ export type User = {
   joinedAt: number;
   joinedTx: string;
   type: 'ens' | 'arbitrum' | '';
-  meta: {
-    blockedCount: number;
-    blockingCount: number;
-    followerCount: number;
-    followingCount: number;
-    postingCount: number;
-    followed: string | null;
-    blocked: string | null;
-    inviteSent: string | null;
-    acceptanceReceived: string | null;
-    inviteReceived: string | null;
-    acceptanceSent: string | null;
-  };
 };
 
 type State = {
   map: {
     [name: string]: User;
   };
+  meta: {
+    [name: string]: UserMeta;
+  };
 };
 
 const initialState: State = {
   map: {},
+  meta: {},
 };
 
 let fetchPromises: any = {};
@@ -193,7 +199,7 @@ export const searchUsers =
 
     for (const user of json.payload) {
       // @ts-ignore
-      const payload = dispatch(processUserPayload({ ...user }));
+      const payload = dispatch(processUserPayload(user));
       const key = contextualName + user.address;
       if (payload?.joinedTx) {
         cachedUser[key] = payload;
@@ -270,24 +276,30 @@ const processUserPayload = (user: any) => (dispatch: Dispatch) => {
     joinedAt: user.joinedAt || '',
     joinedTx: user.joinedTx || '',
     type: user.type || '',
-    meta: {
-      followerCount: user.meta?.followerCount || 0,
-      followingCount: user.meta?.followingCount || 0,
-      blockedCount: user.meta?.blockedCount || 0,
-      blockingCount: user.meta?.blockingCount || 0,
-      postingCount: user.meta?.postingCount || 0,
-      followed: user.meta?.followed || null,
-      blocked: user.meta?.blocked || null,
-      inviteSent: user.meta?.inviteSent || null,
-      acceptanceReceived: user.meta?.acceptanceReceived || null,
-      inviteReceived: user.meta?.inviteReceived || null,
-      acceptanceSent: user.meta?.acceptanceSent || null,
-    },
+  };
+
+  const meta = {
+    followerCount: user.meta?.followerCount || 0,
+    followingCount: user.meta?.followingCount || 0,
+    blockedCount: user.meta?.blockedCount || 0,
+    blockingCount: user.meta?.blockingCount || 0,
+    postingCount: user.meta?.postingCount || 0,
+    followed: user.meta?.followed || null,
+    blocked: user.meta?.blocked || null,
+    inviteSent: user.meta?.inviteSent || null,
+    acceptanceReceived: user.meta?.acceptanceReceived || null,
+    inviteReceived: user.meta?.inviteReceived || null,
+    acceptanceSent: user.meta?.acceptanceSent || null,
   };
 
   dispatch({
     type: ActionTypes.SET_USER,
     payload: payload,
+  });
+
+  dispatch({
+    type: ActionTypes.SET_USER_META,
+    payload: { meta, address: user.username },
   });
 
   return payload;
@@ -314,6 +326,7 @@ export const useUser = (address = ''): User | null => {
     if (!address) return null;
 
     const user = state.users.map[address];
+    const meta = state.users.meta[address];
 
     if (!user) {
       return {
@@ -348,7 +361,10 @@ export const useUser = (address = ''): User | null => {
       };
     }
 
-    return user;
+    return {
+      ...user,
+      meta,
+    };
   }, deepEqual);
 };
 
@@ -356,52 +372,46 @@ export default function users(state = initialState, action: Action<any>): State 
   switch (action.type) {
     case ActionTypes.SET_USER:
       return reduceSetUser(state, action);
+    case ActionTypes.SET_USER_META:
+      return reduceSetUserMeta(state, action);
     case ActionTypes.RESET_USERS:
       return {
-        map: {},
+        ...state,
+        meta: {},
       };
     case ActionTypes.SET_ACCEPTANCE_SENT:
       return {
         ...state,
-        map: {
-          ...state.map,
+        meta: {
+          ...state.meta,
           [action.payload.address]: {
-            ...state.map[action.payload.address],
-            meta: {
-              ...state.map[action.payload.address]?.meta,
-              acceptanceSent: action.payload.acceptanceSent,
-            },
+            ...state.meta[action.payload.address],
+            acceptanceSent: action.payload.acceptanceSent,
           },
         },
       };
     case ActionTypes.SET_FOLLOWED:
       return {
         ...state,
-        map: {
-          ...state.map,
+        meta: {
+          ...state.meta,
           [action.payload.address]: {
-            ...state.map[action.payload.address],
-            meta: {
-              ...state.map[action.payload.address]?.meta,
-              followed: action.payload.followed,
-              followerCount:
-                state.map[action.payload.address]?.meta.followerCount +
-                (action.payload.followed ? 1 : -1),
-            },
+            ...state.meta[action.payload.address],
+            followed: action.payload.followed,
+            followerCount:
+              state.meta[action.payload.address]?.followerCount +
+              (action.payload.followed ? 1 : -1),
           },
         },
       };
     case ActionTypes.SET_BLOCKED:
       return {
         ...state,
-        map: {
-          ...state.map,
+        meta: {
+          ...state.meta,
           [action.payload.address]: {
-            ...state.map[action.payload.address],
-            meta: {
-              ...state.map[action.payload.address]?.meta,
-              blocked: action.payload.blocked,
-            },
+            ...state.meta[action.payload.address],
+            blocked: action.payload.blocked,
           },
         },
       };
@@ -483,19 +493,39 @@ function reduceSetUser(state: State, action: Action<User>): State {
         joinedTx: action.payload.joinedTx,
         type: action.payload.type,
         group: action.payload.group,
-        meta: {
-          followerCount: action.payload.meta?.followerCount || 0,
-          followingCount: action.payload.meta?.followingCount || 0,
-          blockedCount: action.payload.meta?.blockedCount || 0,
-          blockingCount: action.payload.meta?.blockingCount || 0,
-          postingCount: action.payload.meta?.postingCount || 0,
-          followed: action.payload.meta?.followed || null,
-          blocked: action.payload.meta?.blocked || null,
-          inviteSent: action.payload.meta?.inviteSent || null,
-          acceptanceReceived: action.payload.meta?.acceptanceReceived || null,
-          inviteReceived: action.payload.meta?.inviteReceived || null,
-          acceptanceSent: action.payload.meta?.acceptanceSent || null,
-        },
+      },
+    },
+  };
+}
+
+function reduceSetUserMeta(
+  state: State,
+  action: Action<{
+    meta: UserMeta;
+    address: string;
+  }>
+): State {
+  if (!action.payload) return state;
+
+  const userMeta = state.meta[action.payload.address];
+
+  return {
+    ...state,
+    meta: {
+      ...state.meta,
+      [action.payload.address]: {
+        ...userMeta,
+        followerCount: action.payload.meta?.followerCount || 0,
+        followingCount: action.payload.meta?.followingCount || 0,
+        blockedCount: action.payload.meta?.blockedCount || 0,
+        blockingCount: action.payload.meta?.blockingCount || 0,
+        postingCount: action.payload.meta?.postingCount || 0,
+        followed: action.payload.meta?.followed || null,
+        blocked: action.payload.meta?.blocked || null,
+        inviteSent: action.payload.meta?.inviteSent || null,
+        acceptanceReceived: action.payload.meta?.acceptanceReceived || null,
+        inviteReceived: action.payload.meta?.inviteReceived || null,
+        acceptanceSent: action.payload.meta?.acceptanceSent || null,
       },
     },
   };

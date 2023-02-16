@@ -1,6 +1,5 @@
 import { getUser, resetUser, User } from '@ducks/users';
 import { Identity } from '../serviceWorkers/identity';
-import { authenticateGun } from './gun';
 import { postWorkerMessage } from './sw';
 import { selectIdentity } from '../serviceWorkers/util';
 import store, { AppRootState } from '../store/configureAppStore';
@@ -42,13 +41,7 @@ export const getHandle = (user?: User | null, start = 6, end = 4): string => {
 
 export async function loginUser(id: Identity | null) {
   if (id?.type === 'gun') {
-    const decrypted: any = await postWorkerMessage(selectIdentity(id.publicKey));
-    if (decrypted) {
-      // authenticateGun({
-      //   pub: decrypted.publicKey,
-      //   priv: decrypted.privateKey,
-      // });
-    }
+    await postWorkerMessage(selectIdentity(id.publicKey));
     await checkChat();
   }
 

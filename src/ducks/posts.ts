@@ -21,6 +21,7 @@ enum ActionTypes {
   SET_POST = 'posts/setPost',
   UNSET_POST = 'posts/unsetPost',
   SET_META = 'posts/setMeta',
+  SET_METAS = 'posts/setMetas',
   INCREMENT_REPLY = 'posts/incrementReply',
   INCREMENT_LIKE = 'posts/incrementLike',
   SET_LIKED = 'posts/setLiked',
@@ -318,36 +319,34 @@ export const fetchRepliedBy =
   };
 
 const processPosts = (posts: any[]) => async (dispatch: Dispatch) => {
-  for (const post of posts) {
-    if (post.subtype === PostMessageSubType.Repost) {
-      dispatch({
-        type: ActionTypes.SET_META,
-        payload: {
+  dispatch({
+    type: ActionTypes.SET_METAS,
+    payload: posts.map(post => {
+      if (post.subtype === PostMessageSubType.Repost) {
+        return {
           messageId: post.payload.reference,
           meta: post.meta,
-        },
-      });
-    } else {
-      dispatch({
-        type: ActionTypes.SET_META,
-        payload: {
+        };
+      } else {
+        return {
           messageId: post.messageId,
           meta: post.meta,
-        },
-      });
-    }
+        };
+      }
+    }),
+  });
 
-    const { creator } = parseMessageId(post.messageId);
-
-    dispatch({
-      type: ActionTypes.SET_POST,
-      payload: new Post({
+  dispatch({
+    type: ActionTypes.SET_POSTS,
+    payload: posts.map(post => {
+      const { creator } = parseMessageId(post.messageId);
+      return new Post({
         ...post,
         createdAt: new Date(Number(post.createdAt)),
         creator: creator || '',
-      }),
-    });
-  }
+      });
+    }),
+  });
 };
 
 export const searchPosts =
@@ -611,6 +610,8 @@ export default function posts(state = initialState, action: Action): State {
       return reduceSetPost(state, action);
     case ActionTypes.UNSET_POST:
       return reduceUnsetPost(state, action);
+    case ActionTypes.SET_METAS:
+      return reduceSetMetas(state, action);
     case ActionTypes.SET_META:
       return reduceSetMeta(state, action);
     case ActionTypes.APPEND_POSTS:
@@ -679,17 +680,33 @@ function reduceSetPosts(state: State, action: Action): State {
 
   return {
     ...state,
-    map: posts,
+    map: {
+      ...state.map,
+      ...posts,
+    },
+  };
+}
+
+function reduceSetMetas(state: State, action: Action): State {
+  const payload = action.payload;
+  const metas: { [h: string]: PostMeta } = {};
+
+  for (const data of payload) {
+    const { messageId, meta } = data;
+    metas[messageId] = meta;
+  }
+
+  return {
+    ...state,
+    meta: {
+      ...state.meta,
+      ...metas,
+    },
   };
 }
 
 function reduceSetMeta(state: State, action: Action): State {
-  const post = action.payload;
-  const { meta } = post;
-
-  const messageId =
-    post.subtype === PostMessageSubType.Repost ? post.payload.reference : post.messageId;
-
+  const { messageId, meta } = action.payload;
   return {
     ...state,
     meta: {
