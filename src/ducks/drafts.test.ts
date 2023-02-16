@@ -1,6 +1,8 @@
 import { ducks, fetchReset, fetchStub, store } from '~/testUtils';
 import { createEditorStateWithText } from '@draft-js-plugins/editor';
 import { ZkIdentity } from '@zk-kit/identity';
+import { setPostingGroup } from '@ducks/worker';
+import { PostMessageSubType } from '~/message';
 
 const {
   setMirror,
@@ -49,6 +51,28 @@ describe('Drafts Duck', () => {
         method: 'POST',
       },
     ]);
+    fetchReset();
+  });
+
+  it('should not mirror post when submitting group post', async () => {
+    store.dispatch(
+      setDraft({
+        reference: '',
+        editorState: createEditorStateWithText('hello world!'),
+      })
+    );
+    store.dispatch(setMirror(true));
+    store.dispatch(setPostingGroup('zksocial_all'));
+    // @ts-ignore
+    const post: any = await store.dispatch(submitPost(''));
+    expect(post.payload).toStrictEqual({
+      attachment: '',
+      content: 'hello world!',
+      reference: '',
+      title: '',
+      topic: 'ok',
+    });
+    expect(post.subtype).not.toStrictEqual(PostMessageSubType.MirrorPost);
   });
 
   // FIXME ENOENT: no such file or directory, open 'http://127.0.0.1:3000/circuits/rln/wasm'
