@@ -5,9 +5,8 @@ import { Provider } from 'react-redux';
 import { BrowserRouter } from 'react-router-dom';
 import store from './store/configureAppStore';
 import App from './pages/App';
-import './util/gun';
-import { createServiceWorker } from './util/sw';
-import { ThemeProvider } from './components/ThemeContext';
+import { createServiceWorker } from '~/sw';
+import { ThemeProvider } from '@components/ThemeContext';
 
 (async () => {
   if ('serviceWorker' in navigator) {

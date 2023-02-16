@@ -13,6 +13,8 @@ import LocalBackupNotification from '@components/LocalBackupNotification';
 import { useSelectedLocalId } from '@ducks/worker';
 import { useThemeContext } from '@components/ThemeContext';
 import { useZkitter } from '@ducks/zkitter';
+import Icon from '@components/Icon';
+import SpinnerGif from '#/icons/spinner.gif';
 
 export default function HomeFeed(): ReactElement {
   const [limit, setLimit] = useState(20);
@@ -33,7 +35,7 @@ export default function HomeFeed(): ReactElement {
         setFetching(false);
       }
     })();
-  }, [selected]);
+  }, [selected, zkitter]);
 
   const fetchMore = useCallback(
     async (reset = false) => {
@@ -74,7 +76,20 @@ export default function HomeFeed(): ReactElement {
       onScrolledToBottom={fetchMore}>
       <LocalBackupNotification />
       <PostEditor onSuccessPost={onSuccessPost} />
-      {!order.length && !fetching && (
+      {!zkitter && (
+        <div
+          className={classNames(
+            'flex flex-row flex-nowrap items-center justify-center',
+            'py-6 px-4 border rounded-xl text-sm',
+            {
+              'border-gray-200 text-gray-300': theme !== 'dark',
+              'border-gray-800 text-gray-700': theme === 'dark',
+            }
+          )}>
+          <Icon url={SpinnerGif} size={4} />
+        </div>
+      )}
+      {!order.length && !fetching && !!zkitter && (
         <div
           className={classNames(
             'flex flex-row flex-nowrap items-center justify-center',

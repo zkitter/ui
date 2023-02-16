@@ -14,7 +14,6 @@ import Avatar, { Username } from '../Avatar';
 import Icon from '../Icon';
 import Menuable, { ItemProps } from '../Menuable';
 import SpinnerGIF from '#/icons/spinner.gif';
-import gun from '~/gun';
 import { useHistory } from 'react-router';
 import { getHandle, loginUser } from '~/user';
 import {
@@ -209,11 +208,6 @@ function UserMenuable(props: {
 
   const logout = useCallback(async () => {
     setOpened(false);
-
-    // @ts-ignore
-    if (gun.user().is) {
-      gun.user().leave();
-    }
 
     await dispatch(
       setSemaphoreID({
