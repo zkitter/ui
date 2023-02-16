@@ -2,7 +2,6 @@ import Gun from 'gun/gun';
 // const Gun = require('gun');
 import 'gun/sea';
 import { Message, MessageType, Post, PostMessageOption, PostMessageSubType } from './message';
-import config from './config';
 
 const gun = Gun();
 
@@ -18,6 +17,7 @@ export const authenticateGun = (keyPair: { pub: string; priv: string }) => {
 
 export const fetchMessage = async (soul: string): Promise<PostMessageOption> => {
   return new Promise(async (resolve, reject) => {
+    return null;
     try {
       // @ts-ignore
       const data: any = await gun.get(soul);

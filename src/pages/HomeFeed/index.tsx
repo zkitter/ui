@@ -2,7 +2,7 @@ import React, { ReactElement, useCallback, useEffect, useState } from 'react';
 import classNames from 'classnames';
 import Post from '@components/Post';
 import { useDispatch } from 'react-redux';
-import { fetchHomeFeed, setPost, useGoToPost } from '@ducks/posts';
+import { setPost, useGoToPost } from '@ducks/posts';
 import './home-feed.scss';
 import Editor from '@components/Editor';
 import { useLoggedIn } from '@ducks/web3';
@@ -12,15 +12,17 @@ import InfiniteScrollable from '@components/InfiniteScrollable';
 import LocalBackupNotification from '@components/LocalBackupNotification';
 import { useSelectedLocalId } from '@ducks/worker';
 import { useThemeContext } from '@components/ThemeContext';
+import { useZkitter } from '@ducks/zkitter';
 
 export default function HomeFeed(): ReactElement {
   const [limit, setLimit] = useState(20);
-  const [offset, setOffset] = useState(0);
+  const [offset, setOffset] = useState('');
   const [order, setOrder] = useState<string[]>([]);
   const [fetching, setFetching] = useState(false);
   const dispatch = useDispatch();
   const selected = useSelectedLocalId();
   const theme = useThemeContext();
+  const zkitter = useZkitter();
 
   useEffect(() => {
     (async function onGlobalFeedMount() {
@@ -35,18 +37,22 @@ export default function HomeFeed(): ReactElement {
 
   const fetchMore = useCallback(
     async (reset = false) => {
+      if (!zkitter) return;
       if (reset) {
-        const messageIds: any = await dispatch(fetchHomeFeed(20, 0));
-        setOffset(20);
+        const posts = await zkitter.getPosts(20);
+        const messageIds = posts.map(post => post.toJSON().messageId);
+        const last = posts[posts.length - 1];
+        setOffset(last.hash());
         setOrder(messageIds);
       } else {
-        if (order.length % limit) return;
-        const messageIds: any = await dispatch(fetchHomeFeed(limit, offset));
-        setOffset(offset + limit);
+        const posts = await zkitter.getPosts(limit, offset);
+        const messageIds = posts.map(post => post.toJSON().messageId);
+        const last = posts[posts.length - 1];
+        setOffset(last.hash());
         setOrder(order.concat(messageIds));
       }
     },
-    [limit, offset, order]
+    [zkitter, limit, offset, order]
   );
 
   const onSuccessPost = useCallback(
