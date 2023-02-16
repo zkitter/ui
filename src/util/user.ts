@@ -44,10 +44,10 @@ export async function loginUser(id: Identity | null) {
   if (id?.type === 'gun') {
     const decrypted: any = await postWorkerMessage(selectIdentity(id.publicKey));
     if (decrypted) {
-      authenticateGun({
-        pub: decrypted.publicKey,
-        priv: decrypted.privateKey,
-      });
+      // authenticateGun({
+      //   pub: decrypted.publicKey,
+      //   priv: decrypted.privateKey,
+      // });
     }
     await checkChat();
   }

@@ -6,8 +6,6 @@ import {
   PostMessageOption,
   PostMessageSubType,
 } from '~/message';
-import { fetchMessage } from '~/gun';
-import { getUser } from './users';
 import { ThunkDispatch } from 'redux-thunk';
 import { AppRootState } from '../store/configureAppStore';
 import { useSelector } from 'react-redux';
@@ -16,8 +14,6 @@ import config from '~/config';
 import { Dispatch } from 'redux';
 import { useHistory } from 'react-router';
 import { useCallback } from 'react';
-import { EditorState } from 'draft-js';
-import { convertMarkdownToDraft } from '../components/DraftEditor';
 import Web3 from 'web3';
 
 enum ActionTypes {
@@ -108,33 +104,34 @@ export const fetchMeta =
 
 export const fetchPost =
   (messageId: string) =>
-  async (dispatch: ThunkDispatch<any, any, any>): Promise<PostMessageOption | null> => {
-    const { creator, hash } = parseMessageId(messageId);
-    const user: any = await dispatch(getUser(creator));
+  async (
+    dispatch: ThunkDispatch<any, any, any>,
+    getState: () => AppRootState
+  ): Promise<PostMessageOption | null> => {
+    const { hash } = parseMessageId(messageId);
 
-    let message;
-
-    if (!creator) {
-      message = await fetchMessage(`message/${messageId}`);
-    } else if (creator && hash) {
-      message = await fetchMessage(`~${user.pubkey}/message/${messageId}`);
+    if (!hash) {
+      return null;
     }
 
-    if (!message) return null;
+    const contextualName = getContextNameFromState(getState());
 
-    dispatch(
-      setPost(
-        new Post({
-          ...message,
-          creator: creator,
-        })
-      )
-    );
+    const resp = await fetch(`${config.indexerAPI}/v1/post/${hash}`, {
+      method: 'GET',
+      // @ts-ignore
+      headers: {
+        'x-contextual-name': contextualName,
+      },
+    });
+    const json = await resp.json();
 
-    return {
-      ...message,
-      creator: creator,
-    };
+    if (json.error) return null;
+
+    const post = json.payload;
+
+    dispatch(processPosts([post]));
+
+    return post;
   };
 
 export const setPost = (post: Post) => ({
@@ -351,11 +348,6 @@ const processPosts = (posts: any[]) => async (dispatch: Dispatch) => {
       }),
     });
   }
-
-  setTimeout(() => {
-    // @ts-ignore
-    posts.forEach((post: any) => dispatch(fetchPost(post.messageId)));
-  }, 0);
 };
 
 export const searchPosts =
@@ -405,10 +397,6 @@ export const fetchHomeFeed =
       });
     }
 
-    setTimeout(() => {
-      json.payload.forEach((post: any) => dispatch(fetchPost(post.messageId)));
-    }, 0);
-
     return json.payload.map((post: any) => post.messageId);
   };
 
@@ -446,10 +434,6 @@ export const fetchTagFeed =
         }),
       });
     }
-
-    setTimeout(() => {
-      json.payload.forEach((post: any) => dispatch(fetchPost(post.messageId)));
-    }, 0);
 
     return json.payload.map((post: any) => post.messageId);
   };
@@ -511,10 +495,6 @@ export const fetchReplies =
         payload: p,
       });
     }
-
-    setTimeout(() => {
-      json.payload.forEach((post: any) => dispatch(fetchPost(post.messageId)));
-    }, 0);
 
     return json.payload.map((post: any) => post.messageId);
   };

@@ -16,7 +16,6 @@ import {
   Profile,
   ProfileMessageSubType,
 } from '~/message';
-import gun from '~/gun';
 import { ThunkDispatch } from 'redux-thunk';
 import { markdownConvertOptions } from '@components/DraftEditor';
 import config from '~/config';
@@ -120,70 +119,22 @@ export const emptyDraft = (reference?: string): Action<Draft> => ({
 export const submitInterepPost =
   (post: Post) => async (dispatch: Dispatch, getState: () => AppRootState) => {
     const state = getState();
+    const { client: zkitter } = state.zkitter;
     const { selected } = state.worker;
 
     if (selected?.type !== 'interrep') throw new Error('Not in incognito mode');
 
-    const zkIdentity = new ZkIdentity(Strategy.SERIALIZED, selected.serializedIdentity);
-    const identityTrapdoor = zkIdentity.getTrapdoor();
-    const identityNullifier = zkIdentity.getNullifier();
-    const identityCommitment = selected.identityCommitment;
-    const identitySecretHash = zkIdentity.getSecretHash();
-    const { name, provider } = selected;
-    const merkleProof: MerkleProof | null = await findProof(
-      `interrep_${provider.toLowerCase()}_${name}`,
-      BigInt(identityCommitment).toString(16)
-    );
-
-    const identityPathElements = merkleProof!.siblings;
-    const identityPathIndex = merkleProof!.pathIndices;
-
-    if (
-      !identityCommitment ||
-      !identityPathElements ||
-      !identityPathIndex ||
-      !identityTrapdoor ||
-      !identityNullifier
-    ) {
-      return null;
-    }
-
-    const { messageId, hash, ...json } = post.toJSON();
-
-    const epoch = getEpoch();
-    const externalNullifier = genExternalNullifier(epoch);
-    const signal = messageId;
-    const rlnIdentifier = await sha256('zkpost');
-    const xShare = RLN.genSignalHash(signal);
-    const witness = RLN.genWitness(
-      identitySecretHash!,
-      merkleProof!,
-      externalNullifier,
-      signal,
-      BigInt('0x' + rlnIdentifier)
-    );
-    const { proof, publicSignals } = await RLN.genProof(
-      witness,
-      `${config.indexerAPI}/circuits/rln/wasm`,
-      `${config.indexerAPI}/circuits/rln/zkey`
-    );
-
     try {
-      // @ts-ignore
-      const semaphorePost: any = {
-        ...json,
-        proof: JSON.stringify(proof),
-        publicSignals: JSON.stringify(publicSignals),
-        x_share: xShare.toString(),
-        epoch,
-      };
+      const zkIdentity = new ZkIdentity(Strategy.SERIALIZED, selected.serializedIdentity);
+      const { name, provider } = selected;
 
-      // @ts-ignore
-      await gun
-        .get('message')
-        .get(messageId)
-        // @ts-ignore
-        .put(semaphorePost);
+      const proof = await zkitter.services.pubsub.createProof({
+        hash: post.hash(),
+        zkIdentity: zkIdentity,
+        groupId: `interrep_${provider.toLowerCase()}_${name}`,
+      });
+
+      await zkitter.services.pubsub.publish(post, proof);
 
       dispatch({
         type: ActionTypes.SET_SUBMITTING,
@@ -450,7 +401,13 @@ export const submitPost =
       payload: true,
     });
 
-    const { drafts, web3, worker, posts } = getState();
+    const {
+      drafts,
+      worker,
+      posts,
+      zkitter: { client: zkitter },
+    } = getState();
+
     const draft = drafts.map[reference];
     const shouldMirror = drafts.mirror;
 
@@ -525,18 +482,17 @@ export const submitPost =
         return post;
       }
 
-      // @ts-ignore
-      if (!gun.user().is) if (!gun.user().is) throw new Error('not logged in');
+      if (!zkitter) throw new Error('Zkitter is not initialized');
 
       const { messageId, hash, ...json } = await post.toJSON();
 
-      // @ts-ignore
-      await gun
-        .user()
-        .get('message')
-        .get(messageId)
-        // @ts-ignore
-        .put(json);
+      const proof = await zkitter.services.pubsub.createProof({
+        hash,
+        address: post.creator,
+        privateKey: selected?.privateKey,
+      });
+
+      await zkitter.services.pubsub.publish(post, proof);
 
       dispatch({
         type: ActionTypes.SET_SUBMITTING,
@@ -571,15 +527,19 @@ export const submitRepost =
       payload: true,
     });
 
-    const { web3, worker } = getState();
+    const {
+      web3,
+      worker,
+      zkitter: { client: zkitter },
+    } = getState();
 
     const { selected } = worker;
 
     const account = selected?.address;
 
     try {
-      // @ts-ignore
-      if (!gun.user().is) throw new Error('not logged in');
+      if (!zkitter) throw new Error('Zkitter is not initialized');
+      if (selected?.type !== 'gun') return;
 
       const post = new Post({
         type: MessageType.Post,
@@ -592,13 +552,13 @@ export const submitRepost =
 
       const { messageId, hash, ...json } = await post.toJSON();
 
-      // @ts-ignore
-      await gun
-        .user()
-        .get('message')
-        .get(messageId)
-        // @ts-ignore
-        .put(json);
+      const proof = await zkitter.services.pubsub.createProof({
+        hash,
+        address: post.creator,
+        privateKey: selected?.privateKey,
+      });
+
+      await zkitter.services.pubsub.publish(post, proof);
 
       dispatch({
         type: ActionTypes.SET_SUBMITTING,
@@ -625,15 +585,19 @@ export const submitModeration =
       payload: true,
     });
 
-    const { web3, worker } = getState();
+    const {
+      web3,
+      worker,
+      zkitter: { client: zkitter },
+    } = getState();
 
     const { selected } = worker;
 
     const account = selected?.address;
 
     try {
-      // @ts-ignore
-      if (!gun.user().is) throw new Error('not logged in');
+      if (!zkitter) throw new Error('Zkitter is not initialized');
+      if (selected?.type !== 'gun') return;
 
       const moderation = new Moderation({
         type: MessageType.Moderation,
@@ -646,13 +610,13 @@ export const submitModeration =
 
       const { messageId, hash, ...json } = await moderation.toJSON();
 
-      // @ts-ignore
-      await gun
-        .user()
-        .get('message')
-        .get(messageId)
-        // @ts-ignore
-        .put(json);
+      const proof = await zkitter.services.pubsub.createProof({
+        hash,
+        address: moderation.creator,
+        privateKey: selected?.privateKey,
+      });
+
+      await zkitter.services.pubsub.publish(moderation, proof);
 
       dispatch({
         type: ActionTypes.SET_SUBMITTING,
@@ -676,16 +640,19 @@ export const submitModeration =
 export const submitConnection =
   (name: string, subtype: ConnectionMessageSubType) =>
   async (dispatch: Dispatch, getState: () => AppRootState) => {
-    const { web3, worker } = getState();
+    const {
+      web3,
+      worker,
+      zkitter: { client: zkitter },
+    } = getState();
 
     const { selected } = worker;
 
     const account = selected?.address;
-    const gunUser = gun.user();
 
     try {
-      // @ts-ignore
-      if (!gun.user().is) throw new Error('not logged in');
+      if (!zkitter) throw new Error('Zkitter is not initialized');
+      if (selected?.type !== 'gun') return;
 
       dispatch({
         type: ActionTypes.SET_SUBMITTING,
@@ -703,12 +670,13 @@ export const submitConnection =
 
       const { messageId, hash, ...json } = await connection.toJSON();
 
-      // @ts-ignore
-      await gunUser
-        .get('message')
-        .get(messageId)
-        // @ts-ignore
-        .put(json);
+      const proof = await zkitter.services.pubsub.createProof({
+        hash,
+        address: connection.creator,
+        privateKey: selected?.privateKey,
+      });
+
+      await zkitter.services.pubsub.publish(connection, proof);
 
       dispatch({
         type: ActionTypes.SET_SUBMITTING,
@@ -739,17 +707,21 @@ export const submitProfile =
       payload: true,
     });
 
-    const { web3, worker } = getState();
+    const {
+      web3,
+      worker,
+      zkitter: { client: zkitter },
+    } = getState();
 
     const { selected } = worker;
 
     const account = selected?.address;
 
     try {
-      // @ts-ignore
-      if (!gun.user().is) throw new Error('not logged in');
+      if (!zkitter) throw new Error('Zkitter is not initialized');
+      if (selected?.type !== 'gun') return;
 
-      const post = new Profile({
+      const profile = new Profile({
         type: MessageType.Profile,
         subtype: subtype,
         creator: account,
@@ -759,22 +731,22 @@ export const submitProfile =
         },
       });
 
-      const { messageId, hash, ...json } = await post.toJSON();
+      const { messageId, hash, ...json } = await profile.toJSON();
 
-      // @ts-ignore
-      await gun
-        .user()
-        .get('message')
-        .get(messageId)
-        // @ts-ignore
-        .put(json);
+      const proof = await zkitter.services.pubsub.createProof({
+        hash,
+        address: profile.creator,
+        privateKey: selected?.privateKey,
+      });
+
+      await zkitter.services.pubsub.publish(profile, proof);
 
       dispatch({
         type: ActionTypes.SET_SUBMITTING,
         payload: false,
       });
 
-      return post;
+      return profile;
     } catch (e) {
       dispatch({
         type: ActionTypes.SET_SUBMITTING,
