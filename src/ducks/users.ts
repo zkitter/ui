@@ -3,7 +3,7 @@ import { AppRootState } from '../store/configureAppStore';
 import { useSelector } from 'react-redux';
 import deepEqual from 'fast-deep-equal';
 import config from '~/config';
-import { fetchAddressByName as _fetchAddressByName } from '~/web3';
+import { fetchAddressByName as _fetchAddressByName, fetchNameByAddress } from '~/web3';
 import { ThunkDispatch } from 'redux-thunk';
 import { getContextNameFromState } from './posts';
 
@@ -105,6 +105,43 @@ export const watchUser = (username: string) => async (dispatch: ThunkDispatch<an
   });
 };
 
+async function _maybePreloadUserFromZkitter(
+  address: string,
+  dispatch: Dispatch,
+  getState: () => AppRootState
+) {
+  const {
+    zkitter: { client },
+  } = getState();
+
+  if (client?.subscriptions.users[address]) {
+    const user = await client.getUser(address);
+    const meta = await client.getUserMeta(address);
+    if (user) {
+      dispatch(
+        setUser({
+          username: user.address,
+          ens: await fetchNameByAddress(address),
+          name: meta.nickname,
+          pubkey: user.pubkey,
+          address: user.address,
+          coverImage: meta.coverImage,
+          profileImage: meta.profileImage,
+          twitterVerification: meta.twitterVerification,
+          bio: meta.bio,
+          website: meta.website,
+          group: meta.group,
+          ecdh: meta.ecdh,
+          idcommitment: meta.idCommitment,
+          joinedAt: user.joinedAt.getTime(),
+          joinedTx: user.tx,
+          type: user.type,
+        })
+      );
+    }
+  }
+}
+
 export const getUser =
   (address: string) =>
   async (dispatch: Dispatch, getState: () => AppRootState): Promise<User> => {
@@ -121,6 +158,7 @@ export const getUser =
       if (cachedUser[key]) {
         payload = cachedUser[key];
       } else {
+        await _maybePreloadUserFromZkitter(address, dispatch, getState);
         const resp = await fetch(`${config.indexerAPI}/v1/users/${address}`, {
           method: 'GET',
           // @ts-ignore
@@ -134,8 +172,6 @@ export const getUser =
         if (payload?.joinedTx) {
           cachedUser[key] = payload;
         }
-
-        delete fetchPromises[key];
       }
 
       dispatch({
@@ -321,7 +357,7 @@ export const useConnectedTwitter = (address = '') => {
   }, deepEqual);
 };
 
-export const useUser = (address = ''): User | null => {
+export const useUser = (address = ''): (User & { meta: UserMeta }) | null => {
   return useSelector((state: AppRootState) => {
     if (!address) return null;
 

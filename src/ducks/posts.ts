@@ -2,10 +2,10 @@ import {
   MessageType,
   ModerationMessageSubType,
   parseMessageId,
-  Post,
   PostMessageOption,
   PostMessageSubType,
 } from '~/message';
+import { Post } from 'zkitter-js';
 import { ThunkDispatch } from 'redux-thunk';
 import { AppRootState } from '../store/configureAppStore';
 import { useSelector } from 'react-redux';
@@ -187,9 +187,39 @@ export const decrementRepost = (parentId: string) => ({
   payload: parentId,
 });
 
+async function _maybeFetchPostsFromZkitter(
+  creator: string,
+  limit: number,
+  offset?: string,
+  // @ts-ignore
+  dispatch: ThunkDispatch<any, any, any>,
+  getState: () => AppRootState
+): Promise<string[] | null> {
+  const {
+    zkitter: { client },
+  } = getState();
+
+  if (!client) return null;
+
+  if (!client.subscriptions.users[creator]) return null;
+
+  const posts: Post[] = await client.getUserPosts(creator, limit, offset);
+
+  dispatch({
+    type: ActionTypes.SET_POSTS,
+    payload: posts,
+  });
+
+  return posts.map(post => post.toJSON().messageId);
+}
+
 export const fetchPosts =
-  (creator?: string, limit = 10, offset = 0) =>
+  (creator?: string, limit = 20, offset = 0, lastHash?: string) =>
   async (dispatch: ThunkDispatch<any, any, any>, getState: () => AppRootState) => {
+    if (creator) {
+      const posts = await _maybeFetchPostsFromZkitter(creator, limit, lastHash, dispatch, getState);
+      if (posts) return posts;
+    }
     const creatorQuery = creator ? `&creator=${encodeURIComponent(creator)}` : '';
     const contextualName = getContextNameFromState(getState());
     const resp = await fetch(
@@ -204,7 +234,6 @@ export const fetchPosts =
     );
     const json = await resp.json();
     dispatch(processPosts(json.payload));
-
     return json.payload.map((post: any) => post.messageId);
   };
 
