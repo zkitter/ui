@@ -1,5 +1,5 @@
 import { useSelector } from 'react-redux';
-import { genExternalNullifier, MerkleProof, RLN, Semaphore } from '@zk-kit/protocols';
+import { genExternalNullifier, MerkleProof } from '@zk-kit/protocols';
 import { Strategy, ZkIdentity } from '@zk-kit/identity';
 import { AppRootState } from '../store/configureAppStore';
 import deepEqual from 'fast-deep-equal';
@@ -24,8 +24,8 @@ import { updateStatus } from '~/twitter';
 import { setBlockedPost } from './posts';
 import { findProof } from '~/merkle';
 import { generateZkIdentityFromHex, sha256, signWithP256 } from '~/crypto';
-import { getEpoch } from '~/zkchat';
 import { Identity } from '@semaphore-protocol/identity';
+import { ProofType } from 'zkitter-js';
 
 const { draftToMarkdown } = require('markdown-draft-js');
 
@@ -154,6 +154,7 @@ export const submitInterepPost =
 export const submitCustomGroupPost =
   (post: Post) => async (dispatch: Dispatch, getState: () => AppRootState) => {
     const state = getState();
+    const zkitter = state.zkitter.client;
     const { selected, postingGroup } = state.worker;
 
     if (!postingGroup) throw new Error('Not in incognito mode');
@@ -162,63 +163,17 @@ export const submitCustomGroupPost =
     const zkseed = await signWithP256(selected!.privateKey, 'signing for zk identity - 0');
     const zkHex = await sha256(zkseed);
     const zkIdentity = await generateZkIdentityFromHex(zkHex);
-    const identityTrapdoor = zkIdentity.getTrapdoor();
-    const identityNullifier = zkIdentity.getNullifier();
-    const identityCommitment = zkIdentity.genIdentityCommitment().toString(16);
-    const identitySecretHash = zkIdentity.getSecretHash();
-    const merkleProof: MerkleProof | null = await findProof(postingGroup, identityCommitment);
-
-    const identityPathElements = merkleProof!.siblings;
-    const identityPathIndex = merkleProof!.pathIndices;
-    const root = merkleProof!.root;
-
-    if (
-      !identityCommitment ||
-      !identityPathElements ||
-      !identityPathIndex ||
-      !identityTrapdoor ||
-      !identityNullifier
-    ) {
-      return null;
-    }
-
-    const { messageId, hash, ...json } = post.toJSON();
-
-    const epoch = getEpoch();
-    const externalNullifier = genExternalNullifier(epoch);
-    const signal = messageId;
-    const rlnIdentifier = await sha256('zkpost');
-    const xShare = RLN.genSignalHash(signal);
-    const witness = RLN.genWitness(
-      identitySecretHash!,
-      merkleProof!,
-      externalNullifier,
-      signal,
-      BigInt('0x' + rlnIdentifier)
-    );
-    const { proof, publicSignals } = await RLN.genProof(
-      witness,
-      `${config.indexerAPI}/circuits/rln/wasm`,
-      `${config.indexerAPI}/circuits/rln/zkey`
-    );
 
     try {
-      // @ts-ignore
-      const semaphorePost: any = {
-        ...json,
-        proof: JSON.stringify(proof),
-        publicSignals: JSON.stringify(publicSignals),
-        group: postingGroup,
-        x_share: xShare.toString(),
-        epoch,
-      };
+      const { messageId, hash, ...json } = post.toJSON();
 
-      // @ts-ignore
-      await gun
-        .get('message')
-        .get(messageId)
-        // @ts-ignore
-        .put(semaphorePost);
+      const proof = await zkitter.services.pubsub.createProof({
+        hash: post.hash(),
+        zkIdentity: zkIdentity,
+        groupId: postingGroup,
+      });
+
+      await zkitter.services.pubsub.publish(post, proof);
 
       dispatch({
         type: ActionTypes.SET_SUBMITTING,
@@ -239,69 +194,22 @@ export const submitTazPost =
   (post: Post) => async (dispatch: Dispatch, getState: () => AppRootState) => {
     const state = getState();
     const { selected } = state.worker;
+    const zkitter = state.zkitter.client;
 
     if (selected?.type !== 'taz') throw new Error('Not in incognito mode');
 
     const zkIdentity = new Identity(selected.serializedIdentity);
-    const identityTrapdoor = zkIdentity.getTrapdoor();
-    const identityNullifier = zkIdentity.getNullifier();
-    const identityCommitment = selected.identityCommitment;
-    const merkleProof: MerkleProof | null = await findProof(
-      `semaphore_taz_members`,
-      BigInt(identityCommitment).toString(16)
-    );
-
-    const identityPathElements = merkleProof!.siblings;
-    const identityPathIndex = merkleProof!.pathIndices;
-    const root = merkleProof!.root;
-
-    if (
-      !identityCommitment ||
-      !identityPathElements ||
-      !identityPathIndex ||
-      !identityTrapdoor ||
-      !identityNullifier
-    ) {
-      return null;
-    }
 
     const { messageId, hash, ...json } = post.toJSON();
 
-    const externalNullifier = genExternalNullifier('POST');
-
-    const witness = Semaphore.genWitness(
-      identityTrapdoor,
-      identityNullifier,
-      {
-        root: root,
-        leaf: BigInt(identityCommitment),
-        pathIndices: identityPathIndex,
-        siblings: identityPathElements,
-      },
-      externalNullifier,
-      hash.slice(0, 31)
-    );
-    const { proof, publicSignals } = await Semaphore.genProof(
-      witness,
-      `${config.indexerAPI}/circuits/semaphore/wasm`,
-      `${config.indexerAPI}/circuits/semaphore/zkey`
-    );
-
     try {
-      // @ts-ignore
-      const semaphorePost: any = {
-        ...json,
-        group: 'semaphore_taz_members',
-        proof: JSON.stringify(proof),
-        publicSignals: JSON.stringify(publicSignals),
-      };
+      const proof = await zkitter.services.pubsub.createProof({
+        hash: post.hash(),
+        zkIdentity: zkIdentity,
+        groupId: `semaphore_taz_members`,
+      });
 
-      // @ts-ignore
-      await gun
-        .get('message')
-        .get(messageId)
-        // @ts-ignore
-        .put(semaphorePost);
+      await zkitter.services.pubsub.publish(post, proof);
 
       dispatch({
         type: ActionTypes.SET_SUBMITTING,
@@ -323,15 +231,12 @@ export const submitZKPRPost =
     const state = getState();
     const { selected } = state.worker;
     const { zkpr } = state.zkpr;
+    const zkitter = state.zkitter.client;
 
     if (selected?.type !== 'zkpr_interrep') throw new Error('Not in incognito mode');
 
     const identityCommitment = selected.identityCommitment;
-    const merkleProof: MerkleProof | null = await findProof(
-      '',
-      BigInt(identityCommitment).toString(16),
-      'semaphore'
-    );
+    const merkleProof = await findProof('', BigInt(identityCommitment).toString(16), 'semaphore');
 
     const identityPathElements = merkleProof!.siblings;
     const identityPathIndex = merkleProof!.pathIndices;
@@ -343,16 +248,21 @@ export const submitZKPRPost =
 
     const { messageId, hash, ...json } = post.toJSON();
 
-    const externalNullifier = genExternalNullifier('POST');
-    const wasmFilePath = `${config.indexerAPI}/dev/semaphore_wasm`;
-    const finalZkeyPath = `${config.indexerAPI}/dev/semaphore_final_zkey`;
+    const wasmFilePath = `${config.indexerAPI}/dev/rln_wasm`;
+    const finalZkeyPath = `${config.indexerAPI}/dev/rln_final_zkey`;
 
-    const { fullProof } = await zkpr.semaphoreProof(
+    const epoch = Date.now().toString();
+    const externalNullifier = genExternalNullifier(epoch);
+    const signal = hash;
+    const rlnIdentifier = await sha256('zkpost');
+
+    const rlnFullProof = await zkpr.rlnProof(
       externalNullifier,
       hash,
       wasmFilePath,
       finalZkeyPath,
       '',
+      rlnIdentifier,
       {
         root: root.toString(),
         leaf: identityCommitment,
@@ -361,22 +271,12 @@ export const submitZKPRPost =
       }
     );
 
-    const { proof, publicSignals } = fullProof;
-
     try {
-      // @ts-ignore
-      const semaphorePost: any = {
-        ...json,
-        proof: JSON.stringify(proof),
-        publicSignals: JSON.stringify(publicSignals),
-      };
-
-      // @ts-ignore
-      await gun
-        .get('message')
-        .get(messageId)
-        // @ts-ignore
-        .put(semaphorePost);
+      await zkitter.services.pubsub.publish(post, {
+        type: 'rln',
+        proof: rlnFullProof,
+        groupId: merkleProof?.group || '',
+      });
 
       dispatch({
         type: ActionTypes.SET_SUBMITTING,

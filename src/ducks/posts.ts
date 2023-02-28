@@ -130,7 +130,9 @@ export const fetchPost =
 
     const post = json.payload;
 
-    dispatch(processPosts([post]));
+    if (json.payload) {
+      dispatch(processPosts([post]));
+    }
 
     return post;
   };

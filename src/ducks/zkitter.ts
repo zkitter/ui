@@ -3,10 +3,18 @@ import { Dispatch } from 'redux';
 import { useSelector } from 'react-redux';
 import deepEqual from 'fast-deep-equal';
 import { AppRootState } from '../store/configureAppStore';
+import { safeJsonParse } from '~/misc';
+
+const FILTERS_LS_KEY = 'zkitter/filters';
+let resolveSync: null | any = null;
+const waitForSync = new Promise<Zkitter>(resolve => {
+  resolveSync = resolve;
+});
 
 export enum ActionType {
   SET_CLIENT = 'zkitter-js/SET_CLIENT',
   SET_LOADING = 'zkitter-js/SET_LOADING',
+  SET_FILTERS = 'zkitter-js/SET_FILTERS',
 }
 
 export type Action<payload> = {
@@ -19,11 +27,21 @@ export type Action<payload> = {
 export type State = {
   client: Zkitter | null;
   loading: boolean;
+  filters: {
+    groups: string[];
+    users: string[];
+    threads: string[];
+  };
 };
 
 const initialState: State = {
   client: null,
   loading: false,
+  filters: {
+    groups: [],
+    users: [],
+    threads: [],
+  },
 };
 
 export const initZkitter = () => async (dispatch: Dispatch) => {
@@ -36,14 +54,15 @@ export const initZkitter = () => async (dispatch: Dispatch) => {
     payload: true,
   });
 
-  const node = await Zkitter.initialize(opts);
+  const client = await Zkitter.initialize(opts);
+  const filters = getFilters();
 
-  node.on('Users.ArbitrumSynced', console.log.bind(console));
-  node.on('Group.GroupSynced', console.log.bind(console));
-  node.on('Zkitter.NewMessageCreated', console.log.bind(console));
+  client.on('Users.ArbitrumSynced', console.log.bind(console));
+  client.on('Group.GroupSynced', console.log.bind(console));
+  client.on('Zkitter.NewMessageCreated', console.log.bind(console));
 
-  await node.start();
-  await node.subscribe();
+  await client.start();
+  await client.subscribe(filters);
 
   dispatch({
     type: ActionType.SET_LOADING,
@@ -51,9 +70,39 @@ export const initZkitter = () => async (dispatch: Dispatch) => {
   });
 
   dispatch({
-    type: ActionType.SET_CLIENT,
-    payload: node,
+    type: ActionType.SET_FILTERS,
+    payload: filters,
   });
+
+  dispatch({
+    type: ActionType.SET_CLIENT,
+    payload: client,
+  });
+
+  resolveSync(client);
+};
+
+export const updateFilter = () => async (dispatch: Dispatch, getState: () => AppRootState) => {
+  const {
+    worker: { selected },
+    zkitter: { client: _client, filters },
+  } = getState();
+  const client = _client || (await waitForSync);
+
+  if (selected?.type !== 'gun' || !client) {
+    return;
+  }
+
+  const address = selected.address;
+  await client.queryHistory(address);
+  await client.queryUser(address);
+  const followings = await client.getFollowings(address);
+
+  const newFilters = {
+    users: followings.concat(address),
+  };
+  extendFilters(newFilters);
+  await client.subscribe(extendFilters(newFilters));
 };
 
 export default function reducer(state = initialState, action: Action<any>) {
@@ -68,6 +117,11 @@ export default function reducer(state = initialState, action: Action<any>) {
         ...state,
         loading: action.payload,
       };
+    case ActionType.SET_FILTERS:
+      return {
+        ...state,
+        filters: action.payload,
+      };
     default:
       return state;
   }
@@ -77,4 +131,40 @@ export const useZkitter = (): Zkitter | null => {
   return useSelector((state: AppRootState) => {
     return state.zkitter.client;
   }, deepEqual);
+};
+
+export const getFilters = (): {
+  groups: string[];
+  users: string[];
+  threads: string[];
+} => {
+  const data = localStorage.getItem(FILTERS_LS_KEY);
+  const parsed = data ? safeJsonParse(data) : {};
+  return {
+    groups: parsed?.groups || [],
+    users: parsed?.users || [],
+    threads: parsed?.threads || [],
+  };
+};
+
+export const extendFilters = (options: {
+  groups?: string[];
+  users?: string[];
+  threads?: string[];
+}): {
+  groups: string[];
+  users: string[];
+  threads: string[];
+} => {
+  const filters = getFilters();
+
+  const { groups = [], users = [], threads = [] } = options;
+
+  filters.users = [...new Set(filters.users.concat(users))];
+  filters.groups = [...new Set(filters.groups.concat(groups))];
+  filters.threads = [...new Set(filters.threads.concat(threads))];
+
+  localStorage.setItem(FILTERS_LS_KEY, JSON.stringify(filters));
+
+  return filters;
 };
