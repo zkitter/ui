@@ -1,9 +1,10 @@
-import { Zkitter } from 'zkitter-js';
+import { Zkitter, Message as ZkitterMessage, Post } from 'zkitter-js';
 import { Dispatch } from 'redux';
 import { useSelector } from 'react-redux';
 import deepEqual from 'fast-deep-equal';
 import { AppRootState } from '../store/configureAppStore';
 import { safeJsonParse } from '~/misc';
+import { setPost } from '@ducks/posts';
 
 const FILTERS_LS_KEY = 'zkitter/filters';
 let resolveSync: null | any = null;
@@ -15,6 +16,7 @@ export enum ActionType {
   SET_CLIENT = 'zkitter-js/SET_CLIENT',
   SET_LOADING = 'zkitter-js/SET_LOADING',
   SET_FILTERS = 'zkitter-js/SET_FILTERS',
+  SET_SYNC_ARBITRUM = 'zkitter-js/SET_SYNC_ARBITRUM',
 }
 
 export type Action<payload> = {
@@ -32,6 +34,13 @@ export type State = {
     users: string[];
     threads: string[];
   };
+  sync: {
+    arbitrum: {
+      fromBlock: number;
+      toBlock: number;
+      latest: number;
+    };
+  };
 };
 
 const initialState: State = {
@@ -42,7 +51,19 @@ const initialState: State = {
     users: [],
     threads: [],
   },
+  sync: {
+    arbitrum: {
+      fromBlock: 0,
+      toBlock: 0,
+      latest: 0,
+    },
+  },
 };
+
+export const setSyncArbitrum = (sync: State['sync']['arbitrum']) => ({
+  type: ActionType.SET_SYNC_ARBITRUM,
+  payload: sync,
+});
 
 export const initZkitter = () => async (dispatch: Dispatch) => {
   const opts: any = {};
@@ -57,11 +78,24 @@ export const initZkitter = () => async (dispatch: Dispatch) => {
   const client = await Zkitter.initialize(opts);
   const filters = getFilters();
 
-  client.on('Users.ArbitrumSynced', console.log.bind(console));
-  client.on('Group.GroupSynced', console.log.bind(console));
-  client.on('Zkitter.NewMessageCreated', console.log.bind(console));
+  client.on('Users.ArbitrumSynced', data => dispatch(setSyncArbitrum(data)));
 
-  await client.start();
+  if (process.env.NODE_ENV === 'development') {
+    client.on('Group.NewGroupMemberCreated', (member, groupId) => {
+      console.log(groupId + ': new group member ' + member);
+    });
+  }
+
+  client.on('Zkitter.NewMessageCreated', async (msg: ZkitterMessage) => {
+    switch (msg.type) {
+      case 'POST':
+        dispatch(setPost(msg as Post));
+        break;
+    }
+  });
+
+  await client.watchArbitrum();
+  await client.queryHistory();
   await client.subscribe(filters);
 
   dispatch({
@@ -85,7 +119,7 @@ export const initZkitter = () => async (dispatch: Dispatch) => {
 export const updateFilter = () => async (dispatch: Dispatch, getState: () => AppRootState) => {
   const {
     worker: { selected },
-    zkitter: { client: _client, filters },
+    zkitter: { client: _client },
   } = getState();
   const client = _client || (await waitForSync);
 
@@ -101,7 +135,7 @@ export const updateFilter = () => async (dispatch: Dispatch, getState: () => App
   const newFilters = {
     users: followings.concat(address),
   };
-  extendFilters(newFilters);
+
   await client.subscribe(extendFilters(newFilters));
 };
 
@@ -122,6 +156,14 @@ export default function reducer(state = initialState, action: Action<any>) {
         ...state,
         filters: action.payload,
       };
+    case ActionType.SET_SYNC_ARBITRUM:
+      return {
+        ...state,
+        sync: {
+          ...state.sync,
+          arbitrum: action.payload,
+        },
+      };
     default:
       return state;
   }
@@ -130,6 +172,12 @@ export default function reducer(state = initialState, action: Action<any>) {
 export const useZkitter = (): Zkitter | null => {
   return useSelector((state: AppRootState) => {
     return state.zkitter.client;
+  }, deepEqual);
+};
+
+export const useZkitterSync = (): State['sync'] => {
+  return useSelector((state: AppRootState) => {
+    return state.zkitter.sync;
   }, deepEqual);
 };
 

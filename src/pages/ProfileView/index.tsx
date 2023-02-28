@@ -40,6 +40,7 @@ import { useThemeContext } from '@components/ThemeContext';
 import Checkbox from '@components/Checkbox';
 import MemberInviteModal from '@components/MemberInviteModal';
 import UserCountModal, { Item } from '@components/UsersCountModal';
+import { parseMessageId } from '~/message';
 
 let t: any = null;
 
@@ -88,7 +89,9 @@ export default function ProfileView(): ReactElement {
         setOrder(messageIds);
       } else {
         if (order.length % limit) return;
-        const messageIds: any = await dispatch(fetchFn(username, limit, offset));
+        const last = order[order.length - 1];
+        const { hash } = parseMessageId(last || '');
+        const messageIds: any = await dispatch(fetchFn(username, limit, offset, hash));
         setOffset(offset + limit);
         setOrder(order.concat(messageIds));
       }

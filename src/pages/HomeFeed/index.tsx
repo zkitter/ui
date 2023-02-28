@@ -12,7 +12,7 @@ import InfiniteScrollable from '@components/InfiniteScrollable';
 import LocalBackupNotification from '@components/LocalBackupNotification';
 import { useSelectedLocalId } from '@ducks/worker';
 import { useThemeContext } from '@components/ThemeContext';
-import { useZkitter } from '@ducks/zkitter';
+import { useZkitter, useZkitterSync } from '@ducks/zkitter';
 import Icon from '@components/Icon';
 import SpinnerGif from '#/icons/spinner.gif';
 
@@ -25,10 +25,15 @@ export default function HomeFeed(): ReactElement {
   const selected = useSelectedLocalId();
   const theme = useThemeContext();
   const zkitter = useZkitter();
+  const {
+    arbitrum: { toBlock, fromBlock, latest },
+  } = useZkitterSync();
   const [filters, setFilters] = useState<{
     addresses: { [address: string]: true };
     groups: { [groupId: string]: true };
   }>({ addresses: {}, groups: {} });
+
+  const completion = (fromBlock / latest) * 100;
 
   useEffect(() => {
     (async function onGlobalFeedMount() {
@@ -107,7 +112,7 @@ export default function HomeFeed(): ReactElement {
       {!zkitter && (
         <div
           className={classNames(
-            'flex flex-row flex-nowrap items-center justify-center',
+            'flex flex-col flex-nowrap items-center justify-center',
             'py-6 px-4 border rounded-xl text-sm',
             {
               'border-gray-200 text-gray-300': theme !== 'dark',
@@ -115,6 +120,9 @@ export default function HomeFeed(): ReactElement {
             }
           )}>
           <Icon url={SpinnerGif} size={4} />
+          <div>
+            {completion < 99 ? `Syncing with Arbitrum (${completion}%)...` : `Syncing messages...`}
+          </div>
         </div>
       )}
       {!order.length && !fetching && !!zkitter && (
