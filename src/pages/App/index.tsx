@@ -34,7 +34,7 @@ import TazModal from '@components/TazModal';
 import NotificationView from '../NotificationView';
 import { updateNotifications } from '@ducks/app';
 import SearchResultsView from '../SearchResultsView';
-import { initZkitter } from '@ducks/zkitter';
+import { initZkitter, updateFilter } from '@ducks/zkitter';
 
 export default function App(): ReactElement {
   const dispatch = useDispatch();
@@ -77,6 +77,7 @@ export default function App(): ReactElement {
   }, []);
 
   useEffect(() => {
+    console.log(selected?.type);
     if (selected?.type === 'gun') {
       (async () => {
         const ecdhseed = await signWithP256(selected.privateKey, 'signing for ecdh - 0');
@@ -93,6 +94,7 @@ export default function App(): ReactElement {
         });
         await dispatch(fetchUnreads());
         await dispatch(updateNotifications());
+        await dispatch(updateFilter());
       })();
     } else if (selected?.type === 'interrep') {
       (async () => {

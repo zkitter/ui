@@ -25,6 +25,10 @@ export default function HomeFeed(): ReactElement {
   const selected = useSelectedLocalId();
   const theme = useThemeContext();
   const zkitter = useZkitter();
+  const [filters, setFilters] = useState<{
+    addresses: { [address: string]: true };
+    groups: { [groupId: string]: true };
+  }>({ addresses: {}, groups: {} });
 
   useEffect(() => {
     (async function onGlobalFeedMount() {
@@ -35,26 +39,50 @@ export default function HomeFeed(): ReactElement {
         setFetching(false);
       }
     })();
+  }, [selected, zkitter, filters]);
+
+  useEffect(() => {
+    (async function onUpdateFollowings() {
+      if (zkitter && selected?.type === 'gun') {
+        const data = await zkitter?.getFollowings(selected.address);
+        const filters = {
+          addresses: data.reduce(
+            (acc: any, addy) => {
+              acc[addy] = true;
+              return acc;
+            },
+            {
+              [selected.address]: true,
+            }
+          ),
+          groups: {},
+        };
+        setFilters(filters);
+      }
+    })();
   }, [selected, zkitter]);
 
   const fetchMore = useCallback(
     async (reset = false) => {
       if (!zkitter) return;
+
       if (reset) {
-        const posts = await zkitter.getPosts(20);
+        const posts = await zkitter.getHomefeed(filters, 20);
+        if (!posts.length) return;
         const messageIds = posts.map(post => post.toJSON().messageId);
         const last = posts[posts.length - 1];
         setOffset(last.hash());
         setOrder(messageIds);
       } else {
-        const posts = await zkitter.getPosts(limit, offset);
+        const posts = await zkitter.getHomefeed(filters, limit, offset);
+        if (!posts.length) return;
         const messageIds = posts.map(post => post.toJSON().messageId);
         const last = posts[posts.length - 1];
         setOffset(last.hash());
         setOrder(order.concat(messageIds));
       }
     },
-    [zkitter, limit, offset, order]
+    [zkitter, limit, offset, order, filters]
   );
 
   const onSuccessPost = useCallback(
