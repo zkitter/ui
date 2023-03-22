@@ -10,7 +10,7 @@ import {
   signWithP256,
 } from './crypto';
 import { submitProfile } from '@ducks/drafts';
-import { ProfileMessageSubType } from './message';
+import { ProfileMessageSubType } from 'zkitter-js';
 
 export const ellipsify = (str: string, start = 6, end = 4) => {
   return str.slice(0, start) + '...' + str.slice(-end);

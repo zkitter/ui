@@ -15,7 +15,7 @@ import {
   PostMessageSubType,
   Profile,
   ProfileMessageSubType,
-} from '~/message';
+} from 'zkitter-js';
 import { ThunkDispatch } from 'redux-thunk';
 import { markdownConvertOptions } from '@components/DraftEditor';
 import config from '~/config';
@@ -25,7 +25,6 @@ import { setBlockedPost } from './posts';
 import { findProof } from '~/merkle';
 import { generateZkIdentityFromHex, sha256, signWithP256 } from '~/crypto';
 import { Identity } from '@semaphore-protocol/identity';
-import { ProofType } from 'zkitter-js';
 
 const { draftToMarkdown } = require('markdown-draft-js');
 

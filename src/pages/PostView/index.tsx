@@ -7,7 +7,7 @@ import './post-view.scss';
 import { useDispatch } from 'react-redux';
 import Thread from '@components/Thread';
 import ParentThread from '@components/ParentThread';
-import { Post as PostMessage, PostMessageSubType } from '~/message';
+import { Post as PostMessage, PostMessageSubType } from 'zkitter-js';
 import { useENSName } from '@ducks/web3';
 import { useSelectedLocalId } from '@ducks/worker';
 import { usePostModeration } from '@ducks/mods';

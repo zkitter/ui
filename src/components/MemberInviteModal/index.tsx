@@ -13,7 +13,7 @@ import { getHandle, getName } from '~/user';
 import Icon from '../Icon';
 import SpinnerGIF from '#/icons/spinner.gif';
 import { submitConnection } from '@ducks/drafts';
-import { ConnectionMessageSubType } from '~/message';
+import { ConnectionMessageSubType } from 'zkitter-js';
 
 type Props = {
   onClose: () => void;

@@ -8,7 +8,7 @@ import { useHistory, useParams } from 'react-router';
 import { getHandle, getUsername } from '~/user';
 import './post-mod-panel.scss';
 import { useMeta, usePost } from '@ducks/posts';
-import { ModerationMessageSubType, PostMessageSubType } from '~/message';
+import { ModerationMessageSubType, PostMessageSubType } from 'zkitter-js';
 import SwitchButton from '../SwitchButton';
 import { unmoderate, usePostModeration } from '@ducks/mods';
 import { useThemeContext } from '../ThemeContext';

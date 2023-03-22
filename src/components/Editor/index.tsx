@@ -23,7 +23,7 @@ import { useHistory } from 'react-router';
 import Checkbox from '../Checkbox';
 import { getSession, verifyTweet } from '~/twitter';
 import ModerationButton from '../ModerationButton';
-import { ModerationMessageSubType } from '~/message';
+import { ModerationMessageSubType } from 'zkitter-js';
 import { usePostModeration } from '@ducks/mods';
 import { useCommentDisabled, useMeta } from '@ducks/posts';
 import Menuable from '../Menuable';

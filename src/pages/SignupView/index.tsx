@@ -30,7 +30,7 @@ import Input from '@components/Input';
 import Textarea from '@components/Textarea';
 import { CoverImageEditor, ProfileImageEditor } from '../ProfileView';
 import { submitProfile } from '@ducks/drafts';
-import { ProfileMessageSubType } from '~/message';
+import { ProfileMessageSubType } from 'zkitter-js';
 import { useHistory } from 'react-router';
 import deepEqual from 'fast-deep-equal';
 import { addIdentity, setIdentity, setPassphrase } from '../../serviceWorkers/util';

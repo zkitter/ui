@@ -8,7 +8,7 @@ import Editor from '@components/Editor';
 import { useLoggedIn } from '@ducks/web3';
 import { submitPost, useDraft, useSubmitting } from '@ducks/drafts';
 import InfiniteScrollable from '@components/InfiniteScrollable';
-import { Post as PostMessage } from '~/message';
+import { Post as PostMessage } from 'zkitter-js';
 import LocalBackupNotification from '@components/LocalBackupNotification';
 import { useSelectedLocalId } from '@ducks/worker';
 import { useThemeContext } from '@components/ThemeContext';

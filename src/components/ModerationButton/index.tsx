@@ -3,7 +3,7 @@ import Icon from '../Icon';
 import './moderation-btn.scss';
 import classNames from 'classnames';
 import Modal, { ModalContent, ModalHeader } from '../Modal';
-import { ModerationMessageSubType } from '~/message';
+import { ModerationMessageSubType } from 'zkitter-js';
 import { useThemeContext } from '../ThemeContext';
 
 type Props = {

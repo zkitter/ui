@@ -7,7 +7,7 @@ import {
   ModerationMessageSubType,
   Post as PostMessage,
   PostMessageSubType,
-} from '~/message';
+} from 'zkitter-js';
 import {
   decrementLike,
   decrementRepost,
