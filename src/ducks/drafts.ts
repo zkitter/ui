@@ -474,7 +474,7 @@ export const submitPost =
       let replyToTweetId;
       let replyToUsername;
 
-      if (shouldMirror) {
+      if (selected?.type === 'gun' && !postingGroup && shouldMirror) {
         subtype = reference ? PostMessageSubType.MirrorReply : PostMessageSubType.MirrorPost;
 
         if (
