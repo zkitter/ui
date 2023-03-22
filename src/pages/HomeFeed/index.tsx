@@ -6,7 +6,7 @@ import { setPost, useGoToPost } from '@ducks/posts';
 import './home-feed.scss';
 import Editor from '@components/Editor';
 import { useLoggedIn } from '@ducks/web3';
-import { Post as PostMessage } from '~/message';
+import { Filter, Post as PostMessage } from 'zkitter-js';
 import { submitPost, useDraft, useSubmitting } from '@ducks/drafts';
 import InfiniteScrollable from '@components/InfiniteScrollable';
 import LocalBackupNotification from '@components/LocalBackupNotification';
@@ -28,10 +28,7 @@ export default function HomeFeed(): ReactElement {
   const {
     arbitrum: { toBlock, fromBlock, latest },
   } = useZkitterSync();
-  const [filters, setFilters] = useState<{
-    addresses: { [address: string]: true };
-    groups: { [groupId: string]: true };
-  }>({ addresses: {}, groups: {} });
+  const [filters, setFilters] = useState<Filter>(new Filter());
 
   const completion = (fromBlock / latest) * 100;
 
@@ -50,19 +47,8 @@ export default function HomeFeed(): ReactElement {
     (async function onUpdateFollowings() {
       if (zkitter && selected?.type === 'gun') {
         const data = await zkitter?.getFollowings(selected.address);
-        const filters = {
-          addresses: data.reduce(
-            (acc: any, addy) => {
-              acc[addy] = true;
-              return acc;
-            },
-            {
-              [selected.address]: true,
-            }
-          ),
-          groups: {},
-        };
-        setFilters(filters);
+        console.log(data.concat(selected.address));
+        setFilters(new Filter({ address: data.concat(selected.address) }));
       }
     })();
   }, [selected, zkitter]);

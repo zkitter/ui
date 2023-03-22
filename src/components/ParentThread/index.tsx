@@ -1,7 +1,7 @@
 import React, { MouseEventHandler, ReactElement, useEffect } from 'react';
 import { fetchMeta, useGoToPost, usePost } from '@ducks/posts';
 import Post from '../Post';
-import { Post as PostMessage, PostMessageSubType } from '~/message';
+import { Post as PostMessage, PostMessageSubType } from 'zkitter-js';
 import classNames from 'classnames';
 import { useDispatch } from 'react-redux';
 import { useLoggedIn } from '@ducks/web3';

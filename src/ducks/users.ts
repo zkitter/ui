@@ -114,7 +114,7 @@ async function _maybePreloadUserFromZkitter(
     zkitter: { client },
   } = getState();
 
-  if (client?.subscriptions.users[address]) {
+  if (false) {
     const user = await client.getUser(address);
     const meta = await client.getUserMeta(address);
     if (user) {

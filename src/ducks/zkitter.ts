@@ -94,9 +94,8 @@ export const initZkitter = () => async (dispatch: Dispatch) => {
     }
   });
 
-  await client.watchArbitrum();
-  await client.queryHistory();
-  await client.subscribe(filters);
+  await client.start();
+  await client.downloadHistoryFromAPI();
 
   dispatch({
     type: ActionType.SET_LOADING,
@@ -128,15 +127,12 @@ export const updateFilter = () => async (dispatch: Dispatch, getState: () => App
   }
 
   const address = selected.address;
-  await client.queryHistory(address);
   await client.queryUser(address);
   const followings = await client.getFollowings(address);
 
-  const newFilters = {
-    users: followings.concat(address),
-  };
-
-  await client.subscribe(extendFilters(newFilters));
+  await client.updateFilter({
+    address: followings.concat(address),
+  });
 };
 
 export default function reducer(state = initialState, action: Action<any>) {

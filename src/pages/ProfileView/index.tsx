@@ -24,7 +24,7 @@ import Input from '@components/Input';
 import Textarea from '@components/Textarea';
 import deepEqual from 'fast-deep-equal';
 import { removeMessage, submitConnection, submitProfile } from '@ducks/drafts';
-import { ConnectionMessageSubType, ProfileMessageSubType } from '~/message';
+import { ConnectionMessageSubType, ProfileMessageSubType, parseMessageId } from 'zkitter-js';
 import Avatar from '@components/Avatar';
 import EtherScanSVG from '#/icons/etherscan-logo-gray-500.svg';
 import InfiniteScrollable from '@components/InfiniteScrollable';
@@ -40,7 +40,6 @@ import { useThemeContext } from '@components/ThemeContext';
 import Checkbox from '@components/Checkbox';
 import MemberInviteModal from '@components/MemberInviteModal';
 import UserCountModal, { Item } from '@components/UsersCountModal';
-import { parseMessageId } from '~/message';
 
 let t: any = null;
 

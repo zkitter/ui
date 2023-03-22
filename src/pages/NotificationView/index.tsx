@@ -2,7 +2,7 @@ import React, { ReactElement, useCallback, useEffect, useState } from 'react';
 import classNames from 'classnames';
 import { useSelectedLocalId } from '../../ducks/worker';
 import { useHistory } from 'react-router';
-import { parseMessageId, PostMessageSubType } from '../../util/message';
+import { parseMessageId, PostMessageSubType } from 'zkitter-js';
 import { getUser, useUser } from '../../ducks/users';
 import { useThemeContext } from '../../components/ThemeContext';
 import { useDispatch } from 'react-redux';
@@ -124,7 +124,7 @@ function IncomingReactionRow(props: {
   const referencedPost = usePost(originalPost?.payload.reference);
   const messageId =
     originalPost?.subtype === PostMessageSubType.Repost
-      ? originalPost.payload.reference
+      ? originalPost?.payload.reference
       : props.messageId;
   const post = originalPost?.subtype === PostMessageSubType.Repost ? referencedPost : originalPost;
   const dispatch = useDispatch();

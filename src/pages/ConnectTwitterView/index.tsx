@@ -10,7 +10,7 @@ import { useAccount } from '@ducks/web3';
 import { setUser, useConnectedTwitter, useUser } from '@ducks/users';
 import { useDispatch } from 'react-redux';
 import { submitProfile } from '@ducks/drafts';
-import { ProfileMessageSubType } from '~/message';
+import { ProfileMessageSubType } from 'zkitter-js';
 import { useHistory } from 'react-router';
 import { verifyTweet } from '~/twitter';
 import { getHandle } from '~/user';

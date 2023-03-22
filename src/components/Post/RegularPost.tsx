@@ -4,7 +4,7 @@ import React, { ReactElement, useCallback } from 'react';
 import { useHistory } from 'react-router';
 
 import { useMeta, usePost, useZKGroupFromPost } from '@ducks/posts';
-import { MessageType, PostMessageSubType } from '~/message';
+import { MessageType, PostMessageSubType } from 'zkitter-js';
 import { convertMarkdownToDraft, DraftEditor } from '../DraftEditor';
 import { useUser } from '@ducks/users';
 import { getHandle, getUsername } from '~/user';

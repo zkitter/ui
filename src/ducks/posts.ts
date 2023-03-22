@@ -4,8 +4,8 @@ import {
   parseMessageId,
   PostMessageOption,
   PostMessageSubType,
-} from '~/message';
-import { Post } from 'zkitter-js';
+  Post,
+} from 'zkitter-js';
 import { ThunkDispatch } from 'redux-thunk';
 import { AppRootState } from '../store/configureAppStore';
 import { useSelector } from 'react-redux';

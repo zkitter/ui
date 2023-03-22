@@ -6,7 +6,7 @@ import { useDispatch } from 'react-redux';
 
 import { removeMessage } from '@ducks/drafts';
 import { fetchMeta, fetchPost, unsetPost, usePost } from '@ducks/posts';
-import { Post as PostMessage, PostMessageSubType } from '~/message';
+import { Post as PostMessage, PostMessageSubType } from 'zkitter-js';
 
 import ExpandedPost from './ExpandedPost';
 import LoadingPost from './LoadingPost';
@@ -43,7 +43,6 @@ export default function Post(props: Props): ReactElement {
   useEffect(() => {
     if (!post) {
       dispatch(fetchPost(messageId));
-      dispatch(fetchMeta(messageId));
     }
   }, [messageId, post]);
 
