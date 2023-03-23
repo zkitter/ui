@@ -1,17 +1,9 @@
-import { ZKChatClient } from '~/zkchat';
 import { Dispatch } from 'redux';
 import store, { AppRootState } from '../store/configureAppStore';
-import config from '~/config';
 import { useSelector } from 'react-redux';
 import deepEqual from 'fast-deep-equal';
 import { Chat as ChatMessage } from 'zkitter-js';
 import { ChatMeta } from 'zkitter-js/dist/src/models/chats';
-
-const EVENTS = ZKChatClient.EVENTS;
-
-export const zkchat = new ZKChatClient({
-  api: `${config.indexerAPI}/v1/zkchat`,
-});
 
 // sse.on('NEW_CHAT_MESSAGE', async (payload: any) => {
 //   const message = await zkchat.inflateMessage(payload);
@@ -43,6 +35,7 @@ const onNewMessage = (message: any) => {
 enum ActionTypes {
   SET_CHATS = 'chats/setChats',
   SET_MESSAGES_FOR_CHAT = 'chats/setMessagesForChat',
+  PREPEND_MESSAGES_FOR_CHAT = 'chats/prependMessagesForChat',
   ADD_CHAT = 'chats/addChat',
   SET_MESSAGE = 'chats/SET_MESSAGE',
   SET_UNREAD = 'chats/SET_UNREAD',
@@ -108,9 +101,17 @@ const setUnread = (
 
 const setMessagesForChat = (
   chatId: string,
-  messages: string[]
-): Action<{ chatId: string; messages: string[] }> => ({
+  messages: ChatMessage[]
+): Action<{ chatId: string; messages: ChatMessage[] }> => ({
   type: ActionTypes.SET_MESSAGES_FOR_CHAT,
+  payload: { chatId, messages },
+});
+
+export const prependMessagesForChat = (
+  chatId: string,
+  messages: ChatMessage[]
+): Action<{ chatId: string; messages: ChatMessage[] }> => ({
+  type: ActionTypes.PREPEND_MESSAGES_FOR_CHAT,
   payload: { chatId, messages },
 });
 
@@ -156,8 +157,28 @@ export const fetchChats =
 
     const chatMetas: ChatMeta[] = await client.getChatByUser(address);
 
-    console.log(chatMetas);
     dispatch(setChats(chatMetas));
+  };
+
+export const fetchChatMessages =
+  (chatId: string, limit = 50, offset?: string) =>
+  async (dispatch: Dispatch, getState: () => AppRootState) => {
+    const {
+      zkitter: { client },
+      worker: { selected },
+    } = getState();
+
+    if (!client) return;
+
+    if (selected?.type === 'gun') {
+      const messages: ChatMessage[] = await client.getChatMessages(chatId, limit, offset, {
+        type: 'ecdsa',
+        address: selected.address,
+        privateKey: selected.privateKey,
+      });
+
+      dispatch(setMessagesForChat(chatId, messages));
+    }
   };
 
 export const fetchUnreads = () => async (dispatch: Dispatch, getState: () => AppRootState) => {
@@ -190,6 +211,8 @@ export default function chats(state = initialState, action: Action<any>): State 
       return handleAddChat(state, action);
     case ActionTypes.SET_MESSAGES_FOR_CHAT:
       return handleSetMessagesForChats(state, action);
+    case ActionTypes.PREPEND_MESSAGES_FOR_CHAT:
+      return handlePrependMessagesForChats(state, action);
     case ActionTypes.SET_UNREAD:
       return handleSetUnread(state, action);
     case ActionTypes.SET_MESSAGE:
@@ -257,7 +280,7 @@ function handleSetMessagesForChats(
   state: State,
   action: Action<{
     chatId: string;
-    messages: string[];
+    messages: ChatMessage[];
   }>
 ) {
   const { chatId, messages } = action.payload!;
@@ -273,10 +296,56 @@ function handleSetMessagesForChats(
         ...state.chats.map,
         [chatId]: {
           ...chat,
-          messages: messages,
+          messages: messages.map(chat => chat.toJSON().messageId),
         },
       },
     },
+    messages: {
+      ...state.messages,
+      ...messages.reduce((acc: { [messageId: string]: ChatMessage }, msg: ChatMessage) => {
+        acc[msg.toJSON().messageId] = msg;
+        return acc;
+      }, {}),
+    },
+  };
+}
+
+function handlePrependMessagesForChats(
+  state: State,
+  action: Action<{
+    chatId: string;
+    messages: ChatMessage[];
+  }>
+) {
+  const { chatId, messages } = action.payload!;
+  const chat = state.chats.map[chatId];
+
+  if (!chat) return state;
+
+  const newMessages = {
+    ...state.messages,
+    ...messages.reduce((acc: { [messageId: string]: ChatMessage }, msg: ChatMessage) => {
+      acc[msg.toJSON().messageId] = msg;
+      return acc;
+    }, {}),
+  };
+
+  return {
+    ...state,
+    chats: {
+      ...state.chats,
+      map: {
+        ...state.chats.map,
+        [chatId]: {
+          ...chat,
+          messages: messages
+            .map(chat => chat.toJSON().messageId)
+            .filter(id => !state.messages[id])
+            .concat(chat.messages),
+        },
+      },
+    },
+    messages: newMessages,
   };
 }
 
@@ -308,19 +377,39 @@ export const useChatIds = () => {
   }, deepEqual);
 };
 
-export const useChatId = (chatId: string) => {
+export const useChatId = (chatId: string): ChatMeta | null => {
   return useSelector((state: AppRootState) => {
+    const selected = state.worker.selected;
     const chat = state.chats.chats.map[chatId];
 
-    if (!chat) return;
+    if (!chat) return null;
 
-    const { messages, ...rest } = chat;
+    const { senderECDH, senderSeed, receiverECDH, type } = chat;
 
-    return rest;
+    if (selected?.type === 'gun') {
+      const me = state.users.map[selected.address];
+      const recipientECDH = me.ecdh === senderECDH ? receiverECDH : senderECDH;
+
+      return {
+        type,
+        chatId,
+        senderECDH: me.ecdh,
+        senderSeed: me.ecdh === senderECDH ? senderSeed : '',
+        receiverECDH: recipientECDH,
+      };
+    }
+
+    return {
+      type,
+      chatId,
+      senderECDH,
+      senderSeed,
+      receiverECDH,
+    };
   }, deepEqual);
 };
 
-export const useMessagesByChatId = (chatId: string) => {
+export const useMessagesByChatId = (chatId: string): string[] => {
   return useSelector((state: AppRootState) => {
     return state.chats.chats.map[chatId]?.messages || [];
   }, deepEqual);
