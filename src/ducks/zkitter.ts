@@ -1,10 +1,21 @@
-import { Zkitter, Message as ZkitterMessage, Post, generateECDHWithP256 } from 'zkitter-js';
+import {
+  generateECDHWithP256,
+  Message as ZkitterMessage,
+  MessageType,
+  Post,
+  Zkitter,
+  Chats,
+  Chat,
+  FilterOptions,
+} from 'zkitter-js';
 import { Dispatch } from 'redux';
 import { useSelector } from 'react-redux';
 import deepEqual from 'fast-deep-equal';
 import { AppRootState } from '../store/configureAppStore';
 import { safeJsonParse } from '~/misc';
 import { setPost } from '@ducks/posts';
+import { prependMessagesForChat } from '@ducks/chats';
+const { deriveChatId } = Chats;
 
 const FILTERS_LS_KEY = 'zkitter/filters';
 let resolveSync: null | any = null;
@@ -87,9 +98,15 @@ export const initZkitter = () => async (dispatch: Dispatch) => {
   }
 
   client.on('Zkitter.NewMessageCreated', async (msg: ZkitterMessage) => {
+    if (process.env.NODE_ENV === 'development') console.log('new message', msg);
     switch (msg.type) {
-      case 'POST':
+      case MessageType.Post:
         dispatch(setPost(msg as Post));
+        break;
+      case MessageType.Chat:
+        const chat = msg as Chat;
+        const chatId = await deriveChatId(chat.payload.receiverECDH, chat.payload.senderECDH);
+        dispatch(prependMessagesForChat(chatId, [chat]));
         break;
     }
   });
@@ -129,11 +146,11 @@ export const updateFilter = () => async (dispatch: Dispatch, getState: () => App
   const address = selected.address;
   await client.queryUser(address);
   const followings = await client.getFollowings(address);
-  const ecdh = generateECDHWithP256(selected.privateKey, 0);
+  const ecdh = await generateECDHWithP256(selected.privateKey, 0);
 
   await client.updateFilter({
     address: followings.concat(address),
-    ecdh: [ecdh],
+    ecdh: [ecdh.pub],
   });
 };
 

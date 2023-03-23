@@ -9,6 +9,7 @@ import Nickname from '../Nickname';
 import { useHistory, useParams } from 'react-router';
 import {
   addChat,
+  fetchChatMessages,
   useChatId,
   useChatIds,
   useLastNMessages,
@@ -19,7 +20,7 @@ import Input from '../Input';
 import Modal, { ModalFooter, ModalHeader } from '../Modal';
 import Button from '../Button';
 import { getName } from '~/user';
-import { fetchUserByECDH, useUser, useUserByECDH } from '@ducks/users';
+import { fetchUserByECDH, useUser, useUserAddressByECDH } from '@ducks/users';
 import { useThemeContext } from '../ThemeContext';
 import { ChatMeta } from 'zkitter-js/dist/src/models/chats';
 import {
@@ -249,20 +250,16 @@ function ChatMenuItem(props: {
   const chat = useChatId(props.chatId);
   const params = useParams<{ chatId: string }>();
   const history = useHistory();
+
   const [last] = useLastNMessages(props.chatId, 1);
   const theme = useThemeContext();
   const unreads = useUnreadChatMessages(props.chatId);
-  const receiverAddress = useUserByECDH(chat?.receiverECDH || '');
+
+  const receiverAddress = useUserAddressByECDH(chat?.receiverECDH);
   const rUser = useUser(receiverAddress || '');
   const dispatch = useDispatch();
 
   const isSelected = props.chatId === params.chatId;
-
-  useEffect(() => {
-    if (!rUser && chat?.receiverECDH) {
-      dispatch(fetchUserByECDH(chat.receiverECDH));
-    }
-  }, [rUser, chat?.receiverECDH]);
 
   const onClick = useCallback(async () => {
     if (!chat) return;
@@ -270,12 +267,12 @@ function ChatMenuItem(props: {
   }, [props.chatId, selected]);
 
   useEffect(() => {
-    if (!props.chatId || !chat) return;
-    (async () => {
-      // fetch messages
-      // update filters?
-    })();
-  }, [props.chatId, chat]);
+    dispatch(fetchUserByECDH(chat?.receiverECDH));
+  }, [chat?.receiverECDH]);
+
+  useEffect(() => {
+    dispatch(fetchChatMessages(props.chatId));
+  }, [props.chatId]);
 
   if (!chat) return <></>;
 
@@ -283,7 +280,7 @@ function ChatMenuItem(props: {
     <div
       className={classNames('flex flex-row chat-menu__item', {
         'chat-menu__item--selected': isSelected,
-        'chat-menu__item--anon': chat.type === 'DIRECT' && chat.senderSeed,
+        'chat-menu__item--anon': !rUser,
       })}
       onClick={onClick}>
       <div className="relative">
@@ -293,15 +290,15 @@ function ChatMenuItem(props: {
           incognito={!receiverAddress}
           // group={!receiverAddress ? chat.group : undefined}
         />
-        {chat.senderSeed && (
-          <Avatar
-            className={classNames('chat-menu__item__anon-marker', {
-              'bg-gray-800': !zkGroup,
-            })}
-            incognito
-            group={zkGroup}
-          />
-        )}
+        {/*{chat.senderSeed && (*/}
+        {/*  <Avatar*/}
+        {/*    className={classNames('chat-menu__item__anon-marker', {*/}
+        {/*      'bg-gray-800': !zkGroup,*/}
+        {/*    })}*/}
+        {/*    incognito*/}
+        {/*    group={zkGroup}*/}
+        {/*  />*/}
+        {/*)}*/}
       </div>
       <div className="flex flex-col flex-grow flex-shrink mx-4 w-0">
         <Nickname

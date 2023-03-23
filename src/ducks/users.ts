@@ -251,7 +251,9 @@ export const searchUsers =
   };
 
 export const fetchUserByECDH =
-  (ecdh: string) => async (dispatch: Dispatch, getState: () => AppRootState) => {
+  (ecdh?: string) => async (dispatch: Dispatch, getState: () => AppRootState) => {
+    if (!ecdh) return;
+
     const resp = await fetch(`${config.indexerAPI}/v1/ecdh/${ecdh}`);
     const json = await resp.json();
 
@@ -375,9 +377,10 @@ export const useConnectedTwitter = (address = '') => {
   }, deepEqual);
 };
 
-export const useUserByECDH = (ecdh: string): string | null => {
+export const useUserAddressByECDH = (ecdh?: string): string => {
   return useSelector((state: AppRootState) => {
-    return state.users.ecdh[ecdh] || null;
+    if (!ecdh) return '';
+    return state.users.ecdh[ecdh] || '';
   }, deepEqual);
 };
 

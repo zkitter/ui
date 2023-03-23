@@ -15,18 +15,21 @@ import { useSelectedLocalId, useSelectedZKGroup } from '@ducks/worker';
 import Nickname from '../Nickname';
 import Avatar, { Username } from '../Avatar';
 import Textarea from '../Textarea';
-import { generateZkIdentityFromHex, sha256, signWithP256 } from '~/crypto';
 import { FromNow } from '../ChatMenu';
-import { setLastReadForChatId, useChatId, useChatMessage, useMessagesByChatId } from '@ducks/chats';
+import {
+  fetchChatMessages,
+  setLastReadForChatId,
+  useChatId,
+  useChatMessage,
+  useMessagesByChatId,
+} from '@ducks/chats';
 import Icon from '../Icon';
 import SpinnerGIF from '#/icons/spinner.gif';
-import { findProof } from '~/merkle';
-import { Strategy, ZkIdentity } from '@zk-kit/identity';
 import { useDispatch } from 'react-redux';
-import { fetchUserByECDH, useUser, useUserByECDH } from '@ducks/users';
-import { ChatMessageSubType, MessageType } from 'zkitter-js';
-import { ChatMeta } from 'zkitter-js/dist/src/models/chats';
+import { fetchUserByECDH, useUser, useUserAddressByECDH } from '@ducks/users';
+import { ChatMessageSubType, generateECDHWithP256, MessageType, Crypto } from 'zkitter-js';
 import { useZkitter } from '@ducks/zkitter';
+const { deriveSharedSecret, decrypt } = Crypto;
 
 export default function ChatContent(): ReactElement {
   const { chatId } = useParams<{ chatId: string }>();
@@ -34,25 +37,31 @@ export default function ChatContent(): ReactElement {
   const chat = useChatId(chatId);
   const params = useParams<{ chatId: string }>();
   const dispatch = useDispatch();
+  const zkitter = useZkitter();
 
   const loadMore = useCallback(async () => {
-    if (!chat) return;
-  }, [chat]);
+    if (!chat || !zkitter) return;
+    dispatch(fetchChatMessages(chatId));
+  }, [chat, zkitter, chatId]);
 
   useEffect(() => {
     loadMore();
-  }, [loadMore]);
+  }, [loadMore, zkitter, chatId]);
 
   useEffect(() => {
     dispatch(setLastReadForChatId(chatId));
   }, [chatId, messages]);
+
+  useEffect(() => {
+    dispatch(fetchUserByECDH(chat?.receiverECDH));
+  }, [chat?.receiverECDH]);
 
   if (!chat) return <></>;
 
   return (
     <div
       className={classNames('chat-content', {
-        'chat-content--anon': chat?.senderSeed,
+        // 'chat-content--anon': chat?.senderSeed,
         'chat-content--chat-selected': params.chatId,
       })}>
       <ChatHeader />
@@ -61,7 +70,7 @@ export default function ChatContent(): ReactElement {
         onScrolledToTop={loadMore}
         topOffset={128}>
         {messages.map(messageId => {
-          return <ChatMessageBubble key={messageId} messageId={messageId} chat={chat} />;
+          return <ChatMessageBubble key={messageId} messageId={messageId} chatId={chatId} />;
         })}
       </InfiniteScrollable>
       <ChatEditor />
@@ -72,19 +81,12 @@ export default function ChatContent(): ReactElement {
 function ChatHeader(): ReactElement {
   const { chatId } = useParams<{ chatId: string }>();
   const chat = useChatId(chatId);
-  const receiverAddress = useUserByECDH(chat?.receiverECDH || '');
-  const rUser = useUser(receiverAddress || '');
-  const dispatch = useDispatch();
-
-  useEffect(() => {
-    if (!rUser && chat?.receiverECDH) {
-      dispatch(fetchUserByECDH(chat.receiverECDH));
-    }
-  }, [rUser, chat?.receiverECDH]);
+  const receiverAddress = useUserAddressByECDH(chat?.receiverECDH);
 
   return (
     <div className="chat-content__header">
       <Avatar
+        key={chat?.receiverECDH}
         className="w-10 h-10"
         address={receiverAddress || ''}
         incognito={!receiverAddress}
@@ -92,6 +94,7 @@ function ChatHeader(): ReactElement {
       />
       <div className="flex flex-col flex-grow flex-shrink ml-2">
         <Nickname
+          key={chat?.receiverECDH}
           className="font-bold"
           address={receiverAddress || ''}
           // group={chat?.type === 'DIRECT' ? chat.group : undefined}
@@ -130,7 +133,18 @@ function ChatEditor(): ReactElement {
   const submitMessage = useCallback(async () => {
     if (!chat || !content || !zkitter) return;
 
-    console.log(chat, selected, chat, zkitter);
+    if (selected?.type === 'gun') {
+      const me = await zkitter.authorize({
+        type: 'ecdsa',
+        address: selected.address,
+        privateKey: selected.privateKey,
+      });
+
+      await me.directMessage({
+        content,
+        ecdh: chat.receiverECDH,
+      });
+    }
 
     setContent('');
   }, [content, selected, chat, zkitter]);
@@ -223,28 +237,51 @@ function ChatEditor(): ReactElement {
   );
 }
 
-function ChatMessageBubble(props: { messageId: string; chat: ChatMeta }) {
+function ChatMessageBubble(props: { messageId: string; chatId: string }) {
+  const selected = useSelectedLocalId();
+  const chat = useChatId(props.chatId);
   const chatMessage = useChatMessage(props.messageId);
+  const [decrypted, setDecrypted] = useState('');
+  const [isSelf, setSelf] = useState(false);
 
   if (chatMessage?.type !== MessageType.Chat) return <></>;
   if (chatMessage?.subtype !== ChatMessageSubType.Direct) return <></>;
 
   const {
-    payload: { senderSeed, senderECDH, receiverECDH, content },
+    payload: { senderSeed, senderECDH, receiverECDH, content, encryptedContent },
   } = chatMessage;
+
+  useEffect(() => {
+    (async () => {
+      if (typeof content !== 'undefined') {
+        setDecrypted(content);
+      }
+
+      if (selected?.type === 'gun') {
+        const myECDH = await generateECDHWithP256(selected.privateKey, 0);
+        const rECDH = myECDH.pub === senderECDH ? receiverECDH : senderECDH;
+        setSelf(myECDH.pub === senderECDH);
+
+        if (typeof content === 'undefined') {
+          const sharedKey = deriveSharedSecret(rECDH, myECDH.priv);
+          setDecrypted(decrypt(encryptedContent, sharedKey));
+        }
+      }
+    })();
+  }, [content, selected, encryptedContent, senderECDH, receiverECDH]);
 
   return (
     <div
       key={chatMessage.hash()}
       className={classNames('chat-message', {
-        'chat-message--self': senderECDH === props.chat.senderECDH,
-        'chat-message--anon': senderSeed,
+        'chat-message--self': isSelf,
+        // 'chat-message--anon': senderSeed,
       })}>
       <div
         className={classNames('chat-message__content text-light', {
-          'italic opacity-70': typeof content === 'undefined',
+          'italic opacity-70': typeof decrypted === 'undefined',
         })}>
-        {typeof content === 'undefined' ? 'Cannot decrypt message' : content}
+        {typeof decrypted === 'undefined' ? 'Cannot decrypt message' : decrypted}
       </div>
       <FromNow
         className="chat-message__time text-xs mt-2 text-gray-700"
