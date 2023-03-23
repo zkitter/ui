@@ -1,4 +1,4 @@
-import { Zkitter, Message as ZkitterMessage, Post } from 'zkitter-js';
+import { Zkitter, Message as ZkitterMessage, Post, generateECDHWithP256 } from 'zkitter-js';
 import { Dispatch } from 'redux';
 import { useSelector } from 'react-redux';
 import deepEqual from 'fast-deep-equal';
@@ -95,7 +95,7 @@ export const initZkitter = () => async (dispatch: Dispatch) => {
   });
 
   await client.start();
-  await client.downloadHistoryFromAPI();
+  // await client.downloadHistoryFromAPI();
 
   dispatch({
     type: ActionType.SET_LOADING,
@@ -129,9 +129,11 @@ export const updateFilter = () => async (dispatch: Dispatch, getState: () => App
   const address = selected.address;
   await client.queryUser(address);
   const followings = await client.getFollowings(address);
+  const ecdh = generateECDHWithP256(selected.privateKey, 0);
 
   await client.updateFilter({
     address: followings.concat(address),
+    ecdh: [ecdh],
   });
 };
 
