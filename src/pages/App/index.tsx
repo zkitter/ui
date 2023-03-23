@@ -18,7 +18,7 @@ import { loginUser } from '~/user';
 import SettingView from '../SettingView';
 import MetaPanel from '@components/MetaPanel';
 import ChatView from '../ChatView';
-import { fetchUnreads, zkchat } from '@ducks/chats';
+import { fetchChats, fetchUnreads } from '@ducks/chats';
 import {
   generateECDHKeyPairFromhex,
   generateZkIdentityFromHex,
@@ -26,7 +26,6 @@ import {
   signWithP256,
 } from '~/crypto';
 import { Strategy, ZkIdentity } from '@zk-kit/identity';
-import sse from '~/sse';
 import ThemeContext from '@components/ThemeContext';
 import classNames from 'classnames';
 import { Identity } from '@semaphore-protocol/identity';
@@ -77,7 +76,6 @@ export default function App(): ReactElement {
   }, []);
 
   useEffect(() => {
-    console.log(selected?.type);
     if (selected?.type === 'gun') {
       (async () => {
         const ecdhseed = await signWithP256(selected.privateKey, 'signing for ecdh - 0');
@@ -86,15 +84,16 @@ export default function App(): ReactElement {
         const zkHex = await sha256(zkseed);
         const keyPair = await generateECDHKeyPairFromhex(ecdhHex);
         const zkIdentity = await generateZkIdentityFromHex(zkHex);
-        await sse.updateTopics([`ecdh:${keyPair.pub}`]);
-        await zkchat.importIdentity({
-          address: selected.address,
-          zk: zkIdentity,
-          ecdh: keyPair,
-        });
+        // await sse.updateTopics([`ecdh:${keyPair.pub}`]);
+        // await zkchat.importIdentity({
+        //   address: selected.address,
+        //   zk: zkIdentity,
+        //   ecdh: keyPair,
+        // });
         await dispatch(fetchUnreads());
         await dispatch(updateNotifications());
         await dispatch(updateFilter());
+        await dispatch(fetchChats(selected.address));
       })();
     } else if (selected?.type === 'interrep') {
       (async () => {
@@ -107,11 +106,11 @@ export default function App(): ReactElement {
         );
         const ecdhHex = await sha256(ecdhseed);
         const keyPair = await generateECDHKeyPairFromhex(ecdhHex);
-        await zkchat.importIdentity({
-          address: selected?.identityCommitment,
-          zk: zkIdentity,
-          ecdh: keyPair,
-        });
+        // await zkchat.importIdentity({
+        //   address: selected?.identityCommitment,
+        //   zk: zkIdentity,
+        //   ecdh: keyPair,
+        // });
         await dispatch(fetchUnreads());
       })();
     } else if (selected?.type === 'taz') {
@@ -120,11 +119,11 @@ export default function App(): ReactElement {
         const ecdhseed = await sha256(selected.serializedIdentity);
         const ecdhHex = await sha256(ecdhseed);
         const keyPair = await generateECDHKeyPairFromhex(ecdhHex);
-        await zkchat.importIdentity({
-          address: selected?.identityCommitment,
-          zk: zkIdentity,
-          ecdh: keyPair,
-        });
+        // await zkchat.importIdentity({
+        //   address: selected?.identityCommitment,
+        //   zk: zkIdentity,
+        //   ecdh: keyPair,
+        // });
         await dispatch(fetchUnreads());
       })();
     }

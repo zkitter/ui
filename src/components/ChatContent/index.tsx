@@ -17,19 +17,16 @@ import Avatar, { Username } from '../Avatar';
 import Textarea from '../Textarea';
 import { generateZkIdentityFromHex, sha256, signWithP256 } from '~/crypto';
 import { FromNow } from '../ChatMenu';
-import {
-  setLastReadForChatId,
-  useChatId,
-  useChatMessage,
-  useMessagesByChatId,
-  zkchat,
-} from '@ducks/chats';
+import { setLastReadForChatId, useChatId, useChatMessage, useMessagesByChatId } from '@ducks/chats';
 import Icon from '../Icon';
 import SpinnerGIF from '#/icons/spinner.gif';
 import { findProof } from '~/merkle';
 import { Strategy, ZkIdentity } from '@zk-kit/identity';
-import { Chat } from '~/zkchat';
 import { useDispatch } from 'react-redux';
+import { fetchUserByECDH, useUser, useUserByECDH } from '@ducks/users';
+import { ChatMessageSubType, MessageType } from 'zkitter-js';
+import { ChatMeta } from 'zkitter-js/dist/src/models/chats';
+import { useZkitter } from '@ducks/zkitter';
 
 export default function ChatContent(): ReactElement {
   const { chatId } = useParams<{ chatId: string }>();
@@ -40,7 +37,6 @@ export default function ChatContent(): ReactElement {
 
   const loadMore = useCallback(async () => {
     if (!chat) return;
-    await zkchat.fetchMessagesByChat(chat);
   }, [chat]);
 
   useEffect(() => {
@@ -56,7 +52,7 @@ export default function ChatContent(): ReactElement {
   return (
     <div
       className={classNames('chat-content', {
-        'chat-content--anon': chat?.senderHash,
+        'chat-content--anon': chat?.senderSeed,
         'chat-content--chat-selected': params.chatId,
       })}>
       <ChatHeader />
@@ -76,29 +72,38 @@ export default function ChatContent(): ReactElement {
 function ChatHeader(): ReactElement {
   const { chatId } = useParams<{ chatId: string }>();
   const chat = useChatId(chatId);
+  const receiverAddress = useUserByECDH(chat?.receiverECDH || '');
+  const rUser = useUser(receiverAddress || '');
+  const dispatch = useDispatch();
+
+  useEffect(() => {
+    if (!rUser && chat?.receiverECDH) {
+      dispatch(fetchUserByECDH(chat.receiverECDH));
+    }
+  }, [rUser, chat?.receiverECDH]);
 
   return (
     <div className="chat-content__header">
       <Avatar
         className="w-10 h-10"
-        address={chat?.receiver}
-        incognito={!chat?.receiver}
-        group={chat?.type === 'DIRECT' ? chat.group : undefined}
+        address={receiverAddress || ''}
+        incognito={!receiverAddress}
+        // group={chat?.type === 'DIRECT' ? chat.group : undefined}
       />
       <div className="flex flex-col flex-grow flex-shrink ml-2">
         <Nickname
           className="font-bold"
-          address={chat?.receiver}
-          group={chat?.type === 'DIRECT' ? chat.group : undefined}
+          address={receiverAddress || ''}
+          // group={chat?.type === 'DIRECT' ? chat.group : undefined}
         />
         <div
           className={classNames('text-xs', {
             'text-gray-500': true,
           })}>
-          {chat?.receiver && (
+          {receiverAddress && (
             <>
               <span>@</span>
-              <Username address={chat?.receiver || ''} />
+              <Username address={receiverAddress || ''} />
             </>
           )}
         </div>
@@ -116,53 +121,19 @@ function ChatEditor(): ReactElement {
   const [error, setError] = useState('');
   const [isSending, setSending] = useState(false);
   const zkGroup = useSelectedZKGroup();
+  const zkitter = useZkitter();
 
   useEffect(() => {
     setContent('');
   }, [chatId]);
 
   const submitMessage = useCallback(async () => {
-    if (!chat || !content) return;
+    if (!chat || !content || !zkitter) return;
 
-    let signature = '';
-    let merkleProof, identitySecretHash;
-
-    if (selected?.type === 'gun') {
-      signature = signWithP256(selected.privateKey, selected.address) + '.' + selected.address;
-      if (chat.senderHash) {
-        const zkseed = signWithP256(selected.privateKey, 'signing for zk identity - 0');
-        const zkHex = await sha256(zkseed);
-        const zkIdentity = await generateZkIdentityFromHex(zkHex);
-        merkleProof = await findProof(
-          'zksocial_all',
-          zkIdentity.genIdentityCommitment().toString(16)
-        );
-        identitySecretHash = zkIdentity.getSecretHash();
-      }
-    } else if (selected?.type === 'interrep') {
-      const { type, provider, name, identityCommitment, serializedIdentity } = selected;
-      const group = `${type}_${provider.toLowerCase()}_${name}`;
-      const zkIdentity = new ZkIdentity(Strategy.SERIALIZED, serializedIdentity);
-      merkleProof = await findProof(group, BigInt(identityCommitment).toString(16));
-      identitySecretHash = zkIdentity.getSecretHash();
-    } else if (selected?.type === 'taz') {
-      const { identityCommitment } = selected;
-      const group = `semaphore_taz_members`;
-      merkleProof = await findProof(group, BigInt(identityCommitment).toString(16));
-    }
-
-    await zkchat.sendDirectMessage(
-      chat,
-      content,
-      {
-        'X-SIGNED-ADDRESS': signature,
-      },
-      merkleProof,
-      identitySecretHash
-    );
+    console.log(chat, selected, chat, zkitter);
 
     setContent('');
-  }, [content, selected, chat]);
+  }, [content, selected, chat, zkitter]);
 
   const onClickSend = useCallback(async () => {
     setSending(true);
@@ -242,7 +213,7 @@ function ChatEditor(): ReactElement {
                 'opacity-50': isSending,
               })}
               address={selected?.address}
-              incognito={!!chat?.senderHash}
+              incognito={!!chat?.senderSeed}
               group={zkGroup}
             />
           )}
@@ -252,27 +223,32 @@ function ChatEditor(): ReactElement {
   );
 }
 
-function ChatMessageBubble(props: { messageId: string; chat: Chat }) {
+function ChatMessageBubble(props: { messageId: string; chat: ChatMeta }) {
   const chatMessage = useChatMessage(props.messageId);
 
-  if (chatMessage?.type !== 'DIRECT') return <></>;
+  if (chatMessage?.type !== MessageType.Chat) return <></>;
+  if (chatMessage?.subtype !== ChatMessageSubType.Direct) return <></>;
+
+  const {
+    payload: { senderSeed, senderECDH, receiverECDH, content },
+  } = chatMessage;
 
   return (
     <div
-      key={chatMessage.messageId}
+      key={chatMessage.hash()}
       className={classNames('chat-message', {
-        'chat-message--self': chatMessage.sender.ecdh === props.chat.senderECDH,
-        'chat-message--anon': chatMessage.sender.hash,
+        'chat-message--self': senderECDH === props.chat.senderECDH,
+        'chat-message--anon': senderSeed,
       })}>
       <div
         className={classNames('chat-message__content text-light', {
-          'italic opacity-70': chatMessage.encryptionError,
+          'italic opacity-70': typeof content === 'undefined',
         })}>
-        {chatMessage.encryptionError ? 'Cannot decrypt message' : chatMessage.content}
+        {typeof content === 'undefined' ? 'Cannot decrypt message' : content}
       </div>
       <FromNow
         className="chat-message__time text-xs mt-2 text-gray-700"
-        timestamp={chatMessage.timestamp}
+        timestamp={chatMessage.createdAt}
       />
     </div>
   );

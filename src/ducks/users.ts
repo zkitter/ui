@@ -66,11 +66,15 @@ type State = {
   meta: {
     [name: string]: UserMeta;
   };
+  ecdh: {
+    [ecdh: string]: string;
+  };
 };
 
 const initialState: State = {
   map: {},
   meta: {},
+  ecdh: {},
 };
 
 let fetchPromises: any = {};
@@ -246,6 +250,16 @@ export const searchUsers =
     return json.payload;
   };
 
+export const fetchUserByECDH =
+  (ecdh: string) => async (dispatch: Dispatch, getState: () => AppRootState) => {
+    const resp = await fetch(`${config.indexerAPI}/v1/ecdh/${ecdh}`);
+    const json = await resp.json();
+
+    if (!json.error && json.payload) {
+      dispatch(setEcdh(json.payload, ecdh));
+    }
+  };
+
 export const setAcceptanceSent = (
   address: string,
   acceptanceSent: string | null
@@ -338,6 +352,10 @@ const processUserPayload = (user: any) => (dispatch: Dispatch) => {
     payload: { meta, address: user.username },
   });
 
+  if (payload.ecdh) {
+    dispatch(setEcdh(payload.address, payload.ecdh));
+  }
+
   return payload;
 };
 
@@ -354,6 +372,12 @@ export const useConnectedTwitter = (address = '') => {
 
     const [twitterHandle] = user.twitterVerification.replace('https://twitter.com/', '').split('/');
     return twitterHandle;
+  }, deepEqual);
+};
+
+export const useUserByECDH = (ecdh: string): string | null => {
+  return useSelector((state: AppRootState) => {
+    return state.users.ecdh[ecdh] || null;
   }, deepEqual);
 };
 
@@ -454,12 +478,9 @@ export default function users(state = initialState, action: Action<any>): State 
     case ActionTypes.SET_ECDH:
       return {
         ...state,
-        map: {
-          ...state.map,
-          [action.payload.address]: {
-            ...state.map[action.payload.address],
-            ecdh: action.payload.ecdh,
-          },
+        ecdh: {
+          ...state.ecdh,
+          [action.payload.ecdh]: action.payload.address,
         },
       };
     case ActionTypes.SET_ID_COMMITMENT:
