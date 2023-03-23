@@ -15,21 +15,21 @@ import { useSelectedLocalId, useSelectedZKGroup } from '@ducks/worker';
 import Nickname from '../Nickname';
 import Avatar, { Username } from '../Avatar';
 import Textarea from '../Textarea';
-import { generateZkIdentityFromHex, sha256, signWithP256 } from '~/crypto';
 import { FromNow } from '../ChatMenu';
 import {
+  fetchChatMessages,
   setLastReadForChatId,
   useChatId,
   useChatMessage,
   useMessagesByChatId,
-  zkchat,
 } from '@ducks/chats';
 import Icon from '../Icon';
 import SpinnerGIF from '#/icons/spinner.gif';
-import { findProof } from '~/merkle';
-import { Strategy, ZkIdentity } from '@zk-kit/identity';
-import { Chat } from '~/zkchat';
 import { useDispatch } from 'react-redux';
+import { fetchUserByECDH, useUser, useUserAddressByECDH } from '@ducks/users';
+import { ChatMessageSubType, generateECDHWithP256, MessageType, Crypto } from 'zkitter-js';
+import { useZkitter } from '@ducks/zkitter';
+const { deriveSharedSecret, decrypt } = Crypto;
 
 export default function ChatContent(): ReactElement {
   const { chatId } = useParams<{ chatId: string }>();
@@ -37,26 +37,31 @@ export default function ChatContent(): ReactElement {
   const chat = useChatId(chatId);
   const params = useParams<{ chatId: string }>();
   const dispatch = useDispatch();
+  const zkitter = useZkitter();
 
   const loadMore = useCallback(async () => {
-    if (!chat) return;
-    await zkchat.fetchMessagesByChat(chat);
-  }, [chat]);
+    if (!chat || !zkitter) return;
+    dispatch(fetchChatMessages(chatId));
+  }, [chat, zkitter, chatId]);
 
   useEffect(() => {
     loadMore();
-  }, [loadMore]);
+  }, [loadMore, zkitter, chatId]);
 
   useEffect(() => {
     dispatch(setLastReadForChatId(chatId));
   }, [chatId, messages]);
+
+  useEffect(() => {
+    dispatch(fetchUserByECDH(chat?.receiverECDH));
+  }, [chat?.receiverECDH]);
 
   if (!chat) return <></>;
 
   return (
     <div
       className={classNames('chat-content', {
-        'chat-content--anon': chat?.senderHash,
+        // 'chat-content--anon': chat?.senderSeed,
         'chat-content--chat-selected': params.chatId,
       })}>
       <ChatHeader />
@@ -65,7 +70,7 @@ export default function ChatContent(): ReactElement {
         onScrolledToTop={loadMore}
         topOffset={128}>
         {messages.map(messageId => {
-          return <ChatMessageBubble key={messageId} messageId={messageId} chat={chat} />;
+          return <ChatMessageBubble key={messageId} messageId={messageId} chatId={chatId} />;
         })}
       </InfiniteScrollable>
       <ChatEditor />
@@ -76,29 +81,32 @@ export default function ChatContent(): ReactElement {
 function ChatHeader(): ReactElement {
   const { chatId } = useParams<{ chatId: string }>();
   const chat = useChatId(chatId);
+  const receiverAddress = useUserAddressByECDH(chat?.receiverECDH);
 
   return (
     <div className="chat-content__header">
       <Avatar
+        key={chat?.receiverECDH}
         className="w-10 h-10"
-        address={chat?.receiver}
-        incognito={!chat?.receiver}
-        group={chat?.type === 'DIRECT' ? chat.group : undefined}
+        address={receiverAddress || ''}
+        incognito={!receiverAddress}
+        // group={chat?.type === 'DIRECT' ? chat.group : undefined}
       />
       <div className="flex flex-col flex-grow flex-shrink ml-2">
         <Nickname
+          key={chat?.receiverECDH}
           className="font-bold"
-          address={chat?.receiver}
-          group={chat?.type === 'DIRECT' ? chat.group : undefined}
+          address={receiverAddress || ''}
+          // group={chat?.type === 'DIRECT' ? chat.group : undefined}
         />
         <div
           className={classNames('text-xs', {
             'text-gray-500': true,
           })}>
-          {chat?.receiver && (
+          {receiverAddress && (
             <>
               <span>@</span>
-              <Username address={chat?.receiver || ''} />
+              <Username address={receiverAddress || ''} />
             </>
           )}
         </div>
@@ -116,53 +124,30 @@ function ChatEditor(): ReactElement {
   const [error, setError] = useState('');
   const [isSending, setSending] = useState(false);
   const zkGroup = useSelectedZKGroup();
+  const zkitter = useZkitter();
 
   useEffect(() => {
     setContent('');
   }, [chatId]);
 
   const submitMessage = useCallback(async () => {
-    if (!chat || !content) return;
-
-    let signature = '';
-    let merkleProof, identitySecretHash;
+    if (!chat || !content || !zkitter) return;
 
     if (selected?.type === 'gun') {
-      signature = signWithP256(selected.privateKey, selected.address) + '.' + selected.address;
-      if (chat.senderHash) {
-        const zkseed = signWithP256(selected.privateKey, 'signing for zk identity - 0');
-        const zkHex = await sha256(zkseed);
-        const zkIdentity = await generateZkIdentityFromHex(zkHex);
-        merkleProof = await findProof(
-          'zksocial_all',
-          zkIdentity.genIdentityCommitment().toString(16)
-        );
-        identitySecretHash = zkIdentity.getSecretHash();
-      }
-    } else if (selected?.type === 'interrep') {
-      const { type, provider, name, identityCommitment, serializedIdentity } = selected;
-      const group = `${type}_${provider.toLowerCase()}_${name}`;
-      const zkIdentity = new ZkIdentity(Strategy.SERIALIZED, serializedIdentity);
-      merkleProof = await findProof(group, BigInt(identityCommitment).toString(16));
-      identitySecretHash = zkIdentity.getSecretHash();
-    } else if (selected?.type === 'taz') {
-      const { identityCommitment } = selected;
-      const group = `semaphore_taz_members`;
-      merkleProof = await findProof(group, BigInt(identityCommitment).toString(16));
+      const me = await zkitter.authorize({
+        type: 'ecdsa',
+        address: selected.address,
+        privateKey: selected.privateKey,
+      });
+
+      await me.directMessage({
+        content,
+        ecdh: chat.receiverECDH,
+      });
     }
 
-    await zkchat.sendDirectMessage(
-      chat,
-      content,
-      {
-        'X-SIGNED-ADDRESS': signature,
-      },
-      merkleProof,
-      identitySecretHash
-    );
-
     setContent('');
-  }, [content, selected, chat]);
+  }, [content, selected, chat, zkitter]);
 
   const onClickSend = useCallback(async () => {
     setSending(true);
@@ -242,7 +227,7 @@ function ChatEditor(): ReactElement {
                 'opacity-50': isSending,
               })}
               address={selected?.address}
-              incognito={!!chat?.senderHash}
+              incognito={!!chat?.senderSeed}
               group={zkGroup}
             />
           )}
@@ -252,27 +237,55 @@ function ChatEditor(): ReactElement {
   );
 }
 
-function ChatMessageBubble(props: { messageId: string; chat: Chat }) {
+function ChatMessageBubble(props: { messageId: string; chatId: string }) {
+  const selected = useSelectedLocalId();
+  const chat = useChatId(props.chatId);
   const chatMessage = useChatMessage(props.messageId);
+  const [decrypted, setDecrypted] = useState('');
+  const [isSelf, setSelf] = useState(false);
 
-  if (chatMessage?.type !== 'DIRECT') return <></>;
+  if (chatMessage?.type !== MessageType.Chat) return <></>;
+  if (chatMessage?.subtype !== ChatMessageSubType.Direct) return <></>;
+
+  const {
+    payload: { senderSeed, senderECDH, receiverECDH, content, encryptedContent },
+  } = chatMessage;
+
+  useEffect(() => {
+    (async () => {
+      if (typeof content !== 'undefined') {
+        setDecrypted(content);
+      }
+
+      if (selected?.type === 'gun') {
+        const myECDH = await generateECDHWithP256(selected.privateKey, 0);
+        const rECDH = myECDH.pub === senderECDH ? receiverECDH : senderECDH;
+        setSelf(myECDH.pub === senderECDH);
+
+        if (typeof content === 'undefined') {
+          const sharedKey = deriveSharedSecret(rECDH, myECDH.priv);
+          setDecrypted(decrypt(encryptedContent, sharedKey));
+        }
+      }
+    })();
+  }, [content, selected, encryptedContent, senderECDH, receiverECDH]);
 
   return (
     <div
-      key={chatMessage.messageId}
+      key={chatMessage.hash()}
       className={classNames('chat-message', {
-        'chat-message--self': chatMessage.sender.ecdh === props.chat.senderECDH,
-        'chat-message--anon': chatMessage.sender.hash,
+        'chat-message--self': isSelf,
+        // 'chat-message--anon': senderSeed,
       })}>
       <div
         className={classNames('chat-message__content text-light', {
-          'italic opacity-70': chatMessage.encryptionError,
+          'italic opacity-70': typeof decrypted === 'undefined',
         })}>
-        {chatMessage.encryptionError ? 'Cannot decrypt message' : chatMessage.content}
+        {typeof decrypted === 'undefined' ? 'Cannot decrypt message' : decrypted}
       </div>
       <FromNow
         className="chat-message__time text-xs mt-2 text-gray-700"
-        timestamp={chatMessage.timestamp}
+        timestamp={chatMessage.createdAt}
       />
     </div>
   );

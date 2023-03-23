@@ -1,5 +1,5 @@
 import { ducks, fetchStub, gunStub, store } from '~/testUtils';
-import { MessageType, PostMessageSubType } from '~/message';
+import { MessageType, PostMessageSubType } from 'zkitter-js';
 
 const {
   posts: {

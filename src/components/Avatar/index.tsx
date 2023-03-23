@@ -70,7 +70,7 @@ export default function Avatar(props: Props): ReactElement {
 
   useEffect(() => {
     if (username && !user) {
-      dispatch(getUser(username));
+      setTimeout(() => dispatch(getUser(username)), 0);
     }
   }, [username, user]);
 

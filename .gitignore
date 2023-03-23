@@ -9,3 +9,5 @@ config.json
 .env
 coverage/
 .nyc_output
+*.log
+db/

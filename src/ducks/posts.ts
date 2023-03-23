@@ -2,12 +2,10 @@ import {
   MessageType,
   ModerationMessageSubType,
   parseMessageId,
-  Post,
   PostMessageOption,
   PostMessageSubType,
-} from '~/message';
-import { fetchMessage } from '~/gun';
-import { getUser } from './users';
+  Post,
+} from 'zkitter-js';
 import { ThunkDispatch } from 'redux-thunk';
 import { AppRootState } from '../store/configureAppStore';
 import { useSelector } from 'react-redux';
@@ -16,8 +14,6 @@ import config from '~/config';
 import { Dispatch } from 'redux';
 import { useHistory } from 'react-router';
 import { useCallback } from 'react';
-import { EditorState } from 'draft-js';
-import { convertMarkdownToDraft } from '../components/DraftEditor';
 import Web3 from 'web3';
 
 enum ActionTypes {
@@ -25,6 +21,7 @@ enum ActionTypes {
   SET_POST = 'posts/setPost',
   UNSET_POST = 'posts/unsetPost',
   SET_META = 'posts/setMeta',
+  SET_METAS = 'posts/setMetas',
   INCREMENT_REPLY = 'posts/incrementReply',
   INCREMENT_LIKE = 'posts/incrementLike',
   SET_LIKED = 'posts/setLiked',
@@ -108,33 +105,36 @@ export const fetchMeta =
 
 export const fetchPost =
   (messageId: string) =>
-  async (dispatch: ThunkDispatch<any, any, any>): Promise<PostMessageOption | null> => {
-    const { creator, hash } = parseMessageId(messageId);
-    const user: any = await dispatch(getUser(creator));
+  async (
+    dispatch: ThunkDispatch<any, any, any>,
+    getState: () => AppRootState
+  ): Promise<PostMessageOption | null> => {
+    const { hash } = parseMessageId(messageId);
 
-    let message;
-
-    if (!creator) {
-      message = await fetchMessage(`message/${messageId}`);
-    } else if (creator && hash) {
-      message = await fetchMessage(`~${user.pubkey}/message/${messageId}`);
+    if (!hash) {
+      return null;
     }
 
-    if (!message) return null;
+    const contextualName = getContextNameFromState(getState());
 
-    dispatch(
-      setPost(
-        new Post({
-          ...message,
-          creator: creator,
-        })
-      )
-    );
+    const resp = await fetch(`${config.indexerAPI}/v1/post/${hash}`, {
+      method: 'GET',
+      // @ts-ignore
+      headers: {
+        'x-contextual-name': contextualName,
+      },
+    });
+    const json = await resp.json();
 
-    return {
-      ...message,
-      creator: creator,
-    };
+    if (json.error) return null;
+
+    const post = json.payload;
+
+    if (json.payload) {
+      dispatch(processPosts([post]));
+    }
+
+    return post;
   };
 
 export const setPost = (post: Post) => ({
@@ -187,9 +187,39 @@ export const decrementRepost = (parentId: string) => ({
   payload: parentId,
 });
 
+async function _maybeFetchPostsFromZkitter(
+  creator: string,
+  limit: number,
+  offset?: string,
+  // @ts-ignore
+  dispatch: ThunkDispatch<any, any, any>,
+  getState: () => AppRootState
+): Promise<string[] | null> {
+  const {
+    zkitter: { client },
+  } = getState();
+
+  if (!client) return null;
+
+  if (!client.subscriptions.users[creator]) return null;
+
+  const posts: Post[] = await client.getUserPosts(creator, limit, offset);
+
+  dispatch({
+    type: ActionTypes.SET_POSTS,
+    payload: posts,
+  });
+
+  return posts.map(post => post.toJSON().messageId);
+}
+
 export const fetchPosts =
-  (creator?: string, limit = 10, offset = 0) =>
+  (creator?: string, limit = 20, offset = 0, lastHash?: string) =>
   async (dispatch: ThunkDispatch<any, any, any>, getState: () => AppRootState) => {
+    if (creator) {
+      const posts = await _maybeFetchPostsFromZkitter(creator, limit, lastHash, dispatch, getState);
+      if (posts) return posts;
+    }
     const creatorQuery = creator ? `&creator=${encodeURIComponent(creator)}` : '';
     const contextualName = getContextNameFromState(getState());
     const resp = await fetch(
@@ -204,7 +234,6 @@ export const fetchPosts =
     );
     const json = await resp.json();
     dispatch(processPosts(json.payload));
-
     return json.payload.map((post: any) => post.messageId);
   };
 
@@ -321,41 +350,34 @@ export const fetchRepliedBy =
   };
 
 const processPosts = (posts: any[]) => async (dispatch: Dispatch) => {
-  for (const post of posts) {
-    if (post.subtype === PostMessageSubType.Repost) {
-      dispatch({
-        type: ActionTypes.SET_META,
-        payload: {
+  dispatch({
+    type: ActionTypes.SET_METAS,
+    payload: posts.map(post => {
+      if (post.subtype === PostMessageSubType.Repost) {
+        return {
           messageId: post.payload.reference,
           meta: post.meta,
-        },
-      });
-    } else {
-      dispatch({
-        type: ActionTypes.SET_META,
-        payload: {
+        };
+      } else {
+        return {
           messageId: post.messageId,
           meta: post.meta,
-        },
-      });
-    }
+        };
+      }
+    }),
+  });
 
-    const { creator } = parseMessageId(post.messageId);
-
-    dispatch({
-      type: ActionTypes.SET_POST,
-      payload: new Post({
+  dispatch({
+    type: ActionTypes.SET_POSTS,
+    payload: posts.map(post => {
+      const { creator } = parseMessageId(post.messageId);
+      return new Post({
         ...post,
         createdAt: new Date(Number(post.createdAt)),
         creator: creator || '',
-      }),
-    });
-  }
-
-  setTimeout(() => {
-    // @ts-ignore
-    posts.forEach((post: any) => dispatch(fetchPost(post.messageId)));
-  }, 0);
+      });
+    }),
+  });
 };
 
 export const searchPosts =
@@ -405,10 +427,6 @@ export const fetchHomeFeed =
       });
     }
 
-    setTimeout(() => {
-      json.payload.forEach((post: any) => dispatch(fetchPost(post.messageId)));
-    }, 0);
-
     return json.payload.map((post: any) => post.messageId);
   };
 
@@ -446,10 +464,6 @@ export const fetchTagFeed =
         }),
       });
     }
-
-    setTimeout(() => {
-      json.payload.forEach((post: any) => dispatch(fetchPost(post.messageId)));
-    }, 0);
 
     return json.payload.map((post: any) => post.messageId);
   };
@@ -511,10 +525,6 @@ export const fetchReplies =
         payload: p,
       });
     }
-
-    setTimeout(() => {
-      json.payload.forEach((post: any) => dispatch(fetchPost(post.messageId)));
-    }, 0);
 
     return json.payload.map((post: any) => post.messageId);
   };
@@ -631,6 +641,8 @@ export default function posts(state = initialState, action: Action): State {
       return reduceSetPost(state, action);
     case ActionTypes.UNSET_POST:
       return reduceUnsetPost(state, action);
+    case ActionTypes.SET_METAS:
+      return reduceSetMetas(state, action);
     case ActionTypes.SET_META:
       return reduceSetMeta(state, action);
     case ActionTypes.APPEND_POSTS:
@@ -699,17 +711,33 @@ function reduceSetPosts(state: State, action: Action): State {
 
   return {
     ...state,
-    map: posts,
+    map: {
+      ...state.map,
+      ...posts,
+    },
+  };
+}
+
+function reduceSetMetas(state: State, action: Action): State {
+  const payload = action.payload;
+  const metas: { [h: string]: PostMeta } = {};
+
+  for (const data of payload) {
+    const { messageId, meta } = data;
+    metas[messageId] = meta;
+  }
+
+  return {
+    ...state,
+    meta: {
+      ...state.meta,
+      ...metas,
+    },
   };
 }
 
 function reduceSetMeta(state: State, action: Action): State {
-  const post = action.payload;
-  const { meta } = post;
-
-  const messageId =
-    post.subtype === PostMessageSubType.Repost ? post.payload.reference : post.messageId;
-
+  const { messageId, meta } = action.payload;
   return {
     ...state,
     meta: {

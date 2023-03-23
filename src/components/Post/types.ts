@@ -1,5 +1,5 @@
 import { MouseEventHandler } from 'react';
-import { Post as PostMessage } from '~/message';
+import { Post as PostMessage } from 'zkitter-js';
 
 export type Props = {
   messageId: string;
