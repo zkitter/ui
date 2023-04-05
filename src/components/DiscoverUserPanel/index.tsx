@@ -19,12 +19,21 @@ export default function DiscoverUserPanel(): ReactElement {
   const theme = useThemeContext();
 
   useEffect(() => {
+    let unmounted = false;
+
     (async function onUserPanelMount() {
       setLoading(true);
       const list = await dispatch(fetchUsers());
-      setUsers(list as any);
-      setLoading(false);
+
+      if (!unmounted) {
+        setUsers(list as any);
+        setLoading(false);
+      }
     })();
+
+    return () => {
+      unmounted = true;
+    };
   }, []);
 
   return (

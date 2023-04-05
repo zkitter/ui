@@ -13,10 +13,14 @@ export default function DiscoverTagPanel(): ReactElement {
   const theme = useThemeContext();
 
   useEffect(() => {
+    let unmounted = false;
+
     (async function onTagPanelMount() {
       setLoading(true);
       const resp = await fetch(`${config.indexerAPI}/v1/tags?limit=5`);
       const json = await resp.json();
+
+      if (unmounted) return;
 
       if (!json.error) {
         setTags(json.payload);
@@ -24,6 +28,10 @@ export default function DiscoverTagPanel(): ReactElement {
 
       setLoading(false);
     })();
+
+    return () => {
+      unmounted = true;
+    };
   }, []);
 
   return (

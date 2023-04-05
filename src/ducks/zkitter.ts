@@ -50,6 +50,10 @@ export type State = {
       toBlock: number;
       latest: number;
     };
+    history: {
+      total: number;
+      downloaded: number;
+    };
   };
 };
 
@@ -66,6 +70,10 @@ const initialState: State = {
       fromBlock: 0,
       toBlock: 0,
       latest: 0,
+    },
+    history: {
+      total: 0,
+      downloaded: 0,
     },
   },
 };
@@ -111,6 +119,7 @@ export const initZkitter = () => async (dispatch: Dispatch) => {
   });
 
   await client.start();
+
   await client.downloadHistoryFromAPI();
 
   dispatch({

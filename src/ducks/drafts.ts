@@ -15,6 +15,7 @@ import {
   PostMessageSubType,
   Profile,
   ProfileMessageSubType,
+  Zkitter,
 } from 'zkitter-js';
 import { ThunkDispatch } from 'redux-thunk';
 import { markdownConvertOptions } from '@components/DraftEditor';
@@ -25,6 +26,8 @@ import { setBlockedPost } from './posts';
 import { findProof } from '~/merkle';
 import { generateZkIdentityFromHex, sha256, signWithP256 } from '~/crypto';
 import { Identity } from '@semaphore-protocol/identity';
+import { deserializeZKIdentity } from '~/zk';
+import { waitForSync } from '@ducks/zkitter';
 
 const { draftToMarkdown } = require('markdown-draft-js');
 
@@ -195,21 +198,21 @@ export const submitTazPost =
   (post: Post) => async (dispatch: Dispatch, getState: () => AppRootState) => {
     const state = getState();
     const { selected } = state.worker;
-    const zkitter = state.zkitter.client;
+    const zkitter: Zkitter = state.zkitter.client || (await waitForSync);
 
     if (selected?.type !== 'taz') throw new Error('Not in incognito mode');
 
-    const zkIdentity = new Identity(selected.serializedIdentity);
+    const zkIdentity = deserializeZKIdentity(selected.serializedIdentity);
 
     const { messageId, hash, ...json } = post.toJSON();
 
     try {
       const proof = await zkitter.services.pubsub.createProof({
         hash: post.hash(),
-        zkIdentity: zkIdentity,
+        zkIdentity: zkIdentity!,
         groupId: `semaphore_taz_members`,
       });
-
+      console.log(proof);
       await zkitter.services.pubsub.publish(post, proof);
 
       dispatch({
