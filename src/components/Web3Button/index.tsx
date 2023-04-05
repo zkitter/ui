@@ -53,6 +53,8 @@ export default function Web3Button(props: Props): ReactElement {
   const history = useHistory();
 
   useEffect(() => {
+    let unmounted = false;
+
     (async () => {
       if (!identities.length) {
         if (!account) return;
@@ -65,10 +67,14 @@ export default function Web3Button(props: Props): ReactElement {
         if (id?.type !== 'zkpr_interrep' && id?.type !== 'taz') {
           setEnsName('');
           const ens = await fetchNameByAddress(id.address);
-          setEnsName(ens);
+          if (!unmounted) setEnsName(ens);
         }
       }
     })();
+
+    return () => {
+      unmounted = true;
+    };
   }, [account, identities, selectedLocalId]);
 
   let btnContent;

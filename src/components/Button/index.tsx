@@ -12,7 +12,16 @@ type Props = {
 } & ButtonHTMLAttributes<HTMLButtonElement>;
 
 export default function Button(props: Props): ReactElement {
-  const { className, btnType = '', children, onClick, disabled, loading, ...btnProps } = props;
+  const {
+    className,
+    btnType = '',
+    children,
+    onClick,
+    disabled,
+    loading,
+    small,
+    ...btnProps
+  } = props;
   return (
     <button
       className={classNames(
@@ -23,7 +32,7 @@ export default function Button(props: Props): ReactElement {
           'button--primary': btnType === 'primary',
           'button--secondary': btnType === 'secondary',
           'cursor-default': disabled || loading,
-          'button--small': !!props.small,
+          'button--small': !!small,
         },
         className
       )}

@@ -16,6 +16,7 @@ import { sha256 } from './crypto';
 import { findProof } from './merkle';
 import { Identity } from '@semaphore-protocol/identity';
 import { SerializedIdentity } from '@zk-kit/identity/src/types/index';
+import { safeJsonParse } from '~/misc';
 
 export const generateRLNProof =
   (signalString: string) =>
@@ -137,4 +138,25 @@ export const generateRLNProofFromLocalIdentity = async (
     x_share: xShare.toString(),
     epoch,
   };
+};
+
+export const deserializeZKIdentity = (serializedIdentity: string): ZkIdentity | null => {
+  const parsed = safeJsonParse(serializedIdentity);
+
+  let zkIdentity = null;
+
+  if (parsed?.identityNullifier && parsed?.identityTrapdoor && parsed?.secret.length) {
+    zkIdentity = new ZkIdentity(Strategy.SERIALIZED, serializedIdentity);
+  } else if (parsed?.length === 2) {
+    zkIdentity = new ZkIdentity(
+      Strategy.SERIALIZED,
+      JSON.stringify({
+        identityNullifier: parsed[1],
+        identityTrapdoor: parsed[0],
+        secret: [parsed[1], parsed[0]],
+      })
+    );
+  }
+
+  return zkIdentity;
 };

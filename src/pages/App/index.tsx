@@ -34,6 +34,9 @@ import NotificationView from '../NotificationView';
 import { updateNotifications } from '@ducks/app';
 import SearchResultsView from '../SearchResultsView';
 import { initZkitter, updateFilter } from '@ducks/zkitter';
+import { postWorkerMessage } from '~/sw';
+import { setIdentity } from '../../serviceWorkers/util';
+import { findProof } from '~/merkle';
 
 export default function App(): ReactElement {
   const dispatch = useDispatch();
@@ -76,57 +79,15 @@ export default function App(): ReactElement {
   }, []);
 
   useEffect(() => {
-    if (selected?.type === 'gun') {
-      (async () => {
-        const ecdhseed = await signWithP256(selected.privateKey, 'signing for ecdh - 0');
-        const zkseed = await signWithP256(selected.privateKey, 'signing for zk identity - 0');
-        const ecdhHex = await sha256(ecdhseed);
-        const zkHex = await sha256(zkseed);
-        const keyPair = await generateECDHKeyPairFromhex(ecdhHex);
-        const zkIdentity = await generateZkIdentityFromHex(zkHex);
-        // await sse.updateTopics([`ecdh:${keyPair.pub}`]);
-        // await zkchat.importIdentity({
-        //   address: selected.address,
-        //   zk: zkIdentity,
-        //   ecdh: keyPair,
-        // });
-        await dispatch(fetchUnreads());
+    (async () => {
+      if (selected?.type === 'gun') {
         await dispatch(updateNotifications());
         await dispatch(updateFilter());
-        await dispatch(fetchChats(selected.address));
-      })();
-    } else if (selected?.type === 'interrep') {
-      (async () => {
-        const zkIdentity = new ZkIdentity(Strategy.SERIALIZED, selected.serializedIdentity);
-        const ecdhseed = await sha256(
-          zkIdentity
-            .getSecret()
-            .map(d => d.toString())
-            .join()
-        );
-        const ecdhHex = await sha256(ecdhseed);
-        const keyPair = await generateECDHKeyPairFromhex(ecdhHex);
-        // await zkchat.importIdentity({
-        //   address: selected?.identityCommitment,
-        //   zk: zkIdentity,
-        //   ecdh: keyPair,
-        // });
-        await dispatch(fetchUnreads());
-      })();
-    } else if (selected?.type === 'taz') {
-      (async () => {
-        const zkIdentity = new Identity(selected.serializedIdentity);
-        const ecdhseed = await sha256(selected.serializedIdentity);
-        const ecdhHex = await sha256(ecdhseed);
-        const keyPair = await generateECDHKeyPairFromhex(ecdhHex);
-        // await zkchat.importIdentity({
-        //   address: selected?.identityCommitment,
-        //   zk: zkIdentity,
-        //   ecdh: keyPair,
-        // });
-        await dispatch(fetchUnreads());
-      })();
-    }
+      }
+
+      await dispatch(fetchUnreads());
+      await dispatch(fetchChats());
+    })();
   }, [selected]);
 
   useEffect(() => {

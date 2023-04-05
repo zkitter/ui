@@ -47,7 +47,6 @@ export default function HomeFeed(): ReactElement {
     (async function onUpdateFollowings() {
       if (zkitter && selected?.type === 'gun') {
         const data = await zkitter?.getFollowings(selected.address);
-        console.log(data.concat(selected.address));
         setFilters(new Filter({ address: data.concat(selected.address) }));
       }
     })();
@@ -128,7 +127,6 @@ export default function HomeFeed(): ReactElement {
         return (
           <Post
             key={messageId}
-            // key={i}
             className={classNames('rounded-xl transition-colors mb-1 cursor-pointer border', {
               'hover:border-gray-300 border-gray-200': theme !== 'dark',
               'hover:border-gray-700 border-gray-800': theme === 'dark',

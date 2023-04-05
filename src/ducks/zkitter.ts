@@ -4,7 +4,7 @@ import {
   MessageType,
   Post,
   Zkitter,
-  Chats,
+  deriveChatId,
   Chat,
   FilterOptions,
 } from 'zkitter-js';
@@ -15,11 +15,10 @@ import { AppRootState } from '../store/configureAppStore';
 import { safeJsonParse } from '~/misc';
 import { setPost } from '@ducks/posts';
 import { prependMessagesForChat } from '@ducks/chats';
-const { deriveChatId } = Chats;
 
 const FILTERS_LS_KEY = 'zkitter/filters';
 let resolveSync: null | any = null;
-const waitForSync = new Promise<Zkitter>(resolve => {
+export const waitForSync = new Promise<Zkitter>(resolve => {
   resolveSync = resolve;
 });
 
@@ -112,7 +111,7 @@ export const initZkitter = () => async (dispatch: Dispatch) => {
   });
 
   await client.start();
-  // await client.downloadHistoryFromAPI();
+  await client.downloadHistoryFromAPI();
 
   dispatch({
     type: ActionType.SET_LOADING,

@@ -15,6 +15,7 @@ import { Dispatch } from 'redux';
 import { useHistory } from 'react-router';
 import { useCallback } from 'react';
 import Web3 from 'web3';
+import { waitForSync } from '@ducks/zkitter';
 
 enum ActionTypes {
   SET_POSTS = 'posts/setPosts',
@@ -196,8 +197,10 @@ async function _maybeFetchPostsFromZkitter(
   getState: () => AppRootState
 ): Promise<string[] | null> {
   const {
-    zkitter: { client },
+    zkitter: { client: _client },
   } = getState();
+
+  const client = _client || (await waitForSync);
 
   if (!client) return null;
 
@@ -216,10 +219,10 @@ async function _maybeFetchPostsFromZkitter(
 export const fetchPosts =
   (creator?: string, limit = 20, offset = 0, lastHash?: string) =>
   async (dispatch: ThunkDispatch<any, any, any>, getState: () => AppRootState) => {
-    if (creator) {
-      const posts = await _maybeFetchPostsFromZkitter(creator, limit, lastHash, dispatch, getState);
-      if (posts) return posts;
-    }
+    // if (creator) {
+    //   const posts = await _maybeFetchPostsFromZkitter(creator, limit, lastHash, dispatch, getState);
+    //   if (posts) return posts;
+    // }
     const creatorQuery = creator ? `&creator=${encodeURIComponent(creator)}` : '';
     const contextualName = getContextNameFromState(getState());
     const resp = await fetch(
