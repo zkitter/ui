@@ -69,6 +69,7 @@ export default function URLPreview(props: Props): ReactElement {
         const resp = await fetch(`${config.indexerAPI}/v1/preview?link=${encodeURI(url)}`);
         const json = await resp.json();
 
+        if (unmounted) return;
         if (!json.payload.error && !unmounted) {
           const {
             link,
@@ -96,7 +97,7 @@ export default function URLPreview(props: Props): ReactElement {
         setImageSrc('');
         setPreview(null);
       } finally {
-        setLoading(false);
+        if (!unmounted) setLoading(false);
       }
     })();
 
