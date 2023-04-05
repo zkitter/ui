@@ -43,7 +43,7 @@ import { connectZKPR, disconnectZKPR, useIdCommitment, useZKPR, useZKPRLoading }
 import MetamaskSVG from '#/icons/metamask-fox.svg';
 import WalletConnectSVG from '#/icons/walletconnect_logo.svg';
 import CoinbasePNG from '#/icons/coinbase_logo.png';
-import ZKPRSVG from '#/icons/zkpr-logo.svg';
+import CRYPT_KEEPER_SVG from '#/icons/crypt-keeper-logo.svg';
 import TazLogo from '#/icons/taz-logo.png';
 import SpinnerGIF from '#/icons/spinner.gif';
 import Avatar, { Username } from '@components/Avatar';
@@ -344,7 +344,7 @@ function ChooseWalletView(props: { setViewType: (v: ViewType) => void }): ReactE
           Coinbase Wallet
         </WalletOption>
         <WalletOption
-          iconUrl={ZKPRSVG}
+          iconUrl={CRYPT_KEEPER_SVG}
           onClick={connectKeeper}
           selected={walletOption === 'zkpr'}
           loading={zkprLoading}>
