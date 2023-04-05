@@ -2,8 +2,13 @@ import { Dispatch } from 'redux';
 import store, { AppRootState } from '../store/configureAppStore';
 import { useSelector } from 'react-redux';
 import deepEqual from 'fast-deep-equal';
-import { Chat as ChatMessage } from 'zkitter-js';
+import { Chat as ChatMessage, Zkitter } from 'zkitter-js';
 import { ChatMeta } from 'zkitter-js/dist/src/models/chats';
+import { ZkIdentity } from '@zk-kit/identity';
+import { deserializeZKIdentity } from '~/zk';
+import { hexify } from '~/format';
+import { waitForSync } from '@ducks/zkitter';
+import { getZKGroupFromIdentity } from '@ducks/worker';
 
 // sse.on('NEW_CHAT_MESSAGE', async (payload: any) => {
 //   const message = await zkchat.inflateMessage(payload);
@@ -147,18 +152,38 @@ export const setLastReadForChatId =
     dispatch(setUnread(chatId, 0));
   };
 
-export const fetchChats =
-  (address: string) => async (dispatch: Dispatch, getState: () => AppRootState) => {
-    const {
-      zkitter: { client },
-    } = getState();
+export const fetchChats = () => async (dispatch: Dispatch, getState: () => AppRootState) => {
+  const {
+    zkitter: { client },
+    worker: { selected },
+  } = getState();
 
-    if (!client) return;
+  let zkitterClient = client || (await waitForSync);
 
-    const chatMetas: ChatMeta[] = await client.getChatByUser(address);
+  let addressOrIdcommitment = '';
 
-    dispatch(setChats(chatMetas));
-  };
+  if (selected?.type === 'gun') addressOrIdcommitment = selected.address;
+  if (selected?.type === 'interrep') {
+    addressOrIdcommitment = hexify(
+      deserializeZKIdentity(selected.serializedIdentity)!.genIdentityCommitment()
+    );
+  }
+  if (selected?.type === 'taz') {
+    addressOrIdcommitment = hexify(
+      deserializeZKIdentity(selected.serializedIdentity)!.genIdentityCommitment()
+    );
+  }
+
+  const chatMetas: ChatMeta[] = await zkitterClient.getChatByUser(addressOrIdcommitment);
+
+  dispatch(setChats(chatMetas));
+  zkitterClient.updateFilter({
+    ecdh: [
+      ...chatMetas.map(({ senderECDH }) => senderECDH),
+      ...chatMetas.map(({ receiverECDH }) => receiverECDH),
+    ],
+  });
+};
 
 export const fetchChatMessages =
   (chatId: string, limit = 50, offset?: string) =>
@@ -168,15 +193,26 @@ export const fetchChatMessages =
       worker: { selected },
     } = getState();
 
-    if (!client) return;
+    const zkitterClient: Zkitter = client || (await waitForSync);
+
+    let messages: ChatMessage[] = [];
 
     if (selected?.type === 'gun') {
-      const messages: ChatMessage[] = await client.getChatMessages(chatId, limit, offset, {
+      messages = await zkitterClient.getChatMessages(chatId, limit, offset, {
         type: 'ecdsa',
         address: selected.address,
         privateKey: selected.privateKey,
       });
+    } else if (selected?.type === 'taz' || selected?.type === 'interrep') {
+      const zkIdentity = deserializeZKIdentity(selected.serializedIdentity)!;
+      messages = await zkitterClient.getChatMessages(chatId, limit, offset, {
+        type: 'zk',
+        zkIdentity,
+        groupId: getZKGroupFromIdentity(selected),
+      });
+    }
 
+    if (messages.length) {
       dispatch(setMessagesForChat(chatId, messages));
     }
   };

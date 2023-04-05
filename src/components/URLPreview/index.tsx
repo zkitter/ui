@@ -44,6 +44,8 @@ export default function URLPreview(props: Props): ReactElement {
   const isMagnet = urlParams?.protocol === 'magnet:';
 
   useEffect(() => {
+    let unmounted = false;
+
     (async function onURLPreviewLoad() {
       setPreview(null);
       setImageSrc('');
@@ -67,7 +69,7 @@ export default function URLPreview(props: Props): ReactElement {
         const resp = await fetch(`${config.indexerAPI}/v1/preview?link=${encodeURI(url)}`);
         const json = await resp.json();
 
-        if (!json.payload.error) {
+        if (!json.payload.error && !unmounted) {
           const {
             link,
             title = '',
@@ -97,6 +99,8 @@ export default function URLPreview(props: Props): ReactElement {
         setLoading(false);
       }
     })();
+
+    return () => (unmounted = true);
   }, [url]);
 
   const openImageLink = useCallback(

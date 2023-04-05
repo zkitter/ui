@@ -133,6 +133,8 @@ export const submitInterepPost =
         groupId: `interrep_${provider.toLowerCase()}_${name}`,
       });
 
+      console.log({ proof });
+
       await zkitter.services.pubsub.publish(post, proof);
 
       dispatch({

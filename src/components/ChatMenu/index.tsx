@@ -27,13 +27,12 @@ import {
   ChatMessageSubType,
   generateECDHKeyPairFromZKIdentity,
   generateECDHWithP256,
-  Chats,
+  deriveChatId,
 } from 'zkitter-js';
 import { Strategy, ZkIdentity } from '@zk-kit/identity';
 import { safeJsonParse } from '~/misc';
 import crypto from 'crypto';
 import { useDispatch } from 'react-redux';
-const { deriveChatId } = Chats;
 
 export default function ChatMenu(): ReactElement {
   const selected = useSelectedLocalId();
@@ -167,18 +166,18 @@ function CreateChatOptionModal(props: { address: string; onClose: () => void }):
       if (!r_user) return;
 
       let senderECDH,
-        senderSeed = '';
+        senderSeed = props.address;
 
       if (selected?.type === 'gun') {
         senderECDH = await generateECDHWithP256(selected.privateKey, 0);
       } else if (selected?.type === 'interrep') {
         senderECDH = await generateECDHKeyPairFromZKIdentity(
-          new ZkIdentity(Strategy.SERIALIZED, selected.serializedIdentity)
+          new ZkIdentity(Strategy.SERIALIZED, selected.serializedIdentity),
+          senderSeed
         );
       } else if (selected?.type === 'taz') {
         const [trapdoor, nullifier] = safeJsonParse(selected.serializedIdentity) || [];
         if (trapdoor && nullifier) {
-          senderSeed = crypto.randomBytes(16).toString('hex');
           senderECDH = await generateECDHKeyPairFromZKIdentity(
             new ZkIdentity(
               Strategy.SERIALIZED,
@@ -199,7 +198,7 @@ function CreateChatOptionModal(props: { address: string; onClose: () => void }):
       const chatMeta: ChatMeta = {
         type: ChatMessageSubType.Direct,
         senderECDH: senderECDH.pub,
-        senderSeed: senderSeed,
+        senderSeed: selected?.type === 'gun' ? '' : senderSeed,
         receiverECDH: r_user.ecdh,
         chatId,
       };
@@ -210,8 +209,6 @@ function CreateChatOptionModal(props: { address: string; onClose: () => void }):
     },
     [props.address, r_user, selected]
   );
-
-  if (!user) return <></>;
 
   return (
     <Modal className="w-96" onClose={props.onClose}>

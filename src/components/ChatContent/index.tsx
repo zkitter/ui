@@ -11,7 +11,7 @@ import React, {
 import classNames from 'classnames';
 import { useParams } from 'react-router';
 import InfiniteScrollable from '../InfiniteScrollable';
-import { useSelectedLocalId, useSelectedZKGroup } from '@ducks/worker';
+import { getZKGroupFromIdentity, useSelectedLocalId, useSelectedZKGroup } from '@ducks/worker';
 import Nickname from '../Nickname';
 import Avatar, { Username } from '../Avatar';
 import Textarea from '../Textarea';
@@ -27,9 +27,16 @@ import Icon from '../Icon';
 import SpinnerGIF from '#/icons/spinner.gif';
 import { useDispatch } from 'react-redux';
 import { fetchUserByECDH, useUser, useUserAddressByECDH } from '@ducks/users';
-import { ChatMessageSubType, generateECDHWithP256, MessageType, Crypto } from 'zkitter-js';
+import {
+  ChatMessageSubType,
+  generateECDHWithP256,
+  MessageType,
+  deriveSharedSecret,
+  decrypt,
+  generateECDHKeyPairFromZKIdentity,
+} from 'zkitter-js';
 import { useZkitter } from '@ducks/zkitter';
-const { deriveSharedSecret, decrypt } = Crypto;
+import { deserializeZKIdentity } from '~/zk';
 
 export default function ChatContent(): ReactElement {
   const { chatId } = useParams<{ chatId: string }>();
@@ -54,6 +61,7 @@ export default function ChatContent(): ReactElement {
 
   useEffect(() => {
     dispatch(fetchUserByECDH(chat?.receiverECDH));
+    dispatch(fetchUserByECDH(chat?.senderECDH));
   }, [chat?.receiverECDH]);
 
   if (!chat) return <></>;
@@ -133,16 +141,28 @@ function ChatEditor(): ReactElement {
   const submitMessage = useCallback(async () => {
     if (!chat || !content || !zkitter) return;
 
+    let me;
+
     if (selected?.type === 'gun') {
-      const me = await zkitter.authorize({
+      me = await zkitter.authorize({
         type: 'ecdsa',
         address: selected.address,
         privateKey: selected.privateKey,
       });
+    } else if (selected?.type === 'interrep' || selected?.type === 'taz') {
+      const zkIdentity = deserializeZKIdentity(selected.serializedIdentity);
+      me = await zkitter.authorize({
+        type: 'zk',
+        zkIdentity: zkIdentity!,
+        groupId: getZKGroupFromIdentity(selected),
+      });
+    }
 
+    if (me) {
       await me.directMessage({
         content,
         ecdh: chat.receiverECDH,
+        seedOverride: selected?.type === 'gun' ? undefined : chat.senderSeed,
       });
     }
 
@@ -244,6 +264,9 @@ function ChatMessageBubble(props: { messageId: string; chatId: string }) {
   const [decrypted, setDecrypted] = useState('');
   const [isSelf, setSelf] = useState(false);
 
+  const receiverAddress = useUserAddressByECDH(chat?.receiverECDH);
+  const senderAddress = useUserAddressByECDH(chat?.senderECDH);
+
   if (chatMessage?.type !== MessageType.Chat) return <></>;
   if (chatMessage?.subtype !== ChatMessageSubType.Direct) return <></>;
 
@@ -266,9 +289,32 @@ function ChatMessageBubble(props: { messageId: string; chatId: string }) {
           const sharedKey = deriveSharedSecret(rECDH, myECDH.priv);
           setDecrypted(decrypt(encryptedContent, sharedKey));
         }
+      } else if (selected?.type === 'interrep' || selected?.type === 'taz') {
+        const isSenderAnon = !senderAddress;
+        const seed = isSenderAnon ? receiverAddress : senderSeed;
+        const myECDH = await generateECDHKeyPairFromZKIdentity(
+          deserializeZKIdentity(selected.serializedIdentity)!,
+          seed
+        );
+        const rECDH = myECDH.pub === senderECDH ? receiverECDH : senderECDH;
+        setSelf(myECDH.pub === senderECDH);
+
+        if (typeof content === 'undefined') {
+          const sharedKey = deriveSharedSecret(rECDH, myECDH.priv);
+          setDecrypted(decrypt(encryptedContent, sharedKey));
+        }
       }
     })();
-  }, [content, selected, encryptedContent, senderECDH, receiverECDH]);
+  }, [
+    content,
+    selected,
+    encryptedContent,
+    senderECDH,
+    receiverECDH,
+    senderAddress,
+    receiverAddress,
+    senderSeed,
+  ]);
 
   return (
     <div

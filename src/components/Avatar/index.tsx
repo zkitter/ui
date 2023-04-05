@@ -53,6 +53,8 @@ export default function Avatar(props: Props): ReactElement {
   const user = useUser(username);
 
   useEffect(() => {
+    let unmounted = false;
+
     (async () => {
       if (groupName) {
         setUsername(groupName);
@@ -61,11 +63,15 @@ export default function Avatar(props: Props): ReactElement {
 
       if (name && !Web3.utils.isAddress(name)) {
         const addr: any = await dispatch(fetchAddressByName(name));
-        setUsername(addr);
+        if (!unmounted) setUsername(addr);
       } else if (address) {
         setUsername(address);
       }
     })();
+
+    return () => {
+      unmounted = true;
+    };
   }, [name, address, groupName]);
 
   useEffect(() => {
