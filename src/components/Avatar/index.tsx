@@ -30,12 +30,18 @@ export function Username(props: { address?: string }): ReactElement {
   const { address = '' } = props;
 
   useEffect(() => {
+    let unmounted = false;
+
     (async () => {
       setEnsName('');
       if (!address) return;
       const ens = await fetchNameByAddress(address);
-      setEnsName(ens);
+      if (!unmounted) setEnsName(ens);
     })();
+
+    return () => {
+      unmounted = true;
+    };
   }, [address]);
 
   return <>{ensName ? ensName : ellipsify(address)}</>;

@@ -106,7 +106,9 @@ export default function HomeFeed(): ReactElement {
           )}>
           <Icon url={SpinnerGif} size={4} />
           <div>
-            {completion < 99 ? `Syncing with Arbitrum (${completion}%)...` : `Syncing messages...`}
+            {completion < 99
+              ? `Syncing with Arbitrum (${completion.toFixed(2)}%)...`
+              : `Syncing messages...`}
           </div>
         </div>
       )}
