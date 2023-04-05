@@ -100,7 +100,9 @@ export default function URLPreview(props: Props): ReactElement {
       }
     })();
 
-    return () => (unmounted = true);
+    return () => {
+      unmounted = true;
+    };
   }, [url]);
 
   const openImageLink = useCallback(
