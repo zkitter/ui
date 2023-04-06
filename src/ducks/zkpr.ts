@@ -91,8 +91,7 @@ export const connectZKPR =
 
         localStorage.setItem('ZKPR_CACHED', '1');
 
-        const idCommitmentHex = await zkprClient.getActiveIdentity();
-        const idCommitment = idCommitmentHex && BigInt('0x' + idCommitmentHex).toString();
+        const idCommitment = await zkprClient.getActiveOrCreateIdentity();
 
         if (idCommitment) {
           dispatch(setIdCommitment(idCommitment));
@@ -237,6 +236,16 @@ export class ZKPR {
 
   async createIdentity(): Promise<void> {
     return this.client.createIdentity();
+  }
+
+  async getActiveOrCreateIdentity(): Promise<string | null> {
+    const id = await this.getActiveIdentity();
+    if (id) {
+      return id;
+    } else {
+      await this.createIdentity();
+      return await this.getActiveIdentity();
+    }
   }
 
   async semaphoreProof(
