@@ -66,51 +66,50 @@ const setDefaultIdentity = (defaultId: string | null) => {
 
 export const connectZKPR =
   () => async (dispatch: ThunkDispatch<any, any, any>, getState: () => AppRootState) => {
+    console.log('connectZKPR');
     dispatch(setLoading(true));
 
     try {
-      let id: Identity | null = null;
-
       if (typeof window.zkpr !== 'undefined') {
+        console.log('ZKPR injected');
         const zkpr: any = window.zkpr;
         const client = await zkpr.connect();
         const zkprClient = new ZKPR(client);
+
+        console.log({ zkprClient });
 
         zkprClient.on('logout', async () => {
           dispatch(disconnectZKPR());
           setDefaultIdentity(defaultIdSelector(getState()));
         });
 
-        zkprClient.on('identityChanged', async ({ idCommitment: id }) => {
+        zkprClient.on('identityChanged', async idCommitment => {
           dispatch(setIdCommitment(''));
 
-          console.log('identity changed', id);
-          const idCommitment = id?.startsWith('0x') ? id : hexlify(id);
+          console.log('identity changed', idCommitment);
 
           if (idCommitment) {
+            idCommitment = idCommitment?.startsWith('0x') ? idCommitment : hexlify(idCommitment);
             dispatch(setIdCommitment(idCommitment));
-            const id: any = await maybeSetZKPRIdentity(idCommitment);
-            if (!id) setDefaultIdentity(defaultIdSelector(getState()));
+            const _id: any = await maybeSetZKPRIdentity(idCommitment);
+            if (!_id) setDefaultIdentity(defaultIdSelector(getState()));
           }
         });
 
         localStorage.setItem('ZKPR_CACHED', '1');
-
-        const idCommitment = await zkprClient.getActiveOrCreateIdentity();
-        console.log({ idCommitment });
-
+        const idCommitment = await zkprClient.getActiveIdentity();
         if (idCommitment) {
+          // no event fired on connect() so need to set it manually after getActiveIdentity() here
           dispatch(setIdCommitment(idCommitment));
-          id = await maybeSetZKPRIdentity(idCommitment);
+          const _id: any = await maybeSetZKPRIdentity(idCommitment);
+          if (!_id) setDefaultIdentity(defaultIdSelector(getState()));
+        } else {
+          await zkprClient.createIdentity();
         }
 
         dispatch(setZKPR(zkprClient));
       }
-
-      console.log('ZKPR  not loaded');
       dispatch(setLoading(false));
-
-      return id;
     } catch (e) {
       dispatch(setLoading(false));
       throw e;
@@ -223,7 +222,7 @@ export const useIdCommitment = () => {
 
 interface ZKPRListener {
   logout: () => void;
-  identityChanged: (data: { idCommitment: string; provider: string }) => void;
+  identityChanged: (idCommitment: string) => void; // TODO: CK data to become: { idCommitment: string; provider: string }
 }
 
 export class ZKPR {
@@ -239,21 +238,25 @@ export class ZKPR {
 
   async getActiveIdentity(): Promise<string | null> {
     const id = await this.client.getActiveIdentity();
-    return hexlify(id);
+    console.log('client.getActiveIdentity id', id);
+    return id ? hexlify(id) : null;
   }
 
   async createIdentity(): Promise<void> {
-    return this.client.createIdentity();
+    await this.client.createIdentity();
   }
 
   async getActiveOrCreateIdentity(): Promise<string | null> {
     const id = await this.getActiveIdentity();
-    if (id) {
+    if (id !== null) {
       return id;
     } else {
       console.log('no active identity, creating one');
-      await this.createIdentity();
-      return await this.getActiveIdentity();
+      const _id = await this.createIdentity();
+      console.log({ _id });
+      const id = await this.getActiveIdentity();
+      console.log({ id });
+      return id;
     }
   }
 
