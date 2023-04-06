@@ -71,6 +71,7 @@ export const connectZKPR =
         });
 
         zkprClient.on('identityChanged', async idCommitment => {
+          // TODO: update once event data if { idCommitment, provider }
           dispatch(setIdCommitment(''));
 
           if (idCommitment) {
