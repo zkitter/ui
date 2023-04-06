@@ -1,4 +1,4 @@
-name: Code Quality
+name: Unit Tests
 on:
   push:
     branches:
@@ -6,7 +6,7 @@ on:
   pull_request:
 
 jobs:
-  format-lint-build:
+  test:
     runs-on: ubuntu-latest
 
     steps:
@@ -40,6 +40,5 @@ jobs:
       - name: Install dependencies
         run: pnpm i --ignore-scripts --shamefully-hoist # install a flat node_modules dir like npm https://pnpm.io/faq#solution-3
 
-      - name: Validate
-        run: pnpm run validate
-
+      - name: Test
+        run: pnpm run test
