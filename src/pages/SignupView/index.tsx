@@ -151,7 +151,12 @@ function AccountOptionsView(props: { setViewType: (v: ViewType) => void }): Reac
   const zkpr = useZKPR();
 
   useEffect(() => {
-    if (zkpr) selectOption('incognito');
+    if (zkpr) {
+      selectOption('incognito');
+    } else {
+      // if crypt keeper logout event
+      props.setViewType(ViewType.chooseWallet);
+    }
   }, [zkpr]);
 
   const onNext = useCallback(() => {

@@ -51,15 +51,6 @@ const initialState: State = {
   unlocking: false,
 };
 
-const defaultIdSelector = (state: AppRootState): string | null => {
-  const defaultId = state.worker?.identities?.[0];
-  return defaultId !== undefined
-    ? defaultId?.type === 'gun'
-      ? defaultId.publicKey
-      : defaultId?.identityCommitment
-    : null;
-};
-
 const setDefaultIdentity = (defaultId: string | null) => {
   postWorkerMessage(defaultId === null ? setIdentity(defaultId) : selectIdentity(defaultId));
 };
@@ -199,6 +190,15 @@ export default function zkpr(state = initialState, action: Action<any>): State {
       return state;
   }
 }
+
+const defaultIdSelector = (state: AppRootState): string | null => {
+  const defaultId = state.worker?.identities?.[0];
+  return defaultId !== undefined
+    ? defaultId?.type === 'gun'
+      ? defaultId.publicKey
+      : defaultId?.identityCommitment
+    : null;
+};
 
 export const useZKPRLoading = () => {
   return useSelector((state: AppRootState) => {
