@@ -122,7 +122,7 @@ describe('Users Duck', () => {
   it('should set followed', async () => {
     // @ts-ignore
     store.dispatch(setFollowed('0x002', '0xfollowhash'));
-    expect(store.getState().users.map['0x002'].meta.followed).toBe('0xfollowhash');
+    expect(store.getState().users.meta['0x002'].followed).toBe('0xfollowhash');
   });
 
   it('should reset', async () => {
