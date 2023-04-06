@@ -66,17 +66,13 @@ const setDefaultIdentity = (defaultId: string | null) => {
 
 export const connectZKPR =
   () => async (dispatch: ThunkDispatch<any, any, any>, getState: () => AppRootState) => {
-    console.log('connectZKPR');
     dispatch(setLoading(true));
 
     try {
       if (typeof window.zkpr !== 'undefined') {
-        console.log('ZKPR injected');
         const zkpr: any = window.zkpr;
         const client = await zkpr.connect();
         const zkprClient = new ZKPR(client);
-
-        console.log({ zkprClient });
 
         zkprClient.on('logout', async () => {
           dispatch(disconnectZKPR());
@@ -85,8 +81,6 @@ export const connectZKPR =
 
         zkprClient.on('identityChanged', async idCommitment => {
           dispatch(setIdCommitment(''));
-
-          console.log('identity changed', idCommitment);
 
           if (idCommitment) {
             idCommitment = idCommitment?.startsWith('0x') ? idCommitment : hexlify(idCommitment);
@@ -98,6 +92,7 @@ export const connectZKPR =
 
         localStorage.setItem('ZKPR_CACHED', '1');
         const idCommitment = await zkprClient.getActiveIdentity();
+
         if (idCommitment) {
           // no event fired on connect() so need to set it manually after getActiveIdentity() here
           dispatch(setIdCommitment(idCommitment));
@@ -241,26 +236,11 @@ export class ZKPR {
 
   async getActiveIdentity(): Promise<string | null> {
     const id = await this.client.getActiveIdentity();
-    console.log('client.getActiveIdentity id', id);
     return id ? hexlify(id) : null;
   }
 
   async createIdentity(): Promise<void> {
     await this.client.createIdentity();
-  }
-
-  async getActiveOrCreateIdentity(): Promise<string | null> {
-    const id = await this.getActiveIdentity();
-    if (id !== null) {
-      return id;
-    } else {
-      console.log('no active identity, creating one');
-      const _id = await this.createIdentity();
-      console.log({ _id });
-      const id = await this.getActiveIdentity();
-      console.log({ id });
-      return id;
-    }
   }
 
   async semaphoreProof(

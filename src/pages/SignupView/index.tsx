@@ -303,12 +303,8 @@ function ChooseWalletView(props: { setViewType: (v: ViewType) => void }): ReactE
 
   const connectKeeper = useCallback(async () => {
     disconnect();
-    const id: any = await dispatch(connectZKPR());
-    if (id) {
-      history.push('/');
-    } else {
-      history.push('/signup/interep');
-    }
+    await dispatch(connectZKPR());
+    props.setViewType(ViewType.accountOptions);
   }, []);
 
   useEffect(() => {
