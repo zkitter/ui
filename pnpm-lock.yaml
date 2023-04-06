@@ -294,6 +294,9 @@ devDependencies:
   image-webpack-loader:
     specifier: ^8.1.0
     version: 8.1.0
+  is-ci-cli:
+    specifier: ^2.2.0
+    version: 2.2.0
   jest:
     specifier: ^29.3.1
     version: 29.3.1(@types/node@18.11.13)(ts-node@10.9.1)
@@ -9795,6 +9798,15 @@ packages:
   /is-callable@1.2.7:
     resolution: {integrity: sha512-1BC0BVFhS/p0qtw6enp8e+8OD0UrK0oFLztSjNzhcKA3WDuJxxAPXzPuPtKkjEY9UUoEWlX/8fgKeu2S8i9JTA==}
     engines: {node: '>= 0.4'}
+
+  /is-ci-cli@2.2.0:
+    resolution: {integrity: sha512-Xg97ZGDzU0a9gPTAli+TNegMk+PI3x0KLRYCfBa2LAboF1YyuA03Gwdc9vpu3VRNU+lFFNkvXnIQuJ0PgB120Q==}
+    engines: {node: '>=8'}
+    hasBin: true
+    dependencies:
+      cross-spawn: 7.0.3
+      is-ci: 2.0.0
+    dev: true
 
   /is-ci@2.0.0:
     resolution: {integrity: sha512-YfJT7rkpQB0updsdHLGWrvhBJfcfzNNawYDNIyQXJz0IViGf75O8EBPKSdvw2rF+LGCsX4FZ8tcr3b19LcZq4w==}
