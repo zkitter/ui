@@ -84,9 +84,7 @@ export const connectZKPR =
           dispatch(setIdCommitment(''));
 
           if (idCommitment) {
-            // @ts-ignore
             dispatch(setIdCommitment(idCommitment));
-            // @ts-ignore
             const id: any = await maybeSetZKPRIdentity(idCommitment);
             if (!id) {
               const [defaultId] = identities;
@@ -229,6 +227,11 @@ export const useIdCommitment = () => {
   }, deepEqual);
 };
 
+interface ZKPRListener {
+  logout: () => void;
+  identityChanged: (data: { idCommitment: string; provider: string }) => void;
+}
+
 export class ZKPR {
   private client: any;
 
@@ -236,8 +239,8 @@ export class ZKPR {
     this.client = client;
   }
 
-  on(eventName: string, cb: (data: unknown) => void) {
-    return this.client.on(eventName, cb);
+  on<U extends keyof ZKPRListener>(event: U, listener: ZKPRListener[U]) {
+    return this.client.on(event, listener);
   }
 
   async getActiveIdentity(): Promise<string | null> {
