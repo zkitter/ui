@@ -8,15 +8,18 @@ import Editor from '@components/Editor';
 import { useLoggedIn } from '@ducks/web3';
 import { submitPost, useDraft, useSubmitting } from '@ducks/drafts';
 import InfiniteScrollable from '@components/InfiniteScrollable';
-import { Post as PostMessage } from '~/message';
+import { Post as PostMessage } from 'zkitter-js';
 import LocalBackupNotification from '@components/LocalBackupNotification';
 import { useSelectedLocalId } from '@ducks/worker';
 import { useThemeContext } from '@components/ThemeContext';
+import Icon from '@components/Icon';
+import SpinnerGIF from '#/icons/spinner.gif';
 
 export default function GlobalFeed(): ReactElement {
   const [limit, setLimit] = useState(20);
   const [offset, setOffset] = useState(0);
   const [order, setOrder] = useState<string[]>([]);
+  const [loading, setLoading] = useState(false);
   const dispatch = useDispatch();
   const selected = useSelectedLocalId();
   const theme = useThemeContext();
@@ -31,6 +34,7 @@ export default function GlobalFeed(): ReactElement {
 
   const fetchMore = useCallback(
     async (reset = false) => {
+      setLoading(true);
       if (reset) {
         const messageIds: any = await dispatch(fetchPosts(undefined, 20, 0));
         setOffset(20);
@@ -41,6 +45,7 @@ export default function GlobalFeed(): ReactElement {
         setOffset(offset + limit);
         setOrder(order.concat(messageIds));
       }
+      setLoading(false);
     },
     [limit, offset, order]
   );
@@ -76,6 +81,11 @@ export default function GlobalFeed(): ReactElement {
           />
         );
       })}
+      {loading && (
+        <div className="flex flex-row justify-center">
+          <Icon className="self-center my-4" url={SpinnerGIF} size={3} />
+        </div>
+      )}
     </InfiniteScrollable>
   );
 }

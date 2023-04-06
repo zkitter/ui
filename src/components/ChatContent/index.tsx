@@ -11,53 +11,66 @@ import React, {
 import classNames from 'classnames';
 import { useParams } from 'react-router';
 import InfiniteScrollable from '../InfiniteScrollable';
-import { useSelectedLocalId, useSelectedZKGroup } from '@ducks/worker';
+import { getZKGroupFromIdentity, useSelectedLocalId, useSelectedZKGroup } from '@ducks/worker';
 import Nickname from '../Nickname';
 import Avatar, { Username } from '../Avatar';
 import Textarea from '../Textarea';
-import { generateZkIdentityFromHex, sha256, signWithP256 } from '~/crypto';
 import { FromNow } from '../ChatMenu';
 import {
+  fetchChatMessages,
+  getChatById,
+  InflatedChat,
   setLastReadForChatId,
-  useChatId,
   useChatMessage,
   useMessagesByChatId,
-  zkchat,
 } from '@ducks/chats';
 import Icon from '../Icon';
 import SpinnerGIF from '#/icons/spinner.gif';
-import { findProof } from '~/merkle';
-import { Strategy, ZkIdentity } from '@zk-kit/identity';
-import { Chat } from '~/zkchat';
 import { useDispatch } from 'react-redux';
+import { fetchUserByECDH, useUserAddressByECDH } from '@ducks/users';
+import { ChatMessageSubType, MessageType, deriveSharedSecret, decrypt } from 'zkitter-js';
+import { useZkitter } from '@ducks/zkitter';
+import { deserializeZKIdentity, getECDHFromLocalIdentity } from '~/zk';
 
 export default function ChatContent(): ReactElement {
   const { chatId } = useParams<{ chatId: string }>();
   const messages = useMessagesByChatId(chatId);
-  const chat = useChatId(chatId);
-  const params = useParams<{ chatId: string }>();
+  const [chat, setChat] = useState<InflatedChat | null>(null);
   const dispatch = useDispatch();
 
   const loadMore = useCallback(async () => {
     if (!chat) return;
-    await zkchat.fetchMessagesByChat(chat);
-  }, [chat]);
+    dispatch(fetchChatMessages(chatId));
+  }, [chat, chatId]);
 
   useEffect(() => {
     loadMore();
-  }, [loadMore]);
+  }, [loadMore, chatId]);
 
   useEffect(() => {
     dispatch(setLastReadForChatId(chatId));
   }, [chatId, messages]);
+
+  useEffect(() => {
+    let unmounted = false;
+
+    (async () => {
+      const inflatedChat: any = await dispatch(getChatById(chatId));
+      if (!unmounted) setChat(inflatedChat as InflatedChat);
+    })();
+
+    return () => {
+      unmounted = true;
+    };
+  }, [chatId]);
 
   if (!chat) return <></>;
 
   return (
     <div
       className={classNames('chat-content', {
-        'chat-content--anon': chat?.senderHash,
-        'chat-content--chat-selected': params.chatId,
+        // 'chat-content--anon': chat?.senderSeed,
+        'chat-content--chat-selected': chatId,
       })}>
       <ChatHeader />
       <InfiniteScrollable
@@ -65,7 +78,7 @@ export default function ChatContent(): ReactElement {
         onScrolledToTop={loadMore}
         topOffset={128}>
         {messages.map(messageId => {
-          return <ChatMessageBubble key={messageId} messageId={messageId} chat={chat} />;
+          return <ChatMessageBubble key={messageId} messageId={messageId} chatId={chatId} />;
         })}
       </InfiniteScrollable>
       <ChatEditor />
@@ -75,30 +88,46 @@ export default function ChatContent(): ReactElement {
 
 function ChatHeader(): ReactElement {
   const { chatId } = useParams<{ chatId: string }>();
-  const chat = useChatId(chatId);
+  const [chat, setChat] = useState<InflatedChat | null>(null);
+  const dispatch = useDispatch();
+
+  useEffect(() => {
+    let unmounted = false;
+
+    (async () => {
+      const inflatedChat: any = await dispatch(getChatById(chatId));
+      if (!unmounted) setChat(inflatedChat as InflatedChat);
+    })();
+
+    return () => {
+      unmounted = true;
+    };
+  }, [chatId]);
 
   return (
     <div className="chat-content__header">
       <Avatar
+        key={chat?.receiverECDH}
         className="w-10 h-10"
-        address={chat?.receiver}
-        incognito={!chat?.receiver}
-        group={chat?.type === 'DIRECT' ? chat.group : undefined}
+        address={chat?.receiverAddress || ''}
+        incognito={!chat?.receiverAddress}
+        group={chat?.receiverGroupId}
       />
-      <div className="flex flex-col flex-grow flex-shrink ml-2">
+      <div className="flex flex-col flex-grow flex-shrink ml-2 justify-center">
         <Nickname
+          key={chat?.receiverECDH}
           className="font-bold"
-          address={chat?.receiver}
-          group={chat?.type === 'DIRECT' ? chat.group : undefined}
+          address={chat?.receiverAddress || ''}
+          group={chat?.receiverGroupId}
         />
         <div
           className={classNames('text-xs', {
             'text-gray-500': true,
           })}>
-          {chat?.receiver && (
+          {chat?.receiverAddress && (
             <>
               <span>@</span>
-              <Username address={chat?.receiver || ''} />
+              <Username address={chat.receiverAddress || ''} />
             </>
           )}
         </div>
@@ -112,57 +141,60 @@ function ChatEditor(): ReactElement {
   const { chatId } = useParams<{ chatId: string }>();
   const selected = useSelectedLocalId();
   const [content, setContent] = useState('');
-  const chat = useChatId(chatId);
   const [error, setError] = useState('');
   const [isSending, setSending] = useState(false);
   const zkGroup = useSelectedZKGroup();
+  const zkitter = useZkitter();
+  const [chat, setChat] = useState<InflatedChat | null>(null);
+  const dispatch = useDispatch();
+
+  useEffect(() => {
+    let unmounted = false;
+
+    (async () => {
+      const inflatedChat: any = await dispatch(getChatById(chatId));
+      if (!unmounted) setChat(inflatedChat as InflatedChat);
+    })();
+
+    return () => {
+      unmounted = true;
+    };
+  }, [chatId]);
 
   useEffect(() => {
     setContent('');
   }, [chatId]);
 
   const submitMessage = useCallback(async () => {
-    if (!chat || !content) return;
+    if (!chat || !content || !zkitter) return;
 
-    let signature = '';
-    let merkleProof, identitySecretHash;
+    let me;
 
     if (selected?.type === 'gun') {
-      signature = signWithP256(selected.privateKey, selected.address) + '.' + selected.address;
-      if (chat.senderHash) {
-        const zkseed = signWithP256(selected.privateKey, 'signing for zk identity - 0');
-        const zkHex = await sha256(zkseed);
-        const zkIdentity = await generateZkIdentityFromHex(zkHex);
-        merkleProof = await findProof(
-          'zksocial_all',
-          zkIdentity.genIdentityCommitment().toString(16)
-        );
-        identitySecretHash = zkIdentity.getSecretHash();
-      }
-    } else if (selected?.type === 'interrep') {
-      const { type, provider, name, identityCommitment, serializedIdentity } = selected;
-      const group = `${type}_${provider.toLowerCase()}_${name}`;
-      const zkIdentity = new ZkIdentity(Strategy.SERIALIZED, serializedIdentity);
-      merkleProof = await findProof(group, BigInt(identityCommitment).toString(16));
-      identitySecretHash = zkIdentity.getSecretHash();
-    } else if (selected?.type === 'taz') {
-      const { identityCommitment } = selected;
-      const group = `semaphore_taz_members`;
-      merkleProof = await findProof(group, BigInt(identityCommitment).toString(16));
+      me = await zkitter.authorize({
+        type: 'ecdsa',
+        address: selected.address,
+        privateKey: selected.privateKey,
+      });
+    } else if (selected?.type === 'interrep' || selected?.type === 'taz') {
+      const zkIdentity = deserializeZKIdentity(selected.serializedIdentity);
+      me = await zkitter.authorize({
+        type: 'zk',
+        zkIdentity: zkIdentity!,
+        groupId: getZKGroupFromIdentity(selected),
+      });
     }
 
-    await zkchat.sendDirectMessage(
-      chat,
-      content,
-      {
-        'X-SIGNED-ADDRESS': signature,
-      },
-      merkleProof,
-      identitySecretHash
-    );
+    if (me) {
+      await me.directMessage({
+        content,
+        ecdh: chat.receiverECDH,
+        seedOverride: selected?.type === 'gun' ? undefined : chat.senderSeed,
+      });
+    }
 
     setContent('');
-  }, [content, selected, chat]);
+  }, [content, selected, chat, zkitter]);
 
   const onClickSend = useCallback(async () => {
     setSending(true);
@@ -242,7 +274,7 @@ function ChatEditor(): ReactElement {
                 'opacity-50': isSending,
               })}
               address={selected?.address}
-              incognito={!!chat?.senderHash}
+              incognito={!!chat?.senderSeed}
               group={zkGroup}
             />
           )}
@@ -252,27 +284,83 @@ function ChatEditor(): ReactElement {
   );
 }
 
-function ChatMessageBubble(props: { messageId: string; chat: Chat }) {
+function ChatMessageBubble(props: { messageId: string; chatId: string }) {
+  const selected = useSelectedLocalId();
   const chatMessage = useChatMessage(props.messageId);
+  const [decrypted, setDecrypted] = useState('');
+  const [isSelf, setSelf] = useState(false);
+  const [chat, setChat] = useState<InflatedChat | null>(null);
+  const dispatch = useDispatch();
+  const receiverAddress = useUserAddressByECDH(chat?.receiverECDH);
+  const senderAddress = useUserAddressByECDH(chat?.senderECDH);
 
-  if (chatMessage?.type !== 'DIRECT') return <></>;
+  useEffect(() => {
+    let unmounted = false;
+
+    (async () => {
+      const inflatedChat: any = await dispatch(getChatById(props.chatId));
+      if (!unmounted) setChat(inflatedChat as InflatedChat);
+    })();
+
+    return () => {
+      unmounted = true;
+    };
+  }, [props.chatId]);
+
+  useEffect(() => {
+    if (chatMessage?.type !== MessageType.Chat) return;
+    if (chatMessage?.subtype !== ChatMessageSubType.Direct) return;
+
+    const {
+      payload: { senderSeed, senderECDH, receiverECDH, content, encryptedContent },
+    } = chatMessage;
+
+    (async () => {
+      if (typeof content !== 'undefined') {
+        setDecrypted(content);
+      }
+
+      let myECDH;
+
+      if (selected?.type === 'gun') {
+        myECDH = await getECDHFromLocalIdentity(selected);
+      } else if (selected?.type === 'interrep' || selected?.type === 'taz') {
+        const isSenderAnon = !senderAddress;
+        const seed = isSenderAnon ? receiverAddress : senderSeed;
+        myECDH = await getECDHFromLocalIdentity(selected, seed);
+      }
+
+      if (myECDH) {
+        const rECDH = myECDH.pub === senderECDH ? receiverECDH : senderECDH;
+        setSelf(myECDH.pub === senderECDH);
+
+        if (typeof content === 'undefined') {
+          const sharedKey = deriveSharedSecret(rECDH, myECDH.priv);
+          setDecrypted(decrypt(encryptedContent, sharedKey));
+        }
+      }
+    })();
+  }, [selected, senderAddress, receiverAddress, chatMessage]);
+
+  if (chatMessage?.type !== MessageType.Chat) return <></>;
+  if (chatMessage?.subtype !== ChatMessageSubType.Direct) return <></>;
 
   return (
     <div
-      key={chatMessage.messageId}
+      key={chatMessage.hash()}
       className={classNames('chat-message', {
-        'chat-message--self': chatMessage.sender.ecdh === props.chat.senderECDH,
-        'chat-message--anon': chatMessage.sender.hash,
+        'chat-message--self': isSelf,
+        // 'chat-message--anon': senderSeed,
       })}>
       <div
         className={classNames('chat-message__content text-light', {
-          'italic opacity-70': chatMessage.encryptionError,
+          'italic opacity-70': typeof decrypted === 'undefined',
         })}>
-        {chatMessage.encryptionError ? 'Cannot decrypt message' : chatMessage.content}
+        {typeof decrypted === 'undefined' ? 'Cannot decrypt message' : decrypted}
       </div>
       <FromNow
         className="chat-message__time text-xs mt-2 text-gray-700"
-        timestamp={chatMessage.timestamp}
+        timestamp={chatMessage.createdAt}
       />
     </div>
   );

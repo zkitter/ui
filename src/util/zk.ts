@@ -14,36 +14,32 @@ import { ZKPR } from '@ducks/zkpr';
 import { getEpoch } from './zkchat';
 import { sha256 } from './crypto';
 import { findProof } from './merkle';
-import { Identity } from '@semaphore-protocol/identity';
-// eslint-disable-next-line import/no-unresolved
-import { SerializedIdentity } from '@zk-kit/identity/src/types';
+import { safeJsonParse } from '~/misc';
+import { Identity } from '../serviceWorkers/identity';
+import {
+  decrypt,
+  deriveSharedSecret,
+  generateECDHKeyPairFromZKIdentity,
+  generateECDHWithP256,
+} from 'zkitter-js';
 
 export const generateRLNProof =
   (signalString: string) =>
   async (dispatch: Dispatch, getState: () => AppRootState): Promise<RLNFullProof | null> => {
     const state = getState();
     const { selected } = state.worker;
-    const { zkpr } = state.zkpr;
 
     switch (selected?.type) {
       case 'interrep':
         return generateRLNProofFromLocalIdentity(
           signalString,
-          new ZkIdentity(Strategy.SERIALIZED, selected.serializedIdentity),
+          deserializeZKIdentity(selected.serializedIdentity)!,
           `interrep_${selected.provider.toLowerCase()}_${selected.name}`
         );
       case 'taz':
-        const zkIdentity = new Identity(selected.serializedIdentity);
-        const identityTrapdoor = zkIdentity.getTrapdoor();
-        const identityNullifier = zkIdentity.getNullifier();
-        const data: SerializedIdentity = {
-          identityTrapdoor: identityTrapdoor.toString(16),
-          identityNullifier: identityNullifier.toString(16),
-          secret: [identityNullifier, identityTrapdoor].map(item => item.toString(16)),
-        };
         return generateRLNProofFromLocalIdentity(
           signalString,
-          new ZkIdentity(Strategy.SERIALIZED, JSON.stringify(data)),
+          deserializeZKIdentity(selected.serializedIdentity)!,
           `semaphore_taz_members`
         );
       // case "zkpr_interrep":
@@ -138,4 +134,41 @@ export const generateRLNProofFromLocalIdentity = async (
     x_share: xShare.toString(),
     epoch,
   };
+};
+
+export const deserializeZKIdentity = (serializedIdentity: string): ZkIdentity | null => {
+  const parsed = safeJsonParse(serializedIdentity);
+
+  let zkIdentity = null;
+
+  if (parsed?.identityNullifier && parsed?.identityTrapdoor && parsed?.secret.length) {
+    zkIdentity = new ZkIdentity(Strategy.SERIALIZED, serializedIdentity);
+  } else if (parsed?.length === 2) {
+    zkIdentity = new ZkIdentity(
+      Strategy.SERIALIZED,
+      JSON.stringify({
+        identityNullifier: parsed[1],
+        identityTrapdoor: parsed[0],
+        secret: [parsed[1], parsed[0]],
+      })
+    );
+  }
+
+  return zkIdentity;
+};
+
+export const getECDHFromLocalIdentity = async (
+  identity: Identity,
+  seed?: number | string
+): Promise<{ pub: string; priv: string } | null> => {
+  if (identity.type === 'gun') {
+    return generateECDHWithP256(identity.privateKey, 0);
+  } else if (identity.type === 'interrep' || identity.type === 'taz') {
+    return generateECDHKeyPairFromZKIdentity(
+      deserializeZKIdentity(identity.serializedIdentity)!,
+      seed
+    );
+  }
+
+  return null;
 };

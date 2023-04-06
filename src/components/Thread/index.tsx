@@ -3,7 +3,7 @@ import { useDispatch } from 'react-redux';
 import { fetchReplies, useGoToPost, useMeta } from '@ducks/posts';
 import classNames from 'classnames';
 import Post from '../Post';
-import { Post as PostMessage } from '~/message';
+import { Post as PostMessage } from 'zkitter-js';
 import { usePostModeration } from '@ducks/mods';
 import { useThemeContext } from '../ThemeContext';
 

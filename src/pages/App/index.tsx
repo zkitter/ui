@@ -18,7 +18,7 @@ import { loginUser } from '~/user';
 import SettingView from '../SettingView';
 import MetaPanel from '@components/MetaPanel';
 import ChatView from '../ChatView';
-import { fetchUnreads, zkchat } from '@ducks/chats';
+import { fetchChats, fetchUnreads } from '@ducks/chats';
 import {
   generateECDHKeyPairFromhex,
   generateZkIdentityFromHex,
@@ -26,7 +26,6 @@ import {
   signWithP256,
 } from '~/crypto';
 import { Strategy, ZkIdentity } from '@zk-kit/identity';
-import sse from '~/sse';
 import ThemeContext from '@components/ThemeContext';
 import classNames from 'classnames';
 import { Identity } from '@semaphore-protocol/identity';
@@ -34,6 +33,10 @@ import TazModal from '@components/TazModal';
 import NotificationView from '../NotificationView';
 import { updateNotifications } from '@ducks/app';
 import SearchResultsView from '../SearchResultsView';
+import { initZkitter, updateFilter } from '@ducks/zkitter';
+import { postWorkerMessage } from '~/sw';
+import { setIdentity } from '../../serviceWorkers/util';
+import { findProof } from '~/merkle';
 
 export default function App(): ReactElement {
   const dispatch = useDispatch();
@@ -70,59 +73,21 @@ export default function App(): ReactElement {
       if (id) {
         await loginUser(id);
       }
+
+      await dispatch(initZkitter());
     })();
   }, []);
 
   useEffect(() => {
-    if (selected?.type === 'gun') {
-      (async () => {
-        const ecdhseed = await signWithP256(selected.privateKey, 'signing for ecdh - 0');
-        const zkseed = await signWithP256(selected.privateKey, 'signing for zk identity - 0');
-        const ecdhHex = await sha256(ecdhseed);
-        const zkHex = await sha256(zkseed);
-        const keyPair = await generateECDHKeyPairFromhex(ecdhHex);
-        const zkIdentity = await generateZkIdentityFromHex(zkHex);
-        await sse.updateTopics([`ecdh:${keyPair.pub}`]);
-        await zkchat.importIdentity({
-          address: selected.address,
-          zk: zkIdentity,
-          ecdh: keyPair,
-        });
-        await dispatch(fetchUnreads());
+    (async () => {
+      if (selected?.type === 'gun') {
         await dispatch(updateNotifications());
-      })();
-    } else if (selected?.type === 'interrep') {
-      (async () => {
-        const zkIdentity = new ZkIdentity(Strategy.SERIALIZED, selected.serializedIdentity);
-        const ecdhseed = await sha256(
-          zkIdentity
-            .getSecret()
-            .map(d => d.toString())
-            .join()
-        );
-        const ecdhHex = await sha256(ecdhseed);
-        const keyPair = await generateECDHKeyPairFromhex(ecdhHex);
-        await zkchat.importIdentity({
-          address: selected?.identityCommitment,
-          zk: zkIdentity,
-          ecdh: keyPair,
-        });
-        await dispatch(fetchUnreads());
-      })();
-    } else if (selected?.type === 'taz') {
-      (async () => {
-        const zkIdentity = new Identity(selected.serializedIdentity);
-        const ecdhseed = await sha256(selected.serializedIdentity);
-        const ecdhHex = await sha256(ecdhseed);
-        const keyPair = await generateECDHKeyPairFromhex(ecdhHex);
-        await zkchat.importIdentity({
-          address: selected?.identityCommitment,
-          zk: zkIdentity,
-          ecdh: keyPair,
-        });
-        await dispatch(fetchUnreads());
-      })();
-    }
+        await dispatch(updateFilter());
+      }
+
+      await dispatch(fetchUnreads());
+      await dispatch(fetchChats());
+    })();
   }, [selected]);
 
   useEffect(() => {

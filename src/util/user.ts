@@ -1,6 +1,5 @@
 import { getUser, resetUser, User } from '@ducks/users';
 import { Identity } from '../serviceWorkers/identity';
-import { authenticateGun } from './gun';
 import { postWorkerMessage } from './sw';
 import { selectIdentity } from '../serviceWorkers/util';
 import store, { AppRootState } from '../store/configureAppStore';
@@ -11,7 +10,7 @@ import {
   signWithP256,
 } from './crypto';
 import { submitProfile } from '@ducks/drafts';
-import { ProfileMessageSubType } from './message';
+import { ProfileMessageSubType } from 'zkitter-js';
 
 export const ellipsify = (str: string, start = 6, end = 4) => {
   return str.slice(0, start) + '...' + str.slice(-end);
@@ -42,13 +41,7 @@ export const getHandle = (user?: User | null, start = 6, end = 4): string => {
 
 export async function loginUser(id: Identity | null) {
   if (id?.type === 'gun') {
-    const decrypted: any = await postWorkerMessage(selectIdentity(id.publicKey));
-    if (decrypted) {
-      authenticateGun({
-        pub: decrypted.publicKey,
-        priv: decrypted.privateKey,
-      });
-    }
+    await postWorkerMessage(selectIdentity(id.publicKey));
     await checkChat();
   }
 
@@ -71,29 +64,26 @@ async function checkChat() {
   let selectedUser = map[selected?.address];
 
   if (!selectedUser) {
-    // @ts-ignore
-    selectedUser = await store.dispatch(getUser(selected?.address));
+    selectedUser = await store.dispatch(getUser(selected?.address) as any);
   }
 
-  (async () => {
-    if (!selectedUser.ecdh) {
-      const ecdhseed = await signWithP256(selected.privateKey, 'signing for ecdh - 0');
-      const ecdhHex = await sha256(ecdhseed);
-      const keyPair = await generateECDHKeyPairFromhex(ecdhHex);
-      const ecdhPub = keyPair.pub;
-      // @ts-ignore
-      await store.dispatch(submitProfile(ProfileMessageSubType.Custom, ecdhPub, 'ecdh_pubkey'));
-    }
+  if (!selectedUser.ecdh) {
+    const ecdhseed = await signWithP256(selected.privateKey, 'signing for ecdh - 0');
+    const ecdhHex = await sha256(ecdhseed);
+    const keyPair = await generateECDHKeyPairFromhex(ecdhHex);
+    const ecdhPub = keyPair.pub;
+    await store.dispatch(
+      submitProfile(ProfileMessageSubType.Custom, ecdhPub, 'ecdh_pubkey') as any
+    );
+  }
 
-    if (!selectedUser.idcommitment) {
-      const zkseed = await signWithP256(selected.privateKey, 'signing for zk identity - 0');
-      const zkHex = await sha256(zkseed);
-      const zkIdentity = await generateZkIdentityFromHex(zkHex);
-      const idcommitment = zkIdentity.genIdentityCommitment().toString(16);
-      await store.dispatch(
-        // @ts-ignore
-        submitProfile(ProfileMessageSubType.Custom, idcommitment, 'id_commitment')
-      );
-    }
-  })();
+  if (!selectedUser.idcommitment) {
+    const zkseed = await signWithP256(selected.privateKey, 'signing for zk identity - 0');
+    const zkHex = await sha256(zkseed);
+    const zkIdentity = await generateZkIdentityFromHex(zkHex);
+    const idcommitment = zkIdentity.genIdentityCommitment().toString(16);
+    await store.dispatch(
+      submitProfile(ProfileMessageSubType.Custom, idcommitment, 'id_commitment') as any
+    );
+  }
 }

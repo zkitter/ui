@@ -23,7 +23,7 @@ import { useHistory } from 'react-router';
 import Checkbox from '../Checkbox';
 import { getSession, verifyTweet } from '~/twitter';
 import ModerationButton from '../ModerationButton';
-import { ModerationMessageSubType } from '~/message';
+import { ModerationMessageSubType } from 'zkitter-js';
 import { usePostModeration } from '@ducks/mods';
 import { useCommentDisabled, useMeta } from '@ducks/posts';
 import Menuable from '../Menuable';
@@ -75,6 +75,8 @@ export default function Editor(props: Props): ReactElement {
   });
 
   useEffect(() => {
+    let unmounted = false;
+
     (async function () {
       setVerified(false);
       setVerifiedSession('');
@@ -88,7 +90,7 @@ export default function Editor(props: Props): ReactElement {
       try {
         session = await getSession(selectedId);
 
-        if (session) {
+        if (session && !unmounted) {
           setVerifiedSession(session.username);
           dispatch(setMirror(!!localStorage.getItem(`${session.username}_should_mirror`)));
         }
@@ -97,11 +99,15 @@ export default function Editor(props: Props): ReactElement {
       }
 
       if (await verifyTweet(user?.address, user?.twitterVerification, session?.username)) {
-        setVerified(true);
+        if (!unmounted) setVerified(true);
       }
 
-      setVerifying(false);
+      if (!unmounted) setVerifying(false);
     })();
+
+    return () => {
+      unmounted = true;
+    };
   }, [selectedId, user]);
 
   const onChange = useCallback(

@@ -6,7 +6,7 @@ import { useHistory } from 'react-router';
 import { convertMarkdownToDraft, DraftEditor } from '../DraftEditor';
 import { useMeta, usePost, useZKGroupFromPost } from '@ducks/posts';
 import { useUser } from '@ducks/users';
-import { MessageType, PostMessageSubType } from '~/message';
+import { MessageType, PostMessageSubType } from 'zkitter-js';
 import { getHandle, getUsername } from '~/user';
 import { useThemeContext } from '../ThemeContext';
 

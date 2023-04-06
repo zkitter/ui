@@ -14,7 +14,6 @@ import Avatar, { Username } from '../Avatar';
 import Icon from '../Icon';
 import Menuable, { ItemProps } from '../Menuable';
 import SpinnerGIF from '#/icons/spinner.gif';
-import gun from '~/gun';
 import { useHistory } from 'react-router';
 import { getHandle, loginUser } from '~/user';
 import {
@@ -54,6 +53,8 @@ export default function Web3Button(props: Props): ReactElement {
   const history = useHistory();
 
   useEffect(() => {
+    let unmounted = false;
+
     (async () => {
       if (!identities.length) {
         if (!account) return;
@@ -66,10 +67,14 @@ export default function Web3Button(props: Props): ReactElement {
         if (id?.type !== 'zkpr_interrep' && id?.type !== 'taz') {
           setEnsName('');
           const ens = await fetchNameByAddress(id.address);
-          setEnsName(ens);
+          if (!unmounted) setEnsName(ens);
         }
       }
     })();
+
+    return () => {
+      unmounted = true;
+    };
   }, [account, identities, selectedLocalId]);
 
   let btnContent;
@@ -209,11 +214,6 @@ function UserMenuable(props: {
 
   const logout = useCallback(async () => {
     setOpened(false);
-
-    // @ts-ignore
-    if (gun.user().is) {
-      gun.user().leave();
-    }
 
     await dispatch(
       setSemaphoreID({

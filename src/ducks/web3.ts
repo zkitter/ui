@@ -6,7 +6,6 @@ import { ThunkDispatch } from 'redux-thunk';
 import { Dispatch } from 'redux';
 import { generateGunKeyPairFromHex, generateZkIdentityFromHex } from '~/crypto';
 import { defaultWeb3, fetchNameByAddress } from '~/web3';
-import gun, { authenticateGun } from '~/gun';
 import config from '~/config';
 import { getUser } from './users';
 import { getIdentityHash } from '~/arb3';
@@ -274,13 +273,6 @@ export const setWeb3 =
     web3.currentProvider.on('accountsChanged', async ([acct]) => {
       dispatch(reset());
       dispatch(setWeb3Loading(true));
-      const gunUser = gun.user();
-
-      // @ts-ignore
-      if (gunUser.is) {
-        gunUser.leave();
-      }
-
       await dispatch(refreshAccount());
       dispatch(setWeb3Loading(false));
     });
@@ -311,7 +303,6 @@ export const loginGun =
           nonce: nonce,
         })
       );
-      authenticateGun(result as any);
       dispatch(setUnlocking(false));
       return result;
     } catch (e) {

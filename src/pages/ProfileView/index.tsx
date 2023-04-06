@@ -24,7 +24,7 @@ import Input from '@components/Input';
 import Textarea from '@components/Textarea';
 import deepEqual from 'fast-deep-equal';
 import { removeMessage, submitConnection, submitProfile } from '@ducks/drafts';
-import { ConnectionMessageSubType, ProfileMessageSubType } from '~/message';
+import { ConnectionMessageSubType, ProfileMessageSubType, parseMessageId } from 'zkitter-js';
 import Avatar from '@components/Avatar';
 import EtherScanSVG from '#/icons/etherscan-logo-gray-500.svg';
 import InfiniteScrollable from '@components/InfiniteScrollable';
@@ -88,7 +88,9 @@ export default function ProfileView(): ReactElement {
         setOrder(messageIds);
       } else {
         if (order.length % limit) return;
-        const messageIds: any = await dispatch(fetchFn(username, limit, offset));
+        const last = order[order.length - 1];
+        const { hash } = parseMessageId(last || '');
+        const messageIds: any = await dispatch(fetchFn(username, limit, offset, hash));
         setOffset(offset + limit);
         setOrder(order.concat(messageIds));
       }

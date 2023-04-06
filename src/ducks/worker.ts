@@ -132,16 +132,16 @@ export const useSelectedLocalId = () => {
   }, deepEqual);
 };
 
-export const getZKGroupFromIdentity = (id: Identity) => {
-  if (id?.type !== 'interrep' && id?.type !== 'zkpr_interrep' && id?.type !== 'taz') {
-    return null;
-  }
-
+export const getZKGroupFromIdentity = (id: Identity): string => {
   if (id?.type === 'taz') {
     return 'semaphore_taz_members';
   }
 
-  return `interrep_${id.provider.toLowerCase()}_${id.name.toLowerCase()}`;
+  if (id?.type === 'interrep') {
+    return `interrep_${id.provider.toLowerCase()}_${id.name.toLowerCase()}`;
+  }
+
+  return '';
 };
 
 export const useSelectedZKGroup = () => {

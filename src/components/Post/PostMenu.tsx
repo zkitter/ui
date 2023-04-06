@@ -13,7 +13,7 @@ import {
   MessageType,
   ModerationMessageSubType,
   PostMessageSubType,
-} from '~/message';
+} from 'zkitter-js';
 import { getName } from '~/user';
 
 import Icon from '../Icon';

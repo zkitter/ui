@@ -30,12 +30,18 @@ export function Username(props: { address?: string }): ReactElement {
   const { address = '' } = props;
 
   useEffect(() => {
+    let unmounted = false;
+
     (async () => {
       setEnsName('');
       if (!address) return;
       const ens = await fetchNameByAddress(address);
-      setEnsName(ens);
+      if (!unmounted) setEnsName(ens);
     })();
+
+    return () => {
+      unmounted = true;
+    };
   }, [address]);
 
   return <>{ensName ? ensName : ellipsify(address)}</>;
@@ -53,6 +59,8 @@ export default function Avatar(props: Props): ReactElement {
   const user = useUser(username);
 
   useEffect(() => {
+    let unmounted = false;
+
     (async () => {
       if (groupName) {
         setUsername(groupName);
@@ -61,16 +69,20 @@ export default function Avatar(props: Props): ReactElement {
 
       if (name && !Web3.utils.isAddress(name)) {
         const addr: any = await dispatch(fetchAddressByName(name));
-        setUsername(addr);
+        if (!unmounted) setUsername(addr);
       } else if (address) {
         setUsername(address);
       }
     })();
+
+    return () => {
+      unmounted = true;
+    };
   }, [name, address, groupName]);
 
   useEffect(() => {
     if (username && !user) {
-      dispatch(getUser(username));
+      setTimeout(() => dispatch(getUser(username)), 0);
     }
   }, [username, user]);
 
