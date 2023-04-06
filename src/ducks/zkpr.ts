@@ -43,13 +43,17 @@ const initialState: State = {
   unlocking: false,
 };
 
-const identitiesSelector = (state: AppRootState) => state.worker.identities;
+const defaultIdSelector = (state: AppRootState): string | null => {
+  const defaultId = state.worker?.identities?.[0];
+  return defaultId !== undefined
+    ? defaultId?.type === 'gun'
+      ? defaultId.publicKey
+      : defaultId?.identityCommitment
+    : null;
+};
 
-const setDefaultIdentity = (defaultId: Identity) => {
-  const message = defaultId
-    ? selectIdentity(defaultId.type === 'gun' ? defaultId.publicKey : defaultId.identityCommitment)
-    : setIdentity(null);
-  postWorkerMessage(message);
+const setDefaultIdentity = (defaultId: string | null) => {
+  postWorkerMessage(defaultId === null ? setIdentity(defaultId) : selectIdentity(defaultId));
 };
 
 export const connectZKPR =
@@ -67,32 +71,27 @@ export const connectZKPR =
         const zkprClient = new ZKPR(client);
 
         zkprClient.on('logout', async () => {
-          const identities = identitiesSelector(getState());
           dispatch(disconnectZKPR());
-          const [defaultId] = identities;
-          setDefaultIdentity(defaultId);
+          setDefaultIdentity(defaultIdSelector(getState()));
         });
 
-        zkprClient.on('identityChanged', async data => {
+        zkprClient.on('identityChanged', async ({ idCommitment: id }) => {
           dispatch(setIdCommitment(''));
 
-          console.log('identity changed', data);
-          const idCommitment: string = data && BigInt('0x' + data).toString();
-          const identities = identitiesSelector(getState());
+          console.log('identity changed', id);
+          const idCommitment = id?.startsWith('0x') ? id : hexlify(id);
 
           if (idCommitment) {
             dispatch(setIdCommitment(idCommitment));
             const id: any = await maybeSetZKPRIdentity(idCommitment);
-            if (!id) {
-              const [defaultId] = identities;
-              setDefaultIdentity(defaultId);
-            }
+            if (!id) setDefaultIdentity(defaultIdSelector(getState()));
           }
         });
 
         localStorage.setItem('ZKPR_CACHED', '1');
 
         const idCommitment = await zkprClient.getActiveOrCreateIdentity();
+        console.log({ idCommitment });
 
         if (idCommitment) {
           dispatch(setIdCommitment(idCommitment));
@@ -102,6 +101,7 @@ export const connectZKPR =
         dispatch(setZKPR(zkprClient));
       }
 
+      console.log('ZKPR  not loaded');
       dispatch(setLoading(false));
 
       return id;
@@ -245,6 +245,7 @@ export class ZKPR {
     if (id) {
       return id;
     } else {
+      console.log('no active identity, creating one');
       await this.createIdentity();
       return await this.getActiveIdentity();
     }
