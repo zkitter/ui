@@ -64,15 +64,7 @@ export const connectZKPR =
           dispatch(disconnectZKPR());
 
           const [defaultId] = identities;
-          if (defaultId) {
-            postWorkerMessage(
-              selectIdentity(
-                defaultId.type === 'gun' ? defaultId.publicKey : defaultId.identityCommitment
-              )
-            );
-          } else {
-            postWorkerMessage(setIdentity(null));
-          }
+          setDefaultIdentity(defaultId);
         });
 
         zkprClient.on('identityChanged', async data => {
@@ -88,15 +80,7 @@ export const connectZKPR =
             const id: any = await maybeSetZKPRIdentity(idCommitment);
             if (!id) {
               const [defaultId] = identities;
-              if (defaultId) {
-                postWorkerMessage(
-                  selectIdentity(
-                    defaultId.type === 'gun' ? defaultId.publicKey : defaultId.identityCommitment
-                  )
-                );
-              } else {
-                postWorkerMessage(setIdentity(null));
-              }
+              setDefaultIdentity(defaultId);
             }
           }
         });
