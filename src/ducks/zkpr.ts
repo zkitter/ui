@@ -42,6 +42,15 @@ const initialState: State = {
   unlocking: false,
 };
 
+const identitiesSelector = (state: AppRootState) => state.worker.identities;
+
+const setDefaultIdentity = (defaultId: Identity) => {
+  const message = defaultId
+    ? selectIdentity(defaultId.type === 'gun' ? defaultId.publicKey : defaultId.identityCommitment)
+    : setIdentity(null);
+  postWorkerMessage(message);
+};
+
 export const connectZKPR =
   () => async (dispatch: ThunkDispatch<any, any, any>, getState: () => AppRootState) => {
     dispatch(setLoading(true));
@@ -56,24 +65,19 @@ export const connectZKPR =
         const client = await zkpr.connect();
         const zkprClient = new ZKPR(client);
 
-        zkprClient.on('logout', async data => {
-          const {
-            worker: { selected, identities },
-          } = getState();
-
+        zkprClient.on('logout', async () => {
+          const identities = identitiesSelector(getState());
           dispatch(disconnectZKPR());
-
           const [defaultId] = identities;
           setDefaultIdentity(defaultId);
         });
 
         zkprClient.on('identityChanged', async data => {
-          const idCommitment = data && BigInt('0x' + data).toString();
-          const {
-            worker: { identities },
-          } = getState();
-
           dispatch(setIdCommitment(''));
+
+          console.log('identity changed', data);
+          const idCommitment: string = data && BigInt('0x' + data).toString();
+          const identities = identitiesSelector(getState());
 
           if (idCommitment) {
             dispatch(setIdCommitment(idCommitment));
