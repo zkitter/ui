@@ -128,7 +128,10 @@ export const createZKPRIdentity =
 
 export async function maybeSetZKPRIdentity(idCommitment: string) {
   let id: Identity | null = null;
-  const data = await checkPath(idCommitment);
+  const data = await checkPath(idCommitment).catch(err => {
+    console.error(err);
+    return null;
+  });
 
   if (data) {
     id = {
