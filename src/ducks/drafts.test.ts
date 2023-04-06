@@ -3,6 +3,7 @@ import { createEditorStateWithText } from '@draft-js-plugins/editor';
 import { ZkIdentity } from '@zk-kit/identity';
 import { setPostingGroup } from '@ducks/worker';
 import { PostMessageSubType } from '~/message';
+import { setIdentity } from '../serviceWorkers/util';
 
 const {
   setMirror,
@@ -25,7 +26,16 @@ describe('Drafts Duck', () => {
     expect(store.getState().drafts).toStrictEqual({ map: {}, mirror: false, submitting: false });
   });
 
-  it('should submit post', async () => {
+  it('should submit a mirrored post', async () => {
+    store.dispatch(
+      setSelectedId({
+        type: 'gun',
+        address: '0xgunaddress',
+        nonce: 0,
+        publicKey: '0xpub',
+        privateKey: '0xpriv',
+      })
+    );
     store.dispatch(
       setDraft({
         reference: '',
@@ -33,6 +43,12 @@ describe('Drafts Duck', () => {
       })
     );
     store.dispatch(setMirror(true));
+    fetchStub.returns(
+      // @ts-ignore
+      Promise.resolve({
+        json: async () => ({ payload: 'https://twitter.com/foo/status/123' }),
+      })
+    );
     // @ts-ignore
     const post: any = await store.dispatch(submitPost(''));
     expect(post.payload).toStrictEqual({
@@ -40,7 +56,7 @@ describe('Drafts Duck', () => {
       content: 'hello world!',
       reference: '',
       title: '',
-      topic: 'ok',
+      topic: 'https://twitter.com/foo/status/123',
     });
     expect(fetchStub.args[0]).toStrictEqual([
       'http://127.0.0.1:3000/twitter/update',
@@ -63,6 +79,12 @@ describe('Drafts Duck', () => {
     );
     store.dispatch(setMirror(true));
     store.dispatch(setPostingGroup('zksocial_all'));
+    fetchStub.returns(
+      // @ts-ignore
+      Promise.resolve({
+        json: async () => ({ payload: { data: {} } }),
+      })
+    );
     // @ts-ignore
     const post: any = await store.dispatch(submitPost(''));
     expect(post.payload).toStrictEqual({
@@ -70,7 +92,7 @@ describe('Drafts Duck', () => {
       content: 'hello world!',
       reference: '',
       title: '',
-      topic: 'ok',
+      topic: '',
     });
     expect(post.subtype).not.toStrictEqual(PostMessageSubType.MirrorPost);
   });
