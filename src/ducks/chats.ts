@@ -1,41 +1,15 @@
 import { Dispatch } from 'redux';
-import store, { AppRootState } from '../store/configureAppStore';
+import { AppRootState } from '../store/configureAppStore';
 import { useSelector } from 'react-redux';
 import deepEqual from 'fast-deep-equal';
-import { Chat as ChatMessage, Zkitter } from 'zkitter-js';
+import { Chat as ChatMessage, generateECDHKeyPairFromZKIdentity, Zkitter } from 'zkitter-js';
 import { ChatMeta } from 'zkitter-js/dist/src/models/chats';
-import { ZkIdentity } from '@zk-kit/identity';
-import { deserializeZKIdentity } from '~/zk';
+import { deserializeZKIdentity, getECDHFromLocalIdentity } from '~/zk';
 import { hexify } from '~/format';
 import { waitForSync } from '@ducks/zkitter';
 import { getZKGroupFromIdentity } from '@ducks/worker';
-
-// sse.on('NEW_CHAT_MESSAGE', async (payload: any) => {
-//   const message = await zkchat.inflateMessage(payload);
-//   zkchat.prependMessage(message);
-//   const chat: Chat = {
-//     type: 'DIRECT',
-//     receiver: '',
-//     receiverECDH: message.receiver.ecdh!,
-//     senderECDH: message.sender.ecdh!,
-//     senderHash: message.sender.hash,
-//   };
-//   const chatId = zkchat.deriveChatId(chat);
-//   // @ts-ignore
-//   store.dispatch(incrementUnreadForChatId(chatId));
-// });
-
-const onNewMessage = (message: any) => {
-  // const { receiver, sender } = message;
-  // const chatId = zkchat.deriveChatId({
-  //   type: 'DIRECT',
-  //   receiver: '',
-  //   receiverECDH: receiver.ecdh!,
-  //   senderECDH: sender.ecdh!,
-  // });
-  // store.dispatch(setMessage(message));
-  // store.dispatch(setMessagesForChat(chatId, zkchat.activeChats[chatId].messages));
-};
+import { fetchUserByECDH } from '@ducks/users';
+import { ThunkDispatch } from 'redux-thunk';
 
 enum ActionTypes {
   SET_CHATS = 'chats/setChats',
@@ -44,6 +18,8 @@ enum ActionTypes {
   ADD_CHAT = 'chats/addChat',
   SET_MESSAGE = 'chats/SET_MESSAGE',
   SET_UNREAD = 'chats/SET_UNREAD',
+  UPDATE_RECEIVER_META = 'chats/updateReceiverMeta',
+  UPDATE_SENDER_META = 'chats/updateSenderMeta',
 }
 
 type Action<payload> = {
@@ -70,6 +46,10 @@ type State = {
 
 export type InflatedChat = ChatMeta & {
   messages: string[];
+  receiverAddress?: string;
+  receiverGroupId?: string;
+  senderAddress?: string;
+  senderGroupId?: string;
 };
 
 const initialState: State = {
@@ -86,14 +66,53 @@ export const setChats = (chats: ChatMeta[]): Action<ChatMeta[]> => ({
   payload: chats,
 });
 
-export const addChat = (chat: ChatMeta): Action<ChatMeta> => ({
-  type: ActionTypes.ADD_CHAT,
-  payload: chat,
-});
+export const addChat =
+  (chat: ChatMeta) => async (dispatch: Dispatch, getState: () => AppRootState) => {
+    const {
+      zkitter: { client: _client },
+    } = getState();
+
+    let client = _client || (await waitForSync);
+
+    dispatch({
+      type: ActionTypes.ADD_CHAT,
+      payload: chat,
+    });
+
+    client.updateFilter({
+      ecdh: [chat.receiverECDH, chat.senderECDH],
+    });
+  };
 
 const setMessage = (msg: ChatMessage): Action<ChatMessage> => ({
   type: ActionTypes.SET_MESSAGE,
   payload: msg,
+});
+
+const updateSenderMeta = (
+  chatId: string,
+  senderAddress?: string,
+  senderGroupId?: string
+): Action<{ chatId: string; senderAddress?: string; senderGroupId?: string }> => ({
+  type: ActionTypes.UPDATE_SENDER_META,
+  payload: {
+    chatId,
+    senderAddress,
+    senderGroupId,
+  },
+});
+
+const updateReceiverMeta = (
+  chatId: string,
+  receiverAddress?: string,
+  receiverGroupId?: string
+): Action<{ chatId: string; receiverAddress?: string; receiverGroupId?: string }> => ({
+  type: ActionTypes.UPDATE_RECEIVER_META,
+  payload: {
+    chatId,
+    receiverAddress,
+    receiverGroupId,
+  },
 });
 
 const setUnread = (
@@ -104,13 +123,13 @@ const setUnread = (
   payload: { chatId, unreads },
 });
 
-const setMessagesForChat = (
-  chatId: string,
-  messages: ChatMessage[]
-): Action<{ chatId: string; messages: ChatMessage[] }> => ({
-  type: ActionTypes.SET_MESSAGES_FOR_CHAT,
-  payload: { chatId, messages },
-});
+const setMessagesForChat =
+  (chatId: string, messages: ChatMessage[]) => async (dispatch: Dispatch) => {
+    dispatch({
+      type: ActionTypes.SET_MESSAGES_FOR_CHAT,
+      payload: { chatId, messages },
+    });
+  };
 
 export const prependMessagesForChat = (
   chatId: string,
@@ -174,6 +193,8 @@ export const fetchChats = () => async (dispatch: Dispatch, getState: () => AppRo
     );
   }
 
+  if (!addressOrIdcommitment) return;
+
   const chatMetas: ChatMeta[] = await zkitterClient.getChatByUser(addressOrIdcommitment);
 
   dispatch(setChats(chatMetas));
@@ -213,8 +234,76 @@ export const fetchChatMessages =
     }
 
     if (messages.length) {
-      dispatch(setMessagesForChat(chatId, messages));
+      dispatch(setMessagesForChat(chatId, messages) as any);
     }
+  };
+
+export const getChatById =
+  (chatId: string) =>
+  async (
+    dispatch: ThunkDispatch<any, any, any>,
+    getState: () => AppRootState
+  ): Promise<InflatedChat | null> => {
+    const {
+      chats: {
+        chats: { map },
+      },
+      worker: { selected },
+      zkitter: { client: _client },
+    } = getState();
+
+    const chat = map[chatId];
+
+    if (!chat) return null;
+
+    const client: Zkitter = _client || (await waitForSync);
+
+    const { senderECDH, senderSeed, receiverECDH } = chat;
+
+    const senderAddress: string = (await dispatch(fetchUserByECDH(senderECDH))) as any;
+    const receiverAddress: string = (await dispatch(fetchUserByECDH(receiverECDH))) as any;
+
+    let myECDH, myAddress, myGroupId;
+
+    if (selected?.type === 'gun') {
+      myECDH = await getECDHFromLocalIdentity(selected);
+      myAddress = selected.address;
+    }
+
+    if (selected?.type === 'interrep' || selected?.type === 'taz') {
+      const isSenderAnon = !senderAddress;
+      const seed = isSenderAnon ? receiverAddress : senderSeed;
+      myECDH = await getECDHFromLocalIdentity(selected, seed);
+      myGroupId = getZKGroupFromIdentity(selected);
+    }
+
+    if (myECDH) {
+      const recipientECDH = myECDH.pub === senderECDH ? receiverECDH : senderECDH;
+      const rAddress = myECDH.pub === senderECDH ? receiverAddress : senderAddress;
+      const messages = await client.getChatMessages(chatId);
+      const message = messages.find(msg => msg.payload.senderECDH === recipientECDH);
+      let rGroupId;
+
+      if (message) {
+        const proof = await client.getProof(message.hash());
+        if (proof?.type === 'rln') {
+          rGroupId = proof.groupId;
+        }
+      }
+
+      return {
+        ...chat,
+        senderECDH: myECDH.pub,
+        senderSeed: myECDH.pub === senderECDH ? senderSeed : '',
+        receiverECDH: recipientECDH,
+        senderAddress: myAddress,
+        senderGroupId: myGroupId,
+        receiverAddress: rAddress,
+        receiverGroupId: rGroupId,
+      };
+    }
+
+    return null;
   };
 
 export const fetchUnreads = () => async (dispatch: Dispatch, getState: () => AppRootState) => {
@@ -251,6 +340,10 @@ export default function chats(state = initialState, action: Action<any>): State 
       return handlePrependMessagesForChats(state, action);
     case ActionTypes.SET_UNREAD:
       return handleSetUnread(state, action);
+    case ActionTypes.UPDATE_RECEIVER_META:
+      return handleUpdateReceiverMeta(state, action);
+    case ActionTypes.UPDATE_SENDER_META:
+      return handleUpdateSenderMeta(state, action);
     case ActionTypes.SET_MESSAGE:
       return {
         ...state,
@@ -308,6 +401,58 @@ function handleSetChats(state: State, action: Action<ChatMeta[]>) {
     chats: {
       order,
       map,
+    },
+  };
+}
+
+function handleUpdateReceiverMeta(
+  state: State,
+  action: Action<{ chatId: string; receiverAddress?: string; receiverGroupId?: string }>
+) {
+  const { chatId, receiverAddress, receiverGroupId } = action.payload!;
+
+  const chat = state.chats.map[chatId];
+
+  if (!chat) return state;
+
+  return {
+    ...state,
+    chats: {
+      ...state.chats,
+      map: {
+        ...state.chats.map,
+        [chatId]: {
+          ...chat,
+          receiverAddress,
+          receiverGroupId,
+        },
+      },
+    },
+  };
+}
+
+function handleUpdateSenderMeta(
+  state: State,
+  action: Action<{ chatId: string; senderAddress?: string; senderGroupId?: string }>
+) {
+  const { chatId, senderAddress, senderGroupId } = action.payload!;
+
+  const chat = state.chats.map[chatId];
+
+  if (!chat) return state;
+
+  return {
+    ...state,
+    chats: {
+      ...state.chats,
+      map: {
+        ...state.chats.map,
+        [chatId]: {
+          ...chat,
+          senderAddress,
+          senderGroupId,
+        },
+      },
     },
   };
 }
@@ -413,37 +558,37 @@ export const useChatIds = () => {
   }, deepEqual);
 };
 
-export const useChatId = (chatId: string): ChatMeta | null => {
-  return useSelector((state: AppRootState) => {
-    const selected = state.worker.selected;
-    const chat = state.chats.chats.map[chatId];
-
-    if (!chat) return null;
-
-    const { senderECDH, senderSeed, receiverECDH, type } = chat;
-
-    if (selected?.type === 'gun') {
-      const me = state.users.map[selected.address];
-      const recipientECDH = me.ecdh === senderECDH ? receiverECDH : senderECDH;
-
-      return {
-        type,
-        chatId,
-        senderECDH: me.ecdh,
-        senderSeed: me.ecdh === senderECDH ? senderSeed : '',
-        receiverECDH: recipientECDH,
-      };
-    }
-
-    return {
-      type,
-      chatId,
-      senderECDH,
-      senderSeed,
-      receiverECDH,
-    };
-  }, deepEqual);
-};
+// export const useChatId = (chatId: string): ChatMeta | null => {
+//   return useSelector((state: AppRootState) => {
+//     const selected = state.worker.selected;
+//     const chat = state.chats.chats.map[chatId];
+//
+//     if (!chat) return null;
+//
+//     const { senderECDH, senderSeed, receiverECDH, type } = chat;
+//
+//     if (selected?.type === 'gun') {
+//       const me = state.users.map[selected.address];
+//       const recipientECDH = me.ecdh === senderECDH ? receiverECDH : senderECDH;
+//
+//       return {
+//         type,
+//         chatId,
+//         senderECDH: me.ecdh,
+//         senderSeed: me.ecdh === senderECDH ? senderSeed : '',
+//         receiverECDH: recipientECDH,
+//       };
+//     }
+//
+//     return {
+//       type,
+//       chatId,
+//       senderECDH,
+//       senderSeed,
+//       receiverECDH,
+//     };
+//   }, deepEqual);
+// };
 
 export const useMessagesByChatId = (chatId: string): string[] => {
   return useSelector((state: AppRootState) => {

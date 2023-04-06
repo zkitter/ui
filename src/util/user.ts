@@ -64,29 +64,26 @@ async function checkChat() {
   let selectedUser = map[selected?.address];
 
   if (!selectedUser) {
-    // @ts-ignore
-    selectedUser = await store.dispatch(getUser(selected?.address));
+    selectedUser = await store.dispatch(getUser(selected?.address) as any);
   }
 
-  (async () => {
-    if (!selectedUser.ecdh) {
-      const ecdhseed = await signWithP256(selected.privateKey, 'signing for ecdh - 0');
-      const ecdhHex = await sha256(ecdhseed);
-      const keyPair = await generateECDHKeyPairFromhex(ecdhHex);
-      const ecdhPub = keyPair.pub;
-      // @ts-ignore
-      await store.dispatch(submitProfile(ProfileMessageSubType.Custom, ecdhPub, 'ecdh_pubkey'));
-    }
+  if (!selectedUser.ecdh) {
+    const ecdhseed = await signWithP256(selected.privateKey, 'signing for ecdh - 0');
+    const ecdhHex = await sha256(ecdhseed);
+    const keyPair = await generateECDHKeyPairFromhex(ecdhHex);
+    const ecdhPub = keyPair.pub;
+    await store.dispatch(
+      submitProfile(ProfileMessageSubType.Custom, ecdhPub, 'ecdh_pubkey') as any
+    );
+  }
 
-    if (!selectedUser.idcommitment) {
-      const zkseed = await signWithP256(selected.privateKey, 'signing for zk identity - 0');
-      const zkHex = await sha256(zkseed);
-      const zkIdentity = await generateZkIdentityFromHex(zkHex);
-      const idcommitment = zkIdentity.genIdentityCommitment().toString(16);
-      await store.dispatch(
-        // @ts-ignore
-        submitProfile(ProfileMessageSubType.Custom, idcommitment, 'id_commitment')
-      );
-    }
-  })();
+  if (!selectedUser.idcommitment) {
+    const zkseed = await signWithP256(selected.privateKey, 'signing for zk identity - 0');
+    const zkHex = await sha256(zkseed);
+    const zkIdentity = await generateZkIdentityFromHex(zkHex);
+    const idcommitment = zkIdentity.genIdentityCommitment().toString(16);
+    await store.dispatch(
+      submitProfile(ProfileMessageSubType.Custom, idcommitment, 'id_commitment') as any
+    );
+  }
 }

@@ -251,15 +251,25 @@ export const searchUsers =
   };
 
 export const fetchUserByECDH =
-  (ecdh?: string) => async (dispatch: Dispatch, getState: () => AppRootState) => {
-    if (!ecdh) return;
+  (ecdh?: string) =>
+  async (dispatch: Dispatch, getState: () => AppRootState): Promise<string | undefined> => {
+    const {
+      users: { ecdh: ecdhMap },
+    } = getState();
+
+    if (!ecdh) return undefined;
+
+    if (ecdhMap[ecdh]) return ecdhMap[ecdh];
 
     const resp = await fetch(`${config.indexerAPI}/v1/ecdh/${ecdh}`);
     const json = await resp.json();
 
     if (!json.error && json.payload) {
       dispatch(setEcdh(json.payload, ecdh));
+      return json.payload;
     }
+
+    return undefined;
   };
 
 export const setAcceptanceSent = (
