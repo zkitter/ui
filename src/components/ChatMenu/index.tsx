@@ -10,7 +10,8 @@ import { useHistory, useParams } from 'react-router';
 import {
   addChat,
   fetchChatMessages,
-  useChatId,
+  getChatById,
+  InflatedChat,
   useChatIds,
   useLastNMessages,
   useUnreadChatMessages,
@@ -31,7 +32,6 @@ import {
 } from 'zkitter-js';
 import { Strategy, ZkIdentity } from '@zk-kit/identity';
 import { safeJsonParse } from '~/misc';
-import crypto from 'crypto';
 import { useDispatch } from 'react-redux';
 
 export default function ChatMenu(): ReactElement {
@@ -85,7 +85,7 @@ function CreateChatMenu(props: { onBack: () => void }): ReactElement {
     setSearchParam(param);
     const res = await fetch(`${config.indexerAPI}/v1/zkchat/chats/search/${param}`);
     const json = await res.json();
-    setSearchResults(json.payload.map((data: any) => data.receiver_address));
+    setSearchResults(json.payload.map((data: any) => data.name));
   }, []);
 
   useEffect(() => {
@@ -243,32 +243,34 @@ function ChatMenuItem(props: {
   selectNewConvo: (address: string) => void;
 }): ReactElement {
   const selected = useSelectedLocalId();
-  const zkGroup = useSelectedZKGroup();
-  const chat = useChatId(props.chatId);
+  const [chat, setChat] = useState<InflatedChat | null>(null);
   const params = useParams<{ chatId: string }>();
   const history = useHistory();
 
   const [last] = useLastNMessages(props.chatId, 1);
   const theme = useThemeContext();
   const unreads = useUnreadChatMessages(props.chatId);
-
-  const receiverAddress = useUserAddressByECDH(chat?.receiverECDH);
-  const rUser = useUser(receiverAddress || '');
   const dispatch = useDispatch();
 
   const isSelected = props.chatId === params.chatId;
 
   const onClick = useCallback(async () => {
-    if (!chat) return;
     history.push(`/chat/${props.chatId}`);
   }, [props.chatId, selected]);
 
   useEffect(() => {
-    dispatch(fetchUserByECDH(chat?.receiverECDH));
-  }, [chat?.receiverECDH]);
+    let unmounted = false;
 
-  useEffect(() => {
     dispatch(fetchChatMessages(props.chatId));
+
+    (async () => {
+      const inflatedChat: any = await dispatch(getChatById(props.chatId));
+      if (!unmounted) setChat(inflatedChat as InflatedChat);
+    })();
+
+    return () => {
+      unmounted = true;
+    };
   }, [props.chatId]);
 
   if (!chat) return <></>;
@@ -277,15 +279,15 @@ function ChatMenuItem(props: {
     <div
       className={classNames('flex flex-row chat-menu__item', {
         'chat-menu__item--selected': isSelected,
-        'chat-menu__item--anon': !rUser,
+        'chat-menu__item--anon': !!chat?.receiverGroupId,
       })}
       onClick={onClick}>
       <div className="relative">
         <Avatar
           className="w-12 h-12 flex-grow-0 flex-shrink-0"
-          address={receiverAddress || ''}
-          incognito={!receiverAddress}
-          // group={!receiverAddress ? chat.group : undefined}
+          address={chat?.receiverAddress || ''}
+          incognito={!chat?.receiverAddress}
+          group={chat?.receiverGroupId}
         />
         {/*{chat.senderSeed && (*/}
         {/*  <Avatar*/}
@@ -300,7 +302,7 @@ function ChatMenuItem(props: {
       <div className="flex flex-col flex-grow flex-shrink mx-4 w-0">
         <Nickname
           className="font-bold truncate"
-          address={receiverAddress || ''}
+          address={chat?.receiverAddress || ''}
           // group={chat.type === 'DIRECT' ? chat.group : undefined}
         />
         {!props.hideLastChat && (

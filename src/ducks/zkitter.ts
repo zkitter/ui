@@ -14,7 +14,7 @@ import deepEqual from 'fast-deep-equal';
 import { AppRootState } from '../store/configureAppStore';
 import { safeJsonParse } from '~/misc';
 import { setPost } from '@ducks/posts';
-import { prependMessagesForChat } from '@ducks/chats';
+import { fetchChats, prependMessagesForChat } from '@ducks/chats';
 
 const FILTERS_LS_KEY = 'zkitter/filters';
 let resolveSync: null | any = null;
@@ -83,7 +83,7 @@ export const setSyncArbitrum = (sync: State['sync']['arbitrum']) => ({
   payload: sync,
 });
 
-export const initZkitter = () => async (dispatch: Dispatch) => {
+export const initZkitter = () => async (dispatch: Dispatch, getState: () => AppRootState) => {
   const opts: any = {};
 
   if (process.env.NODE_ENV !== 'production') opts.topicPrefix = 'zkitter-dev';
@@ -113,6 +113,16 @@ export const initZkitter = () => async (dispatch: Dispatch) => {
       case MessageType.Chat:
         const chat = msg as Chat;
         const chatId = await deriveChatId(chat.payload.receiverECDH, chat.payload.senderECDH);
+        const {
+          chats: {
+            chats: { map },
+          },
+        } = getState();
+
+        if (!map[chatId]) {
+          await dispatch(fetchChats() as any);
+        }
+
         dispatch(prependMessagesForChat(chatId, [chat]));
         break;
     }
@@ -155,8 +165,7 @@ export const updateFilter = () => async (dispatch: Dispatch, getState: () => App
   await client.queryUser(address);
   const followings = await client.getFollowings(address);
   const ecdh = await generateECDHWithP256(selected.privateKey, 0);
-
-  await client.updateFilter({
+  client.updateFilter({
     address: followings.concat(address),
     ecdh: [ecdh.pub],
   });

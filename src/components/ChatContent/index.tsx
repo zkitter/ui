@@ -18,51 +18,51 @@ import Textarea from '../Textarea';
 import { FromNow } from '../ChatMenu';
 import {
   fetchChatMessages,
+  getChatById,
+  InflatedChat,
   setLastReadForChatId,
-  useChatId,
   useChatMessage,
   useMessagesByChatId,
 } from '@ducks/chats';
 import Icon from '../Icon';
 import SpinnerGIF from '#/icons/spinner.gif';
 import { useDispatch } from 'react-redux';
-import { fetchUserByECDH, useUser, useUserAddressByECDH } from '@ducks/users';
-import {
-  ChatMessageSubType,
-  generateECDHWithP256,
-  MessageType,
-  deriveSharedSecret,
-  decrypt,
-  generateECDHKeyPairFromZKIdentity,
-} from 'zkitter-js';
+import { fetchUserByECDH, useUserAddressByECDH } from '@ducks/users';
+import { ChatMessageSubType, MessageType, deriveSharedSecret, decrypt } from 'zkitter-js';
 import { useZkitter } from '@ducks/zkitter';
-import { deserializeZKIdentity } from '~/zk';
+import { deserializeZKIdentity, getECDHFromLocalIdentity } from '~/zk';
 
 export default function ChatContent(): ReactElement {
   const { chatId } = useParams<{ chatId: string }>();
   const messages = useMessagesByChatId(chatId);
-  const chat = useChatId(chatId);
-  const params = useParams<{ chatId: string }>();
+  const [chat, setChat] = useState<InflatedChat | null>(null);
   const dispatch = useDispatch();
-  const zkitter = useZkitter();
 
   const loadMore = useCallback(async () => {
-    if (!chat || !zkitter) return;
+    if (!chat) return;
     dispatch(fetchChatMessages(chatId));
-  }, [chat, zkitter, chatId]);
+  }, [chat, chatId]);
 
   useEffect(() => {
     loadMore();
-  }, [loadMore, zkitter, chatId]);
+  }, [loadMore, chatId]);
 
   useEffect(() => {
     dispatch(setLastReadForChatId(chatId));
   }, [chatId, messages]);
 
   useEffect(() => {
-    dispatch(fetchUserByECDH(chat?.receiverECDH));
-    dispatch(fetchUserByECDH(chat?.senderECDH));
-  }, [chat?.receiverECDH]);
+    let unmounted = false;
+
+    (async () => {
+      const inflatedChat: any = await dispatch(getChatById(chatId));
+      if (!unmounted) setChat(inflatedChat as InflatedChat);
+    })();
+
+    return () => {
+      unmounted = true;
+    };
+  }, [chatId]);
 
   if (!chat) return <></>;
 
@@ -70,7 +70,7 @@ export default function ChatContent(): ReactElement {
     <div
       className={classNames('chat-content', {
         // 'chat-content--anon': chat?.senderSeed,
-        'chat-content--chat-selected': params.chatId,
+        'chat-content--chat-selected': chatId,
       })}>
       <ChatHeader />
       <InfiniteScrollable
@@ -88,33 +88,46 @@ export default function ChatContent(): ReactElement {
 
 function ChatHeader(): ReactElement {
   const { chatId } = useParams<{ chatId: string }>();
-  const chat = useChatId(chatId);
-  const receiverAddress = useUserAddressByECDH(chat?.receiverECDH);
+  const [chat, setChat] = useState<InflatedChat | null>(null);
+  const dispatch = useDispatch();
+
+  useEffect(() => {
+    let unmounted = false;
+
+    (async () => {
+      const inflatedChat: any = await dispatch(getChatById(chatId));
+      if (!unmounted) setChat(inflatedChat as InflatedChat);
+    })();
+
+    return () => {
+      unmounted = true;
+    };
+  }, [chatId]);
 
   return (
     <div className="chat-content__header">
       <Avatar
         key={chat?.receiverECDH}
         className="w-10 h-10"
-        address={receiverAddress || ''}
-        incognito={!receiverAddress}
-        // group={chat?.type === 'DIRECT' ? chat.group : undefined}
+        address={chat?.receiverAddress || ''}
+        incognito={!chat?.receiverAddress}
+        group={chat?.receiverGroupId}
       />
-      <div className="flex flex-col flex-grow flex-shrink ml-2">
+      <div className="flex flex-col flex-grow flex-shrink ml-2 justify-center">
         <Nickname
           key={chat?.receiverECDH}
           className="font-bold"
-          address={receiverAddress || ''}
-          // group={chat?.type === 'DIRECT' ? chat.group : undefined}
+          address={chat?.receiverAddress || ''}
+          group={chat?.receiverGroupId}
         />
         <div
           className={classNames('text-xs', {
             'text-gray-500': true,
           })}>
-          {receiverAddress && (
+          {chat?.receiverAddress && (
             <>
               <span>@</span>
-              <Username address={receiverAddress || ''} />
+              <Username address={chat.receiverAddress || ''} />
             </>
           )}
         </div>
@@ -128,11 +141,25 @@ function ChatEditor(): ReactElement {
   const { chatId } = useParams<{ chatId: string }>();
   const selected = useSelectedLocalId();
   const [content, setContent] = useState('');
-  const chat = useChatId(chatId);
   const [error, setError] = useState('');
   const [isSending, setSending] = useState(false);
   const zkGroup = useSelectedZKGroup();
   const zkitter = useZkitter();
+  const [chat, setChat] = useState<InflatedChat | null>(null);
+  const dispatch = useDispatch();
+
+  useEffect(() => {
+    let unmounted = false;
+
+    (async () => {
+      const inflatedChat: any = await dispatch(getChatById(chatId));
+      if (!unmounted) setChat(inflatedChat as InflatedChat);
+    })();
+
+    return () => {
+      unmounted = true;
+    };
+  }, [chatId]);
 
   useEffect(() => {
     setContent('');
@@ -259,43 +286,51 @@ function ChatEditor(): ReactElement {
 
 function ChatMessageBubble(props: { messageId: string; chatId: string }) {
   const selected = useSelectedLocalId();
-  const chat = useChatId(props.chatId);
   const chatMessage = useChatMessage(props.messageId);
   const [decrypted, setDecrypted] = useState('');
   const [isSelf, setSelf] = useState(false);
-
+  const [chat, setChat] = useState<InflatedChat | null>(null);
+  const dispatch = useDispatch();
   const receiverAddress = useUserAddressByECDH(chat?.receiverECDH);
   const senderAddress = useUserAddressByECDH(chat?.senderECDH);
 
-  if (chatMessage?.type !== MessageType.Chat) return <></>;
-  if (chatMessage?.subtype !== ChatMessageSubType.Direct) return <></>;
+  useEffect(() => {
+    let unmounted = false;
 
-  const {
-    payload: { senderSeed, senderECDH, receiverECDH, content, encryptedContent },
-  } = chatMessage;
+    (async () => {
+      const inflatedChat: any = await dispatch(getChatById(props.chatId));
+      if (!unmounted) setChat(inflatedChat as InflatedChat);
+    })();
+
+    return () => {
+      unmounted = true;
+    };
+  }, [props.chatId]);
 
   useEffect(() => {
+    if (chatMessage?.type !== MessageType.Chat) return;
+    if (chatMessage?.subtype !== ChatMessageSubType.Direct) return;
+
+    const {
+      payload: { senderSeed, senderECDH, receiverECDH, content, encryptedContent },
+    } = chatMessage;
+
     (async () => {
       if (typeof content !== 'undefined') {
         setDecrypted(content);
       }
 
-      if (selected?.type === 'gun') {
-        const myECDH = await generateECDHWithP256(selected.privateKey, 0);
-        const rECDH = myECDH.pub === senderECDH ? receiverECDH : senderECDH;
-        setSelf(myECDH.pub === senderECDH);
+      let myECDH;
 
-        if (typeof content === 'undefined') {
-          const sharedKey = deriveSharedSecret(rECDH, myECDH.priv);
-          setDecrypted(decrypt(encryptedContent, sharedKey));
-        }
+      if (selected?.type === 'gun') {
+        myECDH = await getECDHFromLocalIdentity(selected);
       } else if (selected?.type === 'interrep' || selected?.type === 'taz') {
         const isSenderAnon = !senderAddress;
         const seed = isSenderAnon ? receiverAddress : senderSeed;
-        const myECDH = await generateECDHKeyPairFromZKIdentity(
-          deserializeZKIdentity(selected.serializedIdentity)!,
-          seed
-        );
+        myECDH = await getECDHFromLocalIdentity(selected, seed);
+      }
+
+      if (myECDH) {
         const rECDH = myECDH.pub === senderECDH ? receiverECDH : senderECDH;
         setSelf(myECDH.pub === senderECDH);
 
@@ -305,16 +340,10 @@ function ChatMessageBubble(props: { messageId: string; chatId: string }) {
         }
       }
     })();
-  }, [
-    content,
-    selected,
-    encryptedContent,
-    senderECDH,
-    receiverECDH,
-    senderAddress,
-    receiverAddress,
-    senderSeed,
-  ]);
+  }, [selected, senderAddress, receiverAddress, chatMessage]);
+
+  if (chatMessage?.type !== MessageType.Chat) return <></>;
+  if (chatMessage?.subtype !== ChatMessageSubType.Direct) return <></>;
 
   return (
     <div
