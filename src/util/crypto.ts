@@ -1,6 +1,12 @@
 import EC from 'elliptic';
 import { Strategy, ZkIdentity } from '@zk-kit/identity';
 
+/**
+ * Convert id commitment big int string from crypt keeper into hex string
+ * @param number
+ */
+export const hexlify = (number: string) => BigInt(`0x${number}`).toString();
+
 export const hexToUintArray = (hex: string): Uint8Array => {
   const a = [];
   for (let i = 0, len = hex.length; i < len; i += 2) {

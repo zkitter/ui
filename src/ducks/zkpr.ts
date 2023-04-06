@@ -13,6 +13,7 @@ import {
   SemaphoreFullProof,
   SemaphoreSolidityProof,
 } from '@zk-kit/protocols';
+import { hexlify } from '~/crypto';
 
 enum ActionTypes {
   SET_LOADING = 'zkpr/setLoading',
@@ -231,7 +232,8 @@ export class ZKPR {
   }
 
   async getActiveIdentity(): Promise<string | null> {
-    return this.client.getActiveIdentity();
+    const id = await this.client.getActiveIdentity();
+    return hexlify(id);
   }
 
   async createIdentity(): Promise<void> {
