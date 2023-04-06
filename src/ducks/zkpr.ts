@@ -36,6 +36,14 @@ type State = {
   idCommitment: string;
 };
 
+declare global {
+  interface Window {
+    zkpr?: {
+      connect: () => Promise<Client | null>;
+    };
+  }
+}
+
 const initialState: State = {
   zkpr: null,
   idCommitment: '',
@@ -63,9 +71,7 @@ export const connectZKPR =
     try {
       let id: Identity | null = null;
 
-      // @ts-ignore
       if (typeof window.zkpr !== 'undefined') {
-        // @ts-ignore
         const zkpr: any = window.zkpr;
         const client = await zkpr.connect();
         const zkprClient = new ZKPR(client);
