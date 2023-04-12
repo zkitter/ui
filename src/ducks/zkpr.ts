@@ -13,7 +13,7 @@ import {
   SemaphoreFullProof,
   SemaphoreSolidityProof,
 } from '@zk-kit/protocols';
-import { hexlify } from '~/crypto';
+import { hexify } from '~/format';
 
 enum ActionTypes {
   SET_LOADING = 'zkpr/setLoading',
@@ -75,7 +75,7 @@ export const connectZKPR =
           dispatch(setIdCommitment(''));
 
           if (idCommitment) {
-            idCommitment = idCommitment?.startsWith('0x') ? idCommitment : hexlify(idCommitment);
+            idCommitment = idCommitment?.startsWith('0x') ? idCommitment : hexify(idCommitment);
             dispatch(setIdCommitment(idCommitment));
             const _id: any = await maybeSetZKPRIdentity(idCommitment);
             if (!_id) setDefaultIdentity(defaultIdSelector(getState()));
@@ -237,7 +237,7 @@ export class ZKPR {
 
   async getActiveIdentity(): Promise<string | null> {
     const id = await this.client.getActiveIdentity();
-    return id ? hexlify(id) : null;
+    return id ? hexify(id) : null;
   }
 
   async createIdentity(): Promise<void> {
