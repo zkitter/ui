@@ -13,6 +13,7 @@ import {
   SemaphoreFullProof,
   SemaphoreSolidityProof,
 } from '@zk-kit/protocols';
+import { hexify } from '~/format';
 
 enum ActionTypes {
   SET_LOADING = 'zkpr/setLoading',
@@ -35,6 +36,14 @@ type State = {
   idCommitment: string;
 };
 
+declare global {
+  interface Window {
+    zkpr?: {
+      connect: () => Promise<Client | null>;
+    };
+  }
+}
+
 const initialState: State = {
   zkpr: null,
   idCommitment: '',
@@ -42,83 +51,52 @@ const initialState: State = {
   unlocking: false,
 };
 
+const setDefaultIdentity = (defaultId: string | null) => {
+  postWorkerMessage(defaultId === null ? setIdentity(defaultId) : selectIdentity(defaultId));
+};
+
 export const connectZKPR =
   () => async (dispatch: ThunkDispatch<any, any, any>, getState: () => AppRootState) => {
     dispatch(setLoading(true));
 
     try {
-      let id: Identity | null = null;
-
-      // @ts-ignore
       if (typeof window.zkpr !== 'undefined') {
-        // @ts-ignore
         const zkpr: any = window.zkpr;
         const client = await zkpr.connect();
         const zkprClient = new ZKPR(client);
 
-        zkprClient.on('logout', async data => {
-          const {
-            worker: { selected, identities },
-          } = getState();
-
+        zkprClient.on('logout', async () => {
           dispatch(disconnectZKPR());
-
-          const [defaultId] = identities;
-          if (defaultId) {
-            postWorkerMessage(
-              selectIdentity(
-                defaultId.type === 'gun' ? defaultId.publicKey : defaultId.identityCommitment
-              )
-            );
-          } else {
-            postWorkerMessage(setIdentity(null));
-          }
+          setDefaultIdentity(defaultIdSelector(getState()));
         });
 
-        zkprClient.on('identityChanged', async data => {
-          const idCommitment = data && BigInt('0x' + data).toString();
-          const {
-            worker: { identities },
-          } = getState();
-
+        zkprClient.on('identityChanged', async idCommitment => {
+          // TODO: update once event data if { idCommitment, provider }
           dispatch(setIdCommitment(''));
 
           if (idCommitment) {
-            // @ts-ignore
+            idCommitment = idCommitment?.startsWith('0x') ? idCommitment : hexify(idCommitment);
             dispatch(setIdCommitment(idCommitment));
-            // @ts-ignore
-            const id: any = await maybeSetZKPRIdentity(idCommitment);
-            if (!id) {
-              const [defaultId] = identities;
-              if (defaultId) {
-                postWorkerMessage(
-                  selectIdentity(
-                    defaultId.type === 'gun' ? defaultId.publicKey : defaultId.identityCommitment
-                  )
-                );
-              } else {
-                postWorkerMessage(setIdentity(null));
-              }
-            }
+            const _id: any = await maybeSetZKPRIdentity(idCommitment);
+            if (!_id) setDefaultIdentity(defaultIdSelector(getState()));
           }
         });
 
         localStorage.setItem('ZKPR_CACHED', '1');
-
-        const idCommitmentHex = await zkprClient.getActiveIdentity();
-        const idCommitment = idCommitmentHex && BigInt('0x' + idCommitmentHex).toString();
+        const idCommitment = await zkprClient.getActiveIdentity();
 
         if (idCommitment) {
+          // no event fired on connect() so need to set it manually after getActiveIdentity() here
           dispatch(setIdCommitment(idCommitment));
-          id = await maybeSetZKPRIdentity(idCommitment);
+          const _id: any = await maybeSetZKPRIdentity(idCommitment);
+          if (!_id) setDefaultIdentity(defaultIdSelector(getState()));
+        } else {
+          await zkprClient.createIdentity();
         }
 
         dispatch(setZKPR(zkprClient));
       }
-
       dispatch(setLoading(false));
-
-      return id;
     } catch (e) {
       dispatch(setLoading(false));
       throw e;
@@ -137,7 +115,11 @@ export const createZKPRIdentity =
 
 export async function maybeSetZKPRIdentity(idCommitment: string) {
   let id: Identity | null = null;
-  const data = await checkPath(idCommitment);
+  // TODO: address https://github.com/zkitter/ui/pull/127#discussion_r1160318853
+  const data = await checkPath(idCommitment).catch(err => {
+    console.error(err);
+    return null;
+  });
 
   if (data) {
     id = {
@@ -211,6 +193,15 @@ export default function zkpr(state = initialState, action: Action<any>): State {
   }
 }
 
+const defaultIdSelector = (state: AppRootState): string | null => {
+  const defaultId = state.worker?.identities?.[0];
+  return defaultId !== undefined
+    ? defaultId?.type === 'gun'
+      ? defaultId.publicKey
+      : defaultId?.identityCommitment
+    : null;
+};
+
 export const useZKPRLoading = () => {
   return useSelector((state: AppRootState) => {
     return state.zkpr.loading;
@@ -229,6 +220,11 @@ export const useIdCommitment = () => {
   }, deepEqual);
 };
 
+interface ZKPRListener {
+  logout: () => void;
+  identityChanged: (idCommitment: string) => void; // TODO: CK data to become: { idCommitment: string; provider: string }
+}
+
 export class ZKPR {
   private client: any;
 
@@ -236,16 +232,17 @@ export class ZKPR {
     this.client = client;
   }
 
-  on(eventName: string, cb: (data: unknown) => void) {
-    return this.client.on(eventName, cb);
+  on<U extends keyof ZKPRListener>(event: U, listener: ZKPRListener[U]) {
+    return this.client.on(event, listener);
   }
 
   async getActiveIdentity(): Promise<string | null> {
-    return this.client.getActiveIdentity();
+    const id = await this.client.getActiveIdentity();
+    return id ? hexify(id) : null;
   }
 
   async createIdentity(): Promise<void> {
-    return this.client.createIdentity();
+    await this.client.createIdentity();
   }
 
   async semaphoreProof(

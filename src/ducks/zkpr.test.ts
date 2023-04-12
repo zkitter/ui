@@ -23,14 +23,8 @@ describe('ZKPR duck', () => {
       })
     );
     // @ts-ignore
-    const id = await store.dispatch(connectZKPR());
-    expect(id).toStrictEqual({
-      type: 'zkpr_interrep',
-      provider: 'diamond',
-      name: 'Twitter',
-      identityPath: { path_elements: ['1', '2'], path_index: [0, 2], root: '3' },
-      identityCommitment: '291',
-    });
+    await store.dispatch(connectZKPR());
+    expect(store.getState().zkpr.idCommitment).toBe('291');
 
     const onLogout = zkprStub.on.args[0][1];
     const onIdentityChanged = zkprStub.on.args[1][1];
