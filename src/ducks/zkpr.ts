@@ -115,6 +115,7 @@ export const createZKPRIdentity =
 
 export async function maybeSetZKPRIdentity(idCommitment: string) {
   let id: Identity | null = null;
+  // TODO: address https://github.com/zkitter/ui/pull/127#discussion_r1160318853
   const data = await checkPath(idCommitment).catch(err => {
     console.error(err);
     return null;
