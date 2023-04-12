@@ -151,7 +151,12 @@ function AccountOptionsView(props: { setViewType: (v: ViewType) => void }): Reac
   const zkpr = useZKPR();
 
   useEffect(() => {
-    if (zkpr) selectOption('incognito');
+    if (zkpr) {
+      selectOption('incognito');
+    } else {
+      // if crypt keeper logout event
+      props.setViewType(ViewType.chooseWallet);
+    }
   }, [zkpr]);
 
   const onNext = useCallback(() => {
@@ -303,12 +308,8 @@ function ChooseWalletView(props: { setViewType: (v: ViewType) => void }): ReactE
 
   const connectKeeper = useCallback(async () => {
     disconnect();
-    const id: any = await dispatch(connectZKPR());
-    if (id) {
-      history.push('/');
-    } else {
-      history.push('/signup/interep');
-    }
+    await dispatch(connectZKPR());
+    props.setViewType(ViewType.accountOptions);
   }, []);
 
   useEffect(() => {
