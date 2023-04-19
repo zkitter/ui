@@ -121,7 +121,7 @@ specifiers:
   webpack-dev-server: ^4.11.1
   webpack-node-externals: ^3.0.0
   webtorrent: ^1.9.4
-  zkitter-js: ^1.2.9
+  zkitter-js: ^1.4.0
 
 dependencies:
   '@coinbase/wallet-sdk': 3.6.2
@@ -180,7 +180,7 @@ dependencies:
   web3: 1.8.1
   web3modal: 1.9.10
   webtorrent: 1.9.6
-  zkitter-js: 1.2.9_rjsyjcrmk25kqsjzwkvj3a2evq
+  zkitter-js: 1.4.0_rjsyjcrmk25kqsjzwkvj3a2evq
 
 devDependencies:
   '@types/classnames': 2.3.1
@@ -17122,8 +17122,8 @@ packages:
     engines: {node: '>=12.20'}
     dev: false
 
-  /zkitter-js/1.2.9_rjsyjcrmk25kqsjzwkvj3a2evq:
-    resolution: {integrity: sha512-yIVdmVCenxKatUhxNDIbRnM6zhsGN1HXKmHI+NBTXekKNZgt7daokq0YWqKtLcwKDaXReIxAHpX0vZR1KB/NOA==}
+  /zkitter-js/1.4.0_rjsyjcrmk25kqsjzwkvj3a2evq:
+    resolution: {integrity: sha512-N3MqoUEhfS8UvBPlCHVDor/DogMT+y6dXgHSpS8UPeHNLz4NWcktuD2Tcneuh44ld6589Cj2bq/6vSqTKTgR9A==}
     engines: {node: 16.x - 18.x}
     hasBin: true
     dependencies:

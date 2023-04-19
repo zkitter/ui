@@ -70,11 +70,11 @@ export default function App(): ReactElement {
     (async function onAppMount() {
       const id: any = await dispatch(syncWorker());
 
+      await dispatch(initZkitter());
+
       if (id) {
         await loginUser(id);
       }
-
-      await dispatch(initZkitter());
     })();
   }, []);
 

@@ -130,12 +130,12 @@ export const initZkitter = () => async (dispatch: Dispatch, getState: () => AppR
 
   await client.start();
 
-  await client.downloadHistoryFromAPI();
-
   dispatch({
     type: ActionType.SET_LOADING,
     payload: false,
   });
+
+  resolveSync(client);
 
   dispatch({
     type: ActionType.SET_FILTERS,
@@ -146,8 +146,6 @@ export const initZkitter = () => async (dispatch: Dispatch, getState: () => AppR
     type: ActionType.SET_CLIENT,
     payload: client,
   });
-
-  resolveSync(client);
 };
 
 export const updateFilter = () => async (dispatch: Dispatch, getState: () => AppRootState) => {
