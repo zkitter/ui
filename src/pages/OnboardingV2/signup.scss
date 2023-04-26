@@ -1,0 +1,198 @@
+@import '~/variable';
+
+.dark {
+  .signup {
+    border-color: $gray-800;
+
+    &__wallet-option {
+      border-color: $gray-800;
+
+      &:hover {
+        box-shadow: 0 0 0 2px $gray-700;
+      }
+    }
+
+    &__account-option {
+      border-color: $gray-800;
+
+      .icon {
+        color: $gray-800;
+      }
+
+      &__title {
+        color: $gray-800;
+      }
+
+      &__desc {
+        color: $gray-800;
+      }
+
+      &:hover {
+        .icon {
+          color: $gray-600;
+        }
+
+        .signup__account-option {
+          &__title {
+            color: $gray-600;
+          }
+
+          &__desc {
+            color: $gray-600;
+          }
+        }
+
+        color: $gray-600;
+      }
+    }
+
+    &__wallet-panel {
+      border-color: $gray-800;
+    }
+
+    &__profile-content {
+      border-color: $gray-800;
+    }
+  }
+}
+
+.signup {
+  width: 48rem;
+  max-height: 60rem;
+  height: fit-content;
+
+  @media only screen and (max-width: 768px) {
+    border: 0;
+  }
+
+  &__profile-content {
+    flex: 1 1 auto;
+    height: 28rem;
+    overflow-y: auto;
+  }
+
+  &__account-options {
+    margin: 1rem 0;
+    align-items: center;
+    justify-content: center;
+
+    @media only screen and (max-width: 768px) {
+      flex-flow: column nowrap;
+    }
+  }
+
+  &__account-option {
+    @extend %col-nowrap;
+    align-items: center;
+    flex: 1 1 auto;
+    border: 2px solid $gray-100;
+    border-radius: 0.5rem;
+    padding: 1rem;
+    cursor: pointer;
+    transition: 100ms ease-in-out;
+    margin: 0 0.5rem;
+    height: 12rem;
+    width: 0;
+
+    @media only screen and (max-width: 768px) {
+      width: 100%;
+      margin: 0.5rem 0;
+    }
+
+    .icon {
+      margin-bottom: 1rem;
+      color: $gray-200;
+      i {
+        font-size: 3rem !important;
+      }
+    }
+
+    &__title {
+      font-size: 1rem;
+      font-weight: 700;
+      line-height: 1.3125;
+      color: $gray-200;
+      margin-bottom: 0.5rem;
+    }
+
+    &__desc {
+      font-size: 0.875rem;
+      text-align: center;
+      color: $gray-200;
+    }
+
+    &:hover {
+      .icon {
+        color: $gray-600;
+      }
+
+      .signup__account-option {
+        &__title {
+          color: $gray-600;
+        }
+
+        &__desc {
+          color: $gray-600;
+        }
+      }
+
+      border-color: $gray-400;
+    }
+
+    &--selected {
+      transform: scale(1.05);
+      .icon {
+        color: $primary-color !important;
+      }
+
+      .signup__account-option {
+        &__title {
+          color: $primary-color !important;
+        }
+
+        &__desc {
+          color: $primary-color !important;
+        }
+      }
+
+      border-color: $primary-color !important;
+    }
+
+    &--disabled {
+      opacity: 0.5;
+      cursor: default;
+      .icon {
+        color: $gray-200 !important;
+      }
+
+      .signup__account-option {
+        &__title {
+          color: $gray-200 !important;
+        }
+
+        &__desc {
+          color: $gray-200 !important;
+        }
+      }
+
+      border-color: $gray-100 !important;
+    }
+  }
+
+  &__wallet-option {
+    cursor: pointer;
+    transition: box-shadow 150ms ease-in-out, color 150ms ease-in-out;
+
+    &:hover {
+      box-shadow: 0 0 0 2px $gray-100;
+    }
+  }
+
+  &__wallet-option + &__wallet-option {
+    margin-top: 0.5rem;
+  }
+
+  &__wallet-panel {
+    width: fit-content;
+  }
+}

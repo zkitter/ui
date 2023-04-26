@@ -5,3 +5,10 @@ export const safeJsonParse = (jsonString: string): any | null => {
     return null;
   }
 };
+
+export type Action<payload> = {
+  type: string;
+  payload?: payload;
+  meta?: any;
+  error?: boolean;
+};

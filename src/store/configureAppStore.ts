@@ -12,6 +12,7 @@ import zkpr from '@ducks/zkpr';
 import mods from '@ducks/mods';
 import chats from '@ducks/chats';
 import zkitter from '@ducks/zkitter';
+import onboarding from '@ducks/onboarding';
 
 const rootReducer = combineReducers({
   app,
@@ -24,6 +25,7 @@ const rootReducer = combineReducers({
   mods,
   chats,
   zkitter,
+  onboarding,
 });
 
 export type AppRootState = ReturnType<typeof rootReducer>;

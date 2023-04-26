@@ -19,24 +19,14 @@ import SettingView from '../SettingView';
 import MetaPanel from '@components/MetaPanel';
 import ChatView from '../ChatView';
 import { fetchChats, fetchUnreads } from '@ducks/chats';
-import {
-  generateECDHKeyPairFromhex,
-  generateZkIdentityFromHex,
-  sha256,
-  signWithP256,
-} from '~/crypto';
-import { Strategy, ZkIdentity } from '@zk-kit/identity';
 import ThemeContext from '@components/ThemeContext';
 import classNames from 'classnames';
-import { Identity } from '@semaphore-protocol/identity';
 import TazModal from '@components/TazModal';
 import NotificationView from '../NotificationView';
 import { updateNotifications } from '@ducks/app';
 import SearchResultsView from '../SearchResultsView';
 import { initZkitter, updateFilter } from '@ducks/zkitter';
-import { postWorkerMessage } from '~/sw';
-import { setIdentity } from '../../serviceWorkers/util';
-import { findProof } from '~/merkle';
+import OnboardingV2 from '../OnboardingV2';
 
 export default function App(): ReactElement {
   const dispatch = useDispatch();
@@ -146,7 +136,7 @@ export default function App(): ReactElement {
             <ConnectTwitterView />
           </Route>
           <Route path="/signup">
-            <SignupView />
+            <OnboardingV2 />
           </Route>
           <Route path="/settings">
             <SettingView />
