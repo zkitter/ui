@@ -94,18 +94,21 @@ export const initZkitter = () => async (dispatch: Dispatch, getState: () => AppR
   });
 
   const client = await Zkitter.initialize(opts);
-  const filters = getFilters();
 
   client.on('Users.ArbitrumSynced', data => dispatch(setSyncArbitrum(data)));
 
   if (process.env.NODE_ENV === 'development') {
     client.on('Group.NewGroupMemberCreated', (member, groupId) => {
-      console.log(groupId + ': new group member ' + member);
+      console.log(groupId + ': new group member ', member);
+    });
+    client.on('Users.NewUserCreated', user => {
+      console.log('new user: ', user);
     });
   }
 
-  client.on('Zkitter.NewMessageCreated', async (msg: ZkitterMessage) => {
-    if (process.env.NODE_ENV === 'development') console.log('new message', msg);
+  client.on('Zkitter.NewMessageCreated', async (msg: ZkitterMessage, proof) => {
+    if (process.env.NODE_ENV === 'development') console.log('new message', msg, proof);
+
     switch (msg.type) {
       case MessageType.Post:
         dispatch(setPost(msg as Post));
@@ -128,23 +131,19 @@ export const initZkitter = () => async (dispatch: Dispatch, getState: () => AppR
     }
   });
 
-  await client.start();
-
   dispatch({
-    type: ActionType.SET_LOADING,
-    payload: false,
+    type: ActionType.SET_CLIENT,
+    payload: client,
   });
 
   resolveSync(client);
 
-  dispatch({
-    type: ActionType.SET_FILTERS,
-    payload: filters,
-  });
+  await client.start();
+  await client.waitForStart();
 
   dispatch({
-    type: ActionType.SET_CLIENT,
-    payload: client,
+    type: ActionType.SET_LOADING,
+    payload: false,
   });
 };
 
@@ -211,38 +210,8 @@ export const useZkitterSync = (): State['sync'] => {
   }, deepEqual);
 };
 
-export const getFilters = (): {
-  groups: string[];
-  users: string[];
-  threads: string[];
-} => {
-  const data = localStorage.getItem(FILTERS_LS_KEY);
-  const parsed = data ? safeJsonParse(data) : {};
-  return {
-    groups: parsed?.groups || [],
-    users: parsed?.users || [],
-    threads: parsed?.threads || [],
-  };
-};
-
-export const extendFilters = (options: {
-  groups?: string[];
-  users?: string[];
-  threads?: string[];
-}): {
-  groups: string[];
-  users: string[];
-  threads: string[];
-} => {
-  const filters = getFilters();
-
-  const { groups = [], users = [], threads = [] } = options;
-
-  filters.users = [...new Set(filters.users.concat(users))];
-  filters.groups = [...new Set(filters.groups.concat(groups))];
-  filters.threads = [...new Set(filters.threads.concat(threads))];
-
-  localStorage.setItem(FILTERS_LS_KEY, JSON.stringify(filters));
-
-  return filters;
+export const useZkitterInitializing = (): State => {
+  return useSelector((state: AppRootState) => {
+    return state.zkitter.loading;
+  }, deepEqual);
 };

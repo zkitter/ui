@@ -12,64 +12,65 @@ import InfiniteScrollable from '@components/InfiniteScrollable';
 import LocalBackupNotification from '@components/LocalBackupNotification';
 import { useSelectedLocalId } from '@ducks/worker';
 import { useThemeContext } from '@components/ThemeContext';
-import { useZkitter, useZkitterSync } from '@ducks/zkitter';
+import { useZkitter, useZkitterInitializing, useZkitterSync } from '@ducks/zkitter';
 import Icon from '@components/Icon';
 import SpinnerGif from '#/icons/spinner.gif';
+import SpinnerGIF from '#/icons/spinner.gif';
 
 export default function HomeFeed(): ReactElement {
   const [limit, setLimit] = useState(20);
   const [offset, setOffset] = useState('');
   const [order, setOrder] = useState<string[]>([]);
-  const [fetching, setFetching] = useState(false);
+  const [fetching, setFetching] = useState(true);
   const dispatch = useDispatch();
   const selected = useSelectedLocalId();
   const theme = useThemeContext();
   const zkitter = useZkitter();
+  const isZkitterInitializing = useZkitterInitializing();
   const {
-    arbitrum: { toBlock, fromBlock, latest },
+    arbitrum: { fromBlock, latest },
   } = useZkitterSync();
-  const [filters, setFilters] = useState<Filter>(new Filter());
+  const [filters, setFilters] = useState<Filter | null>(null);
 
-  const completion = (fromBlock / latest) * 100;
+  const completion = latest ? (fromBlock / latest) * 100 : 0;
 
   useEffect(() => {
     (async function onGlobalFeedMount() {
-      setFetching(true);
-      try {
-        await fetchMore(true);
-      } finally {
-        setFetching(false);
-      }
+      fetchMore(true);
     })();
-  }, [selected, zkitter, filters]);
+  }, [filters]);
 
   useEffect(() => {
     (async function onUpdateFollowings() {
       if (zkitter && selected?.type === 'gun') {
         const data = await zkitter?.getFollowings(selected.address);
         setFilters(new Filter({ address: data.concat(selected.address) }));
+      } else {
+        setFilters(new Filter());
       }
     })();
   }, [selected, zkitter]);
 
   const fetchMore = useCallback(
     async (reset = false) => {
-      if (!zkitter) return;
+      if (!zkitter || !filters) return;
 
-      if (reset) {
-        const posts = await zkitter.getHomefeed(filters, 20);
-        if (!posts.length) return;
-        const messageIds = posts.map(post => post.toJSON().messageId);
-        const last = posts[posts.length - 1];
-        setOffset(last.hash());
-        setOrder(messageIds);
-      } else {
-        const posts = await zkitter.getHomefeed(filters, limit, offset);
-        if (!posts.length) return;
-        const messageIds = posts.map(post => post.toJSON().messageId);
-        const last = posts[posts.length - 1];
-        setOffset(last.hash());
-        setOrder(order.concat(messageIds));
+      setFetching(true);
+
+      if (reset) setOrder([]);
+
+      try {
+        const posts = reset
+          ? await zkitter.getHomefeed(filters, 20)
+          : await zkitter.getHomefeed(filters, 20, offset);
+        if (posts.length) {
+          const messageIds = posts.map(post => post.toJSON().messageId);
+          const last = posts[posts.length - 1];
+          setOffset(last.hash());
+          setOrder(reset ? messageIds : order.concat(messageIds));
+        }
+      } finally {
+        setFetching(false);
       }
     },
     [zkitter, limit, offset, order, filters]
@@ -94,24 +95,22 @@ export default function HomeFeed(): ReactElement {
       onScrolledToBottom={fetchMore}>
       <LocalBackupNotification />
       <PostEditor onSuccessPost={onSuccessPost} />
-      {!zkitter && (
+
+      {isZkitterInitializing && (
         <div
           className={classNames(
             'flex flex-col flex-nowrap items-center justify-center',
-            'py-6 px-4 border rounded-xl text-sm',
+            'py-6 px-4 mb-2 border rounded-xl text-sm',
             {
               'border-gray-200 text-gray-300': theme !== 'dark',
               'border-gray-800 text-gray-700': theme === 'dark',
             }
           )}>
           <Icon url={SpinnerGif} size={4} />
-          <div>
-            {completion < 99
-              ? `Syncing with Arbitrum (${completion.toFixed(2)}%)...`
-              : `Syncing messages...`}
-          </div>
+          <div>{completion < 99 ? `Syncing with Arbitrum (${completion.toFixed(2)}%)...` : ''}</div>
         </div>
       )}
+
       {!order.length && !fetching && !!zkitter && (
         <div
           className={classNames(
@@ -138,6 +137,11 @@ export default function HomeFeed(): ReactElement {
           />
         );
       })}
+      {!!zkitter && fetching && (
+        <div className="flex flex-row justify-center">
+          <Icon className="self-center my-4" url={SpinnerGIF} size={3} />
+        </div>
+      )}
     </InfiniteScrollable>
   );
 }

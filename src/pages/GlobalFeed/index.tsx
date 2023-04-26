@@ -36,12 +36,12 @@ export default function GlobalFeed(): ReactElement {
     async (reset = false) => {
       setLoading(true);
       if (reset) {
-        const messageIds: any = await dispatch(fetchPosts(undefined, 20, 0));
+        const messageIds: any = await dispatch(fetchPosts(undefined, 50, 0));
         setOffset(20);
         setOrder(messageIds);
       } else {
         if (order.length % limit) return;
-        const messageIds: any = await dispatch(fetchPosts(undefined, limit, offset));
+        const messageIds: any = await dispatch(fetchPosts(undefined, 50, offset));
         setOffset(offset + limit);
         setOrder(order.concat(messageIds));
       }
