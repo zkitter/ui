@@ -311,6 +311,62 @@ export const loginGun =
     }
   };
 
+export const authenticateAddress =
+  () => async (dispatch: ThunkDispatch<any, any, any>, getState: () => AppRootState) => {
+    dispatch(setUnlocking(true));
+    const {
+      web3: { account },
+    } = getState();
+
+    try {
+      const state = getState();
+      const { web3, account } = state.web3;
+
+      if (!web3 || !account) {
+        return Promise.reject(new Error('not connected to web3'));
+      }
+
+      const proof = await web3.eth.personal.sign(
+        `Sign this message to prove that you own this address`,
+        account,
+        ''
+      );
+
+      dispatch(setUnlocking(false));
+      return { address: account, proof };
+    } catch (e) {
+      dispatch(setUnlocking(false));
+      throw e;
+    }
+  };
+
+export const loginZkitter =
+  (nonce = 0) =>
+  async (dispatch: ThunkDispatch<any, any, any>, getState: () => AppRootState) => {
+    dispatch(setUnlocking(true));
+    const {
+      web3: { account },
+    } = getState();
+
+    try {
+      const result: any = await dispatch(generateECDSA(nonce));
+      await postWorkerMessage(
+        setIdentity({
+          type: 'gun',
+          address: account,
+          publicKey: result.pub,
+          privateKey: result.priv,
+          nonce,
+        })
+      );
+      dispatch(setUnlocking(false));
+      return result;
+    } catch (e) {
+      dispatch(setUnlocking(false));
+      throw e;
+    }
+  };
+
 export const genSemaphore =
   (web2Provider: 'Twitter' | 'Github' | 'Reddit' = 'Twitter', reputation: string) =>
   async (
@@ -414,6 +470,28 @@ export const generateGunKeyPair =
     // @ts-ignore
     const signedMessage = await web3.eth.personal.sign(
       `Sign this message to generate a GUN key pair with key nonce: ${nonce}`,
+      account
+    );
+
+    return _generateGunKeyPair(signedMessage);
+  };
+
+export const generateECDSA =
+  (nonce = 0) =>
+  async (
+    dispatch: Dispatch,
+    getState: () => AppRootState
+  ): Promise<{ pub: string; priv: string }> => {
+    const state = getState();
+    const { web3, account } = state.web3;
+
+    if (!web3 || !account) {
+      return Promise.reject(new Error('not connected to web3'));
+    }
+
+    // @ts-ignore
+    const signedMessage = await web3.eth.personal.sign(
+      `Sign this message to generate a ECDSA key for Zkitter with key nonce: ${nonce}`,
       account
     );
 

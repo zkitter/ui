@@ -131,6 +131,8 @@ export const initZkitter = () => async (dispatch: Dispatch, getState: () => AppR
     }
   });
 
+  await client.start();
+
   dispatch({
     type: ActionType.SET_CLIENT,
     payload: client,
@@ -138,7 +140,6 @@ export const initZkitter = () => async (dispatch: Dispatch, getState: () => AppR
 
   resolveSync(client);
 
-  await client.start();
   await client.waitForStart();
 
   dispatch({

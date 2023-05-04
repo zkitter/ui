@@ -133,7 +133,9 @@ export const connectWC = () => async (dispatch: ThunkDispatch<any, any, any>) =>
 };
 
 export const disconnectWC = async () => {
-  const provider = await getWCProvider();
-  await provider.disconnect();
-  localStorage.setItem('WC_CACHED', '');
+  if (localStorage.getItem('WC_CACHED') === '1') {
+    const provider = await getWCProvider();
+    await provider.disconnect();
+    localStorage.setItem('WC_CACHED', '');
+  }
 };

@@ -53,6 +53,8 @@ export const connectCB = () => async (dispatch: ThunkDispatch<any, any, any>) =>
 };
 
 export const disconnectCoinbaseProvider = async () => {
-  await getCoinbaseWalletSDK().disconnect();
-  localStorage.setItem('CB_CACHED', '');
+  if (localStorage.getItem('CB_CACHED') === '1') {
+    await getCoinbaseWalletSDK().disconnect();
+    localStorage.setItem('CB_CACHED', '');
+  }
 };

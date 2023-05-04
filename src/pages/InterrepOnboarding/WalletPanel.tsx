@@ -3,7 +3,6 @@ import { disconnectWeb3, useWeb3Account } from '@ducks/web3';
 import { disconnectZKPR, useIdCommitment, useZKPR } from '@ducks/zkpr';
 import { useSelectedLocalId } from '@ducks/worker';
 import { useDispatch } from 'react-redux';
-import { useHistory } from 'react-router';
 import { postWorkerMessage } from '~/sw';
 import { setIdentity } from '../../serviceWorkers/util';
 import Avatar, { Username } from '@components/Avatar';
@@ -11,13 +10,12 @@ import Icon from '@components/Icon';
 import { disconnectWC } from '~/walletconnect';
 import { disconnectCoinbaseProvider } from '~/coinbaseWallet';
 
-export function WalletPanel(): ReactElement {
+export function WalletPanel(props: { onDisconnect?: () => void }): ReactElement {
   const web3Account = useWeb3Account();
   const zkpr = useZKPR();
   const idCommitment = useIdCommitment();
   const selected = useSelectedLocalId();
   const dispatch = useDispatch();
-  const history = useHistory();
 
   const disconnect = useCallback(() => {
     dispatch(disconnectZKPR());
@@ -29,7 +27,9 @@ export function WalletPanel(): ReactElement {
       postWorkerMessage(setIdentity(null));
     }
 
-    history.push('/signup');
+    if (props.onDisconnect) {
+      props.onDisconnect();
+    }
   }, [selected]);
 
   let content;

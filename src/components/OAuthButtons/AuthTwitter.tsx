@@ -15,7 +15,7 @@ export function AuthTwitter(props: { callbackUrl?: string }): ReactElement {
   return (
     <Button
       btnType="primary"
-      className="mb-2 w-36 justify-center"
+      className="mb-2 w-full justify-center"
       onClick={() => auth(props.callbackUrl)}>
       <Icon fa="fab fa-twitter" className="mr-2" />
       Twitter

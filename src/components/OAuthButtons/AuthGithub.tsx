@@ -14,7 +14,7 @@ const auth = (callbackUrl?: string) => {
 export function AuthGithub(props: { callbackUrl?: string }): ReactElement {
   return (
     <Button
-      className="mb-2 w-36 justify-center bg-black hover:bg-gray-900 text-white"
+      className="mb-2 w-full justify-center bg-black hover:bg-gray-900 text-white"
       onClick={() => auth(props.callbackUrl)}>
       <Icon fa="fab fa-github" className="mr-2" />
       Github

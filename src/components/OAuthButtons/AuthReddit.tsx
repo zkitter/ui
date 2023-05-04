@@ -13,7 +13,9 @@ const auth = (callbackUrl?: string) => {
 
 export function AuthReddit(props: { callbackUrl?: string }): ReactElement {
   return (
-    <Button className="mb-2 w-36 justify-center bg-red-500" onClick={() => auth(props.callbackUrl)}>
+    <Button
+      className="mb-2 w-full justify-center bg-red-500"
+      onClick={() => auth(props.callbackUrl)}>
       <Icon fa="fab fa-reddit" className="mr-2" />
       Reddit
     </Button>

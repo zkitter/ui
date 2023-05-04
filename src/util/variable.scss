@@ -57,6 +57,10 @@ $red-25: mix($red, $white, 2.5%);
   color: $primary-color;
 }
 
+.border-primary-color {
+  border-color: $primary-color;
+}
+
 .text-light {
   font-size: 0.9375rem;
   line-height: 1.3125;

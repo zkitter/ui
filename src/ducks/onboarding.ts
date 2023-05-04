@@ -9,6 +9,7 @@ export const OB_REP_LS_KEY = 'zkitter/onboarding/reps';
 enum ActionTypes {
   UPDATE_REP = 'zkitter/onboarding/UPDATE_REP',
   SET_REPS = 'zkitter/onboarding/SET_REPS',
+  UPDATE_PROFILE = 'zkitter/onboarding/UPDATE_PROFILE',
 }
 
 export type Reputation = {
@@ -24,11 +25,36 @@ export type ReputationMap = {
 
 type State = {
   reputations: ReputationMap;
+  profile: {
+    coverImageUrl: string;
+    profileImageUrl: string;
+    name: string;
+    bio: string;
+    website: string;
+  };
 };
 
 const initialState: State = {
   reputations: loadReputationFromLS(),
+  profile: {
+    coverImageUrl: '',
+    profileImageUrl: '',
+    name: '',
+    bio: '',
+    website: '',
+  },
 };
+
+export const updateOnboardingProfile = (profile: {
+  coverImageUrl?: string;
+  profileImageUrl?: string;
+  name?: string;
+  bio?: string;
+  website?: string;
+}) => ({
+  type: ActionTypes.UPDATE_PROFILE,
+  payload: profile,
+});
 
 export const loadRep = () => (dispatch: Dispatch) => {
   dispatch({
@@ -77,6 +103,23 @@ export default function onboarding(state = initialState, action: Action<any>): S
         reputations: reps,
       };
     }
+    case ActionTypes.UPDATE_PROFILE: {
+      const profile = action.payload as {
+        coverImageUrl?: string;
+        profileImageUrl?: string;
+        name?: string;
+        bio?: string;
+        website?: string;
+      };
+
+      return {
+        ...state,
+        profile: {
+          ...state.profile,
+          ...profile,
+        },
+      };
+    }
     default:
       return state;
   }
@@ -85,6 +128,12 @@ export default function onboarding(state = initialState, action: Action<any>): S
 export const useOnboardingReputations = () => {
   return useSelector((state: AppRootState) => {
     return state.onboarding.reputations;
+  }, deepEqual);
+};
+
+export const useOnboardingProfile = () => {
+  return useSelector((state: AppRootState) => {
+    return state.onboarding.profile;
   }, deepEqual);
 };
 

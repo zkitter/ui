@@ -1,7 +1,9 @@
 export enum OnboardingViewType {
   Welcome,
   GroupDiscovery,
-  ProfileCreation,
+  IdentityOptions,
   IdentityCreation,
-  SubmitTx,
+  ProofOfAddress,
+  ProfileCreation,
+  Submit,
 }

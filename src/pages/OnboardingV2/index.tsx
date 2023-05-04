@@ -6,6 +6,9 @@ import './signup.scss';
 import config from '~/config';
 import { useDispatch } from 'react-redux';
 import { loadRep, saveRep, useOnboardingReputations, validateRepJSON } from '@ducks/onboarding';
+import IdentityCreation from './IdentityCreation';
+import IdentityOptions from './IdentityOptions';
+import Submit from './Submit';
 
 export default function OnboardingV2(): ReactElement {
   const dispatch = useDispatch();
@@ -43,13 +46,34 @@ export default function OnboardingV2(): ReactElement {
       content = <Welcome setViewType={setViewType} />;
       break;
     case OnboardingViewType.GroupDiscovery:
-      content = <GroupDiscovery setViewType={setViewType} />;
+      content = <GroupDiscovery onNext={() => setViewType(OnboardingViewType.IdentityOptions)} />;
       break;
-    case OnboardingViewType.ProfileCreation:
+    // case OnboardingViewType.ProfileCreation:
+    //   content = (
+    //     <ProfileCreation
+    //       onNext={() => setViewType(OnboardingViewType.WalletOptions)}
+    //       onBack={() => setViewType(OnboardingViewType.GroupDiscovery)}
+    //     />
+    //   );
+    //   break;
+    case OnboardingViewType.IdentityOptions:
+      content = (
+        <IdentityOptions
+          onBack={() => setViewType(OnboardingViewType.GroupDiscovery)}
+          onNext={() => setViewType(OnboardingViewType.IdentityCreation)}
+        />
+      );
       break;
     case OnboardingViewType.IdentityCreation:
+      content = (
+        <IdentityCreation
+          onBack={() => setViewType(OnboardingViewType.IdentityOptions)}
+          onNext={() => setViewType(OnboardingViewType.Submit)}
+        />
+      );
       break;
-    case OnboardingViewType.SubmitTx:
+    case OnboardingViewType.Submit:
+      content = <Submit setViewType={setViewType} />;
       break;
   }
 
